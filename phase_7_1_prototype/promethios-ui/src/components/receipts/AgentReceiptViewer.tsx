@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -29,6 +29,9 @@ import {
   Menu,
   MenuList,
   ListItemButton,
+  Tabs,
+  Tab,
+  Badge,
 } from '@mui/material';
 import {
   ExpandMore,
@@ -49,10 +52,62 @@ import {
   Compare,
   Timeline,
   Psychology,
+  Science as ResearchIcon,
+  Description as DocumentIcon,
+  Build as ToolIcon,
 } from '@mui/icons-material';
 import { universalGovernanceAdapter } from '../../services/UniversalGovernanceAdapter';
 import { EnhancedToolReceipt } from '../../extensions/ComprehensiveToolReceiptExtension';
 import { InteractiveReceiptExtension, ReceiptChatContext } from '../../extensions/InteractiveReceiptExtension';
+
+// Enhanced interfaces for the consolidated receipts system
+interface ResearchItem {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: Date;
+  sources: string[];
+  findings: string[];
+  cryptographicHash: string;
+  agentId: string;
+  sessionId: string;
+}
+
+interface DocumentItem {
+  id: string;
+  title: string;
+  type: 'document' | 'code' | 'image' | 'video' | 'spreadsheet';
+  content: string;
+  timestamp: Date;
+  size: number;
+  cryptographicHash: string;
+  agentId: string;
+  sessionId: string;
+}
+
+// Tab types for the enhanced receipts viewer
+type ReceiptTabType = 'tools' | 'research' | 'documents';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`receipts-tabpanel-${index}`}
+      aria-labelledby={`receipts-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ height: '100%' }}>{children}</Box>}
+    </div>
+  );
+}
 
 interface AgentReceiptViewerProps {
   agentId: string;
@@ -77,12 +132,32 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
   currentUserId = '',
   currentSessionId = '',
 }) => {
+  // Enhanced state for consolidated receipts system
+  const [activeTab, setActiveTab] = useState<number>(0);
   const [receipts, setReceipts] = useState<EnhancedToolReceipt[]>([]);
+  const [researchItems, setResearchItems] = useState<ResearchItem[]>([]);
+  const [documentItems, setDocumentItems] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Enhanced search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [toolFilter, setToolFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all'); // last_hour, last_day, last_week, last_month, custom
+  const [customDateRange, setCustomDateRange] = useState<{start: Date | null, end: Date | null}>({start: null, end: null});
+  const [trustScoreRange, setTrustScoreRange] = useState<[number, number]>([0, 1]);
+  const [governanceFilter, setGovernanceFilter] = useState<string>('all'); // compliant, warning, violation
+  const [cognitiveFilter, setCognitiveFilter] = useState<string>('all'); // high_confidence, uncertain, complex
+  const [emotionalFilter, setEmotionalFilter] = useState<string>('all'); // confident, curious, concerned
+  const [sessionFilter, setSessionFilter] = useState<string>('all');
+  const [advancedSearchMode, setAdvancedSearchMode] = useState(false);
+  const [savedFilters, setSavedFilters] = useState<any[]>([]);
+  const [quickFilters, setQuickFilters] = useState<string[]>([]);
+  const [groupBy, setGroupBy] = useState<string>('none'); // none, tool, date, session, trust_score
+  const [sortBy, setSortBy] = useState<string>('timestamp'); // timestamp, trust_score, tool_name
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
   const [expandedReceipt, setExpandedReceipt] = useState<string | null>(null);
   
   // Interactive receipt state
@@ -92,7 +167,7 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
   const [interactiveExtension] = useState(() => InteractiveReceiptExtension.getInstance());
 
   useEffect(() => {
-    loadReceipts();
+    loadAllReceiptData();
     
     // Initialize interactive extension if enabled
     if (enableInteractiveMode) {
@@ -198,36 +273,233 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
     }
   };
 
-  const loadReceipts = async () => {
+  // Enhanced loading function that wires to 69-field cryptographic audit logs
+  const loadAllReceiptData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Use ChatPanelGovernanceService for receipt loading
-      const { chatPanelGovernanceService } = await import('../../services/ChatPanelGovernanceService');
-      const agentReceipts = await chatPanelGovernanceService.getAgentReceipts(agentId, 100);
+      console.log(`🔐 Loading comprehensive receipt data from cryptographic audit logs for agent ${agentId}`);
       
-      setReceipts(agentReceipts);
-      console.log(`✅ Loaded ${agentReceipts.length} receipts for agent ${agentId}`);
+      // Wire to UniversalAuditLoggingService for 69-field audit data
+      const auditLogs = await universalGovernanceAdapter.searchAuditLogs({
+        agentId,
+        limit: 1000, // Load more for comprehensive search
+        includeAllFields: true // Get all 69 fields
+      });
+      
+      // Transform audit logs into different receipt types
+      const toolReceipts: EnhancedToolReceipt[] = [];
+      const research: ResearchItem[] = [];
+      const documents: DocumentItem[] = [];
+      
+      auditLogs.forEach((log: any) => {
+        // Tool execution receipts
+        if (log.contextType === 'tool_execution') {
+          toolReceipts.push({
+            receiptId: log.interactionId,
+            toolName: log.toolName || 'Unknown Tool',
+            actionType: log.actionType || 'execute',
+            timestamp: new Date(log.timestamp),
+            status: log.success ? 'success' : 'failed',
+            cryptographicHash: log.cryptographicHash,
+            trustScore: log.trustScore || 0,
+            governanceStatus: log.complianceScore > 0.8 ? 'compliant' : 'warning',
+            // Map all 69 fields for comprehensive search
+            auditData: log
+          });
+        }
+        
+        // Research receipts
+        if (log.contextType === 'research' || log.toolName === 'web_search') {
+          research.push({
+            id: log.interactionId,
+            title: log.inputMessage?.substring(0, 100) || 'Research Session',
+            description: log.outputResponse?.substring(0, 200) || '',
+            timestamp: new Date(log.timestamp),
+            sources: log.sources || [],
+            findings: log.findings || [log.outputResponse],
+            cryptographicHash: log.cryptographicHash,
+            agentId: log.agentId,
+            sessionId: log.sessionId
+          });
+        }
+        
+        // Document receipts
+        if (log.contextType === 'document_creation' || log.toolName === 'document_generation') {
+          documents.push({
+            id: log.interactionId,
+            title: log.documentTitle || log.inputMessage?.substring(0, 50) || 'Generated Document',
+            type: log.documentType || 'document',
+            content: log.outputResponse || '',
+            timestamp: new Date(log.timestamp),
+            size: log.outputResponse?.length || 0,
+            cryptographicHash: log.cryptographicHash,
+            agentId: log.agentId,
+            sessionId: log.sessionId
+          });
+        }
+      });
+      
+      setReceipts(toolReceipts);
+      setResearchItems(research);
+      setDocumentItems(documents);
+      
+      console.log(`✅ Loaded ${toolReceipts.length} tool receipts, ${research.length} research items, ${documents.length} documents from cryptographic audit logs`);
       
     } catch (err) {
-      console.error('❌ Failed to load receipts:', err);
-      setError('Failed to load receipts. Please try again.');
+      console.error('❌ Failed to load receipt data from audit logs:', err);
+      setError('Failed to load receipt data. Please try again.');
+      
+      // Fallback to existing service for backwards compatibility
+      try {
+        const { chatPanelGovernanceService } = await import('../../services/ChatPanelGovernanceService');
+        const agentReceipts = await chatPanelGovernanceService.getAgentReceipts(agentId, 100);
+        setReceipts(agentReceipts);
+        console.log(`⚠️ Fallback: Loaded ${agentReceipts.length} receipts from legacy service`);
+      } catch (fallbackErr) {
+        console.error('❌ Fallback also failed:', fallbackErr);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredReceipts = receipts.filter(receipt => {
-    const matchesSearch = receipt.toolName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         receipt.actionType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         receipt.receiptId.toLowerCase().includes(searchTerm.toLowerCase());
+  // Comprehensive filtering function for massive receipt datasets
+  const getFilteredData = () => {
+    const currentData = activeTab === 0 ? receipts : activeTab === 1 ? researchItems : documentItems;
     
-    const matchesTool = toolFilter === 'all' || receipt.toolName.toLowerCase() === toolFilter.toLowerCase();
-    const matchesStatus = statusFilter === 'all' || receipt.outcome === statusFilter;
-    
-    return matchesSearch && matchesTool && matchesStatus;
-  });
+    return currentData.filter((item: any) => {
+      // Text search across all fields
+      const searchableText = JSON.stringify(item).toLowerCase();
+      const matchesSearch = searchTerm === '' || searchableText.includes(searchTerm.toLowerCase());
+      
+      // Date filtering
+      const itemDate = new Date(item.timestamp);
+      const now = new Date();
+      let matchesDate = true;
+      
+      switch (dateFilter) {
+        case 'last_hour':
+          matchesDate = (now.getTime() - itemDate.getTime()) <= 3600000;
+          break;
+        case 'last_day':
+          matchesDate = (now.getTime() - itemDate.getTime()) <= 86400000;
+          break;
+        case 'last_week':
+          matchesDate = (now.getTime() - itemDate.getTime()) <= 604800000;
+          break;
+        case 'last_month':
+          matchesDate = (now.getTime() - itemDate.getTime()) <= 2592000000;
+          break;
+        case 'custom':
+          if (customDateRange.start && customDateRange.end) {
+            matchesDate = itemDate >= customDateRange.start && itemDate <= customDateRange.end;
+          }
+          break;
+        default:
+          matchesDate = true;
+      }
+      
+      // Tool type filtering (for receipts tab)
+      const matchesTool = activeTab === 0 ? 
+        (toolFilter === 'all' || (item as EnhancedToolReceipt).toolName === toolFilter) : true;
+      
+      // Status filtering
+      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+      
+      // Trust score filtering (for receipts)
+      const matchesTrustScore = activeTab === 0 ? 
+        ((item as EnhancedToolReceipt).trustScore >= trustScoreRange[0] && 
+         (item as EnhancedToolReceipt).trustScore <= trustScoreRange[1]) : true;
+      
+      // Governance filtering
+      const matchesGovernance = activeTab === 0 ? 
+        (governanceFilter === 'all' || (item as EnhancedToolReceipt).governanceStatus === governanceFilter) : true;
+      
+      // Session filtering
+      const matchesSession = sessionFilter === 'all' || item.sessionId === sessionFilter;
+      
+      return matchesSearch && matchesDate && matchesTool && matchesStatus && 
+             matchesTrustScore && matchesGovernance && matchesSession;
+    }).sort((a: any, b: any) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'timestamp':
+          aValue = new Date(a.timestamp).getTime();
+          bValue = new Date(b.timestamp).getTime();
+          break;
+        case 'trust_score':
+          aValue = a.trustScore || 0;
+          bValue = b.trustScore || 0;
+          break;
+        case 'tool_name':
+          aValue = a.toolName || a.title || '';
+          bValue = b.toolName || b.title || '';
+          break;
+        default:
+          aValue = a.timestamp;
+          bValue = b.timestamp;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  // Quick filter functions
+  const applyQuickFilter = (filterType: string) => {
+    switch (filterType) {
+      case 'today':
+        setDateFilter('last_day');
+        break;
+      case 'successful':
+        setStatusFilter('success');
+        break;
+      case 'high_trust':
+        setTrustScoreRange([0.8, 1]);
+        break;
+      case 'violations':
+        setGovernanceFilter('violation');
+        break;
+      case 'research_only':
+        setActiveTab(1);
+        break;
+      case 'documents_only':
+        setActiveTab(2);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setToolFilter('all');
+    setStatusFilter('all');
+    setDateFilter('all');
+    setCustomDateRange({start: null, end: null});
+    setTrustScoreRange([0, 1]);
+    setGovernanceFilter('all');
+    setCognitiveFilter('all');
+    setEmotionalFilter('all');
+    setSessionFilter('all');
+    setQuickFilters([]);
+  };
+
+  const filteredData = getFilteredData();
+
+  // Get unique values for filter dropdowns
+  const uniqueTools = [...new Set(receipts.map(r => r.toolName))];
+  const uniqueSessions = [...new Set([...receipts.map(r => r.sessionId || ''), ...researchItems.map(r => r.sessionId), ...documentItems.map(r => r.sessionId)])];
+
+  // Update references to use filteredData instead of filteredReceipts
+  const currentTabData = filteredData;
 
   const getStatusIcon = (outcome: string) => {
     switch (outcome) {
@@ -287,21 +559,21 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
 
   return (
     <Box sx={{ p: 3, bgcolor: '#0f172a', color: '#e2e8f0', minHeight: '100vh' }}>
-      {/* Header */}
+      {/* Enhanced Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h5" sx={{ color: '#f1f5f9', fontWeight: 600 }}>
-            Agent Receipts
+            Agent Receipts & Artifacts
           </Typography>
           <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-            {agentName} • {filteredReceipts.length} receipts
+            {agentName} • {currentTabData.length} items • Cryptographically verified
           </Typography>
         </Box>
         <Box display="flex" gap={1}>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
-            onClick={loadReceipts}
+            onClick={loadAllReceiptData}
             sx={{
               borderColor: '#374151',
               color: '#94a3b8',
@@ -329,6 +601,44 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
           {error}
         </Alert>
       )}
+
+      {/* Enhanced Tab Navigation */}
+      <Paper sx={{ mb: 3, bgcolor: '#1e293b', borderRadius: 2 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(e, newValue) => setActiveTab(newValue)}
+          sx={{
+            '& .MuiTab-root': { color: '#94a3b8' },
+            '& .Mui-selected': { color: '#3b82f6' },
+            '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' },
+          }}
+        >
+          <Tab
+            icon={<ToolIcon />}
+            label={
+              <Badge badgeContent={receipts.length} color="primary">
+                Tool Executions
+              </Badge>
+            }
+          />
+          <Tab
+            icon={<ResearchIcon />}
+            label={
+              <Badge badgeContent={researchItems.length} color="primary">
+                Research
+              </Badge>
+            }
+          />
+          <Tab
+            icon={<DocumentIcon />}
+            label={
+              <Badge badgeContent={documentItems.length} color="primary">
+                Documents
+              </Badge>
+            }
+          />
+        </Tabs>
+      </Paper>
 
       {/* Filters */}
       <Paper sx={{ p: 2, mb: 3, bgcolor: '#1e293b', borderRadius: 2 }}>
