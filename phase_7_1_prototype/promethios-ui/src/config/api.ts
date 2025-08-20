@@ -39,6 +39,15 @@ export const AGENT_API = {
   IDENTITIES: import.meta.env.VITE_AGENT_API_BASE ? `${import.meta.env.VITE_AGENT_API_BASE}/identities` : `${API_BASE_URL}/api/agents/identities`,
 };
 
+// Receipts API endpoints for cryptographic audit trail and sharing
+export const RECEIPTS_API = {
+  BASE: import.meta.env.VITE_RECEIPTS_API_BASE || `${API_BASE_URL}/api/receipts`,
+  PROCESS_REFERENCE: import.meta.env.VITE_RECEIPTS_API_BASE ? `${import.meta.env.VITE_RECEIPTS_API_BASE}/process-reference` : `${API_BASE_URL}/api/receipts/process-reference`,
+  DETECT_REFERENCES: import.meta.env.VITE_RECEIPTS_API_BASE ? `${import.meta.env.VITE_RECEIPTS_API_BASE}/detect-references` : `${API_BASE_URL}/api/receipts/detect-references`,
+  GET_CONTEXT: (receiptId: string) => import.meta.env.VITE_RECEIPTS_API_BASE ? `${import.meta.env.VITE_RECEIPTS_API_BASE}/${receiptId}/context` : `${API_BASE_URL}/api/receipts/${receiptId}/context`,
+  VERIFY_INTEGRITY: (receiptId: string) => import.meta.env.VITE_RECEIPTS_API_BASE ? `${import.meta.env.VITE_RECEIPTS_API_BASE}/${receiptId}/verify` : `${API_BASE_URL}/api/receipts/${receiptId}/verify`,
+};
+
 // Deployment API endpoints
 export const DEPLOYMENT_API = {
   BASE: DEPLOYMENT_API_BASE_URL,

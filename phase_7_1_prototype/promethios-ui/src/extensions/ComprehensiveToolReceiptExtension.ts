@@ -1641,6 +1641,108 @@ ${reference.continuationHints.map(hint => `• ${hint}`).join('\n')}
     console.log(`📋 Storing shareable reference: ${reference.receiptId}`);
     // Implementation would store in a fast lookup table
   }
+
+  /**
+   * Agent Detection and Processing Methods
+   */
+
+  /**
+   * Detect receipt references in chat messages
+   */
+  static detectReceiptReferences(message: string): string[] {
+    const receiptPattern = /🧾\s*\*\*Receipt Reference\*\*:\s*([a-zA-Z0-9_-]+)/g;
+    const matches: string[] = [];
+    let match;
+    
+    while ((match = receiptPattern.exec(message)) !== null) {
+      matches.push(match[1]); // Extract receipt ID
+    }
+    
+    return matches;
+  }
+
+  /**
+   * Agent API endpoint for processing receipt references
+   */
+  static async processReceiptForAgent(receiptId: string, agentId: string, sessionId: string): Promise<{
+    success: boolean;
+    context?: ReceiptContext;
+    userMessage?: string;
+    agentInstructions?: string;
+    error?: string;
+  }> {
+    try {
+      const extension = ComprehensiveToolReceiptExtension.getInstance();
+      const context = await extension.processReceiptReference(receiptId, agentId);
+      
+      // Generate user-friendly response
+      const userMessage = `✅ **Receipt Loaded**: ${context.originalExecution.toolName} execution from ${new Date(context.originalExecution.timestamp).toLocaleString()}
+
+**What happened:** ${context.originalExecution.actionType}
+**Result:** ${context.originalExecution.result?.summary || 'Completed successfully'}
+**Trust Score:** ${Math.round(context.trustScore * 100)}%
+
+**Available next steps:**
+${context.nextSteps.map(step => `• ${step}`).join('\n')}`;
+
+      // Generate agent instructions
+      const agentInstructions = `RECEIPT_CONTEXT_LOADED: ${receiptId}
+
+You now have access to the full context of a previous tool execution:
+- Tool: ${context.originalExecution.toolName}
+- Action: ${context.originalExecution.actionType}
+- Parameters: ${JSON.stringify(context.originalExecution.parameters)}
+- Result: ${JSON.stringify(context.originalExecution.result)}
+- Business Context: ${JSON.stringify(context.businessContext)}
+
+Continuation Options Available:
+${context.continuationOptions.map(opt => `- ${opt.action}: ${opt.description}`).join('\n')}
+
+You can now:
+1. Continue where this tool execution left off
+2. Build upon the results
+3. Reference the specific data and context
+4. Execute related follow-up actions
+
+The user is expecting you to acknowledge this context and offer to continue the work.`;
+
+      return {
+        success: true,
+        context,
+        userMessage,
+        agentInstructions
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error processing receipt'
+      };
+    }
+  }
+
+  /**
+   * Generate simple chat link for users (what they see)
+   */
+  generateSimpleChatLink(receipt: EnhancedToolReceipt): string {
+    return `🔗 **${receipt.compactTitle}**
+${receipt.compactSummary}
+*Click to continue this work...*`;
+  }
+
+  /**
+   * Generate backend reference for agents (hidden metadata)
+   */
+  generateBackendReference(receipt: EnhancedToolReceipt): string {
+    return JSON.stringify({
+      type: 'receipt_reference',
+      receiptId: receipt.receiptId,
+      agentId: receipt.toolAction.agentId,
+      cryptographicHash: receipt.cryptographicHash,
+      timestamp: receipt.timestamp,
+      toolCategory: receipt.toolCategory
+    });
+  }
 }
 
 export default ComprehensiveToolReceiptExtension;
