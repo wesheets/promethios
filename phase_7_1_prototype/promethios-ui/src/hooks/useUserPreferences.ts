@@ -42,9 +42,22 @@ export const useUserPreferences = () => {
     console.log("🔧 useUserPreferences: db:", db ? "available" : "null");
     
     const loadPreferences = async () => {
-      if (!currentUser || !db) { // Ensure db is available
-        console.log("⚠️ useUserPreferences: currentUser or db not available. currentUser:", currentUser, "db:", db);
-        // For logged-out users or if db is not yet initialized, use localStorage
+      if (!currentUser) {
+        console.log("⚠️ useUserPreferences: No currentUser, using localStorage fallback");
+        // For logged-out users, use localStorage
+        const localNavCollapsed = localStorage.getItem("navCollapsed");
+        console.log("📱 useUserPreferences: Using localStorage fallback. navCollapsed:", localNavCollapsed);
+        setPreferences({
+          ...defaultPreferences,
+          navigationCollapsed: localNavCollapsed === "true",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!db) {
+        console.log("⚠️ useUserPreferences: Database not available, using localStorage fallback");
+        // If db is not yet initialized, use localStorage temporarily
         const localNavCollapsed = localStorage.getItem("navCollapsed");
         console.log("📱 useUserPreferences: Using localStorage fallback. navCollapsed:", localNavCollapsed);
         setPreferences({

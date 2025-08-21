@@ -61,7 +61,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setAuthStable(true); // Mark as stable when user is authenticated
       } else {
         console.log("AuthContext: No user detected (null).");
-        setDbInstance(null); // Clear Firestore instance if no user
+        // Keep database connection alive even when no user - needed for invitation checks
+        // setDbInstance(null); // REMOVED: Don't clear Firestore instance
         setAuthStable(true); // Mark as stable for null state too
       }
       setCurrentUser(user);
@@ -70,7 +71,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, (error) => {
       console.error("AuthContext: Auth state change error:", error);
       setLoading(false);
-      setDbInstance(null);
+      // Keep db connection even on auth errors
+      // setDbInstance(null); // REMOVED: Don't clear db on auth errors
     });
 
     // Cleanup subscription on unmount

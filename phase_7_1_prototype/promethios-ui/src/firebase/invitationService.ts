@@ -80,15 +80,21 @@ const checkIfExistingUser = async (email: string, db: any): Promise<boolean> => 
         const fieldNames = ['userEmail', 'email', 'createdBy', 'owner'];
         
         for (const fieldName of fieldNames) {
-          const q = query(
-            collection(db, collectionName),
-            where(fieldName, '==', email)
-          );
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            console.log(`Found existing user activity in ${collectionName}.${fieldName}`);
-            return true;
+          try {
+            const q = query(
+              collection(db, collectionName),
+              where(fieldName, '==', email)
+            );
+            const querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+              console.log(`Found existing user activity in ${collectionName}.${fieldName}`);
+              return true;
+            }
+          } catch (fieldError) {
+            // Field might not exist or have different structure, continue checking
+            console.log(`Could not check ${collectionName}.${fieldName}:`, fieldError.code || fieldError.message);
+            continue;
           }
         }
       } catch (collectionError) {
