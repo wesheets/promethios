@@ -211,6 +211,15 @@ const ChatbotProfilesPageContent: React.FC = () => {
     });
   };
 
+  // Helper function to update chat history refresh trigger
+  const setChatHistoryRefreshTrigger = (updater: (prev: number) => number) => {
+    if (selectedChatbotId) {
+      const currentState = botStates.get(selectedChatbotId) || initializeBotState(selectedChatbotId);
+      const newTrigger = updater(currentState.chatHistoryRefreshTrigger);
+      updateBotState(selectedChatbotId, { chatHistoryRefreshTrigger: newTrigger });
+    }
+  };
+
   // Get real metrics from chatbot data and governance service (memoized to prevent flickering)
   const getRealMetrics = useCallback(async (chatbot: ChatbotProfile): Promise<ChatbotMetrics> => {
     try {
@@ -1752,7 +1761,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                     agentId={selectedChatbot.id}
                     agentName={selectedChatbot.name}
                     currentSessionId={currentBotState?.currentChatSession?.id}
-                    refreshTrigger={chatHistoryRefreshTrigger} // Add refresh trigger prop
+                    refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0} // Use bot state refresh trigger
                     onChatSelect={(session) => {
                       if (selectedChatbotId) {
                         updateBotState(selectedChatbotId, { 
