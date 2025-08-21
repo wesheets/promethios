@@ -630,6 +630,61 @@ const ChatbotProfilesPageContent: React.FC = () => {
     }
   }, [chatbotProfiles.length, searchParams.get('agent'), searchParams.get('panel')]);
 
+  // State to store metrics for all chatbots
+  const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
+
+  // Load metrics for all chatbots when they change
+  useEffect(() => {
+    const loadAllMetrics = async () => {
+      const metricsMap = new Map<string, ChatbotMetrics>();
+      
+      for (const chatbot of filteredChatbots) {
+        try {
+          const metrics = await getRealMetrics(chatbot);
+          const chatbotId = chatbot.identity?.id || chatbot.key || chatbot.id;
+          metricsMap.set(chatbotId, metrics);
+        } catch (error) {
+          console.warn('Failed to load metrics for chatbot:', chatbot.identity.name, error);
+          // Set fallback metrics
+          const chatbotId = chatbot.identity?.id || chatbot.key || chatbot.id;
+          metricsMap.set(chatbotId, {
+            healthScore: 85,
+            trustScore: 85,
+            performanceRating: 85,
+            messageVolume: 0,
+            responseTime: 1.2,
+            satisfactionScore: 4.5,
+            resolutionRate: 85,
+            lastActive: 'Recently',
+            governanceAlerts: 0,
+          });
+        }
+      }
+      
+      setChatbotMetrics(metricsMap);
+    };
+
+    if (filteredChatbots.length > 0) {
+      loadAllMetrics();
+    }
+  }, [filteredChatbots, getRealMetrics]);
+
+  // Get metrics for a specific chatbot
+  const getMetricsForChatbot = (chatbot: ChatbotProfile): ChatbotMetrics => {
+    const chatbotId = chatbot.identity?.id || chatbot.key || chatbot.id;
+    return chatbotMetrics.get(chatbotId) || {
+      healthScore: 85,
+      trustScore: 85,
+      performanceRating: 85,
+      messageVolume: 0,
+      responseTime: 1.2,
+      satisfactionScore: 4.5,
+      resolutionRate: 85,
+      lastActive: 'Loading...',
+      governanceAlerts: 0,
+    };
+  };
+
   // Filter chatbots based on search
   useEffect(() => {
     if (!searchQuery) {
@@ -2606,32 +2661,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
             <Box sx={{ height: 'calc(100vh - 300px)', overflow: 'auto' }}>
               <Grid container spacing={3}>
                 {filteredChatbots.map((chatbot) => {
-                  // Use state to store metrics for each chatbot
-                  const [metrics, setMetrics] = useState<ChatbotMetrics>({
-                    healthScore: 85,
-                    trustScore: 85,
-                    performanceRating: 85,
-                    messageVolume: 0,
-                    responseTime: 1.2,
-                    satisfactionScore: 4.5,
-                    resolutionRate: 85,
-                    lastActive: 'Loading...',
-                    governanceAlerts: 0,
-                  });
-
-                  // Load real metrics asynchronously
-                  useEffect(() => {
-                    const loadMetrics = async () => {
-                      try {
-                        const realMetrics = await getRealMetrics(chatbot);
-                        setMetrics(realMetrics);
-                      } catch (error) {
-                        console.warn('Failed to load metrics for chatbot:', chatbot.identity.name, error);
-                      }
-                    };
-                    loadMetrics();
-                  }, [chatbot.identity.id, chatbot.latestScorecard]);
-
+                  const metrics = getMetricsForChatbot(chatbot);
                   const governanceType = getGovernanceType(chatbot);
                   const modelProvider = getModelProvider(chatbot);
                   const isNativeAgent = governanceType === 'BYOK';
