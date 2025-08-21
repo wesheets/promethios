@@ -174,6 +174,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   
+  // Circuit breaker to prevent infinite re-renders
+  const MAX_RENDERS = 20;
+  if (renderCountRef.current > MAX_RENDERS) {
+    console.error(`🚨 [CIRCUIT BREAKER] Component has rendered ${renderCountRef.current} times - stopping to prevent infinite loop`);
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', bgcolor: '#0f172a' }}>
+        <Typography sx={{ color: '#ef4444' }}>
+          Error: Infinite re-render detected. Please refresh the page.
+        </Typography>
+      </Box>
+    );
+  }
+  
   // Remove useWidgetCustomizer for now to test if this fixes the context issue
   // const { config: widgetConfig, getChatbotConfig, setActiveChatbotId } = useWidgetCustomizer();
   console.log(`🔍 [DEBUG] ChatbotProfilesPageEnhanced RENDER #${renderCountRef.current}`);
@@ -720,11 +733,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
 
   // Load metrics for all chatbots when they change
+  const metricsLoadingRef = useRef(false);
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[loadAllMetrics] triggered - RENDER #${renderCountRef.current}`);
     console.log('🔍 [DEBUG] - filteredChatbots.length:', filteredChatbots.length);
+    console.log('🔍 [DEBUG] - metricsLoadingRef.current:', metricsLoadingRef.current);
+    
+    // Circuit breaker for metrics loading
+    if (metricsLoadingRef.current) {
+      console.log('🔍 [DEBUG] - SKIPPING: metrics already loading');
+      return;
+    }
     
     const loadAllMetrics = async () => {
+      if (filteredChatbots.length === 0) return;
+      
+      metricsLoadingRef.current = true;
+      console.log('🔍 [DEBUG] - Starting metrics loading...');
+      
       const metricsMap = new Map<string, ChatbotMetrics>();
       
       for (const chatbot of filteredChatbots) {
@@ -751,11 +777,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
       
       setChatbotMetrics(metricsMap);
+      console.log('🔍 [DEBUG] - Metrics loading completed');
+      metricsLoadingRef.current = false; // Reset circuit breaker
     };
 
-    if (filteredChatbots.length > 0) {
-      loadAllMetrics();
-    }
+    loadAllMetrics().catch(error => {
+      console.error('Failed to load metrics:', error);
+      metricsLoadingRef.current = false; // Reset circuit breaker on error
+    });
   }, [filteredChatbots]); // Removed getRealMetrics to prevent infinite loop
 
   // Get metrics for a specific chatbot
