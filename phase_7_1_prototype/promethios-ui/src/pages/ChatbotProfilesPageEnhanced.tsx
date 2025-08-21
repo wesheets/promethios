@@ -759,7 +759,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log('🔍 [DEBUG] - URL restoration completed');
     }, 100);
     
-  }, [agentParam, panelParam, chatbotProfiles.length, selectedChatbot?.identity?.id]);
+  }, [agentParam, panelParam, chatbotProfiles.length]); // Removed selectedChatbot?.identity?.id to prevent circular dependency
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
@@ -768,7 +768,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const metricsLoadingRef = useRef(false);
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[loadAllMetrics] triggered - RENDER #${renderCountRef.current}`);
-    console.log('🔍 [DEBUG] - filteredChatbots.length:', filteredChatbots.length);
+    console.log('🔍 [DEBUG] - chatbotProfiles.length:', chatbotProfiles.length);
     console.log('🔍 [DEBUG] - metricsLoadingRef.current:', metricsLoadingRef.current);
     
     // Circuit breaker for metrics loading
@@ -778,14 +778,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
     
     const loadAllMetrics = async () => {
-      if (filteredChatbots.length === 0) return;
+      if (chatbotProfiles.length === 0) return;
       
       metricsLoadingRef.current = true;
       console.log('🔍 [DEBUG] - Starting metrics loading...');
       
       const metricsMap = new Map<string, ChatbotMetrics>();
       
-      for (const chatbot of filteredChatbots) {
+      for (const chatbot of chatbotProfiles) {
         try {
           const metrics = await getRealMetrics(chatbot);
           const chatbotId = chatbot.identity?.id || chatbot.key || chatbot.id;
@@ -817,7 +817,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.error('Failed to load metrics:', error);
       metricsLoadingRef.current = false; // Reset circuit breaker on error
     });
-  }, [filteredChatbots]); // Removed getRealMetrics to prevent infinite loop
+  }, [chatbotProfiles.length]); // Use chatbotProfiles.length instead of filteredChatbots to prevent dependency loops
 
   // Get metrics for a specific chatbot
   const getMetricsForChatbot = (chatbot: ChatbotProfile): ChatbotMetrics => {
