@@ -170,10 +170,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser: user, loading: authLoading } = useAuth();
   
+  // Debug counter to track re-renders
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
+  
   // Remove useWidgetCustomizer for now to test if this fixes the context issue
   // const { config: widgetConfig, getChatbotConfig, setActiveChatbotId } = useWidgetCustomizer();
-  console.log('🔍 ChatbotProfilesPageEnhanced - user from auth:', user?.uid);
-  console.log('🔍 ChatbotProfilesPageEnhanced - auth loading:', authLoading);
+  console.log(`🔍 [DEBUG] ChatbotProfilesPageEnhanced RENDER #${renderCountRef.current}`);
+  console.log('🔍 [DEBUG] - user from auth:', user?.uid);
+  console.log('🔍 [DEBUG] - auth loading:', authLoading);
+  console.log('🔍 [DEBUG] - location:', location.pathname + location.search);
   
   const chatbotService = ChatbotStorageService.getInstance();
   
@@ -630,10 +636,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Load chatbots on component mount and when user changes
   useEffect(() => {
-    console.log('🔍 ChatbotProfilesPageEnhanced useEffect triggered, user:', user?.uid);
-    console.log('🔍 User object:', user);
-    console.log('🔍 Auth loading:', authLoading);
-    console.log('🔍 About to call loadChatbots...');
+    console.log(`🔍 [DEBUG] useEffect[loadChatbots] triggered - RENDER #${renderCountRef.current}`);
+    console.log('🔍 [DEBUG] - user?.uid:', user?.uid);
+    console.log('🔍 [DEBUG] - authLoading:', authLoading);
+    console.log('🔍 [DEBUG] - About to call loadChatbots...');
     loadChatbots();
     loadConnectedApps();
   }, [user?.uid, authLoading]); // Removed loadChatbots to prevent infinite loop
@@ -646,8 +652,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [isRestoringFromURL, setIsRestoringFromURL] = useState(false);
   
   useEffect(() => {
+    console.log(`🔍 [DEBUG] useEffect[URL restoration] triggered - RENDER #${renderCountRef.current}`);
+    console.log('🔍 [DEBUG] - agentParam:', agentParam);
+    console.log('🔍 [DEBUG] - panelParam:', panelParam);
+    console.log('🔍 [DEBUG] - isRestoringFromURL:', isRestoringFromURL);
+    console.log('🔍 [DEBUG] - chatbotProfiles.length:', chatbotProfiles.length);
+    
     // Prevent circular updates
-    if (isRestoringFromURL) return;
+    if (isRestoringFromURL) {
+      console.log('🔍 [DEBUG] - SKIPPING: isRestoringFromURL is true');
+      return;
+    }
     
     if (agentParam && chatbotProfiles.length > 0) {
       const chatbot = chatbotProfiles.find(bot => 
@@ -706,6 +721,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Load metrics for all chatbots when they change
   useEffect(() => {
+    console.log(`🔍 [DEBUG] useEffect[loadAllMetrics] triggered - RENDER #${renderCountRef.current}`);
+    console.log('🔍 [DEBUG] - filteredChatbots.length:', filteredChatbots.length);
+    
     const loadAllMetrics = async () => {
       const metricsMap = new Map<string, ChatbotMetrics>();
       
