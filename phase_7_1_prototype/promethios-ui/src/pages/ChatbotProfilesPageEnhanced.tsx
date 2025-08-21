@@ -987,11 +987,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         
         // Update chat messages in bot state using functional update to avoid stale closure
         if (selectedChatbot) {
-          console.log(`🔄 [ReceiptSearch] Updating chat messages for bot: ${selectedChatbot.id}`);
+          const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+          console.log(`🔄 [ReceiptSearch] Updating chat messages for bot: ${botId}`);
           
           setBotStates(prev => {
             const newStates = new Map(prev);
-            const currentState = newStates.get(selectedChatbot.id) || initializeBotState(selectedChatbot.id);
+            const currentState = newStates.get(botId) || initializeBotState(botId);
             
             // Use the latest state from the Map, not the potentially stale closure variable
             const latestMessages = currentState.chatMessages || [];
@@ -1001,7 +1002,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             console.log(`🔄 [ReceiptSearch] Updated messages length: ${updatedMessages.length}`);
             
             const updatedState = { ...currentState, chatMessages: updatedMessages };
-            newStates.set(selectedChatbot.id, updatedState);
+            newStates.set(botId, updatedState);
             
             console.log(`✅ [ReceiptSearch] State updated successfully`);
             return newStates;
@@ -1075,11 +1076,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         
         // Update chat messages in bot state using functional update to avoid stale closure
         if (selectedChatbot) {
-          console.log(`🔄 [ChatReference] Updating chat messages for bot: ${selectedChatbot.id}`);
+          const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+          console.log(`🔄 [ChatReference] Updating chat messages for bot: ${botId}`);
           
           setBotStates(prev => {
             const newStates = new Map(prev);
-            const currentState = newStates.get(selectedChatbot.id) || initializeBotState(selectedChatbot.id);
+            const currentState = newStates.get(botId) || initializeBotState(botId);
             
             // Use the latest state from the Map, not the potentially stale closure variable
             const latestMessages = currentState.chatMessages || [];
@@ -1089,7 +1091,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             console.log(`🔄 [ChatReference] Updated messages length: ${updatedMessages.length}`);
             
             const updatedState = { ...currentState, chatMessages: updatedMessages };
-            newStates.set(selectedChatbot.id, updatedState);
+            newStates.set(botId, updatedState);
             
             console.log(`✅ [ChatReference] State updated successfully`);
             return newStates;
@@ -1145,12 +1147,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Update messages with user message and bot response in bot state
       // Fix stale closure issue by using functional update to get latest state
       if (selectedChatbot) {
-        console.log(`🔄 [ChatState] Updating chat messages for bot: ${selectedChatbot.id}`);
+        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+        console.log(`🔄 [ChatState] Updating chat messages for bot: ${botId}`);
         console.log(`🔄 [ChatState] Current chatMessages length: ${chatMessages.length}`);
         
         setBotStates(prev => {
           const newStates = new Map(prev);
-          const currentState = newStates.get(selectedChatbot.id) || initializeBotState(selectedChatbot.id);
+          const currentState = newStates.get(botId) || initializeBotState(botId);
           
           // Use the latest state from the Map, not the potentially stale closure variable
           const latestMessages = currentState.chatMessages || [];
@@ -1160,7 +1163,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           console.log(`🔄 [ChatState] Updated messages length: ${updatedMessages.length}`);
           
           const updatedState = { ...currentState, chatMessages: updatedMessages };
-          newStates.set(selectedChatbot.id, updatedState);
+          newStates.set(botId, updatedState);
           
           console.log(`✅ [ChatState] State updated successfully`);
           return newStates;
