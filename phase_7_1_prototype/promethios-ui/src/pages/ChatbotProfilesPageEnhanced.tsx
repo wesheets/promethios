@@ -133,7 +133,8 @@ interface BotState {
 let globalMountGuard = false;
 let globalComponentInstance: string | null = null;
 
-const ChatbotProfilesPageEnhanced: React.FC = () => {
+// Internal component that uses the WidgetCustomizer context
+const ChatbotProfilesPageContent: React.FC = () => {
   // Mounting guard to prevent multiple instances
   const mountedRef = useRef(false);
   const componentId = useRef(`chatbot-page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
@@ -1105,8 +1106,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   }
 
   return (
-    <WidgetCustomizerProvider>
-      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#0f172a' }}>
+    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#0f172a' }}>
       {/* Main Content Area */}
       <Box
         sx={{
@@ -2971,6 +2971,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         )}
       </Box>
     </Box>
+  );
+};
+
+// Main wrapper component that provides the WidgetCustomizer context
+const ChatbotProfilesPageEnhanced: React.FC = () => {
+  return (
+    <WidgetCustomizerProvider>
+      <ChatbotProfilesPageContent />
     </WidgetCustomizerProvider>
   );
 };
