@@ -1766,7 +1766,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         attachments: msg.attachments,
                         governanceData: msg.governanceData,
                         shadowGovernanceData: msg.shadowGovernanceData,
-                      })));
+                      }));
                       if (selectedChatbotId) {
                         updateBotState(selectedChatbotId, { chatMessages: newMessages });
                       }

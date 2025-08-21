@@ -649,8 +649,8 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
   const uniqueTools = [...new Set(receipts.map(r => r.toolName))];
   const uniqueSessions = [...new Set([...receipts.map(r => r.sessionId || ''), ...researchItems.map(r => r.sessionId), ...documentItems.map(r => r.sessionId)])];
 
-  // Update references to use filteredData instead of filteredReceipts
-  const currentTabData = filteredData;
+  // Update references to use receipts instead of undefined filteredData
+  const currentTabData = receipts;
 
   const getStatusIcon = (outcome: string) => {
     switch (outcome) {
@@ -1115,7 +1115,7 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
       </Paper>
 
       {/* Receipts List */}
-      {filteredReceipts.length === 0 ? (
+      {receipts.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center', bgcolor: '#1e293b', borderRadius: 2 }}>
           <Receipt sx={{ fontSize: 48, color: '#6b7280', mb: 2 }} />
           <Typography variant="h6" sx={{ color: '#94a3b8', mb: 1 }}>
@@ -1127,7 +1127,7 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
         </Paper>
       ) : (
         <Box>
-          {filteredReceipts.map((receipt) => (
+          {receipts.map((receipt) => (
             <Accordion
               key={receipt.receiptId}
               expanded={expandedReceipt === receipt.receiptId}
