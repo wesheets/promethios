@@ -75,7 +75,8 @@ export class ChatPanelGovernanceService {
 
   constructor() {
     console.log('🎯 [ChatPanel] Initializing with Universal Governance Adapter and Extensions');
-    this.universalGovernance = new UniversalGovernanceAdapter();
+    // Use singleton instance to prevent multiple initializations
+    this.universalGovernance = require('./UniversalGovernanceAdapter').universalGovernanceAdapter;
     this.agentConfigService = new AgentConfigurationService();
     this.chatStorageService = new ChatStorageService();
     

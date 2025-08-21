@@ -21,12 +21,19 @@ export const testFirestoreConnection = async (): Promise<{ connected: boolean; e
   try {
     console.log('🔍 Testing Firestore connection...');
     
-    // Try to write a test document
-    const testRef = doc(db, 'connection-test', 'test-doc');
-    await setDoc(testRef, {
-      timestamp: new Date().toISOString(),
-      test: true
-    });
+    // Check if user is authenticated first
+    const { auth } = await import('./config');
+    if (!auth.currentUser) {
+      console.log('⚠️ User not authenticated, skipping Firestore test');
+      return { 
+        connected: false, 
+        error: 'User not authenticated - Firestore access requires authentication' 
+      };
+    }
+    
+    // Try to read a test document (less intrusive than writing)
+    const testRef = doc(db, 'system', 'health-check');
+    await getDoc(testRef);
     
     console.log('✅ Firestore connection successful!');
     return { connected: true };

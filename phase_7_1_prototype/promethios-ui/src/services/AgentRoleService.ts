@@ -86,7 +86,8 @@ export class AgentRoleService {
   private roleAssignments: Map<string, RoleAssignment[]> = new Map(); // agentId -> assignments
 
   constructor() {
-    this.universalGovernance = new UniversalGovernanceAdapter();
+    // Use singleton instance to prevent multiple initializations
+    this.universalGovernance = require('./UniversalGovernanceAdapter').universalGovernanceAdapter;
     this.initializePrebuiltRoles();
   }
 

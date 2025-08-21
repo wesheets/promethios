@@ -495,7 +495,11 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const modernChatGovernanceAdapter = useMemo(() => new ModernChatGovernanceAdapter(), []);
   const governedInsightsQAService = useMemo(() => ModernChatGovernedInsightsQAService.getInstance(), []);
   const enhancedAuditLoggingService = useMemo(() => EnhancedAuditLoggingService.getInstance(), []);
-  const universalGovernanceAdapter = useMemo(() => new UniversalGovernanceAdapter(), []);
+  const universalGovernanceAdapter = useMemo(() => {
+    // Use singleton instance to prevent multiple initializations
+    const { universalGovernanceAdapter: singleton } = require('../services/UniversalGovernanceAdapter');
+    return singleton;
+  }, []);
 
   // NEW: Initialize missing extensions
   const auditLogAccessExtension = useMemo(() => AuditLogAccessExtension.getInstance(), []);

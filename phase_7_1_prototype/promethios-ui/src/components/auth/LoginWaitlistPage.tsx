@@ -360,60 +360,13 @@ const LoginWaitlistPage: React.FC = () => {
   
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Video Background */}
-      <div className="video-background">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className={`transition-opacity duration-1000 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onCanPlay={() => {
-            console.log('Video onCanPlay triggered');
-            setVideoLoaded(true);
-            setVideoError(false);
-          }}
-          onError={(e) => {
-            console.error('Video onError triggered:', e);
-            setVideoError(true);
-            setVideoLoaded(false);
-          }}
-          onLoadStart={() => console.log('Video loading started')}
-          onLoadedData={() => console.log('Video data loaded')}
-        >
-          <source src="/ai-orb-background.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        
-        {/* Video loading indicator */}
-        {!videoLoaded && !videoError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
-            <div className="text-white text-sm opacity-50">Loading video...</div>
-          </div>
-        )}
-        
-        {/* Video error fallback */}
-        {videoError && (
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-white text-sm opacity-50">Video unavailable</div>
-            </div>
-          </div>
-        )}
+      {/* Simple Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"></div>
+      
+      {/* Animated overlay for visual interest */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+        <div className="w-full h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 animate-pulse"></div>
       </div>
-      
-      {/* Video Overlay for text readability */}
-      <div className="video-overlay"></div>
-      
-      {/* Fallback animated background for when video is loading or failed */}
-      {(!videoLoaded || videoError) && (
-        <div className="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
-          {/* Enhanced fallback background */}
-          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 animate-pulse"></div>
-        </div>
-      )}
       
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
