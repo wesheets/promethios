@@ -700,6 +700,16 @@ You operate with governance oversight that monitors your interactions for safety
       // CRITICAL: Load complete agent configuration (chatbot wrapper + scorecard)
       const fullAgentConfig = await this.loadCompleteAgentConfiguration(agentId, userId);
       
+      // 🔧 TOOL INTEGRATION: Load tool schemas from backend
+      let toolSchemas: any[] = [];
+      try {
+        console.log('🔧 [Universal] Loading tool schemas for chat...');
+        toolSchemas = await this.toolService.loadToolSchemas();
+        console.log(`🔧 [Universal] Loaded ${toolSchemas.length} tool schemas`);
+      } catch (toolError) {
+        console.warn('⚠️ [Universal] Failed to load tool schemas:', toolError);
+      }
+      
       // Prepare backend chat request with full agent configuration
       const chatRequest: BackendChatRequest = {
         agent_id: agentId,
@@ -711,6 +721,8 @@ You operate with governance oversight that monitors your interactions for safety
         model: fullAgentConfig.model || this.getDefaultModel(fullAgentConfig.provider || this.getDefaultProvider(fullAgentConfig)),
         conversationHistory: context?.conversationHistory || [],
         attachments: context?.attachments || [], // Include file attachments
+        // 🔧 TOOL INTEGRATION: Add tool schemas to the request
+        tools: toolSchemas.length > 0 ? toolSchemas : undefined,
         // CRITICAL: Pass complete agent configuration to backend
         agent_configuration: {
           personality: fullAgentConfig.personality,
