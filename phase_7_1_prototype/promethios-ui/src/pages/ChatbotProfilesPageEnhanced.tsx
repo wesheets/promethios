@@ -611,7 +611,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
     loadConnectedApps();
   }, [user?.uid, authLoading, loadChatbots]);
 
-  // Restore state from URL parameters after chatbots are loaded
+   // URL restoration effect - restore state from URL parameters
   useEffect(() => {
     const agentId = searchParams.get('agent');
     const panelType = searchParams.get('panel') as RightPanelType;
@@ -637,18 +637,16 @@ const ChatbotProfilesPageContent: React.FC = () => {
             }
             newState.isWorkspaceMode = true;
             setBotStates(prev => new Map(prev).set(agentId, newState));
-          } else if (panelType && !isAlreadyInWorkspace) {
-            updateBotState(agentId, { rightPanelType: panelType, isWorkspaceMode: true });
           }
           
-          // Set selected chatbot to restore workspace only if not already selected
+          // Set selected chatbot and workspace mode
           if (!isAlreadySelected) {
             setSelectedChatbot(chatbot);
           }
         }
       }
     }
-  }, [chatbotProfiles, searchParams, selectedChatbot, botStates]);
+  }, [chatbotProfiles.length, searchParams.toString()]); // Only depend on length and URL string
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
