@@ -4,6 +4,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendPasswordResetEmail,
   createUserWithEmailAndPassword,
   signOut
@@ -49,6 +51,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     console.log("AuthContext: Setting up auth state listener");
+    
+    // Check for redirect result first
+    getRedirectResult(auth).then((result) => {
+      if (result) {
+        console.log("AuthContext: Redirect result received:", result.user?.email);
+      }
+    }).catch((error) => {
+      console.error("AuthContext: Redirect result error:", error);
+    });
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log("AuthContext: Auth state changed. User object:", user);
       if (user) {
@@ -75,7 +87,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const loginWithGoogle = async () => {
-    return await signInWithPopup(auth, googleProvider);
+    try {
+      // First try popup method
+      console.log("AuthContext: Attempting Google login with popup");
+      return await signInWithPopup(auth, googleProvider);
+    } catch (error: any) {
+      console.log("AuthContext: Popup failed, trying redirect fallback", error.code);
+      
+      // If popup fails due to Cross-Origin-Opener-Policy or other popup issues, use redirect
+      if (error.code === 'auth/popup-blocked' || 
+          error.code === 'auth/popup-closed-by-user' ||
+          error.code === 'auth/cancelled-popup-request' ||
+          error.message?.includes('Cross-Origin-Opener-Policy')) {
+        
+        console.log("AuthContext: Using redirect method as fallback");
+        // Use redirect method as fallback
+        await signInWithRedirect(auth, googleProvider);
+        // The redirect will handle the rest, no return value needed
+        return null;
+      }
+      
+      // Re-throw other errors
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string) => {
