@@ -350,6 +350,13 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [trustThreshold, setTrustThreshold] = useState<number>(70);
   const [riskCategories, setRiskCategories] = useState<string[]>(['financial_transactions', 'data_access']);
 
+  // Function to update right panel type for the current chatbot
+  const setRightPanelType = (panelType: RightPanelType) => {
+    if (selectedChatbotId) {
+      updateBotState(selectedChatbotId, { rightPanelType: panelType });
+    }
+  };
+
 
 
   // Mock governance type function
@@ -837,9 +844,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
         }
         
         // Save to chat history
-        if (currentChatSession) {
+        if (currentBotState?.currentChatSession) {
           try {
-            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
               id: userMessage.id,
               content: userMessage.content,
               sender: userMessage.sender,
@@ -848,7 +855,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
               agentName: selectedChatbot.name,
             });
             
-            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
               id: agentResponse.id,
               content: agentResponse.content,
               sender: agentResponse.sender,
@@ -909,9 +916,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
         }
         
         // Save to chat history
-        if (currentChatSession) {
+        if (currentBotState?.currentChatSession) {
           try {
-            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
               id: userMessage.id,
               content: userMessage.content,
               sender: userMessage.sender,
@@ -920,7 +927,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
               agentName: selectedChatbot.name,
             });
             
-            await chatHistoryService.addMessageToSession(currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
               id: agentResponse.id,
               content: agentResponse.content,
               sender: agentResponse.sender,
@@ -962,10 +969,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
       }
       
       // Save messages to chat history if we have a current session
-      if (currentChatSession && selectedChatbot && user?.uid) {
+      if (currentBotState?.currentChatSession && selectedChatbot && user?.uid) {
         try {
           // Add user message to chat history
-          await chatHistoryService.addMessageToSession(currentChatSession.id, {
+          await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
             id: userMessage.id,
             content: userMessage.content,
             sender: userMessage.sender,
@@ -975,7 +982,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
           });
           
           // Add agent response to chat history
-          await chatHistoryService.addMessageToSession(currentChatSession.id, {
+          await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
             id: response.id,
             content: response.content,
             sender: response.sender,

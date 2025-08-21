@@ -514,7 +514,6 @@ export class UniversalGovernanceAdapter {
       });
       
       // DEBUGGER: Let's see the final merged configuration
-      debugger;
       console.log('🚨 DEBUGGER: Final merged config:', mergedConfig);
       
       return mergedConfig;
@@ -573,7 +572,6 @@ export class UniversalGovernanceAdapter {
         });
         
         // DEBUGGER: Let's see the exact chatbot data structure
-        debugger;
         console.log('🚨 DEBUGGER: Full chatbot object:', chatbot);
         
         return {
@@ -727,7 +725,6 @@ You operate with governance oversight that monitors your interactions for safety
 
       // Call real backend API (same as modern chat) with actual userId
       console.log('🚨 DEBUGGER: About to call backend with chatRequest:', chatRequest);
-      debugger;
       const backendResponse: BackendChatResponse = await this.callBackendAPI(CHAT_ENDPOINT, chatRequest, userId);
       
       // Convert backend response to EnhancedResponse format
@@ -2011,7 +2008,6 @@ You operate with governance oversight that monitors your interactions for safety
         agentConfigModel: agentConfig?.model,
         agentConfigApiDetails: agentConfig?.apiDetails
       });
-      debugger;
       
       // Call backend API with full governance integration
       const result = await this.callBackendAPI(CHAT_ENDPOINT, backendRequest, request.userId);
