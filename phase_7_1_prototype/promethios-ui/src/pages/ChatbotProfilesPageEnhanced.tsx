@@ -1010,7 +1010,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
             selectedChatbot.name,
             user.uid
           );
-          setCurrentChatSession(newSession);
+          updateBotState(selectedChatbot.id, { currentChatSession: newSession });
           
           // Trigger chat history panel refresh
           setChatHistoryRefreshTrigger(prev => prev + 1);

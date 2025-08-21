@@ -381,7 +381,7 @@ export class ChatHistoryService {
     try {
       // Remove from unified storage using correct API
       await unifiedStorage.delete('chats', `user_${session.userId}_${sessionId}`);
-      await unifiedStorage.delete('chats', `sessions/${sessionId}`);
+      await unifiedStorage.delete('chats', `session_${sessionId}`);
 
       // Update user's chat index
       await this.removeFromUserChatIndex(session.userId, sessionId);
@@ -469,8 +469,8 @@ export class ChatHistoryService {
       // Save to user's chat collection using correct API
       await unifiedStorage.set('chats', `user_${session.userId}_${session.id}`, serializedSession);
 
-      // Also save to sessions collection for direct access
-      await unifiedStorage.set('chats', `sessions/${session.id}`, serializedSession);
+      // Also save to sessions collection for direct access (use 2-segment path)
+      await unifiedStorage.set('chats', `session_${session.id}`, serializedSession);
 
       // Update user's chat index for efficient loading
       await this.updateUserChatIndex(session.userId, session.id);
