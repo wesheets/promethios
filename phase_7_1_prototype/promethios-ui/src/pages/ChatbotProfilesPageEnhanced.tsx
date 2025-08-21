@@ -216,6 +216,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const activeSession = currentBotState?.activeSession || null;
   const isWorkspaceMode = currentBotState?.isWorkspaceMode || false;
   
+  // Debug logging for chat state
+  if (renderCountRef.current <= 5 || renderCountRef.current % 5 === 0) {
+    console.log(`🔍 [ChatState] RENDER #${renderCountRef.current} - selectedChatbotId: ${selectedChatbotId}`);
+    console.log(`🔍 [ChatState] RENDER #${renderCountRef.current} - currentBotState exists: ${!!currentBotState}`);
+    console.log(`🔍 [ChatState] RENDER #${renderCountRef.current} - chatMessages.length: ${chatMessages.length}`);
+    if (chatMessages.length > 0) {
+      console.log(`🔍 [ChatState] RENDER #${renderCountRef.current} - Last message: ${chatMessages[chatMessages.length - 1]?.content?.substring(0, 50)}...`);
+    }
+  }
+  
   // Remaining global state (not bot-specific)
   const [isTyping, setIsTyping] = useState(false);
   const [messageInput, setMessageInput] = useState('');
@@ -975,10 +985,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           }
         };
         
-        // Update chat messages in bot state
+        // Update chat messages in bot state using functional update to avoid stale closure
         if (selectedChatbot) {
-          updateBotState(selectedChatbot.id, {
-            chatMessages: [...chatMessages, userMessage, agentResponse]
+          console.log(`🔄 [ReceiptSearch] Updating chat messages for bot: ${selectedChatbot.id}`);
+          
+          setBotStates(prev => {
+            const newStates = new Map(prev);
+            const currentState = newStates.get(selectedChatbot.id) || initializeBotState(selectedChatbot.id);
+            
+            // Use the latest state from the Map, not the potentially stale closure variable
+            const latestMessages = currentState.chatMessages || [];
+            const updatedMessages = [...latestMessages, userMessage, agentResponse];
+            
+            console.log(`🔄 [ReceiptSearch] Latest messages length: ${latestMessages.length}`);
+            console.log(`🔄 [ReceiptSearch] Updated messages length: ${updatedMessages.length}`);
+            
+            const updatedState = { ...currentState, chatMessages: updatedMessages };
+            newStates.set(selectedChatbot.id, updatedState);
+            
+            console.log(`✅ [ReceiptSearch] State updated successfully`);
+            return newStates;
           });
         }
         
@@ -1047,10 +1073,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           }
         };
         
-        // Update chat messages in bot state
+        // Update chat messages in bot state using functional update to avoid stale closure
         if (selectedChatbot) {
-          updateBotState(selectedChatbot.id, {
-            chatMessages: [...chatMessages, userMessage, agentResponse]
+          console.log(`🔄 [ChatReference] Updating chat messages for bot: ${selectedChatbot.id}`);
+          
+          setBotStates(prev => {
+            const newStates = new Map(prev);
+            const currentState = newStates.get(selectedChatbot.id) || initializeBotState(selectedChatbot.id);
+            
+            // Use the latest state from the Map, not the potentially stale closure variable
+            const latestMessages = currentState.chatMessages || [];
+            const updatedMessages = [...latestMessages, userMessage, agentResponse];
+            
+            console.log(`🔄 [ChatReference] Latest messages length: ${latestMessages.length}`);
+            console.log(`🔄 [ChatReference] Updated messages length: ${updatedMessages.length}`);
+            
+            const updatedState = { ...currentState, chatMessages: updatedMessages };
+            newStates.set(selectedChatbot.id, updatedState);
+            
+            console.log(`✅ [ChatReference] State updated successfully`);
+            return newStates;
           });
         }
         
@@ -1101,9 +1143,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       };
       
       // Update messages with user message and bot response in bot state
+      // Fix stale closure issue by using functional update to get latest state
       if (selectedChatbot) {
-        updateBotState(selectedChatbot.id, {
-          chatMessages: [...chatMessages, userMessage, response]
+        console.log(`🔄 [ChatState] Updating chat messages for bot: ${selectedChatbot.id}`);
+        console.log(`🔄 [ChatState] Current chatMessages length: ${chatMessages.length}`);
+        
+        setBotStates(prev => {
+          const newStates = new Map(prev);
+          const currentState = newStates.get(selectedChatbot.id) || initializeBotState(selectedChatbot.id);
+          
+          // Use the latest state from the Map, not the potentially stale closure variable
+          const latestMessages = currentState.chatMessages || [];
+          const updatedMessages = [...latestMessages, userMessage, response];
+          
+          console.log(`🔄 [ChatState] Latest messages length: ${latestMessages.length}`);
+          console.log(`🔄 [ChatState] Updated messages length: ${updatedMessages.length}`);
+          
+          const updatedState = { ...currentState, chatMessages: updatedMessages };
+          newStates.set(selectedChatbot.id, updatedState);
+          
+          console.log(`✅ [ChatState] State updated successfully`);
+          return newStates;
         });
       }
       
@@ -1906,7 +1966,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         shadowGovernanceData: msg.shadowGovernanceData,
                       }));
                       if (selectedChatbotId) {
-                        updateBotState(selectedChatbotId, { chatMessages: newMessages });
+                        console.log(`🔄 [ChatHistory] Loading ${newMessages.length} messages for bot: ${selectedChatbotId}`);
+                        
+                        // Use direct state update to avoid any potential stale closure issues
+                        setBotStates(prev => {
+                          const newStates = new Map(prev);
+                          const currentState = newStates.get(selectedChatbotId) || initializeBotState(selectedChatbotId);
+                          const updatedState = { ...currentState, chatMessages: newMessages };
+                          newStates.set(selectedChatbotId, updatedState);
+                          
+                          console.log(`✅ [ChatHistory] Loaded ${newMessages.length} messages successfully`);
+                          return newStates;
+                        });
                       }
                     }}
                     onNewChat={(session) => {
