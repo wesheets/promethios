@@ -85,6 +85,12 @@ export class ChatHistoryService {
   private static instance: ChatHistoryService;
   private receiptExtension: ComprehensiveToolReceiptExtension;
   private activeSessions: Map<string, ChatSession> = new Map();
+  
+  // Add caching for chat history loading
+  private loadingPromises = new Map<string, Promise<ChatSession[]>>();
+  private cacheTimestamps = new Map<string, number>();
+  private chatHistoryCache = new Map<string, ChatSession[]>();
+  private readonly CACHE_DURATION = 30000; // 30 seconds cache
 
   private constructor() {
     this.receiptExtension = new ComprehensiveToolReceiptExtension();
@@ -280,70 +286,122 @@ export class ChatHistoryService {
     try {
       console.log(`📚 Loading chat history for user: ${userId}`);
       
-      // Get all chat sessions for user from unified storage
-      const sessions: ChatSession[] = [];
+      // Create cache key including filter for proper caching
+      const filterKey = filter ? JSON.stringify(filter) : 'all';
+      const cacheKey = `${userId}_${filterKey}`;
+      
+      // Check cache freshness first
+      const lastCacheTime = this.cacheTimestamps.get(cacheKey) || 0;
+      const now = Date.now();
+      
+      if (now - lastCacheTime < this.CACHE_DURATION) {
+        const cachedSessions = this.chatHistoryCache.get(cacheKey);
+        if (cachedSessions && cachedSessions.length >= 0) { // Allow empty arrays to be cached
+          console.log(`🎯 Using cached chat history for user (cache still fresh): ${userId} - ${cachedSessions.length} sessions`);
+          return cachedSessions;
+        }
+      }
+      
+      // Check if already loading - if so, wait for that promise
+      const existingPromise = this.loadingPromises.get(cacheKey);
+      if (existingPromise) {
+        console.log(`🔄 Already loading chat history for user, waiting for existing promise: ${userId}`);
+        return await existingPromise;
+      }
+      
+      // Create new loading promise
+      const loadingPromise = this.loadChatHistoryFromStorage(userId, filter, cacheKey, now);
+      this.loadingPromises.set(cacheKey, loadingPromise);
       
       try {
-        // Try to get user's chat index first (use 2-segment path for Firebase)
-        const userChatIndex = await unifiedStorage.get('chats', `user_${userId}_index`);
-        
-        if (userChatIndex && Array.isArray(userChatIndex)) {
-          // Load sessions from index
-          for (const sessionId of userChatIndex) {
-            try {
-              const sessionData = await unifiedStorage.get('chats', `user_${userId}_${sessionId}`);
-              if (sessionData) {
-                const session = this.deserializeChatSession(sessionData);
-                
-                // Apply filters
-                if (this.matchesFilter(session, filter)) {
-                  sessions.push(session);
-                }
+        const result = await loadingPromise;
+        return result;
+      } finally {
+        // Clean up the loading promise
+        this.loadingPromises.delete(cacheKey);
+      }
+      
+    } catch (error) {
+      console.error('Error in getUserChatHistory:', error);
+      // Clean up on error
+      const filterKey = filter ? JSON.stringify(filter) : 'all';
+      const cacheKey = `${userId}_${filterKey}`;
+      this.loadingPromises.delete(cacheKey);
+      return [];
+    }
+  }
+
+  private async loadChatHistoryFromStorage(
+    userId: string,
+    filter: ChatHistoryFilter | undefined,
+    cacheKey: string,
+    now: number
+  ): Promise<ChatSession[]> {
+    // Get all chat sessions for user from unified storage
+    const sessions: ChatSession[] = [];
+    
+    try {
+      // Try to get user's chat index first (use 2-segment path for Firebase)
+      const userChatIndex = await unifiedStorage.get('chats', `user_${userId}_index`);
+      
+      if (userChatIndex && Array.isArray(userChatIndex)) {
+        // Load sessions from index
+        for (const sessionId of userChatIndex) {
+          try {
+            const sessionData = await unifiedStorage.get('chats', `user_${userId}_${sessionId}`);
+            if (sessionData) {
+              const session = this.deserializeChatSession(sessionData);
+              
+              // Apply filters
+              if (this.matchesFilter(session, filter)) {
+                sessions.push(session);
               }
-            } catch (error) {
-              console.warn(`Failed to load chat session ${sessionId}:`, error);
             }
-          }
-        } else {
-          // Fallback: try to load sessions directly (less efficient but works)
-          console.log('📚 No chat index found, attempting direct session loading');
-          
-          // Try common session patterns (use 2-segment paths for Firebase)
-          for (let i = 0; i < 100; i++) { // Limit to prevent infinite loops
-            try {
-              const sessionData = await unifiedStorage.get('chats', `user_${userId}_chat_${i}`);
-              if (sessionData) {
-                const session = this.deserializeChatSession(sessionData);
-                if (this.matchesFilter(session, filter)) {
-                  sessions.push(session);
-                }
-              }
-            } catch (error) {
-              // Session doesn't exist, continue
-              break;
-            }
+          } catch (error) {
+            console.warn(`Failed to load chat session ${sessionId}:`, error);
           }
         }
-      } catch (storageError) {
-        console.warn('Storage access error, trying alternative approach:', storageError);
+      } else {
+        // Fallback: try to load sessions directly (less efficient but works)
+        console.log('📚 No chat index found, attempting direct session loading');
         
-        // Try to get sessions from active sessions cache
-        for (const [sessionId, session] of this.activeSessions) {
-          if (session.userId === userId && this.matchesFilter(session, filter)) {
-            sessions.push(session);
+        // Try common session patterns (use 2-segment paths for Firebase)
+        for (let i = 0; i < 100; i++) { // Limit to prevent infinite loops
+          try {
+            const sessionData = await unifiedStorage.get('chats', `user_${userId}_chat_${i}`);
+            if (sessionData) {
+              const session = this.deserializeChatSession(sessionData);
+              if (this.matchesFilter(session, filter)) {
+                sessions.push(session);
+              }
+            }
+          } catch (error) {
+            // Session doesn't exist, continue
+            break;
           }
         }
       }
-
-      // Sort by last updated (most recent first) - chronological order
-      sessions.sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime());
-
-      console.log(`📚 Loaded ${sessions.length} chat sessions for user ${userId}`);
-      return sessions;
-    } catch (error) {
-      console.error('❌ Failed to get chat sessions:', error);
-      return [];
+    } catch (storageError) {
+      console.warn('Storage access error, trying alternative approach:', storageError);
+      
+      // Try to get sessions from active sessions cache
+      for (const [sessionId, session] of this.activeSessions) {
+        if (session.userId === userId && this.matchesFilter(session, filter)) {
+          sessions.push(session);
+        }
+      }
     }
+
+    // Sort by last updated (most recent first) - chronological order
+    sessions.sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime());
+
+    console.log(`📚 Loaded ${sessions.length} chat sessions for user ${userId}`);
+    
+    // Update cache
+    this.chatHistoryCache.set(cacheKey, sessions);
+    this.cacheTimestamps.set(cacheKey, now);
+    
+    return sessions;
   }
 
   /**
