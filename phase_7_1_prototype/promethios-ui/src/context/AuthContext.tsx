@@ -56,22 +56,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log("AuthContext: Auth state changed. User object:", user);
       
-      // Simplified stability check - only ignore rapid null flips
-      if (!authStable && currentUser && !user) {
-        console.log("AuthContext: Ignoring rapid auth state flip to null");
-        return;
-      }
-      
       if (user) {
         console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
         setAuthStable(true); // Mark as stable when user is authenticated
       } else {
         console.log("AuthContext: No user detected (null).");
         setDbInstance(null); // Clear Firestore instance if no user
-        // Only mark as stable if we were already in a null state
-        if (!currentUser) {
-          setAuthStable(true);
-        }
+        setAuthStable(true); // Mark as stable for null state too
       }
       setCurrentUser(user);
       setLoading(false);
@@ -84,7 +75,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Cleanup subscription on unmount
     return unsubscribe;
-  }, [currentUser, authStable]);
+  }, []); // FIXED: Empty dependency array - only run once!
 
   const loginWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
