@@ -228,7 +228,8 @@ const ChatbotProfilesPageContent: React.FC = () => {
       console.log(`🔍 [Metrics] Session metrics for ${agentId}:`, sessionMetrics);
       
       // Get chat history for message volume and response time calculations
-      const chatHistory = await chatHistoryService.getUserChatHistory(agentId);
+      // Note: getUserChatHistory expects user ID, not agent ID
+      const chatHistory = user?.uid ? await chatHistoryService.getUserChatHistory(user.uid, { agentId }) : [];
       const messageVolume = chatHistory?.length || 0;
       console.log(`🔍 [Metrics] Message volume for ${agentId}:`, messageVolume);
       
@@ -281,7 +282,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
         governanceAlerts: 0, // No alerts by default
       };
     }
-  }, []);
+  }, [user]);
 
   // Synchronous version for analytics panels (uses cached data)
   const getRealMetricsSync = useCallback((chatbot: ChatbotProfile): ChatbotMetrics => {
@@ -1745,13 +1746,17 @@ const ChatbotProfilesPageContent: React.FC = () => {
                   <ChatHistoryPanel
                     agentId={selectedChatbot.id}
                     agentName={selectedChatbot.name}
-                    currentSessionId={currentChatSession?.id}
+                    currentSessionId={currentBotState?.currentChatSession?.id}
                     refreshTrigger={chatHistoryRefreshTrigger} // Add refresh trigger prop
                     onChatSelect={(session) => {
-                      setCurrentChatSession(session);
-                      setCurrentChatName(session.name || `Chat ${session.id.slice(-8)}`);
+                      if (selectedChatbotId) {
+                        updateBotState(selectedChatbotId, { 
+                          currentChatSession: session,
+                          currentChatName: session.name || `Chat ${session.id.slice(-8)}`
+                        });
+                      }
                       // Load the chat messages into the current chat interface
-                      setChatMessages(session.messages.map(msg => ({
+                      const newMessages = session.messages.map(msg => ({
                         id: msg.id,
                         content: msg.content,
                         sender: msg.sender,
@@ -1762,20 +1767,30 @@ const ChatbotProfilesPageContent: React.FC = () => {
                         governanceData: msg.governanceData,
                         shadowGovernanceData: msg.shadowGovernanceData,
                       })));
+                      if (selectedChatbotId) {
+                        updateBotState(selectedChatbotId, { chatMessages: newMessages });
+                      }
                     }}
                     onNewChat={(session) => {
-                      if (session) {
-                        // New chat created - set the session and name
-                        setCurrentChatSession(session);
-                        setCurrentChatName(session.name || `Chat ${session.id.slice(-8)}`);
-                        // Trigger chat history panel refresh
-                        setChatHistoryRefreshTrigger(prev => prev + 1);
-                      } else {
-                        // Clear current chat and start fresh
-                        setCurrentChatSession(null);
-                        setCurrentChatName(null);
+                      if (selectedChatbotId) {
+                        if (session) {
+                          // New chat created - set the session and name
+                          updateBotState(selectedChatbotId, {
+                            currentChatSession: session,
+                            currentChatName: session.name || `Chat ${session.id.slice(-8)}`,
+                            chatMessages: []
+                          });
+                          // Trigger chat history panel refresh
+                          setChatHistoryRefreshTrigger(prev => prev + 1);
+                        } else {
+                          // Clear current chat and start fresh
+                          updateBotState(selectedChatbotId, {
+                            currentChatSession: null,
+                            currentChatName: '',
+                            chatMessages: []
+                          });
+                        }
                       }
-                      setChatMessages([]);
                       setMessageInput('');
                       setAttachedFiles([]);
                     }}
