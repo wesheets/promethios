@@ -522,7 +522,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
     const panelType = searchParams.get('panel') as RightPanelType;
     
     if (agentId && chatbotProfiles.length > 0) {
-      const chatbot = chatbotProfiles.find(bot => bot.id === agentId);
+      const chatbot = chatbotProfiles.find(bot => 
+        bot.identity?.id === agentId || bot.key === agentId || bot.id === agentId
+      );
       if (chatbot) {
         console.log(`🔄 Restoring state for agent: ${agentId}, panel: ${panelType}`);
         
