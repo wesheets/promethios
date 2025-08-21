@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import NewHeader from './components/navigation/NewHeader';
@@ -40,13 +40,43 @@ import UIIntegration from './UIIntegration';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
-  console.log("🚀 AppContent component is executing!");
+  // Debug counter to track App re-renders
+  const appRenderCountRef = useRef(0);
+  appRenderCountRef.current += 1;
+  
+  console.log(`🚀 [DEBUG] AppContent RENDER #${appRenderCountRef.current}`);
+  
   const location = useLocation();
   const [loaderComplete, setLoaderComplete] = useState(false);
   
-  console.log("📍 Current location:", location.pathname);
-  console.log("🔧 App - Location object:", location);
-  console.log("🔧 App - About to render UIIntegration with key:", location.pathname);
+  // Circuit breaker for App component
+  const MAX_APP_RENDERS = 50;
+  if (appRenderCountRef.current > MAX_APP_RENDERS) {
+    console.error(`🚨 [APP CIRCUIT BREAKER] App has rendered ${appRenderCountRef.current} times - stopping infinite loop`);
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh', 
+        backgroundColor: '#0f172a',
+        color: '#ef4444',
+        fontSize: '18px',
+        textAlign: 'center'
+      }}>
+        <div>
+          <h2>App Infinite Re-render Detected</h2>
+          <p>The application has rendered {appRenderCountRef.current} times.</p>
+          <p>Please refresh the page and check the console for debug information.</p>
+        </div>
+      </div>
+    );
+  }
+  
+  console.log(`📍 [DEBUG] Current location: ${location.pathname}`);
+  console.log(`🔧 [DEBUG] Location search: ${location.search}`);
+  console.log(`🔧 [DEBUG] Location key: ${location.key}`);
+  console.log(`🔧 [DEBUG] About to render UIIntegration with key: ${location.pathname}`);
   
   // Define isUIRoute to determine if we're on a UI route
   const isUIRoute = location.pathname.startsWith('/ui');
