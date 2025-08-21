@@ -636,34 +636,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🔍 About to call loadChatbots...');
     loadChatbots();
     loadConnectedApps();
-  }, [user?.uid, authLoading, loadChatbots]);
+  }, [user?.uid, authLoading]); // Removed loadChatbots to prevent infinite loop
 
    // URL restoration effect - restore state from URL parameters
+  const agentParam = useMemo(() => searchParams.get('agent'), [searchParams]);
+  const panelParam = useMemo(() => searchParams.get('panel'), [searchParams]);
+  
   useEffect(() => {
-    const agentId = searchParams.get('agent');
-    const panelType = searchParams.get('panel') as RightPanelType;
-    
-    if (agentId && chatbotProfiles.length > 0) {
+    if (agentParam && chatbotProfiles.length > 0) {
       const chatbot = chatbotProfiles.find(bot => 
-        bot.identity?.id === agentId || bot.key === agentId || bot.id === agentId
+        bot.identity?.id === agentParam || bot.key === agentParam || bot.id === agentParam
       );
       if (chatbot) {
-        console.log(`🔄 Restoring state for agent: ${agentId}, panel: ${panelType}`);
+        console.log(`🔄 Restoring state for agent: ${agentParam}, panel: ${panelParam}`);
         
         // Only restore if not already selected and in workspace mode to prevent infinite loop
-        const existingState = botStates.get(agentId);
-        const isAlreadySelected = selectedChatbot?.identity?.id === agentId;
+        const existingState = botStates.get(agentParam);
+        const isAlreadySelected = selectedChatbot?.identity?.id === agentParam;
         const isAlreadyInWorkspace = existingState?.isWorkspaceMode;
         
         if (!isAlreadySelected || !isAlreadyInWorkspace) {
           // Initialize bot state if it doesn't exist
-          if (!botStates.has(agentId)) {
-            const newState = initializeBotState(agentId);
-            if (panelType) {
-              newState.rightPanelType = panelType;
+          if (!botStates.has(agentParam)) {
+            const newState = initializeBotState(agentParam);
+            if (panelParam) {
+              newState.rightPanelType = panelParam as RightPanelType;
             }
             newState.isWorkspaceMode = true;
-            setBotStates(prev => new Map(prev).set(agentId, newState));
+            setBotStates(prev => new Map(prev).set(agentParam, newState));
           }
           
           // Set selected chatbot and workspace mode
@@ -673,7 +673,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         }
       }
     }
-  }, [chatbotProfiles.length, searchParams.toString()]); // Only depend on length and URL string
+  }, [chatbotProfiles.length, agentParam, panelParam]); // Use memoized values
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
@@ -712,7 +712,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (filteredChatbots.length > 0) {
       loadAllMetrics();
     }
-  }, [filteredChatbots, getRealMetrics]);
+  }, [filteredChatbots]); // Removed getRealMetrics to prevent infinite loop
 
   // Get metrics for a specific chatbot
   const getMetricsForChatbot = (chatbot: ChatbotProfile): ChatbotMetrics => {
