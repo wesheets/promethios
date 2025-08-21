@@ -199,6 +199,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Bot-specific state management
   const [botStates, setBotStates] = useState<Map<string, BotState>>(new Map());
   
+  // Add metrics caching to prevent repeated calculations
+  const metricsCache = useRef<Map<string, { metrics: ChatbotMetrics; timestamp: number }>>(new Map());
+  const metricsLoadingPromises = useRef<Map<string, Promise<ChatbotMetrics>>>(new Map());
+  const METRICS_CACHE_DURATION = 30000; // 30 seconds cache
+  
   // State management
   const [chatbotProfiles, setChatbotProfiles] = useState<ChatbotProfile[]>([]);
   const [filteredChatbots, setFilteredChatbots] = useState<ChatbotProfile[]>([]);
@@ -276,11 +281,40 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
-  // Get real metrics from chatbot data and governance service (memoized to prevent flickering)
+  // Get real metrics from chatbot data and governance service (cached to prevent repeated calls)
   const getRealMetrics = useCallback(async (chatbot: ChatbotProfile): Promise<ChatbotMetrics> => {
+    const agentId = chatbot.identity?.id || chatbot.key || chatbot.id;
+    
+    // Check cache first
+    const cached = metricsCache.current.get(agentId);
+    const now = Date.now();
+    
+    if (cached && (now - cached.timestamp) < METRICS_CACHE_DURATION) {
+      console.log(`🎯 [Metrics] Using cached metrics for agent: ${agentId}`);
+      return cached.metrics;
+    }
+    
+    // Check if already loading
+    const existingPromise = metricsLoadingPromises.current.get(agentId);
+    if (existingPromise) {
+      console.log(`🔄 [Metrics] Already loading metrics for agent, waiting: ${agentId}`);
+      return await existingPromise;
+    }
+    
+    // Create new loading promise
+    const loadingPromise = loadMetricsFromServices(chatbot, agentId, now);
+    metricsLoadingPromises.current.set(agentId, loadingPromise);
+    
     try {
-      // Try to get real metrics from governance service first
-      const agentId = chatbot.identity?.id || chatbot.key || chatbot.id;
+      const result = await loadingPromise;
+      return result;
+    } finally {
+      metricsLoadingPromises.current.delete(agentId);
+    }
+  }, [user?.uid]);
+
+  const loadMetricsFromServices = async (chatbot: ChatbotProfile, agentId: string, now: number): Promise<ChatbotMetrics> => {
+    try {
       console.log(`🔍 [Metrics] Loading metrics for agent: ${agentId}`);
       
       // Get trust score from governance service
@@ -329,25 +363,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       };
       
       console.log(`✅ [Metrics] Calculated metrics for ${agentId}:`, realMetrics);
+      
+      // Cache the results
+      metricsCache.current.set(agentId, { metrics: realMetrics, timestamp: now });
+      
       return realMetrics;
-      
     } catch (error) {
-      console.warn('⚠️ Failed to fetch real metrics, using fallbacks:', error);
+      console.error(`❌ [Metrics] Error loading metrics for ${agentId}:`, error);
       
-      // Fallback to reasonable defaults if real data fails
-      return {
-        healthScore: 85, // Default healthy score
-        trustScore: 85, // Default trust score
-        performanceRating: 85, // Default performance
-        messageVolume: 0, // No messages yet
-        responseTime: 1.2, // Default response time
-        satisfactionScore: 4.5, // Default satisfaction
-        resolutionRate: 85, // Default resolution rate
-        lastActive: 'Recently', // Default activity
-        governanceAlerts: 0, // No alerts by default
+      // Return fallback metrics on error
+      const fallbackMetrics = {
+        healthScore: 85,
+        trustScore: 85,
+        performanceRating: 85,
+        messageVolume: 0,
+        responseTime: 1.2,
+        satisfactionScore: 4.5,
+        resolutionRate: 85,
+        lastActive: 'Unknown',
+        governanceAlerts: 0,
       };
+      
+      // Cache fallback metrics for a shorter duration
+      metricsCache.current.set(agentId, { metrics: fallbackMetrics, timestamp: now - (METRICS_CACHE_DURATION / 2) });
+      
+      return fallbackMetrics;
     }
-  }, [user]);
+  };
 
   // Synchronous version for analytics panels (uses cached data)
   const getRealMetricsSync = useCallback((chatbot: ChatbotProfile): ChatbotMetrics => {
