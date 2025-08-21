@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import {
   User,
   onAuthStateChanged,
@@ -113,7 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await signOut(auth);
   };
 
-  const value: AuthContextType = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value: AuthContextType = useMemo(() => ({
     currentUser,
     loading,
     db: dbInstance, // Provide the Firestore instance
@@ -122,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signup,
     resetPassword,
     logout,
-  };
+  }), [currentUser, loading, dbInstance]);
 
   return (
     <AuthContext.Provider value={value}>
