@@ -88,15 +88,21 @@ export const useUserPreferences = () => {
           
           console.log('🔥 useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
           
-          // Use retry logic for document creation
-          await firestoreRetry.setDoc(
+          // Use retry logic for document creation (using .then() since onSnapshot callback can't be async)
+          firestoreRetry.setDoc(
             () => setDoc(userPrefsRef, initialPrefs),
             userPrefsRef.path
-          );
-          
-          console.log('✅ useUserPreferences: Successfully created initial document');
-          setPreferences(initialPrefs);
-          setLoading(false);
+          ).then(() => {
+            console.log('✅ useUserPreferences: Successfully created initial document');
+            setPreferences(initialPrefs);
+            setLoading(false);
+          }).catch((err) => {
+            console.error('❌ useUserPreferences: Error creating initial user preferences document:', err);
+            setError('Failed to create initial preferences');
+            setLoading(false);
+            // Fallback to localStorage on error
+            setPreferences(initialPrefs);
+          });
         } else {
           console.log('✅ useUserPreferences: User preferences found:', docSnap.data());
           const firestorePrefs = docSnap.data() as UserPreferences;
