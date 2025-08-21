@@ -136,9 +136,41 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     </WidgetCustomizerProvider>
   );
 };
+// Global mounting guard to prevent multiple instances across the entire app
+let globalMountGuard = false;
+let globalComponentInstance: string | null = null;
 
-const ChatbotProfilesPageContent: React.FC = () => {
-  console.log('🔍 ChatbotProfilesPageEnhanced component mounting...');
+const ChatbotProfilesPageEnhanced: React.FC = () => {
+  // Mounting guard to prevent multiple instances
+  const mountedRef = useRef(false);
+  const componentId = useRef(`chatbot-page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  
+  useEffect(() => {
+    if (mountedRef.current || globalMountGuard) {
+      console.warn(`🚨 ChatbotProfilesPageEnhanced: Preventing duplicate mount. Current: ${componentId.current}, Global: ${globalComponentInstance}`);
+      return;
+    }
+    
+    mountedRef.current = true;
+    globalMountGuard = true;
+    globalComponentInstance = componentId.current;
+    console.log(`🔍 ChatbotProfilesPageEnhanced component mounting... (${componentId.current})`);
+    
+    return () => {
+      mountedRef.current = false;
+      if (globalComponentInstance === componentId.current) {
+        globalMountGuard = false;
+        globalComponentInstance = null;
+      }
+      console.log(`🔍 ChatbotProfilesPageEnhanced component unmounting... (${componentId.current})`);
+    };
+  }, []);
+  
+  // If this is a duplicate mount, return null to prevent rendering
+  if (globalMountGuard && globalComponentInstance !== componentId.current) {
+    console.warn(`🚨 Blocking duplicate render of ChatbotProfilesPageEnhanced (${componentId.current})`);
+    return null;
+  }
   
   const navigate = useNavigate();
   const location = useLocation();
