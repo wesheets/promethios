@@ -2232,10 +2232,89 @@ You have access to various tools that can help you assist users. When you need t
           console.log('🔧 ANTHROPIC DEBUG: Response data received:', {
             hasResponse: !!data.response,
             responseLength: data.response?.length,
-            dataKeys: Object.keys(data)
+            dataKeys: Object.keys(data),
+            hasToolCalls: !!data.tool_calls
           });
           
-          const finalResponse = data.response || 'No response received';
+          let finalResponse = data.response || 'No response received';
+          
+          // 🔧 TOOL PROCESSING: Check for tool calls in the response
+          if (data.tool_calls && Array.isArray(data.tool_calls) && data.tool_calls.length > 0) {
+            console.log('🔧 [ToolIntegration] Tool calls detected in Anthropic response:', data.tool_calls);
+            
+            // Process each tool call
+            const toolResults: ToolResult[] = [];
+            for (const toolCall of data.tool_calls) {
+              try {
+                console.log(`🔧 [ToolIntegration] Executing tool: ${toolCall.function.name}`);
+                const toolResult = await toolIntegrationService.executeToolCall(
+                  toolCall,
+                  message,
+                  { agentId: agent.id, provider: 'anthropic' }
+                );
+                toolResults.push(toolResult);
+                console.log(`✅ [ToolIntegration] Tool executed successfully: ${toolCall.function.name}`);
+              } catch (toolError) {
+                console.error(`❌ [ToolIntegration] Tool execution failed: ${toolCall.function.name}`, toolError);
+                // Create error result
+                toolResults.push({
+                  tool_call_id: toolCall.id,
+                  role: 'tool',
+                  name: toolCall.function.name,
+                  content: `Error: ${toolError.message}`
+                });
+              }
+            }
+            
+            // If we have tool results, make another API call with the results
+            if (toolResults.length > 0) {
+              console.log('🔧 [ToolIntegration] Making follow-up Anthropic API call with tool results');
+              
+              // Add tool calls and results to conversation history
+              const updatedHistory = [
+                ...conversationHistory.map(msg => ({
+                  role: msg.sender === 'user' ? 'user' : 'assistant',
+                  content: msg.content
+                })),
+                { role: 'user', content: message },
+                { role: 'assistant', content: finalResponse, tool_calls: data.tool_calls },
+                ...toolResults.map(result => ({
+                  role: 'tool',
+                  tool_call_id: result.tool_call_id,
+                  name: result.name,
+                  content: result.content
+                }))
+              ];
+              
+              // Make follow-up API call with tool results
+              try {
+                const followUpResponse = await fetch(`${API_BASE_URL}/api/chat`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    agent_id: selectedAgent?.id || 'default',
+                    user_id: currentUser?.uid || 'anonymous',
+                    message: '', // Empty message for continuation
+                    provider: 'anthropic',
+                    model: selectedModel,
+                    conversation_history: updatedHistory.slice(-30), // Keep last 30 messages
+                    tool_results: toolResults
+                  })
+                });
+                
+                if (followUpResponse.ok) {
+                  const followUpData = await followUpResponse.json();
+                  finalResponse = followUpData.response || finalResponse;
+                  console.log('✅ [ToolIntegration] Follow-up Anthropic response received with tool integration');
+                }
+              } catch (followUpError) {
+                console.error('❌ [ToolIntegration] Follow-up Anthropic API call failed:', followUpError);
+              }
+            }
+          }
+          
           console.log('🔧 ANTHROPIC DEBUG: Final response length:', finalResponse.length);
           return finalResponse;
           
