@@ -58,7 +58,7 @@ export class MultiAgentGovernanceWrapper {
   };
 
   constructor() {
-    this.universalGovernance = new UniversalGovernanceAdapter();
+    this.universalGovernance = UniversalGovernanceAdapter.getInstance();
     this.initializeUniversalGovernance();
   }
 

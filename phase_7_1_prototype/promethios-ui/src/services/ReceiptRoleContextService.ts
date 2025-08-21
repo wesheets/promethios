@@ -84,7 +84,7 @@ export class ReceiptRoleContextService {
   private performanceCache: Map<string, RolePerformanceAnalytics> = new Map();
 
   private constructor() {
-    this.governanceAdapter = new UniversalGovernanceAdapter();
+    this.governanceAdapter = UniversalGovernanceAdapter.getInstance();
   }
 
   public static getInstance(): ReceiptRoleContextService {

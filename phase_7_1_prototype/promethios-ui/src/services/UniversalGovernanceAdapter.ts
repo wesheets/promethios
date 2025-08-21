@@ -81,13 +81,12 @@ interface BackendChatResponse {
 }
 
 export class UniversalGovernanceAdapter {
-  private activeSessions: Map<string, any> = new Map();
-  private context: string = 'universal';
-  private initialized: boolean = false;
-  private governanceContext: GovernanceContext | null = null;
+  private static instance: UniversalGovernanceAdapter;
   
-  // Agent configuration management
-  private agentConfigurations: Map<string, RuntimeConfiguration> = new Map();
+  // Agent configuration and runtime state
+  private agentConfigurations: Map<string, AgentConfiguration> = new Map();
+  private runtimeConfigurations: Map<string, RuntimeConfiguration> = new Map();
+  private governanceContexts: Map<string, GovernanceContext> = new Map();
   private toolRegistry: Map<string, AgentTool> = new Map();
   private currentAgentConfig: RuntimeConfiguration | null = null;
 
@@ -95,7 +94,7 @@ export class UniversalGovernanceAdapter {
   private realGovernance: RealGovernanceIntegration;
   private toolService: ToolIntegrationService;
 
-  constructor() {
+  private constructor() {
     console.log('🌐 [Universal] Initializing governance adapter with backend API integration');
     
     // Initialize Modern Chat service integrations
@@ -107,6 +106,13 @@ export class UniversalGovernanceAdapter {
     this.initializeBackendIntegration().catch(error => {
       console.error('❌ [Universal] Failed to initialize backend integration:', error);
     });
+  }
+
+  static getInstance(): UniversalGovernanceAdapter {
+    if (!UniversalGovernanceAdapter.instance) {
+      UniversalGovernanceAdapter.instance = new UniversalGovernanceAdapter();
+    }
+    return UniversalGovernanceAdapter.instance;
   }
 
   // ============================================================================
@@ -2697,5 +2703,5 @@ You operate with governance oversight that monitors your interactions for safety
 }
 
 // Export singleton instance for easy use
-export const universalGovernanceAdapter = new UniversalGovernanceAdapter();
+export const universalGovernanceAdapter = UniversalGovernanceAdapter.getInstance();
 

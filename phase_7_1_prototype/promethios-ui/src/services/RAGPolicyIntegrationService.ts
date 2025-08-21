@@ -129,7 +129,7 @@ export class RAGPolicyIntegrationService {
       enablePolicyAnalytics: true
     });
 
-    this.governanceAdapter = new UniversalGovernanceAdapter();
+    this.governanceAdapter = UniversalGovernanceAdapter.getInstance();
 
     console.log('🔗 RAG + Policy Integration Service initialized');
   }

@@ -46,7 +46,7 @@ export class ReceiptIntegrationService {
 
   private constructor() {
     this.receiptExtension = new ComprehensiveToolReceiptExtension();
-    this.governanceAdapter = new UniversalGovernanceAdapter();
+    this.governanceAdapter = UniversalGovernanceAdapter.getInstance();
   }
 
   static getInstance(): ReceiptIntegrationService {
