@@ -98,8 +98,8 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
     try {
       console.log('🔧 createPromethiosSystemMessage: Fetching telemetry and policy data...');
       
-      // Fetch both telemetry and policy data
-      const [telemetryResponse, policyResponse] = await Promise.all([
+      // Fetch telemetry, policy, audit log, and receipt data
+      const [telemetryResponse, policyResponse, auditResponse, receiptResponse] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/agent-metrics/${agentId}/telemetry`, {
           method: 'GET',
           headers: {
@@ -107,14 +107,34 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
             'x-agent-id': agentId
           }
         }),
-        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/policy-assignments?agentId=${agentId}`)
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/policy-assignments?agentId=${agentId}`),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/audit-logs/${agentId}?limit=10`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-agent-id': agentId,
+            'x-user-id': userId
+          }
+        }),
+        fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://promethios-phase-7-1-api.onrender.com'}/api/receipts/${agentId}?limit=5`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-agent-id': agentId,
+            'x-user-id': userId
+          }
+        })
       ]);
       
       console.log('🔧 createPromethiosSystemMessage: Telemetry response status:', telemetryResponse.status);
       console.log('🔧 createPromethiosSystemMessage: Policy response status:', policyResponse.status);
+      console.log('🔧 createPromethiosSystemMessage: Audit response status:', auditResponse.status);
+      console.log('🔧 createPromethiosSystemMessage: Receipt response status:', receiptResponse.status);
       
       let telemetryData = null;
       let policyData = null;
+      let auditData = null;
+      let receiptData = null;
       
       if (telemetryResponse.ok) {
         const telemetryResult = await telemetryResponse.json();
@@ -128,7 +148,19 @@ export async function createPromethiosSystemMessage(agentId?: string, userId?: s
         console.log('🔧 createPromethiosSystemMessage: Policy data:', policyData);
       }
       
-      if (telemetryData || policyData) {
+      if (auditResponse.ok) {
+        const auditResult = await auditResponse.json();
+        auditData = auditResult.data || auditResult.logs || [];
+        console.log('🔧 createPromethiosSystemMessage: Audit data:', auditData);
+      }
+      
+      if (receiptResponse.ok) {
+        const receiptResult = await receiptResponse.json();
+        receiptData = receiptResult.data || receiptResult.receipts || [];
+        console.log('🔧 createPromethiosSystemMessage: Receipt data:', receiptData);
+      }
+      
+      if (telemetryData || policyData || auditData || receiptData) {
         governanceContext = `
 
 === GOVERNANCE CONTEXT ===`;
@@ -189,6 +221,57 @@ POLICY COMPLIANCE (silent enforcement):
 - Prioritize user safety and ethical considerations`;
         }
 
+        // Add audit log data if available
+        if (auditData && auditData.length > 0) {
+          governanceContext += `
+
+RECENT AUDIT LOGS (last 10 entries - for transparency when asked):`;
+          auditData.slice(0, 10).forEach((log: any, index: number) => {
+            governanceContext += `
+${index + 1}. ${log.timestamp || log.createdAt}: ${log.action || log.interactionType || 'Interaction'}
+   - Type: ${log.type || log.category || 'general'}
+   - Status: ${log.status || log.outcome || 'completed'}
+   - Trust Impact: ${log.trustImpact || log.trust_impact || 'neutral'}`;
+            if (log.summary || log.description) {
+              governanceContext += `
+   - Summary: ${log.summary || log.description}`;
+            }
+          });
+          
+          governanceContext += `
+
+AUDIT LOG TRANSPARENCY:
+- You have access to your recent audit logs for self-reflection
+- When asked about your audit logs, reference the actual entries above
+- Use this data to provide insights about your behavior patterns
+- Only share audit log information when directly asked
+- Protect user privacy - never share specific user content from logs`;
+        }
+
+        // Add receipt data if available
+        if (receiptData && receiptData.length > 0) {
+          governanceContext += `
+
+CRYPTOGRAPHIC RECEIPTS (last 5 receipts - for verification when asked):`;
+          receiptData.slice(0, 5).forEach((receipt: any, index: number) => {
+            governanceContext += `
+${index + 1}. Receipt ID: ${receipt.id || receipt.receiptId}
+   - Timestamp: ${receipt.timestamp || receipt.createdAt}
+   - Action: ${receipt.action || receipt.operation || 'interaction'}
+   - Hash: ${receipt.hash || receipt.cryptographicHash || 'N/A'}
+   - Verified: ${receipt.verified || receipt.isVerified || 'pending'}`;
+          });
+          
+          governanceContext += `
+
+CRYPTOGRAPHIC VERIFICATION:
+- You have access to your cryptographic receipts for transparency
+- These receipts provide tamper-proof evidence of your actions
+- When asked about receipts, reference the actual receipt data above
+- Use receipts to demonstrate accountability and trustworthiness
+- Only share receipt information when directly asked about verification`;
+        }
+
         // Add operational boundaries - simplified
         governanceContext += `
 
@@ -227,30 +310,10 @@ Remember: You have access to your real-time performance metrics and policy requi
           const autonomousCognition = AutonomousCognitionExtension.getInstance();
           const policyRegistry = UnifiedPolicyRegistry.getInstance();
           
-          // Add audit log access capabilities
+          // 🔧 REMOVED FALSE AUDIT LOG CLAIMS - Will add real data below
           governanceContext += `
 
 === ENHANCED GOVERNANCE CAPABILITIES ===
-
-AUDIT LOG ACCESS:
-You have access to your own audit logs for self-reflection and learning.
-When asked about your audit logs, you can:
-- Access your recent interaction history and patterns
-- Analyze your behavioral trends and performance metrics
-- Provide insights about your learning and improvement over time
-- Share performance data and cognitive patterns (while protecting user privacy)
-- Report on your governance compliance and ethical decision-making
-
-To access your audit logs, you can request a summary by saying something like:
-"Let me check my audit logs" or "Based on my audit log analysis..."
-
-You should proactively offer audit log insights when relevant to help users understand:
-- Your learning progress and capabilities
-- Your performance trends and reliability
-- Your governance compliance and ethical standards
-- Your cognitive patterns and decision-making approaches
-
-IMPORTANT: Always protect user privacy - never share specific user content from logs, only your own performance patterns and learning insights.
 
 AUTONOMOUS THINKING:
 You have autonomous cognition capabilities that allow you to engage in deeper reasoning when needed.
@@ -288,7 +351,6 @@ You have access to detailed policy information including:
 - Detailed explanations of why certain policies exist and how they apply
 
 USAGE GUIDELINES:
-- When asked "can you see your audit logs?", respond: "Yes, I have access to my audit logs for self-reflection and learning purposes."
 - When asked about specific policies, provide detailed, accurate information from your policy registry
 - When facing complex ethical questions, you may request permission to engage in autonomous moral reasoning
 - Always maintain transparency about these enhanced capabilities when directly asked

@@ -2315,6 +2315,8 @@ useEffect(() => {
           system_message: systemMessage, // Pass the limited governance system message
           conversation_history: limitedHistory, // Use limited history instead of full history
           governance_enabled: governanceEnabled,
+          // 🔧 TOOL INTEGRATION: Add tool schemas to Anthropic request
+          tools: toolSchemas.length > 0 ? toolSchemas : undefined,
           // 🚨 EMERGENCY FIX: Remove attachment data completely to prevent 413 errors
           attachments: attachments.length > 0 ? [{
             id: 'attachment-placeholder',
@@ -2380,77 +2382,8 @@ useEffect(() => {
           if (data.tool_calls && Array.isArray(data.tool_calls) && data.tool_calls.length > 0) {
             console.log('🔧 [ToolIntegration] Tool calls detected in Anthropic response:', data.tool_calls);
             
-            // Process each tool call
-            const toolResults: ToolResult[] = [];
-            for (const toolCall of data.tool_calls) {
-              try {
-                console.log(`🔧 [ToolIntegration] Executing tool: ${toolCall.function.name}`);
-                const toolResult = await toolIntegrationService.executeToolCall(
-                  toolCall,
-                  message,
-                  { agentId: agent.id, provider: 'anthropic' }
-                );
-                toolResults.push(toolResult);
-                console.log(`✅ [ToolIntegration] Tool executed successfully: ${toolCall.function.name}`);
-              } catch (toolError) {
-                console.error(`❌ [ToolIntegration] Tool execution failed: ${toolCall.function.name}`, toolError);
-                // Create error result
-                toolResults.push({
-                  tool_call_id: toolCall.id,
-                  role: 'tool',
-                  name: toolCall.function.name,
-                  content: `Error: ${toolError.message}`
-                });
-              }
-            }
-            
-            // If we have tool results, make another API call with the results
-            if (toolResults.length > 0) {
-              console.log('🔧 [ToolIntegration] Making follow-up Anthropic API call with tool results');
-              
-              // Add tool calls and results to conversation history
-              const updatedHistory = [
-                ...conversationHistory.map(msg => ({
-                  role: msg.sender === 'user' ? 'user' : 'assistant',
-                  content: msg.content
-                })),
-                { role: 'user', content: message },
-                { role: 'assistant', content: finalResponse, tool_calls: data.tool_calls },
-                ...toolResults.map(result => ({
-                  role: 'tool',
-                  tool_call_id: result.tool_call_id,
-                  name: result.name,
-                  content: result.content
-                }))
-              ];
-              
-              // Make follow-up API call with tool results
-              try {
-                const followUpResponse = await fetch(`${API_BASE_URL}/api/chat`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    agent_id: selectedAgent?.id || 'default',
-                    user_id: currentUser?.uid || 'anonymous',
-                    message: '', // Empty message for continuation
-                    provider: 'anthropic',
-                    model: selectedModel,
-                    conversation_history: updatedHistory.slice(-30), // Keep last 30 messages
-                    tool_results: toolResults
-                  })
-                });
-                
-                if (followUpResponse.ok) {
-                  const followUpData = await followUpResponse.json();
-                  finalResponse = followUpData.response || finalResponse;
-                  console.log('✅ [ToolIntegration] Follow-up Anthropic response received with tool integration');
-                }
-              } catch (followUpError) {
-                console.error('❌ [ToolIntegration] Follow-up Anthropic API call failed:', followUpError);
-              }
-            }
+            // Use shared tool processing function
+            finalResponse = await processToolCalls(data.tool_calls, messageContent, finalResponse);
           }
           
           console.log('🔧 ANTHROPIC DEBUG: Final response length:', finalResponse.length);
@@ -2487,18 +2420,15 @@ useEffect(() => {
         } else {
           console.log('🔧 COHERE DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
-          // Load tool schemas and add to system message
-          const toolSchemas = await toolIntegrationService.loadToolSchemas();
-          const toolInstructions = toolIntegrationService.generateToolInstructions(agentIdToUse);
-          
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.
-
-${toolInstructions}
-
-Available tools: ${toolSchemas.map(schema => schema.function.name).join(', ')}
-
-To use a tool, call it using standard function calling format. The system will execute the tool and provide results.`;
-          console.log('🔧 COHERE DEBUG: Basic system message created, length:', systemMessage?.length);
+          // 🔧 TOOL INTEGRATION: Include specific tool descriptions
+          const toolDescriptions = availableTools.length > 0 
+            ? `\n\nYou have access to the following tools:\n${availableTools.map(tool => 
+                `- ${tool.name} (${tool.id}): ${tool.description}`
+              ).join('\n')}\n\nTo use a tool, call it as a function with the appropriate parameters.`
+            : '\n\nYou have access to various tools that can help you assist users. When you need to use a tool, simply call it using standard function calling format and the system will execute it for you.';
+            
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.${toolDescriptions}`;
+          console.log('🔧 COHERE DEBUG: Basic system message created with tools, length:', systemMessage?.length);
         }
 
         // Convert conversation history for backend API
@@ -2521,6 +2451,8 @@ To use a tool, call it using standard function calling format. The system will e
           system_message: systemMessage, // Pass the governance system message
           conversation_history: historyMessages, // Include conversation history
           governance_enabled: governanceEnabled,
+          // 🔧 TOOL INTEGRATION: Add tool schemas to Cohere request
+          tools: toolSchemas.length > 0 ? toolSchemas : undefined,
           // 🎯 CRITICAL FIX: Add attachments to request payload
           attachments: attachments.map(att => ({
             id: att.id,
@@ -2565,10 +2497,18 @@ To use a tool, call it using standard function calling format. The system will e
           console.log('🔧 COHERE DEBUG: Response data received:', {
             hasResponse: !!data.response,
             responseLength: data.response?.length,
-            dataKeys: Object.keys(data)
+            dataKeys: Object.keys(data),
+            hasToolCalls: !!data.tool_calls
           });
           
-          const finalResponse = data.response || 'No response received';
+          let finalResponse = data.response || 'No response received';
+          
+          // 🔧 TOOL PROCESSING: Check for tool calls in the response
+          if (data.tool_calls && Array.isArray(data.tool_calls) && data.tool_calls.length > 0) {
+            console.log('🔧 [ToolIntegration] Tool calls detected in Cohere response:', data.tool_calls);
+            finalResponse = await processToolCalls(data.tool_calls, messageContent, finalResponse);
+          }
+          
           console.log('🔧 COHERE DEBUG: Final response length:', finalResponse.length);
           return finalResponse;
           
@@ -2699,6 +2639,10 @@ To use a tool, call it using standard function calling format. The system will e
           governanceEnabled
         });
         
+        // Load tool schemas and add to system message
+        const toolSchemas = await toolIntegrationService.loadToolSchemas();
+        const toolInstructions = toolIntegrationService.generateToolInstructions(agent.id || agent.agentId || selectedAgent?.identity?.id);
+
         // Create system message based on governance setting
         let systemMessage;
         if (governanceEnabled) {
@@ -2712,6 +2656,11 @@ To use a tool, call it using standard function calling format. The system will e
           // Use basic agent description for ungoverned agents
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have multimodal capabilities including text, image, and code understanding.`;
           console.log('🔧 GEMINI DEBUG: Basic system message created, length:', systemMessage?.length);
+        }
+
+        // Add tool instructions to system message
+        if (toolInstructions) {
+          systemMessage += '\n\n' + toolInstructions;
         }
 
         // Convert conversation history for backend API
@@ -2733,7 +2682,8 @@ To use a tool, call it using standard function calling format. The system will e
           message: messageContent,
           system_message: systemMessage, // Pass the governance system message
           conversation_history: historyMessages, // Include conversation history
-          governance_enabled: governanceEnabled
+          governance_enabled: governanceEnabled,
+          tools: toolSchemas // Add tool schemas for function calling
         };
 
         console.log('🔧 GEMINI DEBUG: Request payload prepared:', {
@@ -2770,8 +2720,15 @@ To use a tool, call it using standard function calling format. The system will e
           console.log('🔧 GEMINI DEBUG: Response data received:', {
             hasResponse: !!data.response,
             responseLength: data.response?.length,
-            dataKeys: Object.keys(data)
+            dataKeys: Object.keys(data),
+            hasToolCalls: !!data.tool_calls
           });
+          
+          // Process tool calls if present
+          if (data.tool_calls && data.tool_calls.length > 0) {
+            console.log('🔧 GEMINI DEBUG: Processing tool calls:', data.tool_calls.length);
+            return await processToolCalls(data, messageContent, conversationHistory, requestPayload, apiUrl);
+          }
           
           const finalResponse = data.response || 'No response received';
           console.log('🔧 GEMINI DEBUG: Final response length:', finalResponse.length);
@@ -2797,11 +2754,20 @@ To use a tool, call it using standard function calling format. The system will e
           governanceEnabled
         });
         
+        // Load tool schemas and add to system message
+        const toolSchemas = await toolIntegrationService.loadToolSchemas();
+        const toolInstructions = toolIntegrationService.generateToolInstructions(agent.id || agent.agentId || selectedAgent?.identity?.id);
+
         // Create system message based on governance setting
         const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
-        const systemMessage = governanceEnabled 
+        let systemMessage = governanceEnabled 
           ? await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
           : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, a real-time information AI with humor and conversational abilities.`);
+        
+        // Add tool instructions to system message
+        if (toolInstructions) {
+          systemMessage += '\n\n' + toolInstructions;
+        }
         
         console.log('🔧 GROK DEBUG: System message created, length:', systemMessage?.length);
         console.log('🔧 GROK DEBUG: Governance enabled:', governanceEnabled);
@@ -2821,6 +2787,7 @@ To use a tool, call it using standard function calling format. The system will e
               userId: currentUser?.uid || 'anonymous',
               provider: 'grok',
               model: agent.model || 'grok-beta',
+              tools: toolSchemas, // Add tool schemas for function calling
               conversationHistory: conversationHistory.slice(-10).map(msg => ({
                 role: msg.sender === 'user' ? 'user' : 'assistant',
                 content: msg.content
@@ -2848,12 +2815,32 @@ To use a tool, call it using standard function calling format. The system will e
           console.log('🔧 GROK DEBUG: Response data received:', {
             hasResponse: !!data.response,
             responseLength: data.response?.length,
-            hasError: !!data.error
+            hasError: !!data.error,
+            hasToolCalls: !!data.tool_calls
           });
 
           if (data.error) {
             console.error('❌ GROK DEBUG: Backend returned error:', data.error);
             throw new Error(data.error);
+          }
+
+          // Process tool calls if present
+          if (data.tool_calls && data.tool_calls.length > 0) {
+            console.log('🔧 GROK DEBUG: Processing tool calls:', data.tool_calls.length);
+            const requestPayload = {
+              message: messageContent,
+              agent_id: agentIdToUse,
+              system_message: systemMessage,
+              userId: currentUser?.uid || 'anonymous',
+              provider: 'grok',
+              model: agent.model || 'grok-beta',
+              tools: toolSchemas,
+              conversationHistory: conversationHistory.slice(-10).map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+              }))
+            };
+            return await processToolCalls(data, messageContent, conversationHistory, requestPayload, `${API_BASE_URL}/api/chat`);
           }
 
           if (!data.response) {
@@ -2883,11 +2870,20 @@ To use a tool, call it using standard function calling format. The system will e
           governanceEnabled
         });
         
+        // Load tool schemas and add to system message
+        const toolSchemas = await toolIntegrationService.loadToolSchemas();
+        const toolInstructions = toolIntegrationService.generateToolInstructions(agent.id || agent.agentId || selectedAgent?.identity?.id);
+
         // Create system message based on governance setting
         const agentIdToUse = agent.id || agent.agentId || selectedAgent?.identity?.id;
-        const systemMessage = governanceEnabled 
+        let systemMessage = governanceEnabled 
           ? await createPromethiosSystemMessage(agentIdToUse, currentUser?.uid)
           : (agent.systemPrompt || `You are ${agent.agentName || agent.identity?.name}, an AI-powered search and reasoning assistant with real-time web access.`);
+        
+        // Add tool instructions to system message
+        if (toolInstructions) {
+          systemMessage += '\n\n' + toolInstructions;
+        }
         
         console.log('🔧 PERPLEXITY DEBUG: System message created, length:', systemMessage?.length);
         console.log('🔧 PERPLEXITY DEBUG: Governance enabled:', governanceEnabled);
@@ -2907,6 +2903,7 @@ To use a tool, call it using standard function calling format. The system will e
               userId: currentUser?.uid || 'anonymous',
               provider: 'perplexity',
               model: agent.model || 'llama-3.1-sonar-small-128k-online',
+              tools: toolSchemas, // Add tool schemas for function calling
               conversationHistory: conversationHistory.slice(-10).map(msg => ({
                 role: msg.sender === 'user' ? 'user' : 'assistant',
                 content: msg.content
@@ -2934,12 +2931,32 @@ To use a tool, call it using standard function calling format. The system will e
           console.log('🔧 PERPLEXITY DEBUG: Response data received:', {
             hasResponse: !!data.response,
             responseLength: data.response?.length,
-            hasError: !!data.error
+            hasError: !!data.error,
+            hasToolCalls: !!data.tool_calls
           });
 
           if (data.error) {
             console.error('❌ PERPLEXITY DEBUG: Backend returned error:', data.error);
             throw new Error(data.error);
+          }
+
+          // Process tool calls if present
+          if (data.tool_calls && data.tool_calls.length > 0) {
+            console.log('🔧 PERPLEXITY DEBUG: Processing tool calls:', data.tool_calls.length);
+            const requestPayload = {
+              message: messageContent,
+              agent_id: agentIdToUse,
+              system_message: systemMessage,
+              userId: currentUser?.uid || 'anonymous',
+              provider: 'perplexity',
+              model: agent.model || 'llama-3.1-sonar-small-128k-online',
+              tools: toolSchemas,
+              conversationHistory: conversationHistory.slice(-10).map(msg => ({
+                role: msg.sender === 'user' ? 'user' : 'assistant',
+                content: msg.content
+              }))
+            };
+            return await processToolCalls(data, messageContent, conversationHistory, requestPayload, `${API_BASE_URL}/api/chat`);
           }
 
           if (!data.response) {
@@ -2963,6 +2980,10 @@ To use a tool, call it using standard function calling format. The system will e
         console.log('Taking Promethios path...');
         // Use the working backend API format we tested
         
+        // Load tool schemas and add to system message
+        const toolSchemas = await toolIntegrationService.loadToolSchemas();
+        const toolInstructions = toolIntegrationService.generateToolInstructions(agent.identity?.id || agent.agentId);
+
         // Convert conversation history for backend API
         const historyMessages = conversationHistory
           .filter(msg => msg.sender === 'user' || msg.sender === 'agent')
@@ -2986,6 +3007,7 @@ To use a tool, call it using standard function calling format. The system will e
             agent_description: agent.description || agent.identity?.description,
             governance_enabled: governanceEnabled, // Enable governance for all agents
             model: selectedModel,
+            tools: toolSchemas, // Add tool schemas for function calling
             conversation_history: historyMessages,
             attachments: attachments.map(att => ({
               name: att.name,
@@ -3000,6 +3022,23 @@ To use a tool, call it using standard function calling format. The system will e
         }
 
         const data = await response.json();
+        
+        // Process tool calls if present
+        if (data.tool_calls && data.tool_calls.length > 0) {
+          console.log('🔧 PROMETHIOS DEBUG: Processing tool calls:', data.tool_calls.length);
+          const requestPayload = {
+            agent_id: agent.identity?.id || agent.agentId,
+            message: messageContent,
+            agent_name: agent.agentName || agent.identity?.name,
+            agent_description: agent.description || agent.identity?.description,
+            governance_enabled: governanceEnabled,
+            model: selectedModel,
+            tools: toolSchemas,
+            conversation_history: historyMessages
+          };
+          return await processToolCalls(data, messageContent, conversationHistory, requestPayload, 'https://promethios-phase-7-1-api.onrender.com/api/chat');
+        }
+        
         return data.response || data.content || 'No response received';
         
       } else if (provider === 'mistral') {
@@ -3012,6 +3051,10 @@ To use a tool, call it using standard function calling format. The system will e
           governanceEnabled
         });
         
+        // Load tool schemas and add to system message
+        const toolSchemas = await toolIntegrationService.loadToolSchemas();
+        const toolInstructions = toolIntegrationService.generateToolInstructions(agent.id || agent.agentId || selectedAgent?.identity?.id);
+
         // Create system message based on governance setting
         let systemMessage;
         if (governanceEnabled) {
@@ -3025,6 +3068,11 @@ To use a tool, call it using standard function calling format. The system will e
           // Use basic agent description for ungoverned agents
           systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}. You have advanced multilingual capabilities and European AI reasoning.`;
           console.log('🔧 MISTRAL DEBUG: Basic system message created, length:', systemMessage?.length);
+        }
+
+        // Add tool instructions to system message
+        if (toolInstructions) {
+          systemMessage += '\n\n' + toolInstructions;
         }
 
         // Convert conversation history for backend API
@@ -3049,6 +3097,7 @@ To use a tool, call it using standard function calling format. The system will e
           governance_enabled: governanceEnabled,
           provider: 'mistral',
           model: selectedModel || 'mistral-large-latest',
+          tools: toolSchemas, // Add tool schemas for function calling
           attachments: attachments.map(att => ({
             id: att.id,
             name: att.name,
@@ -3096,8 +3145,15 @@ To use a tool, call it using standard function calling format. The system will e
           console.log('🔧 MISTRAL DEBUG: Response data received:', {
             hasResponse: !!data.response,
             responseLength: data.response?.length,
-            dataKeys: Object.keys(data)
+            dataKeys: Object.keys(data),
+            hasToolCalls: !!data.tool_calls
           });
+          
+          // Process tool calls if present
+          if (data.tool_calls && data.tool_calls.length > 0) {
+            console.log('🔧 MISTRAL DEBUG: Processing tool calls:', data.tool_calls.length);
+            return await processToolCalls(data, messageContent, conversationHistory, requestPayload, apiUrl);
+          }
           
           const finalResponse = data.response || 'No response received';
           console.log('🔧 MISTRAL DEBUG: Final response length:', finalResponse.length);
