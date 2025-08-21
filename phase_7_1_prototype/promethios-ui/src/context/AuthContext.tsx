@@ -48,6 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [dbInstance, setDbInstance] = useState<Firestore | null>(db); // Use db from config directly
+  const [authStable, setAuthStable] = useState(false); // Add stability flag
 
   useEffect(() => {
     console.log("AuthContext: Setting up auth state listener");
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getRedirectResult(auth).then((result) => {
       if (result) {
         console.log("AuthContext: Redirect result received:", result.user?.email);
+        setAuthStable(true); // Mark as stable after successful redirect
       }
     }).catch((error) => {
       console.error("AuthContext: Redirect result error:", error);
@@ -63,11 +65,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log("AuthContext: Auth state changed. User object:", user);
+      
+      // Add stability check - don't flip state rapidly
+      if (!authStable && currentUser && !user) {
+        console.log("AuthContext: Ignoring auth state flip to null (unstable state)");
+        return;
+      }
+      
       if (user) {
         console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
+        setAuthStable(true); // Mark as stable when user is authenticated
       } else {
         console.log("AuthContext: No user detected (null).");
         setDbInstance(null); // Clear Firestore instance if no user
+        // Only mark as stable if we were already in a null state
+        if (!currentUser) {
+          setAuthStable(true);
+        }
       }
       setCurrentUser(user);
       setLoading(false);
@@ -80,36 +94,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Cleanup subscription on unmount
     return unsubscribe;
-  }, []);
+  }, [currentUser, authStable]);
 
   const loginWithEmail = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const loginWithGoogle = async () => {
-    try {
-      // First try popup method
-      console.log("AuthContext: Attempting Google login with popup");
-      return await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      console.log("AuthContext: Popup failed, trying redirect fallback", error.code);
-      
-      // If popup fails due to Cross-Origin-Opener-Policy or other popup issues, use redirect
-      if (error.code === 'auth/popup-blocked' || 
-          error.code === 'auth/popup-closed-by-user' ||
-          error.code === 'auth/cancelled-popup-request' ||
-          error.message?.includes('Cross-Origin-Opener-Policy')) {
-        
-        console.log("AuthContext: Using redirect method as fallback");
-        // Use redirect method as fallback
-        await signInWithRedirect(auth, googleProvider);
-        // The redirect will handle the rest, no return value needed
-        return null;
-      }
-      
-      // Re-throw other errors
-      throw error;
-    }
+    console.log("AuthContext: Using redirect-only method for Google login");
+    // Skip popup entirely - use redirect method only to avoid Cross-Origin-Opener-Policy issues
+    await signInWithRedirect(auth, googleProvider);
+    // The redirect will handle the rest, no return value needed
+    return null;
   };
 
   const signup = async (email: string, password: string) => {
