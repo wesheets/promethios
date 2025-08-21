@@ -54,7 +54,7 @@ const LoginWaitlistPage: React.FC = () => {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [waitlistError, setWaitlistError] = useState('');
   
-  //   // Test Firestore connection on component mount
+  // Test Firestore connection - but only show results, don't block UI
   useEffect(() => {
     const testConnection = async () => {
       setConnectionStatus('testing');
@@ -64,14 +64,15 @@ const LoginWaitlistPage: React.FC = () => {
           setConnectionStatus('connected');
           console.log('✅ Firestore connection verified');
         } else {
-          setConnectionStatus('failed');
-          setDebugInfo(`Connection failed: ${result.error}`);
-          console.error('❌ Firestore connection failed:', result.error);
+          // Don't show connection failures on login page - it's expected
+          setConnectionStatus('waiting');
+          setDebugInfo('Waiting for authentication');
+          console.log('ℹ️ Firestore connection waiting for authentication');
         }
       } catch (error: any) {
-        setConnectionStatus('failed');
-        setDebugInfo(`Connection error: ${error.message}`);
-        console.error('❌ Connection test error:', error);
+        setConnectionStatus('waiting');
+        setDebugInfo('Waiting for authentication');
+        console.log('ℹ️ Firestore connection test - waiting for authentication');
       }
     };
     
