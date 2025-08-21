@@ -491,6 +491,123 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const realGovernanceIntegration = useMemo(() => new RealGovernanceIntegration(), []);
   const toolIntegrationService = useMemo(() => new ToolIntegrationService(), []);
 
+  // 🔧 TOOL INTEGRATION: Fetch available tools from backend
+  const [availableTools, setAvailableTools] = useState<any[]>([]);
+  const [toolSchemas, setToolSchemas] = useState<any[]>([]);
+  
+  // Fetch available tools on component mount
+  useEffect(() => {
+    const fetchAvailableTools = async () => {
+      try {
+        console.log('🔧 [ToolIntegration] Fetching available tools from backend...');
+        const response = await fetch(`${API_BASE_URL}/api/tools`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🔧 [ToolIntegration] Available tools:', data.tools);
+          setAvailableTools(data.tools || []);
+          
+          // Convert tools to AI-compatible schemas
+          const schemas = (data.tools || []).map(tool => ({
+            type: 'function',
+            function: {
+              name: tool.id,
+              description: tool.description,
+              parameters: {
+                type: 'object',
+                properties: getToolParameters(tool.id),
+                required: getRequiredParameters(tool.id)
+              }
+            }
+          }));
+          setToolSchemas(schemas);
+          console.log('🔧 [ToolIntegration] Tool schemas created:', schemas);
+        }
+      } catch (error) {
+        console.error('❌ [ToolIntegration] Failed to fetch tools:', error);
+      }
+    };
+    
+    fetchAvailableTools();
+  }, []);
+  
+  // Helper function to get tool parameters based on tool ID
+  const getToolParameters = (toolId: string) => {
+    switch (toolId) {
+      case 'web_search':
+        return {
+          query: { type: 'string', description: 'Search query to find information on the web' }
+        };
+      case 'document_generation':
+        return {
+          content: { type: 'string', description: 'Content to include in the document' },
+          format: { type: 'string', enum: ['pdf', 'docx', 'txt'], description: 'Document format' }
+        };
+      case 'data_visualization':
+        return {
+          data: { type: 'string', description: 'Data to visualize (JSON format)' },
+          chart_type: { type: 'string', enum: ['bar', 'line', 'pie', 'scatter'], description: 'Type of chart to create' }
+        };
+      case 'coding_programming':
+        return {
+          code: { type: 'string', description: 'Code to execute or analyze' },
+          language: { type: 'string', description: 'Programming language' }
+        };
+      default:
+        return {};
+    }
+  };
+  
+  // Helper function to get required parameters
+  const getRequiredParameters = (toolId: string) => {
+    switch (toolId) {
+      case 'web_search':
+        return ['query'];
+      case 'document_generation':
+        return ['content'];
+      case 'data_visualization':
+        return ['data', 'chart_type'];
+      case 'coding_programming':
+        return ['code'];
+      default:
+        return [];
+    }
+  };
+  
+  // 🔧 TOOL INTEGRATION: Shared function to process tool calls for all providers
+  const processToolCalls = async (toolCalls: any[], userMessage: string, initialResponse: string = '') => {
+    console.log('🔧 [ToolIntegration] Processing tool calls:', toolCalls);
+    
+    const toolResults: ToolResult[] = [];
+    for (const toolCall of toolCalls) {
+      try {
+        console.log(`🔧 [ToolIntegration] Executing tool: ${toolCall.function.name}`);
+        const toolResult = await toolIntegrationService.executeToolCall(
+          toolCall,
+          userMessage,
+          { agentId: selectedAgent?.identity?.id, provider: provider }
+        );
+        toolResults.push(toolResult);
+        console.log(`✅ [ToolIntegration] Tool executed successfully: ${toolCall.function.name}`);
+      } catch (toolError) {
+        console.error(`❌ [ToolIntegration] Tool execution failed: ${toolCall.function.name}`, toolError);
+        // Create error result
+        toolResults.push({
+          tool_call_id: toolCall.id,
+          role: 'tool',
+          name: toolCall.function.name,
+          content: `Error: ${toolError.message}`
+        });
+      }
+    }
+    
+    // Return the initial response with tool results appended
+    const toolResultsText = toolResults.map(result => 
+      `Tool ${result.name} result: ${result.content}`
+    ).join('\n\n');
+    
+    return initialResponse + (toolResultsText ? `\n\n${toolResultsText}` : '');
+  };
+
   // ✨ ENHANCED GOVERNANCE SERVICES (Added alongside existing services)
   const modernChatGovernanceAdapter = useMemo(() => new ModernChatGovernanceAdapter(), []);
   const governedInsightsQAService = useMemo(() => ModernChatGovernedInsightsQAService.getInstance(), []);
@@ -2079,11 +2196,15 @@ useEffect(() => {
         } else {
           console.log('🔧 OPENAI DEBUG: Creating basic system message...');
           // Use basic agent description for ungoverned agents
-          // Note: Tool integration is now handled by the backend Provider Registry
-          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.
-
-You have access to various tools that can help you assist users. When you need to use a tool, simply call it using standard function calling format and the system will execute it for you.`;
-          console.log('🔧 OPENAI DEBUG: Basic system message created, length:', systemMessage?.length);
+          // 🔧 TOOL INTEGRATION: Include specific tool descriptions
+          const toolDescriptions = availableTools.length > 0 
+            ? `\n\nYou have access to the following tools:\n${availableTools.map(tool => 
+                `- ${tool.name} (${tool.id}): ${tool.description}`
+              ).join('\n')}\n\nTo use a tool, call it as a function with the appropriate parameters.`
+            : '\n\nYou have access to various tools that can help you assist users. When you need to use a tool, simply call it using standard function calling format and the system will execute it for you.';
+            
+          systemMessage = `You are ${agent.agentName || agent.identity?.name}. ${agent.description || agent.identity?.description}.${toolDescriptions}`;
+          console.log('🔧 OPENAI DEBUG: Basic system message created with tools, length:', systemMessage?.length);
         }
 
         const messages = [
@@ -2105,7 +2226,12 @@ You have access to various tools that can help you assist users. When you need t
             model: selectedModel || 'gpt-3.5-turbo',
             messages: messages,
             max_tokens: 1000,
-            temperature: 0.7
+            temperature: 0.7,
+            // 🔧 TOOL INTEGRATION: Add tools parameter for function calling
+            ...(toolSchemas.length > 0 && { 
+              tools: toolSchemas,
+              tool_choice: 'auto'
+            })
           })
         });
 
@@ -2114,7 +2240,19 @@ You have access to various tools that can help you assist users. When you need t
         }
 
         const data = await response.json();
-        return data.choices[0]?.message?.content || 'No response received';
+        console.log('🔧 [ToolIntegration] OpenAI response data:', data);
+        
+        // 🔧 TOOL PROCESSING: Check for tool calls in OpenAI response
+        const message = data.choices[0]?.message;
+        if (message?.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+          console.log('🔧 [ToolIntegration] Tool calls detected in OpenAI response:', message.tool_calls);
+          
+          // Process tool calls and get final response
+          const finalResponse = await processToolCalls(message.tool_calls, messageContent, message.content || '');
+          return finalResponse;
+        }
+        
+        return message?.content || 'No response received';
         
       } else if (provider === 'anthropic') {
         console.log('🔧 ANTHROPIC DEBUG: Taking Anthropic path...');
