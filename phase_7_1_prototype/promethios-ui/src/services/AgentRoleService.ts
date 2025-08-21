@@ -6,7 +6,7 @@
  * Links roles to receipts, logs, and knowledge for complete contextual awareness.
  */
 
-import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
+import { UniversalGovernanceAdapter, universalGovernanceAdapter } from './UniversalGovernanceAdapter';
 
 export interface AgentRole {
   id: string;
@@ -87,7 +87,7 @@ export class AgentRoleService {
 
   constructor() {
     // Use singleton instance to prevent multiple initializations
-    this.universalGovernance = require('./UniversalGovernanceAdapter').universalGovernanceAdapter;
+    this.universalGovernance = universalGovernanceAdapter;
     this.initializePrebuiltRoles();
   }
 

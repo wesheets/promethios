@@ -138,7 +138,7 @@ import AutonomousThinkingChecker from './AutonomousThinkingChecker';
 import { ModernChatGovernanceAdapter } from '../services/ModernChatGovernanceAdapter';
 import { ModernChatGovernedInsightsQAService } from '../services/ModernChatGovernedInsightsQAService';
 import { EnhancedAuditLoggingService } from '../services/EnhancedAuditLoggingService';
-import { UniversalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
+import { UniversalGovernanceAdapter, universalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
 import { MessageContext } from '../shared/governance/types/SharedGovernanceTypes';
 import { AgentMetricsWidget } from './AgentMetricsWidget';
 
@@ -495,10 +495,9 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const modernChatGovernanceAdapter = useMemo(() => new ModernChatGovernanceAdapter(), []);
   const governedInsightsQAService = useMemo(() => ModernChatGovernedInsightsQAService.getInstance(), []);
   const enhancedAuditLoggingService = useMemo(() => EnhancedAuditLoggingService.getInstance(), []);
-  const universalGovernanceAdapter = useMemo(() => {
+  const universalGovernanceAdapterInstance = useMemo(() => {
     // Use singleton instance to prevent multiple initializations
-    const { universalGovernanceAdapter: singleton } = require('../services/UniversalGovernanceAdapter');
-    return singleton;
+    return universalGovernanceAdapter;
   }, []);
 
   // NEW: Initialize missing extensions
