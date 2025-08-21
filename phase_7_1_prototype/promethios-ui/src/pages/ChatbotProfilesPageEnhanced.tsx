@@ -210,8 +210,8 @@ const ChatbotProfilesPageContent: React.FC = () => {
     });
   };
 
-  // Get real metrics from chatbot data instead of mock data
-  const getRealMetrics = (chatbot: ChatbotProfile): ChatbotMetrics => {
+  // Get real metrics from chatbot data instead of mock data (memoized to prevent flickering)
+  const getRealMetrics = useCallback((chatbot: ChatbotProfile): ChatbotMetrics => {
     // Try to get real metrics from latestScorecard if available
     if (chatbot.latestScorecard) {
       return {
@@ -239,7 +239,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
       lastActive: 'Recently', // Default activity
       governanceAlerts: 0, // No alerts by default
     };
-  };
+  }, []);
 
   // Modal state for chatbot management
   const [manageModalOpen, setManageModalOpen] = useState(false);
@@ -528,9 +528,12 @@ const ChatbotProfilesPageContent: React.FC = () => {
       if (chatbot) {
         console.log(`🔄 Restoring state for agent: ${agentId}, panel: ${panelType}`);
         
-        // Only restore if not already in workspace mode to prevent infinite loop
+        // Only restore if not already selected and in workspace mode to prevent infinite loop
         const existingState = botStates.get(agentId);
-        if (!existingState || !existingState.isWorkspaceMode) {
+        const isAlreadySelected = selectedChatbot?.identity?.id === agentId;
+        const isAlreadyInWorkspace = existingState?.isWorkspaceMode;
+        
+        if (!isAlreadySelected || !isAlreadyInWorkspace) {
           // Initialize bot state if it doesn't exist
           if (!botStates.has(agentId)) {
             const newState = initializeBotState(agentId);
@@ -539,16 +542,18 @@ const ChatbotProfilesPageContent: React.FC = () => {
             }
             newState.isWorkspaceMode = true;
             setBotStates(prev => new Map(prev).set(agentId, newState));
-          } else if (panelType) {
+          } else if (panelType && !isAlreadyInWorkspace) {
             updateBotState(agentId, { rightPanelType: panelType, isWorkspaceMode: true });
           }
           
-          // Set selected chatbot to restore workspace
-          setSelectedChatbot(chatbot);
+          // Set selected chatbot to restore workspace only if not already selected
+          if (!isAlreadySelected) {
+            setSelectedChatbot(chatbot);
+          }
         }
       }
     }
-  }, [chatbotProfiles, searchParams]);
+  }, [chatbotProfiles.length, searchParams.get('agent'), searchParams.get('panel')]);
 
   // Filter chatbots based on search
   useEffect(() => {
@@ -566,26 +571,29 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
     // Handle chatbot selection for command center
   const handleChatbotSelect = async (chatbot: ChatbotProfile) => {
+    const chatbotId = chatbot.identity?.id || chatbot.key || chatbot.id;
+    console.log(`🎯 [Command Center] Selecting chatbot: ${chatbot.identity.name} (ID: ${chatbotId})`);
+    
     setSelectedChatbot(chatbot);
     
     // Initialize bot state if it doesn't exist
-    if (!botStates.has(chatbot.id)) {
-      const newState = initializeBotState(chatbot.id);
+    if (!botStates.has(chatbotId)) {
+      const newState = initializeBotState(chatbotId);
       newState.isWorkspaceMode = true;
       newState.rightPanelType = 'analytics'; // Default to analytics panel
-      setBotStates(prev => new Map(prev).set(chatbot.identity?.id || chatbot.key || chatbot.id, newState));
+      setBotStates(prev => new Map(prev).set(chatbotId, newState));
     } else {
       // Update existing state to workspace mode
-      updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { 
+      updateBotState(chatbotId, { 
         isWorkspaceMode: true,
-        rightPanelType: currentBotState?.rightPanelType || 'analytics'
+        rightPanelType: botStates.get(chatbotId)?.rightPanelType || 'analytics'
       });
     }
     
     // Update URL parameters for deep linking
     setSearchParams({ 
-      agent: chatbot.identity?.id || chatbot.key || chatbot.id, 
-      panel: currentBotState?.rightPanelType || 'analytics' 
+      agent: chatbotId, 
+      panel: botStates.get(chatbotId)?.rightPanelType || 'analytics' 
     });
     
     setWorkspaceSelectedTab('analytics');
@@ -597,7 +605,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
       
       // Start new chat session with governance
       const session = await chatPanelGovernanceService.startChatSession(chatbot);
-      updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { 
+      updateBotState(chatbotId, { 
         activeSession: session,
         chatMessages: []
       });
@@ -2523,7 +2531,8 @@ const ChatbotProfilesPageContent: React.FC = () => {
             <Box sx={{ height: 'calc(100vh - 300px)', overflow: 'auto' }}>
               <Grid container spacing={3}>
                 {filteredChatbots.map((chatbot) => {
-                  const metrics = getRealMetrics(chatbot);
+                  // Memoize these calculations to prevent flickering
+                  const metrics = useMemo(() => getRealMetrics(chatbot), [chatbot.latestScorecard, getRealMetrics]);
                   const governanceType = getGovernanceType(chatbot);
                   const modelProvider = getModelProvider(chatbot);
                   const isNativeAgent = governanceType === 'BYOK';
