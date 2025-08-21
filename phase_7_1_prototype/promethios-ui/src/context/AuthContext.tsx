@@ -53,22 +53,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     console.log("AuthContext: Setting up auth state listener");
     
-    // Check for redirect result first
-    getRedirectResult(auth).then((result) => {
-      if (result) {
-        console.log("AuthContext: Redirect result received:", result.user?.email);
-        setAuthStable(true); // Mark as stable after successful redirect
-      }
-    }).catch((error) => {
-      console.error("AuthContext: Redirect result error:", error);
-    });
-    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log("AuthContext: Auth state changed. User object:", user);
       
-      // Add stability check - don't flip state rapidly
+      // Simplified stability check - only ignore rapid null flips
       if (!authStable && currentUser && !user) {
-        console.log("AuthContext: Ignoring auth state flip to null (unstable state)");
+        console.log("AuthContext: Ignoring rapid auth state flip to null");
         return;
       }
       
@@ -101,11 +91,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const loginWithGoogle = async () => {
-    console.log("AuthContext: Using redirect-only method for Google login");
-    // Skip popup entirely - use redirect method only to avoid Cross-Origin-Opener-Policy issues
-    await signInWithRedirect(auth, googleProvider);
-    // The redirect will handle the rest, no return value needed
-    return null;
+    try {
+      console.log("AuthContext: Attempting Google login with popup (improved error handling)");
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("AuthContext: Popup login successful:", result.user?.email);
+      return result;
+    } catch (error: any) {
+      console.log("AuthContext: Popup login error:", error.code, error.message);
+      
+      // Handle specific popup errors more gracefully
+      if (error.code === 'auth/popup-closed-by-user') {
+        console.log("AuthContext: User closed popup, not switching to redirect");
+        throw error; // Let the UI handle this
+      }
+      
+      // For other errors, just throw them - don't try redirect
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string) => {
