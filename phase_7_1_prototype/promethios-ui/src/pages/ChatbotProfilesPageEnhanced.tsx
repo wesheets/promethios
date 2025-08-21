@@ -664,6 +664,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Add a flag to prevent circular updates during URL restoration
   const [isRestoringFromURL, setIsRestoringFromURL] = useState(false);
   
+  // TEMPORARILY DISABLED: URL restoration useEffect causing infinite loops
+  // TODO: Fix the circular dependency in URL restoration logic
+  /*
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[URL restoration] triggered - RENDER #${renderCountRef.current}`);
     console.log('🔍 [DEBUG] - agentParam:', agentParam);
@@ -728,6 +731,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
     }
   }, [chatbotProfiles.length, agentParam, panelParam, isRestoringFromURL]); // Include isRestoringFromURL in deps
+  */
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
