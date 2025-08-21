@@ -355,6 +355,11 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const setRightPanelType = (panelType: RightPanelType) => {
     if (selectedChatbotId) {
       updateBotState(selectedChatbotId, { rightPanelType: panelType });
+      
+      // Update URL parameters to keep them in sync with state
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('panel', panelType);
+      setSearchParams(newSearchParams, { replace: true });
     }
   };
 
