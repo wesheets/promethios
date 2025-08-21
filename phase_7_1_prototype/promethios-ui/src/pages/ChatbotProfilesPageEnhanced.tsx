@@ -175,7 +175,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   renderCountRef.current += 1;
   
   // Circuit breaker to prevent infinite re-renders
-  const MAX_RENDERS = 20;
+  const MAX_RENDERS = 50; // Increased from 20 to 50 to allow chat functionality while we optimize
   if (renderCountRef.current > MAX_RENDERS) {
     console.error(`🚨 [CIRCUIT BREAKER] Component has rendered ${renderCountRef.current} times - stopping to prevent infinite loop`);
     return (
