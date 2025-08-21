@@ -861,7 +861,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
     
     // Update URL parameters for deep linking (only if not currently restoring from URL)
-    if (!isRestoringFromURL) {
+    if (!isRestoringFromURLRef.current) {
       setSearchParams({ 
         agent: chatbotId, 
         panel: botStates.get(chatbotId)?.rightPanelType || 'analytics' 
@@ -918,7 +918,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     });
     
     // Update URL parameters for deep linking (only if not currently restoring from URL)
-    if (!isRestoringFromURL) {
+    if (!isRestoringFromURLRef.current) {
       setSearchParams({ 
         agent: chatbot.identity?.id || chatbot.key || chatbot.id, 
         panel: type || 'analytics' 
