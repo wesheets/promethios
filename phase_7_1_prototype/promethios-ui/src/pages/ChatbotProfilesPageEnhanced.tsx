@@ -661,77 +661,95 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const agentParam = useMemo(() => searchParams.get('agent'), [searchParams]);
   const panelParam = useMemo(() => searchParams.get('panel'), [searchParams]);
   
-  // Add a flag to prevent circular updates during URL restoration
-  const [isRestoringFromURL, setIsRestoringFromURL] = useState(false);
+  // Use refs for tracking to prevent circular dependencies
+  const isRestoringFromURLRef = useRef(false);
+  const lastProcessedParamsRef = useRef({ agent: '', panel: '' });
   
-  // TEMPORARILY DISABLED: URL restoration useEffect causing infinite loops
-  // TODO: Fix the circular dependency in URL restoration logic
-  /*
+  // URL restoration with proper circular dependency prevention
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[URL restoration] triggered - RENDER #${renderCountRef.current}`);
     console.log('🔍 [DEBUG] - agentParam:', agentParam);
     console.log('🔍 [DEBUG] - panelParam:', panelParam);
-    console.log('🔍 [DEBUG] - isRestoringFromURL:', isRestoringFromURL);
+    console.log('🔍 [DEBUG] - isRestoringFromURLRef.current:', isRestoringFromURLRef.current);
     console.log('🔍 [DEBUG] - chatbotProfiles.length:', chatbotProfiles.length);
     
-    // Prevent circular updates
-    if (isRestoringFromURL) {
-      console.log('🔍 [DEBUG] - SKIPPING: isRestoringFromURL is true');
+    // Prevent circular updates using ref (doesn't cause re-renders)
+    if (isRestoringFromURLRef.current) {
+      console.log('🔍 [DEBUG] - SKIPPING: Currently restoring from URL');
       return;
     }
     
-    if (agentParam && chatbotProfiles.length > 0) {
-      const chatbot = chatbotProfiles.find(bot => 
-        bot.identity?.id === agentParam || bot.key === agentParam || bot.id === agentParam
-      );
-      if (chatbot) {
-        console.log(`🔄 Restoring state for agent: ${agentParam}, panel: ${panelParam}`);
-        
-        // Check current state to avoid unnecessary updates
-        const existingState = botStates.get(agentParam);
-        const isAlreadySelected = selectedChatbot?.identity?.id === agentParam;
-        const isAlreadyInWorkspace = existingState?.isWorkspaceMode;
-        const hasCorrectPanel = existingState?.rightPanelType === panelParam;
-        
-        // Only update if something actually needs to change
-        if (!isAlreadySelected || !isAlreadyInWorkspace || !hasCorrectPanel) {
-          setIsRestoringFromURL(true);
-          
-          // Batch all state updates together to prevent multiple re-renders
-          const updates: Array<() => void> = [];
-          
-          // Initialize bot state if it doesn't exist or needs updates
-          if (!botStates.has(agentParam) || !isAlreadyInWorkspace || !hasCorrectPanel) {
-            updates.push(() => {
-              setBotStates(prev => {
-                const newMap = new Map(prev);
-                const currentState = newMap.get(agentParam) || initializeBotState(agentParam);
-                const updatedState = {
-                  ...currentState,
-                  rightPanelType: panelParam as RightPanelType || currentState.rightPanelType,
-                  isWorkspaceMode: true
-                };
-                newMap.set(agentParam, updatedState);
-                return newMap;
-              });
-            });
-          }
-          
-          // Set selected chatbot if needed
-          if (!isAlreadySelected) {
-            updates.push(() => setSelectedChatbot(chatbot));
-          }
-          
-          // Execute all updates
-          updates.forEach(update => update());
-          
-          // Reset flag after a brief delay to allow state to settle
-          setTimeout(() => setIsRestoringFromURL(false), 100);
-        }
-      }
+    // Check if params actually changed to prevent unnecessary processing
+    const currentParams = { agent: agentParam || '', panel: panelParam || '' };
+    const lastParams = lastProcessedParamsRef.current;
+    
+    if (currentParams.agent === lastParams.agent && currentParams.panel === lastParams.panel) {
+      console.log('🔍 [DEBUG] - SKIPPING: URL params unchanged');
+      return;
     }
-  }, [chatbotProfiles.length, agentParam, panelParam, isRestoringFromURL]); // Include isRestoringFromURL in deps
-  */
+    
+    // Only process if we have valid params and chatbots are loaded
+    if (!agentParam || chatbotProfiles.length === 0) {
+      console.log('🔍 [DEBUG] - SKIPPING: No agent param or chatbots not loaded');
+      return;
+    }
+    
+    const chatbot = chatbotProfiles.find(bot => 
+      bot.identity?.id === agentParam || bot.key === agentParam || bot.id === agentParam
+    );
+    
+    if (!chatbot) {
+      console.log('🔍 [DEBUG] - SKIPPING: Chatbot not found for agent:', agentParam);
+      return;
+    }
+    
+    console.log(`🔄 Restoring state for agent: ${agentParam}, panel: ${panelParam}`);
+    
+    // Check current state to avoid unnecessary updates
+    const existingState = botStates.get(agentParam);
+    const isAlreadySelected = selectedChatbot?.identity?.id === agentParam;
+    const isAlreadyInWorkspace = existingState?.isWorkspaceMode;
+    const hasCorrectPanel = existingState?.rightPanelType === panelParam;
+    
+    // Only update if something actually needs to change
+    if (isAlreadySelected && isAlreadyInWorkspace && hasCorrectPanel) {
+      console.log('🔍 [DEBUG] - SKIPPING: State already matches URL params');
+      lastProcessedParamsRef.current = currentParams;
+      return;
+    }
+    
+    // Set restoration flag to prevent circular updates
+    isRestoringFromURLRef.current = true;
+    
+    // Batch all state updates together using a single setState call
+    setBotStates(prev => {
+      const newMap = new Map(prev);
+      const currentState = newMap.get(agentParam) || initializeBotState(agentParam);
+      const updatedState = {
+        ...currentState,
+        rightPanelType: (panelParam as RightPanelType) || currentState.rightPanelType,
+        isWorkspaceMode: true,
+        chatHistoryRefreshTrigger: currentState.chatHistoryRefreshTrigger + 1
+      };
+      newMap.set(agentParam, updatedState);
+      return newMap;
+    });
+    
+    // Set selected chatbot if needed
+    if (!isAlreadySelected) {
+      setSelectedChatbot(chatbot);
+    }
+    
+    // Update last processed params
+    lastProcessedParamsRef.current = currentParams;
+    
+    // Reset restoration flag after a brief delay
+    setTimeout(() => {
+      isRestoringFromURLRef.current = false;
+      console.log('🔍 [DEBUG] - URL restoration completed');
+    }, 100);
+    
+  }, [agentParam, panelParam, chatbotProfiles.length, selectedChatbot?.identity?.id]);
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
