@@ -558,10 +558,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     return { name: 'Unknown', color: '#6b7280' };
   };
 
+  // Add loading circuit breaker
+  const loadingChatbotsRef = useRef(false);
+
   const loadChatbots = useCallback(async () => {
     console.log('🔍 loadChatbots called, user:', user?.uid);
     console.log('🔍 loadChatbots called, authLoading:', authLoading);
     console.log('🔍 ChatbotStorageService instance:', chatbotService);
+    
+    // Circuit breaker: prevent multiple simultaneous calls
+    if (loadingChatbotsRef.current) {
+      console.log('🔄 Already loading chatbots, skipping duplicate call');
+      return;
+    }
     
     // Wait for auth to finish loading
     if (authLoading) {
@@ -623,6 +632,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
 
     try {
+      // Set loading circuit breaker
+      loadingChatbotsRef.current = true;
+      
       setLoading(true);
       setError(null);
       console.log('🔍 Calling chatbotService.getChatbots with user:', user.uid);
@@ -640,6 +652,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setFilteredChatbots([]);
     } finally {
       setLoading(false);
+      // Clear loading circuit breaker
+      loadingChatbotsRef.current = false;
       console.log('🔍 Loading set to false');
     }
   }, [user?.uid, authLoading, chatbotService]);

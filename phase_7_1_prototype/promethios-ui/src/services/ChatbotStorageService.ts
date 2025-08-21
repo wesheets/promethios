@@ -304,12 +304,36 @@ export class ChatbotStorageService {
     return chatbot;
   }
 
+  // Add loading state tracking to prevent duplicate calls
+  private loadingStates = new Map<string, boolean>();
+  private cacheTimestamps = new Map<string, number>();
+  private readonly CACHE_DURATION = 30000; // 30 seconds cache
+
   /**
    * Get all chatbots for the current user
    */
   public async getChatbots(ownerId: string): Promise<ChatbotProfile[]> {
     try {
       console.log('🤖 Loading chatbots for user:', ownerId);
+      
+      // Circuit breaker: Check if already loading for this user
+      if (this.loadingStates.get(ownerId)) {
+        console.log('🔄 Already loading chatbots for user, returning cached data:', ownerId);
+        return Array.from(this.chatbots.values()).filter(c => c.identity.ownerId === ownerId);
+      }
+      
+      // Check cache freshness
+      const cacheKey = `chatbots_${ownerId}`;
+      const lastCacheTime = this.cacheTimestamps.get(cacheKey) || 0;
+      const now = Date.now();
+      
+      if (now - lastCacheTime < this.CACHE_DURATION) {
+        console.log('🎯 Using cached chatbots for user (cache still fresh):', ownerId);
+        return Array.from(this.chatbots.values()).filter(c => c.identity.ownerId === ownerId);
+      }
+      
+      // Set loading state
+      this.loadingStates.set(ownerId, true);
       
       // Get all chatbot keys from unified storage
       const allKeys = await unifiedStorage.keys('agents');
@@ -362,6 +386,12 @@ export class ChatbotStorageService {
       
       console.log(`🤖 Loaded ${chatbots.length} chatbots for user ${ownerId}`);
       
+      // Update cache timestamp
+      this.cacheTimestamps.set(cacheKey, now);
+      
+      // Clear loading state
+      this.loadingStates.set(ownerId, false);
+      
       // If no real chatbots exist, return empty array (no mock data)
       if (chatbots.length === 0) {
         console.log('🤖 No chatbots found for user, returning empty array');
@@ -372,6 +402,8 @@ export class ChatbotStorageService {
       
     } catch (error) {
       console.error('Error loading chatbots:', error);
+      // Clear loading state on error
+      this.loadingStates.set(ownerId, false);
       return [];
     }
   }
