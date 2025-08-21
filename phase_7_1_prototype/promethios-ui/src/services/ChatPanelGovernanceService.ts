@@ -9,7 +9,7 @@
 import { ChatbotProfile } from '../types/ChatbotTypes';
 import { AgentConfigurationService } from './AgentConfigurationService';
 import { RuntimeConfiguration, AgentConfiguration } from '../types/AgentConfigurationTypes';
-import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
+import { UniversalGovernanceAdapter, universalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { ChatStorageService, ChatMessage as StoredChatMessage, AgentChatHistory } from './ChatStorageService';
 import { PredictiveGovernanceExtension, RiskPrediction } from '../extensions/PredictiveGovernanceExtension';
 import { InteractiveReceiptExtension } from '../extensions/InteractiveReceiptExtension';
@@ -76,7 +76,7 @@ export class ChatPanelGovernanceService {
   constructor() {
     console.log('🎯 [ChatPanel] Initializing with Universal Governance Adapter and Extensions');
     // Use singleton instance to prevent multiple initializations
-    this.universalGovernance = require('./UniversalGovernanceAdapter').universalGovernanceAdapter;
+    this.universalGovernance = universalGovernanceAdapter;
     this.agentConfigService = new AgentConfigurationService();
     this.chatStorageService = new ChatStorageService();
     
