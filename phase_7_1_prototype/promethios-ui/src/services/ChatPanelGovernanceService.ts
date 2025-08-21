@@ -17,6 +17,7 @@ import { ReceiptIntegrationService } from '../components/receipts/ReceiptIntegra
 import { ReceiptRoleContextService, RoleReceiptContext } from './ReceiptRoleContextService';
 import { AgentRoleService, AgentRole } from './AgentRoleService';
 import { auth } from '../firebase/config';
+import { ToolIntegrationService, ToolCall, ToolResult } from './ToolIntegrationService';
 
 // Chat Panel Response Types
 interface ChatMessage {
@@ -68,6 +69,9 @@ export class ChatPanelGovernanceService {
   private receiptRoleContext: ReceiptRoleContextService;
   private agentRoleService: AgentRoleService;
   
+  // Tool Integration
+  private toolIntegrationService: ToolIntegrationService;
+  
   private currentSession: ChatSession | null = null;
   private conversationHistory: ChatMessage[] = [];
   private activeSessions: Map<string, ChatSession> = new Map();
@@ -89,7 +93,10 @@ export class ChatPanelGovernanceService {
     this.receiptRoleContext = ReceiptRoleContextService.getInstance();
     this.agentRoleService = new AgentRoleService();
     
-    console.log('✅ [ChatPanel] All extensions and role context services initialized successfully');
+    // Initialize tool integration service
+    this.toolIntegrationService = new ToolIntegrationService();
+    
+    console.log('✅ [ChatPanel] All extensions, role context services, and tool integration initialized successfully');
   }
 
   // ============================================================================
@@ -248,6 +255,16 @@ export class ChatPanelGovernanceService {
       const currentUser = await this.getCurrentUser();
       const userId = currentUser?.uid || 'anonymous';
       
+      // 🔧 TOOL INTEGRATION: Load tool schemas from backend
+      let toolSchemas: any[] = [];
+      try {
+        console.log('🔧 [ToolIntegration] Loading tool schemas for chat...');
+        toolSchemas = await this.toolIntegrationService.loadToolSchemas();
+        console.log(`🔧 [ToolIntegration] Loaded ${toolSchemas.length} tool schemas`);
+      } catch (toolError) {
+        console.warn('⚠️ [ToolIntegration] Failed to load tool schemas:', toolError);
+      }
+      
       // Use the Universal Governance Adapter's sendMessage method for proper image processing
       const enhancedResponse = await this.universalGovernance.sendMessage({
         agentId: agentId,
@@ -257,7 +274,9 @@ export class ChatPanelGovernanceService {
         attachments: attachmentData, // Include attachment data for image processing
         conversationHistory: context?.conversationHistory || [],
         provider: context?.provider, // Pass provider if available
-        model: context?.model // Pass model if available
+        model: context?.model, // Pass model if available
+        // 🔧 TOOL INTEGRATION: Add tool schemas to the request
+        tools: toolSchemas.length > 0 ? toolSchemas : undefined
       });
       
       return {
