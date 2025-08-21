@@ -284,14 +284,14 @@ export class ChatHistoryService {
       const sessions: ChatSession[] = [];
       
       try {
-        // Try to get user's chat index first
-        const userChatIndex = await unifiedStorage.get('chats', `${userId}/index`);
+        // Try to get user's chat index first (use 2-segment path for Firebase)
+        const userChatIndex = await unifiedStorage.get('chats', `user_${userId}_index`);
         
         if (userChatIndex && Array.isArray(userChatIndex)) {
           // Load sessions from index
           for (const sessionId of userChatIndex) {
             try {
-              const sessionData = await unifiedStorage.get('chats', `${userId}/${sessionId}`);
+              const sessionData = await unifiedStorage.get('chats', `user_${userId}_${sessionId}`);
               if (sessionData) {
                 const session = this.deserializeChatSession(sessionData);
                 
@@ -308,10 +308,10 @@ export class ChatHistoryService {
           // Fallback: try to load sessions directly (less efficient but works)
           console.log('📚 No chat index found, attempting direct session loading');
           
-          // Try common session patterns
+          // Try common session patterns (use 2-segment paths for Firebase)
           for (let i = 0; i < 100; i++) { // Limit to prevent infinite loops
             try {
-              const sessionData = await unifiedStorage.get('chats', `${userId}/chat_${i}`);
+              const sessionData = await unifiedStorage.get('chats', `user_${userId}_chat_${i}`);
               if (sessionData) {
                 const session = this.deserializeChatSession(sessionData);
                 if (this.matchesFilter(session, filter)) {
@@ -380,7 +380,7 @@ export class ChatHistoryService {
 
     try {
       // Remove from unified storage using correct API
-      await unifiedStorage.delete('chats', `${session.userId}/${sessionId}`);
+      await unifiedStorage.delete('chats', `user_${session.userId}_${sessionId}`);
       await unifiedStorage.delete('chats', `sessions/${sessionId}`);
 
       // Update user's chat index
@@ -403,11 +403,11 @@ export class ChatHistoryService {
 
   private async removeFromUserChatIndex(userId: string, sessionId: string): Promise<void> {
     try {
-      const existingIndex = await unifiedStorage.get('chats', `${userId}/index`) || [];
-      const index = Array.isArray(existingIndex) ? existingIndex : [];
+        const existingIndex = await unifiedStorage.get('chats', `user_${userId}_index`) || [];
+      const updatedIndex = existingIndex.filter((id: string) => id !== sessionId);
       
-      const updatedIndex = index.filter(id => id !== sessionId);
-      await unifiedStorage.set('chats', `${userId}/index`, updatedIndex);
+      // Update the index
+      await unifiedStorage.set('chats', `user_${userId}_index`, updatedIndex);
     } catch (error) {
       console.warn('Failed to update user chat index on deletion:', error);
     }
@@ -467,7 +467,7 @@ export class ChatHistoryService {
       const serializedSession = this.serializeChatSession(session);
       
       // Save to user's chat collection using correct API
-      await unifiedStorage.set('chats', `${session.userId}/${session.id}`, serializedSession);
+      await unifiedStorage.set('chats', `user_${session.userId}_${session.id}`, serializedSession);
 
       // Also save to sessions collection for direct access
       await unifiedStorage.set('chats', `sessions/${session.id}`, serializedSession);
@@ -487,8 +487,8 @@ export class ChatHistoryService {
 
   private async updateUserChatIndex(userId: string, sessionId: string): Promise<void> {
     try {
-      // Get existing index
-      const existingIndex = await unifiedStorage.get('chats', `${userId}/index`) || [];
+      // Get existing index (use 2-segment path for Firebase)
+      const existingIndex = await unifiedStorage.get('chats', `user_${userId}_index`) || [];
       const index = Array.isArray(existingIndex) ? existingIndex : [];
       
       // Add session ID if not already present
@@ -500,7 +500,7 @@ export class ChatHistoryService {
           index.splice(100);
         }
         
-        await unifiedStorage.set('chats', `${userId}/index`, index);
+        await unifiedStorage.set('chats', `user_${userId}_index`, index);
       }
     } catch (error) {
       console.warn('Failed to update user chat index:', error);
