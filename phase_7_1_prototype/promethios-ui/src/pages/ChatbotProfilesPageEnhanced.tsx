@@ -642,7 +642,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const agentParam = useMemo(() => searchParams.get('agent'), [searchParams]);
   const panelParam = useMemo(() => searchParams.get('panel'), [searchParams]);
   
+  // Add a flag to prevent circular updates during URL restoration
+  const [isRestoringFromURL, setIsRestoringFromURL] = useState(false);
+  
   useEffect(() => {
+    // Prevent circular updates
+    if (isRestoringFromURL) return;
+    
     if (agentParam && chatbotProfiles.length > 0) {
       const chatbot = chatbotProfiles.find(bot => 
         bot.identity?.id === agentParam || bot.key === agentParam || bot.id === agentParam
@@ -650,30 +656,50 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       if (chatbot) {
         console.log(`🔄 Restoring state for agent: ${agentParam}, panel: ${panelParam}`);
         
-        // Only restore if not already selected and in workspace mode to prevent infinite loop
+        // Check current state to avoid unnecessary updates
         const existingState = botStates.get(agentParam);
         const isAlreadySelected = selectedChatbot?.identity?.id === agentParam;
         const isAlreadyInWorkspace = existingState?.isWorkspaceMode;
+        const hasCorrectPanel = existingState?.rightPanelType === panelParam;
         
-        if (!isAlreadySelected || !isAlreadyInWorkspace) {
-          // Initialize bot state if it doesn't exist
-          if (!botStates.has(agentParam)) {
-            const newState = initializeBotState(agentParam);
-            if (panelParam) {
-              newState.rightPanelType = panelParam as RightPanelType;
-            }
-            newState.isWorkspaceMode = true;
-            setBotStates(prev => new Map(prev).set(agentParam, newState));
+        // Only update if something actually needs to change
+        if (!isAlreadySelected || !isAlreadyInWorkspace || !hasCorrectPanel) {
+          setIsRestoringFromURL(true);
+          
+          // Batch all state updates together to prevent multiple re-renders
+          const updates: Array<() => void> = [];
+          
+          // Initialize bot state if it doesn't exist or needs updates
+          if (!botStates.has(agentParam) || !isAlreadyInWorkspace || !hasCorrectPanel) {
+            updates.push(() => {
+              setBotStates(prev => {
+                const newMap = new Map(prev);
+                const currentState = newMap.get(agentParam) || initializeBotState(agentParam);
+                const updatedState = {
+                  ...currentState,
+                  rightPanelType: panelParam as RightPanelType || currentState.rightPanelType,
+                  isWorkspaceMode: true
+                };
+                newMap.set(agentParam, updatedState);
+                return newMap;
+              });
+            });
           }
           
-          // Set selected chatbot and workspace mode
+          // Set selected chatbot if needed
           if (!isAlreadySelected) {
-            setSelectedChatbot(chatbot);
+            updates.push(() => setSelectedChatbot(chatbot));
           }
+          
+          // Execute all updates
+          updates.forEach(update => update());
+          
+          // Reset flag after a brief delay to allow state to settle
+          setTimeout(() => setIsRestoringFromURL(false), 100);
         }
       }
     }
-  }, [chatbotProfiles.length, agentParam, panelParam]); // Use memoized values
+  }, [chatbotProfiles.length, agentParam, panelParam, isRestoringFromURL]); // Include isRestoringFromURL in deps
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
@@ -765,11 +791,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       });
     }
     
-    // Update URL parameters for deep linking
-    setSearchParams({ 
-      agent: chatbotId, 
-      panel: botStates.get(chatbotId)?.rightPanelType || 'analytics' 
-    });
+    // Update URL parameters for deep linking (only if not currently restoring from URL)
+    if (!isRestoringFromURL) {
+      setSearchParams({ 
+        agent: chatbotId, 
+        panel: botStates.get(chatbotId)?.rightPanelType || 'analytics' 
+      });
+    }
     
     setWorkspaceSelectedTab('analytics');
     
@@ -820,11 +848,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       isWorkspaceMode: true 
     });
     
-    // Update URL parameters for deep linking
-    setSearchParams({ 
-      agent: chatbot.identity?.id || chatbot.key || chatbot.id, 
-      panel: type || 'analytics' 
-    });
+    // Update URL parameters for deep linking (only if not currently restoring from URL)
+    if (!isRestoringFromURL) {
+      setSearchParams({ 
+        agent: chatbot.identity?.id || chatbot.key || chatbot.id, 
+        panel: type || 'analytics' 
+      });
+    }
   };
 
   // Chat functionality - Real Universal Governance Adapter Integration
