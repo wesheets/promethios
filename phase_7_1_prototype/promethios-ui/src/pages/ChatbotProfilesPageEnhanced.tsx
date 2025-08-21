@@ -163,7 +163,8 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   
   // Current bot state (derived from botStates map)
-  const currentBotState = selectedChatbot ? botStates.get(selectedChatbot.id) : null;
+  const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
+  const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
   const rightPanelType = currentBotState?.rightPanelType || null;
   const chatMessages = currentBotState?.chatMessages || [];
   const activeSession = currentBotState?.activeSession || null;
@@ -215,48 +216,41 @@ const ChatbotProfilesPageContent: React.FC = () => {
     try {
       // Try to get real metrics from governance service first
       const agentId = chatbot.identity?.id || chatbot.key || chatbot.id;
+      console.log(`🔍 [Metrics] Loading metrics for agent: ${agentId}`);
       
       // Get trust score from governance service
       const trustData = await chatPanelGovernanceService.getTrustScore(agentId);
       const trustScore = trustData?.currentScore ? Math.round(trustData.currentScore * 100) : null;
+      console.log(`🔍 [Metrics] Trust score for ${agentId}:`, trustScore);
       
       // Get session metrics if available
       const sessionMetrics = chatPanelGovernanceService.getSessionMetrics?.(agentId);
+      console.log(`🔍 [Metrics] Session metrics for ${agentId}:`, sessionMetrics);
       
       // Get chat history for message volume and response time calculations
-      const chatHistory = await chatHistoryService.getChatHistory(agentId);
-      const messageVolume = chatHistory?.messages?.length || 0;
+      const chatHistory = await chatHistoryService.getUserChatHistory(agentId);
+      const messageVolume = chatHistory?.length || 0;
+      console.log(`🔍 [Metrics] Message volume for ${agentId}:`, messageVolume);
       
       // Calculate average response time from recent messages (if available)
       let averageResponseTime = 1.2; // Default fallback
-      if (chatHistory?.messages && chatHistory.messages.length > 0) {
-        const recentMessages = chatHistory.messages.slice(-10); // Last 10 messages
-        const responseTimes = recentMessages
-          .filter(msg => msg.sender === 'agent' && msg.responseTime)
-          .map(msg => msg.responseTime || 1.2);
-        
-        if (responseTimes.length > 0) {
-          averageResponseTime = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
+      if (chatHistory && chatHistory.length > 0) {
+        // Get the most recent session
+        const recentSession = chatHistory[0];
+        if (recentSession?.messages && recentSession.messages.length > 0) {
+          const recentMessages = recentSession.messages.slice(-10); // Last 10 messages
+          const responseTimes = recentMessages
+            .filter(msg => msg.sender === 'agent' && msg.responseTime)
+            .map(msg => msg.responseTime || 1.2);
+          
+          if (responseTimes.length > 0) {
+            averageResponseTime = responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length;
+          }
         }
       }
       
-      // Try to get real metrics from latestScorecard if available
-      if (chatbot.latestScorecard) {
-        return {
-          healthScore: chatbot.latestScorecard.healthScore || (trustScore ? Math.min(trustScore + 10, 100) : 85),
-          trustScore: trustScore || chatbot.latestScorecard.score || 85,
-          performanceRating: chatbot.latestScorecard.performanceRating || (trustScore ? Math.min(trustScore + 5, 100) : 85),
-          messageVolume: messageVolume || chatbot.latestScorecard.messageVolume || 0,
-          responseTime: averageResponseTime || chatbot.latestScorecard.responseTime || 1.2,
-          satisfactionScore: chatbot.latestScorecard.satisfactionScore || (trustScore ? (trustScore / 100) * 5 : 4.5),
-          resolutionRate: chatbot.latestScorecard.resolutionRate || (trustScore ? Math.min(trustScore + 15, 100) : 85),
-          lastActive: chatbot.latestScorecard.lastActive || (messageVolume > 0 ? 'Recently' : 'No activity'),
-          governanceAlerts: sessionMetrics?.violations || chatbot.latestScorecard.governanceAlerts || 0,
-        };
-      }
-      
-      // Use real governance data with intelligent fallbacks
-      return {
+      // Calculate real metrics based on actual data
+      const realMetrics = {
         healthScore: trustScore ? Math.min(trustScore + 10, 100) : 85, // Health slightly higher than trust
         trustScore: trustScore || 85, // Real trust score from governance
         performanceRating: trustScore ? Math.min(trustScore + 5, 100) : 85, // Performance based on trust
@@ -267,6 +261,10 @@ const ChatbotProfilesPageContent: React.FC = () => {
         lastActive: messageVolume > 0 ? 'Recently' : 'No activity', // Based on actual activity
         governanceAlerts: sessionMetrics?.violations || 0, // Real violation count
       };
+      
+      console.log(`✅ [Metrics] Calculated metrics for ${agentId}:`, realMetrics);
+      return realMetrics;
+      
     } catch (error) {
       console.warn('⚠️ Failed to fetch real metrics, using fallbacks:', error);
       
@@ -286,7 +284,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
   }, []);
 
   // Synchronous version for analytics panels (uses cached data)
-  const getRealMetricsSyncSync = useCallback((chatbot: ChatbotProfile): ChatbotMetrics => {
+  const getRealMetricsSync = useCallback((chatbot: ChatbotProfile): ChatbotMetrics => {
     // Try to get real metrics from latestScorecard if available
     if (chatbot.latestScorecard) {
       return {
