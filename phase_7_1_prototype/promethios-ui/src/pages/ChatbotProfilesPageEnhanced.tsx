@@ -316,7 +316,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
 
   // Modal state for chatbot management
   const [manageModalOpen, setManageModalOpen] = useState(false);
-  const [selectedChatbotId, setSelectedChatbotId] = useState<string | null>(null);
+  const [manageChatbotId, setManageChatbotId] = useState<string | null>(null);
 
   const handleManageChatbot = (chatbotId: string) => {
     console.log('🔧 handleManageChatbot called with ID:', chatbotId);
@@ -338,7 +338,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
     }
     
     // For real chatbots, open the manage modal
-    setSelectedChatbotId(chatbotId);
+    setManageChatbotId(chatbotId);
     setManageModalOpen(true);
   };
 
@@ -2891,14 +2891,14 @@ const ChatbotProfilesPageContent: React.FC = () => {
         )}
 
         {/* Chatbot Management Modal - Only show for real chatbots */}
-        {manageModalOpen && selectedChatbotId && user?.uid && (
+        {manageModalOpen && manageChatbotId && user?.uid && (
           <AgentManageModal
             open={manageModalOpen}
             onClose={() => {
               setManageModalOpen(false);
-              setSelectedChatbotId(null);
+              setManageChatbotId(null);
             }}
-            agentId={selectedChatbotId}
+            agentId={manageChatbotId}
             onAgentUpdated={async (updatedAgent) => {
               // Refresh the chatbots list to show updated data
               await loadChatbots();
