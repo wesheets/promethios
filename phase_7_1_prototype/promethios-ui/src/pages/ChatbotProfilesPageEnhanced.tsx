@@ -528,23 +528,27 @@ const ChatbotProfilesPageContent: React.FC = () => {
       if (chatbot) {
         console.log(`🔄 Restoring state for agent: ${agentId}, panel: ${panelType}`);
         
-        // Initialize bot state if it doesn't exist
-        if (!botStates.has(agentId)) {
-          const newState = initializeBotState(agentId);
-          if (panelType) {
-            newState.rightPanelType = panelType;
+        // Only restore if not already in workspace mode to prevent infinite loop
+        const existingState = botStates.get(agentId);
+        if (!existingState || !existingState.isWorkspaceMode) {
+          // Initialize bot state if it doesn't exist
+          if (!botStates.has(agentId)) {
+            const newState = initializeBotState(agentId);
+            if (panelType) {
+              newState.rightPanelType = panelType;
+            }
+            newState.isWorkspaceMode = true;
+            setBotStates(prev => new Map(prev).set(agentId, newState));
+          } else if (panelType) {
+            updateBotState(agentId, { rightPanelType: panelType, isWorkspaceMode: true });
           }
-          newState.isWorkspaceMode = true;
-          setBotStates(prev => new Map(prev).set(agentId, newState));
-        } else if (panelType) {
-          updateBotState(agentId, { rightPanelType: panelType });
+          
+          // Set selected chatbot to restore workspace
+          setSelectedChatbot(chatbot);
         }
-        
-        // Set selected chatbot to restore workspace
-        setSelectedChatbot(chatbot);
       }
     }
-  }, [chatbotProfiles, searchParams, botStates]);
+  }, [chatbotProfiles, searchParams]);
 
   // Filter chatbots based on search
   useEffect(() => {
