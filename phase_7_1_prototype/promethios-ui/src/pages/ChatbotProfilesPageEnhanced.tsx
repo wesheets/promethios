@@ -997,7 +997,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
           console.warn('Failed to save to chat history:', historyError);
           // Don't break the chat flow if history fails
         }
-      } else if (!currentChatSession && selectedChatbot && user?.uid) {
+      } else if (!currentBotState?.currentChatSession && selectedChatbot && user?.uid) {
         // Auto-create a new chat session if none exists
         try {
           const newSession = await chatHistoryService.createChatSession(
