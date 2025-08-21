@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
+import { firestoreRetry } from '../utils/firestoreRetry';
 
 export interface UserPreferences {
   navigationCollapsed: boolean;
@@ -86,16 +87,16 @@ export const useUserPreferences = () => {
           };
           
           console.log('🔥 useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
-          setDoc(userPrefsRef, initialPrefs).then(() => {
-            console.log('✅ useUserPreferences: Successfully created initial document');
-            setPreferences(initialPrefs);
-            setLoading(false);
-          }).catch(err => {
-            console.error('❌ useUserPreferences: Error creating initial user preferences document:', err.code, err.message, err);
-            console.error('❌ useUserPreferences: Full error object:', err);
-            setError('Failed to create initial preferences');
-            setLoading(false);
-          });
+          
+          // Use retry logic for document creation
+          await firestoreRetry.setDoc(
+            () => setDoc(userPrefsRef, initialPrefs),
+            userPrefsRef.path
+          );
+          
+          console.log('✅ useUserPreferences: Successfully created initial document');
+          setPreferences(initialPrefs);
+          setLoading(false);
         } else {
           console.log('✅ useUserPreferences: User preferences found:', docSnap.data());
           const firestorePrefs = docSnap.data() as UserPreferences;
@@ -141,7 +142,13 @@ export const useUserPreferences = () => {
       if (currentUser && db) {
         console.log("🔥 useUserPreferences: Updating Firestore for user:", currentUser.uid);
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
-        await updateDoc(userPrefsRef, updates);
+        
+        // Use retry logic for document update
+        await firestoreRetry.updateDoc(
+          () => updateDoc(userPrefsRef, updates),
+          userPrefsRef.path
+        );
+        
         console.log("✅ useUserPreferences: Successfully updated Firestore");
       } else {
         console.log("⚠️ useUserPreferences: Skipping Firestore update - currentUser or db not available");
