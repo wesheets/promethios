@@ -169,17 +169,25 @@ const LoginWaitlistPage: React.FC = () => {
     try {
       await loginWithEmail(loginEmail, loginPassword);
       
-      // Check if user has been approved for access or is an existing user
-      const invitationCheck = await checkUserInvitation(loginEmail, db);
+      // 🚨 TEMPORARY: Bypass invitation check for development/testing
+      // TODO: Re-enable when database permissions are fixed
+      const BYPASS_INVITATION_CHECK = true;
       
-      if (!invitationCheck.hasAccess) {
-        setLoginError(invitationCheck.reason || 'Access denied. Please request access through the waitlist.');
-        await logout(); // Sign them out immediately
-        return;
+      if (BYPASS_INVITATION_CHECK) {
+        console.log(`🔓 [EMAIL LOGIN] BYPASSING invitation check for development - allowing access for ${loginEmail}`);
+        setLoginError(''); // Clear any previous errors
+      } else {
+        // Original invitation check logic (disabled for now)
+        const invitationCheck = await checkUserInvitation(loginEmail, db);
+        
+        if (!invitationCheck.hasAccess) {
+          setLoginError(invitationCheck.reason || 'Access denied. Please request access through the waitlist.');
+          await logout(); // Sign them out immediately
+          return;
+        }
+        
+        console.log(`Login successful for ${invitationCheck.isExistingUser ? 'existing' : 'new approved'} user:`, loginEmail);
       }
-      
-      // User has access, proceed to dashboard
-      console.log(`Login successful for ${invitationCheck.isExistingUser ? 'existing' : 'new approved'} user:`, loginEmail);
       
       navigate('/ui/dashboard');
     } catch (error) {
@@ -219,41 +227,53 @@ const LoginWaitlistPage: React.FC = () => {
       const userEmail = result?.user?.email || loginEmail;
       
       if (userEmail) {
-        let userType = 'user'; // Default user type
+        // 🚨 TEMPORARY: Bypass invitation check for development/testing
+        // TODO: Re-enable when database permissions are fixed
+        const BYPASS_INVITATION_CHECK = true;
         
-        try {
-          // Check if user has been approved for access or is an existing user
-          console.log(`🔍 [LOGIN] Checking invitation for user: ${userEmail}`);
-          const invitationCheck = await checkUserInvitation(userEmail, db);
-          console.log(`🔍 [LOGIN] Invitation check result:`, invitationCheck);
+        if (BYPASS_INVITATION_CHECK) {
+          console.log(`🔓 [LOGIN] BYPASSING invitation check for development - allowing access for ${userEmail}`);
+          setLoginError(''); // Clear any previous errors
+        } else {
+          // Original invitation check logic (disabled for now)
+          let userType = 'user'; // Default user type
           
-          if (!invitationCheck.hasAccess) {
-            // Only logout if it's a legitimate access denial, not a database error
-            if (invitationCheck.reason && !invitationCheck.reason.includes('Unable to verify')) {
-              console.log(`🚫 [LOGIN] Access denied for ${userEmail}: ${invitationCheck.reason}`);
-              setLoginError(invitationCheck.reason);
-              await logout(); // Sign them out immediately
-              return;
+          try {
+            // Check if user has been approved for access or is an existing user
+            console.log(`🔍 [LOGIN] Checking invitation for user: ${userEmail}`);
+            const invitationCheck = await checkUserInvitation(userEmail, db);
+            console.log(`🔍 [LOGIN] Invitation check result:`, invitationCheck);
+            
+            if (!invitationCheck.hasAccess) {
+              // Only logout if it's a legitimate access denial, not a database error
+              if (invitationCheck.reason && !invitationCheck.reason.includes('Unable to verify')) {
+                console.log(`🚫 [LOGIN] Access denied for ${userEmail}: ${invitationCheck.reason}`);
+                setLoginError(invitationCheck.reason);
+                await logout(); // Sign them out immediately
+                return;
+              } else {
+                // Database error - allow access but show warning
+                console.log(`⚠️ [LOGIN] Database error during invitation check, allowing access for ${userEmail}`);
+                setLoginError('Warning: Unable to verify invitation status, but allowing access.');
+                // Don't logout - continue with login
+              }
             } else {
-              // Database error - allow access but show warning
-              console.log(`⚠️ [LOGIN] Database error during invitation check, allowing access for ${userEmail}`);
-              setLoginError('Warning: Unable to verify invitation status, but allowing access.');
-              // Don't logout - continue with login
+              console.log(`✅ [LOGIN] Access granted for ${userEmail}`);
+              userType = invitationCheck.isExistingUser ? 'existing' : 'new approved';
             }
-          } else {
-            console.log(`✅ [LOGIN] Access granted for ${userEmail}`);
-            userType = invitationCheck.isExistingUser ? 'existing' : 'new approved';
+          } catch (invitationError) {
+            // Catch any errors from the invitation check itself
+            console.error(`❌ [LOGIN] Error during invitation check for ${userEmail}:`, invitationError);
+            console.log(`⚠️ [LOGIN] Allowing access due to invitation check error`);
+            setLoginError('Warning: Unable to verify invitation status, but allowing access.');
+            // Don't logout - continue with login
           }
-        } catch (invitationError) {
-          // Catch any errors from the invitation check itself
-          console.error(`❌ [LOGIN] Error during invitation check for ${userEmail}:`, invitationError);
-          console.log(`⚠️ [LOGIN] Allowing access due to invitation check error`);
-          setLoginError('Warning: Unable to verify invitation status, but allowing access.');
-          // Don't logout - continue with login
+          
+          console.log(`✅ [LOGIN] Login successful for ${userType} user:`, userEmail);
         }
         
         // User has access, proceed to dashboard
-        console.log(`✅ [LOGIN] Login successful for ${userType} user:`, userEmail);
+        console.log(`✅ [LOGIN] Proceeding to dashboard for user:`, userEmail);
       }
       
       navigate('/ui/dashboard');
