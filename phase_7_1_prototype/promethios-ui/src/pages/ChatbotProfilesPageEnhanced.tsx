@@ -129,13 +129,6 @@ interface BotState {
   chatHistoryRefreshTrigger: number;
 }
 
-const ChatbotProfilesPageEnhanced: React.FC = () => {
-  return (
-    <WidgetCustomizerProvider>
-      <ChatbotProfilesPageContent />
-    </WidgetCustomizerProvider>
-  );
-};
 // Global mounting guard to prevent multiple instances across the entire app
 let globalMountGuard = false;
 let globalComponentInstance: string | null = null;
@@ -171,7 +164,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.warn(`🚨 Blocking duplicate render of ChatbotProfilesPageEnhanced (${componentId.current})`);
     return null;
   }
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1112,7 +1105,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#0f172a' }}>
+    <WidgetCustomizerProvider>
+      <Box sx={{ display: 'flex', height: '100vh', bgcolor: '#0f172a' }}>
       {/* Main Content Area */}
       <Box
         sx={{
@@ -2977,6 +2971,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         )}
       </Box>
     </Box>
+    </WidgetCustomizerProvider>
   );
 };
 
