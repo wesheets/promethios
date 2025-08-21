@@ -1080,7 +1080,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
               <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                    Chat with Your Agent{currentChatName ? ` - ${currentChatName}` : ''}
+                    Chat with Your Agent{currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
                     {selectedChatbot.identity.name}
