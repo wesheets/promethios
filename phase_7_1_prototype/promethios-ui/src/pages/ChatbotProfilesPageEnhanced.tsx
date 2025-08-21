@@ -648,7 +648,7 @@ const ChatbotProfilesPageContent: React.FC = () => {
         }
       }
     }
-  }, [chatbotProfiles.length, searchParams.get('agent'), searchParams.get('panel')]);
+  }, [chatbotProfiles, searchParams, selectedChatbot, botStates]);
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());

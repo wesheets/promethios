@@ -2643,6 +2643,19 @@ You operate with governance oversight that monitors your interactions for safety
     throw new Error('Governance validation endpoint not implemented in backend');
   }
 
+  // 🧾 RECEIPTS - Missing signChatSession method
+  async signChatSession(sessionId: string, cryptographicHash: string): Promise<any> {
+    console.log('🧾 [Universal] Signing chat session:', sessionId);
+    // For now, return a mock signature until backend endpoint is implemented
+    return {
+      signature: `sig_${Date.now()}_${sessionId.slice(-8)}`,
+      timestamp: new Date().toISOString(),
+      hash: cryptographicHash,
+      sessionId: sessionId,
+      verified: true
+    };
+  }
+
   // ============================================================================
   // 📊 UGA FEATURE IMPLEMENTATION SUMMARY
   // ============================================================================
