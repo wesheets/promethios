@@ -305,7 +305,7 @@ export class ChatbotStorageService {
   }
 
   // Add loading state tracking to prevent duplicate calls
-  private loadingStates = new Map<string, boolean>();
+  private loadingPromises = new Map<string, Promise<ChatbotProfile[]>>();
   private cacheTimestamps = new Map<string, number>();
   private readonly CACHE_DURATION = 30000; // 30 seconds cache
 
@@ -316,96 +316,108 @@ export class ChatbotStorageService {
     try {
       console.log('🤖 Loading chatbots for user:', ownerId);
       
-      // Circuit breaker: Check if already loading for this user
-      if (this.loadingStates.get(ownerId)) {
-        console.log('🔄 Already loading chatbots for user, returning cached data:', ownerId);
-        return Array.from(this.chatbots.values()).filter(c => c.identity.ownerId === ownerId);
-      }
-      
-      // Check cache freshness
+      // Check cache freshness first
       const cacheKey = `chatbots_${ownerId}`;
       const lastCacheTime = this.cacheTimestamps.get(cacheKey) || 0;
       const now = Date.now();
       
       if (now - lastCacheTime < this.CACHE_DURATION) {
-        console.log('🎯 Using cached chatbots for user (cache still fresh):', ownerId);
-        return Array.from(this.chatbots.values()).filter(c => c.identity.ownerId === ownerId);
-      }
-      
-      // Set loading state
-      this.loadingStates.set(ownerId, true);
-      
-      // Get all chatbot keys from unified storage
-      const allKeys = await unifiedStorage.keys('agents');
-      console.log('🔍 All chatbot keys from unified storage:', allKeys);
-      
-      // Filter for this user's chatbots (stored with format: {userId}_{chatbotId})
-      const userChatbotKeys = allKeys.filter(key => {
-        const keyPart = key.replace('agents/', '');
-        // Check if key starts with userId_ and contains chatbot- in the ID part
-        return keyPart.startsWith(`${ownerId}_`) && keyPart.includes('chatbot-');
-      });
-      
-      console.log('🔍 User chatbot keys found:', userChatbotKeys);
-      
-      const chatbots: ChatbotProfile[] = [];
-      
-      // Load each chatbot from storage
-      for (const key of userChatbotKeys) {
-        try {
-          const keyPart = key.replace('agents/', '');
-          console.log('🔍 Loading chatbot with key:', keyPart);
-          
-          const chatbotData = await unifiedStorage.get<any>('agents', keyPart);
-          if (chatbotData) {
-            console.log('🔍 Loaded chatbot data:', chatbotData.identity?.name || 'Unknown');
-            
-            // Safely deserialize dates with fallbacks
-            const chatbot: ChatbotProfile = {
-              ...chatbotData,
-              identity: {
-                ...chatbotData.identity,
-                creationDate: chatbotData.identity?.creationDate 
-                  ? new Date(chatbotData.identity.creationDate) 
-                  : new Date(),
-                lastModifiedDate: chatbotData.identity?.lastModifiedDate 
-                  ? new Date(chatbotData.identity.lastModifiedDate) 
-                  : new Date(),
-              },
-              lastActivity: chatbotData.lastActivity ? new Date(chatbotData.lastActivity) : new Date(),
-            };
-            
-            // Add to in-memory cache
-            this.chatbots.set(chatbot.identity.id, chatbot);
-            chatbots.push(chatbot);
-          }
-        } catch (error) {
-          console.error(`Error loading chatbot with key ${key}:`, error);
+        const cachedChatbots = Array.from(this.chatbots.values()).filter(c => c.identity.ownerId === ownerId);
+        if (cachedChatbots.length > 0) {
+          console.log('🎯 Using cached chatbots for user (cache still fresh):', ownerId, `- ${cachedChatbots.length} chatbots`);
+          return cachedChatbots;
         }
       }
       
-      console.log(`🤖 Loaded ${chatbots.length} chatbots for user ${ownerId}`);
-      
-      // Update cache timestamp
-      this.cacheTimestamps.set(cacheKey, now);
-      
-      // Clear loading state
-      this.loadingStates.set(ownerId, false);
-      
-      // If no real chatbots exist, return empty array (no mock data)
-      if (chatbots.length === 0) {
-        console.log('🤖 No chatbots found for user, returning empty array');
-        return [];
+      // Check if already loading - if so, wait for that promise
+      const existingPromise = this.loadingPromises.get(ownerId);
+      if (existingPromise) {
+        console.log('🔄 Already loading chatbots for user, waiting for existing promise:', ownerId);
+        return await existingPromise;
       }
       
-      return chatbots;
+      // Create new loading promise
+      const loadingPromise = this.loadChatbotsFromStorage(ownerId, cacheKey, now);
+      this.loadingPromises.set(ownerId, loadingPromise);
+      
+      try {
+        const result = await loadingPromise;
+        return result;
+      } finally {
+        // Clean up the loading promise
+        this.loadingPromises.delete(ownerId);
+      }
       
     } catch (error) {
-      console.error('Error loading chatbots:', error);
-      // Clear loading state on error
-      this.loadingStates.set(ownerId, false);
+      console.error('Error in getChatbots:', error);
+      // Clean up on error
+      this.loadingPromises.delete(ownerId);
       return [];
     }
+  }
+
+  private async loadChatbotsFromStorage(ownerId: string, cacheKey: string, now: number): Promise<ChatbotProfile[]> {
+    // Get all chatbot keys from unified storage
+    const allKeys = await unifiedStorage.keys('agents');
+    console.log('🔍 All chatbot keys from unified storage:', allKeys);
+    
+    // Filter for this user's chatbots (stored with format: {userId}_{chatbotId})
+    const userChatbotKeys = allKeys.filter(key => {
+      const keyPart = key.replace('agents/', '');
+      // Check if key starts with userId_ and contains chatbot- in the ID part
+      return keyPart.startsWith(`${ownerId}_`) && keyPart.includes('chatbot-');
+    });
+    
+    console.log('🔍 User chatbot keys found:', userChatbotKeys);
+    
+    const chatbots: ChatbotProfile[] = [];
+    
+    // Load each chatbot from storage
+    for (const key of userChatbotKeys) {
+      try {
+        const keyPart = key.replace('agents/', '');
+        console.log('🔍 Loading chatbot with key:', keyPart);
+        
+        const chatbotData = await unifiedStorage.get<any>('agents', keyPart);
+        if (chatbotData) {
+          console.log('🔍 Loaded chatbot data:', chatbotData.identity?.name || 'Unknown');
+          
+          // Safely deserialize dates with fallbacks
+          const chatbot: ChatbotProfile = {
+            ...chatbotData,
+            identity: {
+              ...chatbotData.identity,
+              creationDate: chatbotData.identity?.creationDate 
+                ? new Date(chatbotData.identity.creationDate) 
+                : new Date(),
+              lastModifiedDate: chatbotData.identity?.lastModifiedDate 
+                ? new Date(chatbotData.identity.lastModifiedDate) 
+                : new Date(),
+            },
+            lastActivity: chatbotData.lastActivity ? new Date(chatbotData.lastActivity) : new Date(),
+          };
+          
+          // Add to in-memory cache
+          this.chatbots.set(chatbot.identity.id, chatbot);
+          chatbots.push(chatbot);
+        }
+      } catch (error) {
+        console.error(`Error loading chatbot with key ${key}:`, error);
+      }
+    }
+    
+    console.log(`🤖 Loaded ${chatbots.length} chatbots for user ${ownerId}`);
+    
+    // Update cache timestamp
+    this.cacheTimestamps.set(cacheKey, now);
+    
+    // If no real chatbots exist, return empty array (no mock data)
+    if (chatbots.length === 0) {
+      console.log('🤖 No chatbots found for user, returning empty array');
+      return [];
+    }
+    
+    return chatbots;
   }
 
   /**
