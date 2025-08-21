@@ -219,17 +219,41 @@ const LoginWaitlistPage: React.FC = () => {
       const userEmail = result?.user?.email || loginEmail;
       
       if (userEmail) {
-        // Check if user has been approved for access or is an existing user
-        const invitationCheck = await checkUserInvitation(userEmail, db);
+        let userType = 'user'; // Default user type
         
-        if (!invitationCheck.hasAccess) {
-          setLoginError(invitationCheck.reason || 'Access denied. Please request access through the waitlist.');
-          await logout(); // Sign them out immediately
-          return;
+        try {
+          // Check if user has been approved for access or is an existing user
+          console.log(`🔍 [LOGIN] Checking invitation for user: ${userEmail}`);
+          const invitationCheck = await checkUserInvitation(userEmail, db);
+          console.log(`🔍 [LOGIN] Invitation check result:`, invitationCheck);
+          
+          if (!invitationCheck.hasAccess) {
+            // Only logout if it's a legitimate access denial, not a database error
+            if (invitationCheck.reason && !invitationCheck.reason.includes('Unable to verify')) {
+              console.log(`🚫 [LOGIN] Access denied for ${userEmail}: ${invitationCheck.reason}`);
+              setLoginError(invitationCheck.reason);
+              await logout(); // Sign them out immediately
+              return;
+            } else {
+              // Database error - allow access but show warning
+              console.log(`⚠️ [LOGIN] Database error during invitation check, allowing access for ${userEmail}`);
+              setLoginError('Warning: Unable to verify invitation status, but allowing access.');
+              // Don't logout - continue with login
+            }
+          } else {
+            console.log(`✅ [LOGIN] Access granted for ${userEmail}`);
+            userType = invitationCheck.isExistingUser ? 'existing' : 'new approved';
+          }
+        } catch (invitationError) {
+          // Catch any errors from the invitation check itself
+          console.error(`❌ [LOGIN] Error during invitation check for ${userEmail}:`, invitationError);
+          console.log(`⚠️ [LOGIN] Allowing access due to invitation check error`);
+          setLoginError('Warning: Unable to verify invitation status, but allowing access.');
+          // Don't logout - continue with login
         }
         
         // User has access, proceed to dashboard
-        console.log(`Login successful for ${invitationCheck.isExistingUser ? 'existing' : 'new approved'} user:`, userEmail);
+        console.log(`✅ [LOGIN] Login successful for ${userType} user:`, userEmail);
       }
       
       navigate('/ui/dashboard');
