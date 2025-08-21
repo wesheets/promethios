@@ -133,8 +133,7 @@ interface BotState {
 let globalMountGuard = false;
 let globalComponentInstance: string | null = null;
 
-// Internal component that uses the WidgetCustomizer context
-const ChatbotProfilesPageContent: React.FC = () => {
+const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Mounting guard to prevent multiple instances
   const mountedRef = useRef(false);
   const componentId = useRef(`chatbot-page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
@@ -170,7 +169,9 @@ const ChatbotProfilesPageContent: React.FC = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser: user, loading: authLoading } = useAuth();
-  const { config: widgetConfig, getChatbotConfig, setActiveChatbotId } = useWidgetCustomizer();
+  
+  // Remove useWidgetCustomizer for now to test if this fixes the context issue
+  // const { config: widgetConfig, getChatbotConfig, setActiveChatbotId } = useWidgetCustomizer();
   console.log('🔍 ChatbotProfilesPageEnhanced - user from auth:', user?.uid);
   console.log('🔍 ChatbotProfilesPageEnhanced - auth loading:', authLoading);
   
@@ -2971,15 +2972,6 @@ const ChatbotProfilesPageContent: React.FC = () => {
         )}
       </Box>
     </Box>
-  );
-};
-
-// Main wrapper component that provides the WidgetCustomizer context
-const ChatbotProfilesPageEnhanced: React.FC = () => {
-  return (
-    <WidgetCustomizerProvider>
-      <ChatbotProfilesPageContent />
-    </WidgetCustomizerProvider>
   );
 };
 
