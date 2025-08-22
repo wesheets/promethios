@@ -279,6 +279,9 @@ class ProviderRegistry {
         responseKeys: Object.keys(response)
       });
       
+      // 🎯 TOOL EXECUTION FIX: Store the final response to return
+      let finalResponse = response;
+      
       // Process tool calls if present
       if (provider.hasToolCalls(response)) {
         addDebugLog('info', 'tool_execution', `Tool calls detected in provider response`, {
@@ -379,24 +382,19 @@ class ProviderRegistry {
           
           console.log(`✅ ProviderRegistry: Follow-up response generated with tool results (${followUpResponse.content?.length || 0} chars)`);
           
-          // Return the follow-up response (which should have actual content)
-          return {
+          // 🎯 CRITICAL FIX: Update finalResponse to be the follow-up response
+          finalResponse = {
             ...followUpResponse,
             tool_results: toolResults,
-            has_tool_calls: true,
-            metadata: {
-              providerId,
-              responseTime: Date.now() - startTime,
-              auditEventId,
-              governanceApplied: config.governanceEnabled,
-              toolCallsProcessed: toolResults.length
-            }
+            has_tool_calls: true
           };
+          
+          console.log(`🎯 ProviderRegistry: Final response updated to follow-up response (${finalResponse.content?.length || 0} chars)`);
+        } else {
+          // Add tool results to response (fallback if no follow-up needed)
+          finalResponse.tool_results = toolResults;
+          finalResponse.has_tool_calls = true;
         }
-        
-        // Add tool results to response (fallback if no follow-up needed)
-        response.tool_results = toolResults;
-        response.has_tool_calls = true;
       } else {
         addDebugLog('debug', 'tool_execution', `No tool calls detected in response`, {
           providerId,
@@ -414,16 +412,17 @@ class ProviderRegistry {
         agentId,
         userId,
         responseTime: Date.now() - startTime,
-        responseLength: response.content?.length || 0,
+        responseLength: finalResponse.content?.length || 0,
         toolsEnabled: toolSchemas.length > 0,
-        toolCallsCount: response.tool_calls?.length || 0,
+        toolCallsCount: finalResponse.tool_calls?.length || 0,
         timestamp: new Date().toISOString()
       });
       
       console.log(`✅ ProviderRegistry: Response generated successfully with provider ${providerId}`);
       
+      // 🎯 CRITICAL FIX: Return finalResponse instead of original response
       return {
-        ...response,
+        ...finalResponse,
         metadata: {
           providerId,
           responseTime: Date.now() - startTime,
