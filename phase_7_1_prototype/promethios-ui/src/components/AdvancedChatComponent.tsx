@@ -2373,20 +2373,31 @@ useEffect(() => {
             hasResponse: !!data.response,
             responseLength: data.response?.length,
             dataKeys: Object.keys(data),
-            hasToolCalls: !!data.tool_calls
+            hasToolCalls: !!data.tool_calls,
+            fullData: data
           });
           
+          // 🎯 TOOL EXECUTION FIX: The backend now handles tool execution automatically
+          // and returns the final response with tool results in data.response
+          // No need for frontend tool processing - just use the final response
           let finalResponse = data.response || 'No response received';
           
-          // 🔧 TOOL PROCESSING: Check for tool calls in the response
+          // 🔧 LEGACY TOOL PROCESSING: Keep for backward compatibility but backend should handle this
           if (data.tool_calls && Array.isArray(data.tool_calls) && data.tool_calls.length > 0) {
-            console.log('🔧 [ToolIntegration] Tool calls detected in Anthropic response:', data.tool_calls);
+            console.log('🔧 [ToolIntegration] Tool calls detected (legacy mode):', data.tool_calls);
+            console.log('⚠️ [ToolIntegration] Backend should have already processed these tools');
             
-            // Use shared tool processing function
-            finalResponse = await processToolCalls(data.tool_calls, messageContent, finalResponse);
+            // Use shared tool processing function only if backend didn't process tools
+            if (finalResponse.includes("I'll do a more specific search") || finalResponse.length < 100) {
+              console.log('🔧 [ToolIntegration] Backend tool processing may have failed, using frontend fallback');
+              finalResponse = await processToolCalls(data.tool_calls, messageContent, finalResponse);
+            } else {
+              console.log('✅ [ToolIntegration] Backend tool processing successful, using final response');
+            }
           }
           
           console.log('🔧 ANTHROPIC DEBUG: Final response length:', finalResponse.length);
+          console.log('🔧 ANTHROPIC DEBUG: Final response preview:', finalResponse.substring(0, 200) + '...');
           return finalResponse;
           
         } catch (error) {
