@@ -201,10 +201,25 @@ class AnthropicProvider extends ProviderPlugin {
         requestConfig.system = systemMessage;
       }
 
-      // Add tools if provided
+      // Add tools if provided (transform from OpenAI format to Anthropic format)
       if (tools && Array.isArray(tools) && tools.length > 0) {
-        requestConfig.tools = tools;
-        console.log(`🛠️ Anthropic Provider: Adding ${tools.length} tools to request`);
+        requestConfig.tools = tools.map(tool => {
+          // Transform OpenAI-style tool schema to Anthropic format
+          if (tool.type === 'function' && tool.function) {
+            return {
+              name: tool.function.name,
+              description: tool.function.description,
+              input_schema: tool.function.parameters || {}
+            };
+          } else if (tool.name && tool.description) {
+            // Already in Anthropic format
+            return tool;
+          } else {
+            console.warn('⚠️ Unknown tool format:', tool);
+            return tool;
+          }
+        });
+        console.log(`🛠️ Anthropic Provider: Adding ${tools.length} tools to request (transformed to Anthropic format)`);
       }
 
       console.log(`🤖 Anthropic Provider: Generating response with model ${requestConfig.model}`);
