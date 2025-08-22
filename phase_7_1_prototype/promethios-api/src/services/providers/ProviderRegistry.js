@@ -368,6 +368,20 @@ class ProviderRegistry {
             });
             
             console.log(`🔧 ProviderRegistry: Using Anthropic-specific format with assistant+user messages (${toolResultBlocks.length} tool results, ${assistantContent.length} content blocks)`);
+          
+          // 🔍 DEBUG: Show the exact conversation structure being sent to Anthropic
+          console.log(`🔍 [ANTHROPIC-DEBUG] Follow-up conversation structure:`);
+          console.log(`🔍 [ANTHROPIC-DEBUG] Total messages: ${updatedMessages.length}`);
+          updatedMessages.forEach((msg, index) => {
+            console.log(`🔍 [ANTHROPIC-DEBUG] Message ${index}: role=${msg.role}, contentType=${Array.isArray(msg.content) ? 'array' : 'string'}, contentLength=${Array.isArray(msg.content) ? msg.content.length : msg.content?.length || 0}`);
+            if (Array.isArray(msg.content)) {
+              msg.content.forEach((block, blockIndex) => {
+                console.log(`🔍 [ANTHROPIC-DEBUG]   Block ${blockIndex}: type=${block.type}, ${block.type === 'text' ? `text="${block.text?.substring(0, 50)}..."` : block.type === 'tool_use' ? `name=${block.name}` : block.type === 'tool_result' ? `tool_use_id=${block.tool_use_id}` : 'unknown'}`);
+              });
+            } else {
+              console.log(`🔍 [ANTHROPIC-DEBUG]   Content: "${msg.content?.substring(0, 100) || 'NO CONTENT'}..."`);
+            }
+          });
           } else {
             // OpenAI format: use assistant message with tool calls + tool role messages
             updatedMessages.push({
