@@ -14,6 +14,10 @@ class DataVisualizationTool {
       properties: {
         data: {
           type: 'array',
+          items: {
+            type: 'object',
+            description: 'Data point object with key-value pairs'
+          },
           description: 'The data to visualize (array of objects or arrays)'
         },
         chart_type: {
