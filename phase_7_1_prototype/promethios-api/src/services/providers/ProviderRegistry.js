@@ -306,21 +306,39 @@ class ProviderRegistry {
           // Add tool results to conversation
           const updatedMessages = [...enhancedRequestData.messages];
           
-          // Add Claude's tool call message (assistant message with tool calls)
-          updatedMessages.push({
-            role: 'assistant',
-            content: response.content || '',
-            tool_calls: toolCalls
-          });
-          
-          // Add tool results as tool messages
-          for (const result of toolResults) {
+          // Provider-specific tool result formatting
+          if (providerId === 'anthropic') {
+            // Anthropic format: tool results are included in assistant message content
+            // For now, let's add tool results as user message with results summary
+            const toolResultsSummary = toolResults.map(result => 
+              `Tool ${result.name} executed successfully. Result: ${result.content}`
+            ).join('\n\n');
+            
             updatedMessages.push({
-              role: 'tool',
-              tool_call_id: result.tool_call_id,
-              name: result.name,
-              content: result.content
+              role: 'user',
+              content: `Here are the tool execution results:\n\n${toolResultsSummary}\n\nPlease provide a response based on these results.`
             });
+            
+            console.log(`🔧 ProviderRegistry: Using Anthropic-specific tool result format`);
+          } else {
+            // OpenAI format: use assistant message with tool calls + tool role messages
+            updatedMessages.push({
+              role: 'assistant',
+              content: response.content || '',
+              tool_calls: toolCalls
+            });
+            
+            // Add tool results as tool messages
+            for (const result of toolResults) {
+              updatedMessages.push({
+                role: 'tool',
+                tool_call_id: result.tool_call_id,
+                name: result.name,
+                content: result.content
+              });
+            }
+            
+            console.log(`🔧 ProviderRegistry: Using OpenAI-specific tool result format`);
           }
           
           // Generate follow-up response with tool results
