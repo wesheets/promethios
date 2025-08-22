@@ -330,18 +330,19 @@ class ProviderRegistry {
           
           // Provider-specific tool result formatting
           if (providerId === 'anthropic') {
-            // Anthropic format: tool results are included in assistant message content
-            // For now, let's add tool results as user message with results summary
-            const toolResultsSummary = toolResults.map(result => 
-              `Tool ${result.name} executed successfully. Result: ${result.content}`
-            ).join('\n\n');
+            // Anthropic format: add tool results as user message with tool_result blocks
+            const toolResultBlocks = toolResults.map(result => ({
+              type: 'tool_result',
+              tool_use_id: result.tool_call_id,
+              content: result.content
+            }));
             
             updatedMessages.push({
               role: 'user',
-              content: `Here are the tool execution results:\n\n${toolResultsSummary}\n\nPlease provide a response based on these results.`
+              content: toolResultBlocks
             });
             
-            console.log(`🔧 ProviderRegistry: Using Anthropic-specific tool result format`);
+            console.log(`🔧 ProviderRegistry: Using Anthropic-specific tool_result format with ${toolResultBlocks.length} blocks`);
           } else {
             // OpenAI format: use assistant message with tool calls + tool role messages
             updatedMessages.push({
