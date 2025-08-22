@@ -113,7 +113,7 @@ class HuggingFaceProvider extends ProviderPlugin {
   /**
    * Generate response using HuggingFace API with full governance integration
    */
-  async generateResponse(prompt, options = {}) {
+  async generateResponse(requestData, options = {}) {
     const startTime = Date.now();
     
     try {
@@ -122,30 +122,90 @@ class HuggingFaceProvider extends ProviderPlugin {
         throw new Error('HuggingFace Provider not initialized');
       }
 
-      if (!options.model) {
-        throw new Error('Model must be specified in options - no default model available');
+      // Handle both old (prompt, options) and new (requestData) calling conventions
+      let prompt, model, messages, systemMessage, maxTokens, temperature, topP, tools;
+      
+      if (typeof requestData === 'string') {
+        // Old calling convention: generateResponse(prompt, options)
+        prompt = requestData;
+        model = options.model;
+        messages = options.messages;
+        systemMessage = options.systemMessage;
+        maxTokens = options.maxTokens;
+        temperature = options.temperature;
+        topP = options.topP;
+        tools = options.tools;
+      } else {
+        // New calling convention: generateResponse(requestData)
+        prompt = requestData.prompt;
+        model = requestData.model;
+        messages = requestData.messages;
+        systemMessage = requestData.systemMessage || requestData.system_message;
+        maxTokens = requestData.maxTokens || requestData.max_tokens;
+        temperature = requestData.temperature;
+        topP = requestData.topP || requestData.top_p;
+        tools = requestData.tools;
       }
-      const model = options.model;
-      const maxTokens = options.maxTokens || 512;
-      const temperature = options.temperature || 0.7;
+
+      // Use the model specified in request data, no default fallback
+      if (!model) {
+        throw new Error('Model must be specified in request data - no default model available');
+      }
+
+      // Apply governance context if provided
+      let enhancedPrompt = prompt;
+      if (requestData.governanceContext || options.governanceContext) {
+        enhancedPrompt = await this.applyGovernanceContext(prompt, requestData.governanceContext || options.governanceContext);
+      }
+
+      // Prepare input text
+      let inputText;
+      if (messages && Array.isArray(messages)) {
+        // Convert messages to text format for HuggingFace
+        inputText = messages.map(msg => {
+          if (msg.role === 'system') return `System: ${msg.content}`;
+          if (msg.role === 'user') return `User: ${msg.content}`;
+          if (msg.role === 'assistant') return `Assistant: ${msg.content}`;
+          return msg.content;
+        }).join('\n');
+      } else if (enhancedPrompt) {
+        inputText = enhancedPrompt;
+        if (systemMessage) {
+          inputText = `System: ${systemMessage}\nUser: ${enhancedPrompt}`;
+        }
+      } else {
+        throw new Error('Either messages array or prompt must be provided');
+      }
+
+      // Add tool instructions if tools are provided
+      if (tools && Array.isArray(tools) && tools.length > 0) {
+        const toolDescriptions = tools.map(tool => 
+          `${tool.function?.name || tool.name}: ${tool.function?.description || tool.description}`
+        ).join('\n');
+        inputText = `Available tools:\n${toolDescriptions}\n\n${inputText}`;
+        console.log(`🛠️ HuggingFace Provider: Adding ${tools.length} tools to prompt`);
+      }
 
       // Audit the request
       await this.auditEvent('generation_request', {
         model: model,
-        promptLength: prompt.length,
-        maxTokens: maxTokens,
-        temperature: temperature
+        promptLength: inputText.length,
+        maxTokens: maxTokens || 512,
+        temperature: temperature || 0.7,
+        hasTools: tools && tools.length > 0
       });
+
+      console.log(`🤖 HuggingFace Provider: Generating response with model ${model}`);
 
       // Generate response using HuggingFace Inference API
       const response = await this.client.textGeneration({
         model: model,
-        inputs: prompt,
+        inputs: inputText,
         parameters: {
-          max_new_tokens: maxTokens,
-          temperature: temperature,
+          max_new_tokens: maxTokens || 512,
+          temperature: temperature || 0.7,
           do_sample: true,
-          top_p: 0.9,
+          top_p: topP || 0.9,
           repetition_penalty: 1.1
         }
       });
@@ -153,24 +213,46 @@ class HuggingFaceProvider extends ProviderPlugin {
       const responseTime = Date.now() - startTime;
       const generatedText = response.generated_text || '';
 
-      // Audit the response
-      await this.auditEvent('generation_response', {
-        model: model,
-        responseLength: generatedText.length,
-        responseTime: responseTime,
+      // Apply governance post-processing if needed
+      let finalResponse = generatedText;
+      if (requestData.governanceContext || options.governanceContext) {
+        finalResponse = await this.applyGovernancePostProcessing(generatedText, requestData.governanceContext || options.governanceContext);
+      }
+
+      // HuggingFace doesn't have native tool calling, but we can detect tool usage patterns
+      // For now, we'll return empty tool_calls array
+      let toolCalls = [];
+
+      // Update metrics
+      await this.updateMetrics({
+        requestCount: 1,
+        responseTime,
+        tokensUsed: Math.ceil((inputText.length + finalResponse.length) / 4),
         success: true
       });
 
-      return {
-        text: generatedText,
+      // Audit the response
+      await this.auditEvent('generation_response', {
         model: model,
-        usage: {
-          prompt_tokens: Math.ceil(prompt.length / 4),
-          completion_tokens: Math.ceil(generatedText.length / 4),
-          total_tokens: Math.ceil((prompt.length + generatedText.length) / 4)
-        },
+        responseLength: finalResponse.length,
         responseTime: responseTime,
-        provider: this.providerId
+        toolCallsCount: toolCalls.length,
+        hasTools: tools && tools.length > 0,
+        success: true
+      });
+
+      console.log(`✅ HuggingFace Provider: Response generated successfully (${responseTime}ms)`);
+
+      return {
+        content: finalResponse,
+        usage: {
+          prompt_tokens: Math.ceil(inputText.length / 4),
+          completion_tokens: Math.ceil(finalResponse.length / 4),
+          total_tokens: Math.ceil((inputText.length + finalResponse.length) / 4)
+        },
+        model: model,
+        tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        raw_response: response
       };
 
     } catch (error) {

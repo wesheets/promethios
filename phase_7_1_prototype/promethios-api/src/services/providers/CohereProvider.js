@@ -110,7 +110,7 @@ class CohereProvider extends ProviderPlugin {
   /**
    * Generate response using Cohere API with full governance integration
    */
-  async generateResponse(prompt, options = {}) {
+  async generateResponse(requestData, options = {}) {
     const startTime = Date.now();
     
     try {
@@ -119,26 +119,78 @@ class CohereProvider extends ProviderPlugin {
         throw new Error('Cohere Provider not initialized');
       }
 
+      // Handle both old (prompt, options) and new (requestData) calling conventions
+      let prompt, model, messages, systemMessage, maxTokens, temperature, topP, tools;
+      
+      if (typeof requestData === 'string') {
+        // Old calling convention: generateResponse(prompt, options)
+        prompt = requestData;
+        model = options.model;
+        messages = options.messages;
+        systemMessage = options.systemMessage;
+        maxTokens = options.maxTokens;
+        temperature = options.temperature;
+        topP = options.topP;
+        tools = options.tools;
+      } else {
+        // New calling convention: generateResponse(requestData)
+        prompt = requestData.prompt;
+        model = requestData.model;
+        messages = requestData.messages;
+        systemMessage = requestData.systemMessage || requestData.system_message;
+        maxTokens = requestData.maxTokens || requestData.max_tokens;
+        temperature = requestData.temperature;
+        topP = requestData.topP || requestData.top_p;
+        tools = requestData.tools;
+      }
+
+      // Use the model specified in request data, no default fallback
+      if (!model) {
+        throw new Error('Model must be specified in request data - no default model available');
+      }
+
       // Apply governance context if provided
       let enhancedPrompt = prompt;
-      if (options.governanceContext) {
-        enhancedPrompt = await this.applyGovernanceContext(prompt, options.governanceContext);
+      if (requestData.governanceContext || options.governanceContext) {
+        enhancedPrompt = await this.applyGovernanceContext(prompt, requestData.governanceContext || options.governanceContext);
       }
 
       // Prepare Cohere request
       const requestConfig = {
-        model: options.model,
-        message: enhancedPrompt,
-        max_tokens: options.maxTokens || 1000,
-        temperature: options.temperature || 0.7,
-        p: options.topP || 1.0,
-        frequency_penalty: options.frequencyPenalty || 0,
-        presence_penalty: options.presencePenalty || 0
+        model: model,
+        max_tokens: maxTokens || 1000,
+        temperature: temperature || 0.7,
+        p: topP || 1.0,
+        frequency_penalty: requestData.frequencyPenalty || options.frequencyPenalty || 0,
+        presence_penalty: requestData.presencePenalty || options.presencePenalty || 0
       };
 
+      // Handle messages vs prompt for Cohere
+      if (messages && Array.isArray(messages)) {
+        // Convert messages to Cohere format
+        const lastMessage = messages[messages.length - 1];
+        requestConfig.message = lastMessage.content || lastMessage.text;
+        
+        // Extract system message from messages if present
+        const systemMsg = messages.find(msg => msg.role === 'system');
+        if (systemMsg) {
+          requestConfig.preamble = systemMsg.content;
+        }
+      } else if (enhancedPrompt) {
+        requestConfig.message = enhancedPrompt;
+      } else {
+        throw new Error('Either messages array or prompt must be provided');
+      }
+
       // Add system message if provided (Cohere uses preamble)
-      if (options.systemMessage) {
-        requestConfig.preamble = options.systemMessage;
+      if (systemMessage) {
+        requestConfig.preamble = systemMessage;
+      }
+
+      // Add tools if provided
+      if (tools && Array.isArray(tools) && tools.length > 0) {
+        requestConfig.tools = tools;
+        console.log(`🛠️ Cohere Provider: Adding ${tools.length} tools to request`);
       }
 
       console.log(`🤖 Cohere Provider: Generating response with model ${requestConfig.model}`);
@@ -151,8 +203,21 @@ class CohereProvider extends ProviderPlugin {
 
       // Apply governance post-processing if needed
       let finalResponse = generatedText;
-      if (options.governanceContext) {
-        finalResponse = await this.applyGovernancePostProcessing(generatedText, options.governanceContext);
+      if (requestData.governanceContext || options.governanceContext) {
+        finalResponse = await this.applyGovernancePostProcessing(generatedText, requestData.governanceContext || options.governanceContext);
+      }
+
+      // Extract tool calls if present (Cohere format)
+      let toolCalls = [];
+      if (response.tool_calls && Array.isArray(response.tool_calls)) {
+        toolCalls = response.tool_calls.map(call => ({
+          id: call.id || `call_${Date.now()}`,
+          type: 'function',
+          function: {
+            name: call.name,
+            arguments: JSON.stringify(call.parameters || {})
+          }
+        }));
       }
 
       // Update metrics
@@ -169,23 +234,20 @@ class CohereProvider extends ProviderPlugin {
         model: requestConfig.model,
         responseTime,
         tokensUsed: response.meta?.tokens?.input_tokens + response.meta?.tokens?.output_tokens || 0,
-        promptLength: prompt.length,
+        promptLength: (prompt || '').length,
         responseLength: finalResponse.length,
-        agentId: options.agentId,
-        userId: options.userId
+        toolCallsCount: toolCalls.length,
+        hasTools: tools && tools.length > 0
       });
 
+      console.log(`✅ Cohere Provider: Response generated successfully (${responseTime}ms)`);
+
       return {
-        success: true,
-        response: finalResponse,
-        metadata: {
-          provider: this.name,
-          model: requestConfig.model,
-          responseTime,
-          tokensUsed: response.meta?.tokens?.input_tokens + response.meta?.tokens?.output_tokens || 0,
-          finishReason: response.finish_reason,
-          governanceApplied: !!options.governanceContext
-        }
+        content: finalResponse,
+        usage: response.meta?.tokens,
+        model: requestConfig.model,
+        tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        raw_response: response
       };
 
     } catch (error) {

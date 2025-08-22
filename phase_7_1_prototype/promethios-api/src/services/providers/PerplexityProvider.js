@@ -118,7 +118,7 @@ class PerplexityProvider extends ProviderPlugin {
   /**
    * Generate response using Perplexity API with full governance integration
    */
-  async generateResponse(prompt, options = {}) {
+  async generateResponse(requestData, options = {}) {
     const startTime = Date.now();
     
     try {
@@ -127,55 +127,130 @@ class PerplexityProvider extends ProviderPlugin {
         throw new Error('Perplexity Provider not initialized');
       }
 
-      if (!options.model) {
-        throw new Error('Model must be specified in options - no default model available');
+      // Handle both old (prompt, options) and new (requestData) calling conventions
+      let prompt, model, messages, systemMessage, maxTokens, temperature, topP, tools;
+      
+      if (typeof requestData === 'string') {
+        // Old calling convention: generateResponse(prompt, options)
+        prompt = requestData;
+        model = options.model;
+        messages = options.messages;
+        systemMessage = options.systemMessage;
+        maxTokens = options.maxTokens;
+        temperature = options.temperature;
+        topP = options.topP;
+        tools = options.tools;
+      } else {
+        // New calling convention: generateResponse(requestData)
+        prompt = requestData.prompt;
+        model = requestData.model;
+        messages = requestData.messages;
+        systemMessage = requestData.systemMessage || requestData.system_message;
+        maxTokens = requestData.maxTokens || requestData.max_tokens;
+        temperature = requestData.temperature;
+        topP = requestData.topP || requestData.top_p;
+        tools = requestData.tools;
       }
-      const model = options.model;
-      const maxTokens = options.maxTokens || 512;
-      const temperature = options.temperature || 0.7;
+
+      // Use the model specified in request data, no default fallback
+      if (!model) {
+        throw new Error('Model must be specified in request data - no default model available');
+      }
+
+      // Apply governance context if provided
+      let enhancedPrompt = prompt;
+      if (requestData.governanceContext || options.governanceContext) {
+        enhancedPrompt = await this.applyGovernanceContext(prompt, requestData.governanceContext || options.governanceContext);
+      }
+
+      // Prepare request payload
+      const requestPayload = {
+        model: model,
+        max_tokens: maxTokens || 512,
+        temperature: temperature || 0.7,
+        top_p: topP || 1.0,
+        stream: false
+      };
+
+      // Handle messages vs prompt
+      if (messages && Array.isArray(messages)) {
+        requestPayload.messages = messages;
+      } else if (enhancedPrompt) {
+        requestPayload.messages = [
+          { role: 'user', content: enhancedPrompt }
+        ];
+      } else {
+        throw new Error('Either messages array or prompt must be provided');
+      }
+
+      // Add system message if provided
+      if (systemMessage) {
+        requestPayload.messages.unshift({
+          role: 'system',
+          content: systemMessage
+        });
+      }
+
+      // Add tools if provided (Perplexity may not support tools natively, but we'll include them)
+      if (tools && Array.isArray(tools) && tools.length > 0) {
+        requestPayload.tools = tools;
+        console.log(`🛠️ Perplexity Provider: Adding ${tools.length} tools to request`);
+      }
 
       // Audit the request
       await this.auditEvent('generation_request', {
         model: model,
-        promptLength: prompt.length,
-        maxTokens: maxTokens,
-        temperature: temperature
+        promptLength: (prompt || '').length,
+        maxTokens: maxTokens || 512,
+        temperature: temperature || 0.7,
+        hasTools: tools && tools.length > 0
       });
 
+      console.log(`🤖 Perplexity Provider: Generating response with model ${model}`);
+
       // Make request to Perplexity API
-      const response = await this.makeAPIRequest('/chat/completions', {
-        model: model,
-        messages: [
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: maxTokens,
-        temperature: temperature,
-        stream: false
-      });
+      const response = await this.makeAPIRequest('/chat/completions', requestPayload);
 
       const responseTime = Date.now() - startTime;
       const generatedText = response.choices?.[0]?.message?.content || '';
 
+      // Apply governance post-processing if needed
+      let finalResponse = generatedText;
+      if (requestData.governanceContext || options.governanceContext) {
+        finalResponse = await this.applyGovernancePostProcessing(generatedText, requestData.governanceContext || options.governanceContext);
+      }
+
+      // Extract tool calls if present (Perplexity may not support native tool calling)
+      const toolCalls = response.choices?.[0]?.message?.tool_calls || [];
+
+      // Update metrics
+      await this.updateMetrics({
+        requestCount: 1,
+        responseTime,
+        tokensUsed: response.usage?.total_tokens || 0,
+        success: true
+      });
+
       // Audit the response
       await this.auditEvent('generation_response', {
         model: model,
-        responseLength: generatedText.length,
+        responseLength: finalResponse.length,
         responseTime: responseTime,
-        success: true,
-        citations: response.citations?.length || 0
+        toolCallsCount: toolCalls.length,
+        hasTools: tools && tools.length > 0,
+        citations: response.citations?.length || 0,
+        success: true
       });
 
+      console.log(`✅ Perplexity Provider: Response generated successfully (${responseTime}ms)`);
+
       return {
-        text: generatedText,
+        content: finalResponse,
+        usage: response.usage,
         model: model,
-        usage: response.usage || {
-          prompt_tokens: Math.ceil(prompt.length / 4),
-          completion_tokens: Math.ceil(generatedText.length / 4),
-          total_tokens: Math.ceil((prompt.length + generatedText.length) / 4)
-        },
+        tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
         citations: response.citations || [],
-        responseTime: responseTime,
-        provider: this.providerId
+        raw_response: response
       };
 
     } catch (error) {

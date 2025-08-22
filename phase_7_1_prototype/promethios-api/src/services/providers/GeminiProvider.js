@@ -106,7 +106,7 @@ class GeminiProvider extends ProviderPlugin {
   /**
    * Generate response using Gemini API with full governance integration
    */
-  async generateResponse(prompt, options = {}) {
+  async generateResponse(requestData, options = {}) {
     const startTime = Date.now();
     
     try {
@@ -115,42 +115,83 @@ class GeminiProvider extends ProviderPlugin {
         throw new Error('Gemini Provider not initialized');
       }
 
-      // Apply governance context if provided
-      let enhancedPrompt = prompt;
-      if (options.governanceContext) {
-        enhancedPrompt = await this.applyGovernanceContext(prompt, options.governanceContext);
+      // Handle both old (prompt, options) and new (requestData) calling conventions
+      let prompt, model, messages, systemMessage, maxTokens, temperature, topP, tools;
+      
+      if (typeof requestData === 'string') {
+        // Old calling convention: generateResponse(prompt, options)
+        prompt = requestData;
+        model = options.model;
+        messages = options.messages;
+        systemMessage = options.systemMessage;
+        maxTokens = options.maxTokens;
+        temperature = options.temperature;
+        topP = options.topP;
+        tools = options.tools;
+      } else {
+        // New calling convention: generateResponse(requestData)
+        prompt = requestData.prompt;
+        model = requestData.model;
+        messages = requestData.messages;
+        systemMessage = requestData.systemMessage || requestData.system_message;
+        maxTokens = requestData.maxTokens || requestData.max_tokens;
+        temperature = requestData.temperature;
+        topP = requestData.topP || requestData.top_p;
+        tools = requestData.tools;
       }
 
-      // Get the model
-      // Use the model specified in options, no default fallback
-      const modelName = options.model;
-      if (!modelName) {
-        throw new Error('Model must be specified in options - no default model available');
+      // Use the model specified in request data, no default fallback
+      if (!model) {
+        throw new Error('Model must be specified in request data - no default model available');
       }
-      const model = this.client.getGenerativeModel({ model: modelName });
+
+      // Apply governance context if provided
+      let enhancedPrompt = prompt;
+      if (requestData.governanceContext || options.governanceContext) {
+        enhancedPrompt = await this.applyGovernanceContext(prompt, requestData.governanceContext || options.governanceContext);
+      }
 
       // Prepare generation config
       const generationConfig = {
-        temperature: options.temperature || 0.7,
-        topP: options.topP || 1.0,
-        topK: options.topK || 40,
-        maxOutputTokens: options.maxTokens || 1000,
+        temperature: temperature || 0.7,
+        topP: topP || 1.0,
+        topK: requestData.topK || options.topK || 40,
+        maxOutputTokens: maxTokens || 1000,
       };
 
-      // Add system instruction if provided (Gemini uses systemInstruction)
-      let modelWithConfig = model;
-      if (options.systemMessage) {
-        modelWithConfig = this.client.getGenerativeModel({
-          model: modelName,
-          systemInstruction: options.systemMessage
-        });
+      // Get the model with system instruction if provided
+      let modelConfig = { model: model };
+      if (systemMessage) {
+        modelConfig.systemInstruction = systemMessage;
       }
 
-      console.log(`🤖 Gemini Provider: Generating response with model ${modelName}`);
+      // Add tools if provided
+      if (tools && Array.isArray(tools) && tools.length > 0) {
+        modelConfig.tools = tools;
+        console.log(`🛠️ Gemini Provider: Adding ${tools.length} tools to request`);
+      }
+
+      const geminiModel = this.client.getGenerativeModel(modelConfig);
+
+      // Prepare content
+      let contents;
+      if (messages && Array.isArray(messages)) {
+        // Convert messages to Gemini format
+        contents = messages.map(msg => ({
+          role: msg.role === 'assistant' ? 'model' : msg.role,
+          parts: [{ text: msg.content }]
+        }));
+      } else if (enhancedPrompt) {
+        contents = [{ role: 'user', parts: [{ text: enhancedPrompt }] }];
+      } else {
+        throw new Error('Either messages array or prompt must be provided');
+      }
+
+      console.log(`🤖 Gemini Provider: Generating response with model ${model}`);
 
       // Make the API call
-      const result = await modelWithConfig.generateContent({
-        contents: [{ role: 'user', parts: [{ text: enhancedPrompt }] }],
+      const result = await geminiModel.generateContent({
+        contents: contents,
         generationConfig
       });
       
@@ -160,8 +201,21 @@ class GeminiProvider extends ProviderPlugin {
 
       // Apply governance post-processing if needed
       let finalResponse = generatedText;
-      if (options.governanceContext) {
-        finalResponse = await this.applyGovernancePostProcessing(generatedText, options.governanceContext);
+      if (requestData.governanceContext || options.governanceContext) {
+        finalResponse = await this.applyGovernancePostProcessing(generatedText, requestData.governanceContext || options.governanceContext);
+      }
+
+      // Extract tool calls if present (Gemini format)
+      let toolCalls = [];
+      if (response.functionCalls && Array.isArray(response.functionCalls)) {
+        toolCalls = response.functionCalls.map(call => ({
+          id: call.id || `call_${Date.now()}`,
+          type: 'function',
+          function: {
+            name: call.name,
+            arguments: JSON.stringify(call.args || {})
+          }
+        }));
       }
 
       // Update metrics
@@ -175,26 +229,23 @@ class GeminiProvider extends ProviderPlugin {
       // Audit the interaction
       await this.auditEvent('response_generated', {
         provider: this.name,
-        model: modelName,
+        model: model,
         responseTime,
         tokensUsed: response.usageMetadata?.totalTokenCount || 0,
-        promptLength: prompt.length,
+        promptLength: (prompt || '').length,
         responseLength: finalResponse.length,
-        agentId: options.agentId,
-        userId: options.userId
+        toolCallsCount: toolCalls.length,
+        hasTools: tools && tools.length > 0
       });
 
+      console.log(`✅ Gemini Provider: Response generated successfully (${responseTime}ms)`);
+
       return {
-        success: true,
-        response: finalResponse,
-        metadata: {
-          provider: this.name,
-          model: modelName,
-          responseTime,
-          tokensUsed: response.usageMetadata?.totalTokenCount || 0,
-          finishReason: response.candidates?.[0]?.finishReason,
-          governanceApplied: !!options.governanceContext
-        }
+        content: finalResponse,
+        usage: response.usageMetadata,
+        model: model,
+        tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        raw_response: response
       };
 
     } catch (error) {
