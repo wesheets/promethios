@@ -407,6 +407,7 @@ class ProviderRegistry {
           });
           
           console.log(`✅ ProviderRegistry: Follow-up response generated with tool results (${followUpResponse.content?.length || 0} chars)`);
+          console.log(`🔍 ProviderRegistry: Follow-up response content preview: "${followUpResponse.content?.substring(0, 100) || 'NO CONTENT'}"`);
           
           // 🎯 CRITICAL FIX: Update finalResponse to be the follow-up response
           finalResponse = {
@@ -416,6 +417,7 @@ class ProviderRegistry {
           };
           
           console.log(`🎯 ProviderRegistry: Final response updated to follow-up response (${finalResponse.content?.length || 0} chars)`);
+          console.log(`🔍 ProviderRegistry: Final response content preview: "${finalResponse.content?.substring(0, 100) || 'NO CONTENT'}"`);
         } else {
           // Add tool results to response (fallback if no follow-up needed)
           finalResponse.tool_results = toolResults;
