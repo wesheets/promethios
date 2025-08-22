@@ -203,19 +203,26 @@ class AnthropicProvider extends ProviderPlugin {
 
       // Add tools if provided (transform from OpenAI format to Anthropic format)
       if (tools && Array.isArray(tools) && tools.length > 0) {
-        requestConfig.tools = tools.map(tool => {
+        console.log(`🔍 [DEBUG] Received ${tools.length} tools for transformation:`, JSON.stringify(tools, null, 2));
+        
+        requestConfig.tools = tools.map((tool, index) => {
+          console.log(`🔍 [DEBUG] Processing tool ${index}:`, JSON.stringify(tool, null, 2));
+          
           // Transform OpenAI-style tool schema to Anthropic format
           if (tool.type === 'function' && tool.function) {
-            return {
+            const transformed = {
               name: tool.function.name,
               description: tool.function.description,
               input_schema: tool.function.parameters || {}
             };
+            console.log(`✅ [DEBUG] Transformed tool ${index} to Anthropic format:`, JSON.stringify(transformed, null, 2));
+            return transformed;
           } else if (tool.name && tool.description) {
             // Already in Anthropic format
+            console.log(`✅ [DEBUG] Tool ${index} already in Anthropic format`);
             return tool;
           } else {
-            console.warn('⚠️ Unknown tool format:', tool);
+            console.warn(`⚠️ [DEBUG] Unknown tool format for tool ${index}:`, JSON.stringify(tool, null, 2));
             return tool;
           }
         });
