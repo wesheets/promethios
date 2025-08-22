@@ -111,10 +111,19 @@ class ProviderRegistry {
    * @returns {ProviderPlugin} The provider plugin instance
    */
   getProvider(providerId) {
+    // Add debugging information
+    console.log(`🔍 ProviderRegistry: Looking for provider '${providerId}'`);
+    console.log(`🔍 ProviderRegistry: Available providers:`, Array.from(this.providers.keys()));
+    console.log(`🔍 ProviderRegistry: Total registered providers: ${this.providers.size}`);
+    
     const provider = this.providers.get(providerId);
     if (!provider) {
+      console.error(`❌ ProviderRegistry: Provider '${providerId}' not found in registry`);
+      console.error(`❌ ProviderRegistry: Available providers: [${Array.from(this.providers.keys()).join(', ')}]`);
       throw new Error(`Provider ${providerId} not found`);
     }
+    
+    console.log(`✅ ProviderRegistry: Found provider '${providerId}'`);
     return provider;
   }
 
