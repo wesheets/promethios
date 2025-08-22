@@ -330,7 +330,25 @@ class ProviderRegistry {
           
           // Provider-specific tool result formatting
           if (providerId === 'anthropic') {
-            // Anthropic format: add tool results as user message with tool_result blocks
+            // Anthropic format: need both assistant message with tool_use AND user message with tool_result
+            // 1. Add original assistant message with tool calls
+            updatedMessages.push({
+              role: 'assistant',
+              content: [
+                {
+                  type: 'text',
+                  text: response.content || ''
+                },
+                ...toolCalls.map(toolCall => ({
+                  type: 'tool_use',
+                  id: toolCall.id,
+                  name: toolCall.function?.name || toolCall.name,
+                  input: toolCall.function?.arguments ? JSON.parse(toolCall.function.arguments) : toolCall.arguments
+                }))
+              ]
+            });
+            
+            // 2. Add user message with tool results
             const toolResultBlocks = toolResults.map(result => ({
               type: 'tool_result',
               tool_use_id: result.tool_call_id,
@@ -342,7 +360,7 @@ class ProviderRegistry {
               content: toolResultBlocks
             });
             
-            console.log(`🔧 ProviderRegistry: Using Anthropic-specific tool_result format with ${toolResultBlocks.length} blocks`);
+            console.log(`🔧 ProviderRegistry: Using Anthropic-specific format with assistant+user messages (${toolResultBlocks.length} tool results)`);
           } else {
             // OpenAI format: use assistant message with tool calls + tool role messages
             updatedMessages.push({
