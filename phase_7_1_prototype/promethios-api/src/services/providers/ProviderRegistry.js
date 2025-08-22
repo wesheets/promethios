@@ -299,7 +299,65 @@ class ProviderRegistry {
           successfulCalls: toolResults?.filter(result => !result.content?.includes('error')).length || 0
         });
         
-        // Add tool results to response
+        // Generate follow-up response with tool results
+        if (toolResults && toolResults.length > 0) {
+          console.log(`🔄 ProviderRegistry: Generating follow-up response with tool results for ${providerId}`);
+          
+          // Add tool results to conversation
+          const updatedMessages = [...enhancedRequestData.messages];
+          
+          // Add Claude's tool call message (assistant message with tool calls)
+          updatedMessages.push({
+            role: 'assistant',
+            content: response.content || '',
+            tool_calls: toolCalls
+          });
+          
+          // Add tool results as tool messages
+          for (const result of toolResults) {
+            updatedMessages.push({
+              role: 'tool',
+              tool_call_id: result.tool_call_id,
+              name: result.name,
+              content: result.content
+            });
+          }
+          
+          // Generate follow-up response with tool results
+          const followUpRequestData = {
+            ...enhancedRequestData,
+            messages: updatedMessages
+          };
+          
+          console.log(`🤖 ProviderRegistry: Making follow-up API call to ${providerId} with ${toolResults.length} tool results`);
+          
+          const followUpResponse = await provider.generateResponse(followUpRequestData);
+          
+          addDebugLog('info', 'tool_execution', `Follow-up response generated`, {
+            providerId,
+            hasContent: !!followUpResponse.content,
+            contentLength: followUpResponse.content?.length || 0,
+            toolResultsIncluded: toolResults.length
+          });
+          
+          console.log(`✅ ProviderRegistry: Follow-up response generated with tool results (${followUpResponse.content?.length || 0} chars)`);
+          
+          // Return the follow-up response (which should have actual content)
+          return {
+            ...followUpResponse,
+            tool_results: toolResults,
+            has_tool_calls: true,
+            metadata: {
+              providerId,
+              responseTime: Date.now() - startTime,
+              auditEventId,
+              governanceApplied: config.governanceEnabled,
+              toolCallsProcessed: toolResults.length
+            }
+          };
+        }
+        
+        // Add tool results to response (fallback if no follow-up needed)
         response.tool_results = toolResults;
         response.has_tool_calls = true;
       } else {
