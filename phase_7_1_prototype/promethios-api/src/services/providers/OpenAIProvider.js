@@ -938,18 +938,43 @@ class OpenAIProvider extends ProviderPlugin {
    * @returns {Array} OpenAI-specific tool format
    */
   formatToolsForProvider(toolSchemas) {
-    return toolSchemas.map(schema => ({
-      type: 'function',
-      function: {
-        name: schema.name,
-        description: schema.description,
-        parameters: schema.parameters || {
-          type: 'object',
-          properties: {},
-          required: []
-        }
+    return toolSchemas.map(schema => {
+      // Handle OpenAI format: { type: "function", function: { name, description, parameters } }
+      if (schema.type === 'function' && schema.function) {
+        return schema; // Already in correct OpenAI format
       }
-    }));
+      // Handle direct format: { name, description, parameters }
+      else if (schema.name && schema.description) {
+        return {
+          type: 'function',
+          function: {
+            name: schema.name,
+            description: schema.description,
+            parameters: schema.parameters || {
+              type: 'object',
+              properties: {},
+              required: []
+            }
+          }
+        };
+      }
+      // Fallback for unknown format
+      else {
+        console.warn('⚠️ OpenAIProvider: Unknown tool schema format:', schema);
+        return {
+          type: 'function',
+          function: {
+            name: 'unknown_tool',
+            description: 'Tool with unknown format',
+            parameters: {
+              type: 'object',
+              properties: {},
+              required: []
+            }
+          }
+        };
+      }
+    });
   }
 
   /**

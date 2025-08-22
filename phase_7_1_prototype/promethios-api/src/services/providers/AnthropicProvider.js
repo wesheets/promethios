@@ -907,15 +907,45 @@ class AnthropicProvider extends ProviderPlugin {
    * @returns {Array} Claude-specific tool format
    */
   formatToolsForProvider(toolSchemas) {
-    return toolSchemas.map(schema => ({
-      name: schema.name,
-      description: schema.description,
-      input_schema: schema.parameters || {
-        type: 'object',
-        properties: {},
-        required: []
+    return toolSchemas.map(schema => {
+      // Handle OpenAI format: { type: "function", function: { name, description, parameters } }
+      if (schema.type === 'function' && schema.function) {
+        return {
+          name: schema.function.name,
+          description: schema.function.description,
+          input_schema: schema.function.parameters || {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+        };
       }
-    }));
+      // Handle direct Anthropic format: { name, description, parameters }
+      else if (schema.name && schema.description) {
+        return {
+          name: schema.name,
+          description: schema.description,
+          input_schema: schema.parameters || {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+        };
+      }
+      // Fallback for unknown format
+      else {
+        console.warn('⚠️ AnthropicProvider: Unknown tool schema format:', schema);
+        return {
+          name: 'unknown_tool',
+          description: 'Tool with unknown format',
+          input_schema: {
+            type: 'object',
+            properties: {},
+            required: []
+          }
+        };
+      }
+    });
   }
 
   /**
