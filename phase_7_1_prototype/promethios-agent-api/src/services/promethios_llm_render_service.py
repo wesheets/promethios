@@ -313,13 +313,24 @@ class PromethiosLLMRenderService:
                     'vision_results': vision_results
                 }
             
-            else:                # Check if function calling is enabled and tools are available
+            else:                
+                # 🚨 CRITICAL DEBUG: Check if function calling is enabled and tools are available
                 function_calling_enabled = context.get('function_calling_enabled', False)
                 tools = context.get('tools', [])
                 
-                logger.info(f"🔍 [ToolDebug] Function calling enabled: {function_calling_enabled}")
-                logger.info(f"🔍 [ToolDebug] Tools available: {len(tools)}")
-                logger.info(f"🔍 [ToolDebug] Provider: {provider}")
+                logger.info(f"🚨 [CRITICAL-DEBUG] Reached tool processing path!")
+                logger.info(f"🚨 [CRITICAL-DEBUG] Function calling enabled: {function_calling_enabled}")
+                logger.info(f"🚨 [CRITICAL-DEBUG] Tools available: {len(tools)}")
+                logger.info(f"🚨 [CRITICAL-DEBUG] Provider: {provider}")
+                logger.info(f"🚨 [CRITICAL-DEBUG] Context keys: {list(context.keys())}")
+                
+                # Log first few tools for debugging
+                if tools:
+                    for i, tool in enumerate(tools[:3]):
+                        tool_name = tool.get('function', {}).get('name', tool.get('name', 'Unknown'))
+                        logger.info(f"🚨 [CRITICAL-DEBUG] Tool {i+1}: {tool_name}")
+                else:
+                    logger.error(f"🚨 [CRITICAL-DEBUG] NO TOOLS IN CONTEXT!")
                 
                 # CHATGPT DEBUG POINT 1: Verify tools are actually passed to agent runtime
                 logger.info(f"🧪 [CHATGPT-DEBUG-1] Tools passed to runtime: {len(tools) if tools else 0}")
