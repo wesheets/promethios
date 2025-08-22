@@ -332,20 +332,27 @@ class ProviderRegistry {
           if (providerId === 'anthropic') {
             // Anthropic format: need both assistant message with tool_use AND user message with tool_result
             // 1. Add original assistant message with tool calls
+            const assistantContent = [];
+            
+            // Only add text block if there's actual content
+            if (response.content && response.content.trim()) {
+              assistantContent.push({
+                type: 'text',
+                text: response.content
+              });
+            }
+            
+            // Add tool_use blocks
+            assistantContent.push(...toolCalls.map(toolCall => ({
+              type: 'tool_use',
+              id: toolCall.id,
+              name: toolCall.function?.name || toolCall.name,
+              input: toolCall.function?.arguments ? JSON.parse(toolCall.function.arguments) : toolCall.arguments
+            })));
+            
             updatedMessages.push({
               role: 'assistant',
-              content: [
-                {
-                  type: 'text',
-                  text: response.content || ''
-                },
-                ...toolCalls.map(toolCall => ({
-                  type: 'tool_use',
-                  id: toolCall.id,
-                  name: toolCall.function?.name || toolCall.name,
-                  input: toolCall.function?.arguments ? JSON.parse(toolCall.function.arguments) : toolCall.arguments
-                }))
-              ]
+              content: assistantContent
             });
             
             // 2. Add user message with tool results
@@ -360,7 +367,7 @@ class ProviderRegistry {
               content: toolResultBlocks
             });
             
-            console.log(`🔧 ProviderRegistry: Using Anthropic-specific format with assistant+user messages (${toolResultBlocks.length} tool results)`);
+            console.log(`🔧 ProviderRegistry: Using Anthropic-specific format with assistant+user messages (${toolResultBlocks.length} tool results, ${assistantContent.length} content blocks)`);
           } else {
             // OpenAI format: use assistant message with tool calls + tool role messages
             updatedMessages.push({
