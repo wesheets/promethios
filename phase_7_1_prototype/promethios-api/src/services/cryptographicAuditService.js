@@ -871,6 +871,29 @@ class CryptographicAuditService {
   }
 
   /**
+   * Compatibility method for ProviderRegistry interface
+   * Maps to logCryptographicEvent with appropriate parameter mapping
+   */
+  async logEvent(eventType, eventData, userId = 'system', agentId = null) {
+    try {
+      // Extract agentId from eventData if not provided
+      const resolvedAgentId = agentId || eventData?.agentId || eventData?.agent_id || 'system';
+      
+      // Call the main cryptographic logging method
+      return await this.logCryptographicEvent(
+        resolvedAgentId,
+        userId,
+        eventType,
+        eventData,
+        { source: 'provider_registry' }
+      );
+    } catch (error) {
+      console.error('Error in CryptographicAuditService.logEvent:', error);
+      return null;
+    }
+  }
+
+  /**
    * Cleanup old cryptographic logs based on retention policy
    */
   async cleanupOldLogs(retentionPeriod = null) {
