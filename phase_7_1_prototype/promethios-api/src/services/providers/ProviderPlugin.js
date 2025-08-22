@@ -808,6 +808,28 @@ class ProviderPlugin {
     // This method should be overridden by the registry or governance layer
     throw new Error(`Tool execution not implemented for provider ${this.providerName}. This should be handled by the registry or governance layer.`);
   }
+
+  /**
+   * Update provider metrics (placeholder implementation)
+   * @param {Object} metrics - Metrics to update
+   */
+  async updateMetrics(metrics = {}) {
+    try {
+      console.log(`📊 ProviderPlugin: Updating metrics for ${this.providerName}:`, metrics);
+      
+      // Audit metrics update
+      await this.auditEvent('metrics_updated', {
+        providerId: this.providerId,
+        metrics: metrics,
+        timestamp: new Date().toISOString()
+      });
+      
+      console.log(`✅ ProviderPlugin: Metrics updated successfully for ${this.providerName}`);
+    } catch (error) {
+      console.error(`❌ ProviderPlugin: Failed to update metrics for ${this.providerName}:`, error);
+      // Don't throw - metrics updates shouldn't break the main flow
+    }
+  }
 }
 
 module.exports = ProviderPlugin;

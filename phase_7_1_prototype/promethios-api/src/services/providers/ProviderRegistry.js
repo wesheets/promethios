@@ -9,6 +9,7 @@
 const ProviderPlugin = require('./ProviderPlugin');
 const AuditService = require('../auditService');
 const CryptographicAuditService = require('../cryptographicAuditService');
+const governanceContextService = require('../governanceContextService');
 
 // Import debug logging
 let addDebugLog;
@@ -502,7 +503,7 @@ class ProviderRegistry {
       };
       
       // Use existing audit service
-      await auditService.logEvent(eventType, 'system', auditEvent);
+      await AuditService.logEvent(eventType, 'system', auditEvent);
       
       // Use cryptographic audit service for tamper-evident logging
       if (cryptographicAuditService) {
