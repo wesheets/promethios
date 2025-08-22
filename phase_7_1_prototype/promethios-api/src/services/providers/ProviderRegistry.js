@@ -592,7 +592,7 @@ class ProviderRegistry {
       await AuditService.logEvent(eventType, 'system', auditEvent);
       
       // Use cryptographic audit service for tamper-evident logging
-      if (CryptographicAuditService) {
+      if (CryptographicAuditService && typeof CryptographicAuditService.logEvent === 'function') {
         const auditEventId = await CryptographicAuditService.logEvent(
           'provider_operation',
           auditEvent,
