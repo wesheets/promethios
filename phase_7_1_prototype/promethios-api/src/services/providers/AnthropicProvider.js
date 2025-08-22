@@ -129,7 +129,7 @@ class AnthropicProvider extends ProviderPlugin {
   /**
    * Generate response using Anthropic API with full governance integration
    */
-  async generateResponse(prompt, options = {}) {
+  async generateResponse(requestData, options = {}) {
     const startTime = Date.now();
     
     try {
@@ -138,34 +138,73 @@ class AnthropicProvider extends ProviderPlugin {
         throw new Error('Anthropic Provider not initialized');
       }
 
-      // Apply governance context if provided
-      let enhancedPrompt = prompt;
-      if (options.governanceContext) {
-        enhancedPrompt = await this.applyGovernanceContext(prompt, options.governanceContext);
+      // Handle both old (prompt, options) and new (requestData) calling conventions
+      let prompt, model, messages, systemMessage, maxTokens, temperature, topP, tools;
+      
+      if (typeof requestData === 'string') {
+        // Old calling convention: generateResponse(prompt, options)
+        prompt = requestData;
+        model = options.model;
+        messages = options.messages;
+        systemMessage = options.systemMessage;
+        maxTokens = options.maxTokens;
+        temperature = options.temperature;
+        topP = options.topP;
+        tools = options.tools;
+      } else {
+        // New calling convention: generateResponse(requestData)
+        prompt = requestData.prompt;
+        model = requestData.model;
+        messages = requestData.messages;
+        systemMessage = requestData.systemMessage || requestData.system_message;
+        maxTokens = requestData.maxTokens || requestData.max_tokens;
+        temperature = requestData.temperature;
+        topP = requestData.topP || requestData.top_p;
+        tools = requestData.tools;
       }
 
-      // Use the model specified in options, no default fallback
-      if (!options.model) {
-        throw new Error('Model must be specified in options - no default model available');
+      // Use the model specified in request data, no default fallback
+      if (!model) {
+        throw new Error('Model must be specified in request data - no default model available');
+      }
+
+      // Apply governance context if provided
+      let enhancedPrompt = prompt;
+      if (requestData.governanceContext || options.governanceContext) {
+        enhancedPrompt = await this.applyGovernanceContext(prompt, requestData.governanceContext || options.governanceContext);
       }
 
       // Prepare Anthropic request
       const requestConfig = {
-        model: options.model,
-        max_tokens: options.maxTokens || 1000,
-        temperature: options.temperature || 0.7,
-        top_p: options.topP || 1.0,
-        messages: [
+        model: model,
+        max_tokens: maxTokens || 1000,
+        temperature: temperature || 0.7,
+        top_p: topP || 1.0
+      };
+
+      // Handle messages vs prompt
+      if (messages && Array.isArray(messages)) {
+        requestConfig.messages = messages;
+      } else if (enhancedPrompt) {
+        requestConfig.messages = [
           {
             role: 'user',
             content: enhancedPrompt
           }
-        ]
-      };
+        ];
+      } else {
+        throw new Error('Either messages array or prompt must be provided');
+      }
 
       // Add system message if provided (Anthropic uses system parameter)
-      if (options.systemMessage) {
-        requestConfig.system = options.systemMessage;
+      if (systemMessage) {
+        requestConfig.system = systemMessage;
+      }
+
+      // Add tools if provided
+      if (tools && Array.isArray(tools) && tools.length > 0) {
+        requestConfig.tools = tools;
+        console.log(`🛠️ Anthropic Provider: Adding ${tools.length} tools to request`);
       }
 
       console.log(`🤖 Anthropic Provider: Generating response with model ${requestConfig.model}`);
@@ -178,8 +217,25 @@ class AnthropicProvider extends ProviderPlugin {
 
       // Apply governance post-processing if needed
       let finalResponse = generatedText;
-      if (options.governanceContext) {
-        finalResponse = await this.applyGovernancePostProcessing(generatedText, options.governanceContext);
+      if (requestData.governanceContext || options.governanceContext) {
+        finalResponse = await this.applyGovernancePostProcessing(generatedText, requestData.governanceContext || options.governanceContext);
+      }
+
+      // Check for tool calls in response
+      let toolCalls = [];
+      if (response.content) {
+        for (const content of response.content) {
+          if (content.type === 'tool_use') {
+            toolCalls.push({
+              id: content.id,
+              type: 'function',
+              function: {
+                name: content.name,
+                arguments: JSON.stringify(content.input)
+              }
+            });
+          }
+        }
       }
 
       // Update metrics
@@ -196,23 +252,20 @@ class AnthropicProvider extends ProviderPlugin {
         model: requestConfig.model,
         responseTime,
         tokensUsed: response.usage?.input_tokens + response.usage?.output_tokens || 0,
-        promptLength: prompt.length,
+        promptLength: (prompt || '').length,
         responseLength: finalResponse.length,
-        agentId: options.agentId,
-        userId: options.userId
+        toolCallsCount: toolCalls.length,
+        hasTools: tools && tools.length > 0
       });
 
+      console.log(`✅ Anthropic Provider: Response generated successfully (${responseTime}ms)`);
+
       return {
-        success: true,
-        response: finalResponse,
-        metadata: {
-          provider: this.name,
-          model: requestConfig.model,
-          responseTime,
-          tokensUsed: response.usage?.input_tokens + response.usage?.output_tokens || 0,
-          stopReason: response.stop_reason,
-          governanceApplied: !!options.governanceContext
-        }
+        content: finalResponse,
+        usage: response.usage,
+        model: requestConfig.model,
+        tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+        raw_response: response
       };
 
     } catch (error) {
