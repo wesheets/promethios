@@ -184,7 +184,25 @@ class AnthropicProvider extends ProviderPlugin {
 
       // Handle messages vs prompt
       if (messages && Array.isArray(messages)) {
-        requestConfig.messages = messages;
+        // Filter out system messages from messages array (Anthropic doesn't accept them there)
+        const systemMessages = messages.filter(msg => msg.role === 'system');
+        const nonSystemMessages = messages.filter(msg => msg.role !== 'system');
+        
+        requestConfig.messages = nonSystemMessages;
+        
+        // Combine system messages with existing systemMessage
+        if (systemMessages.length > 0) {
+          const combinedSystemContent = systemMessages.map(msg => msg.content).join('\n\n');
+          if (systemMessage) {
+            requestConfig.system = systemMessage + '\n\n' + combinedSystemContent;
+          } else {
+            requestConfig.system = combinedSystemContent;
+          }
+        } else if (systemMessage) {
+          requestConfig.system = systemMessage;
+        }
+        
+        console.log(`🔍 [DEBUG] Filtered messages: ${systemMessages.length} system, ${nonSystemMessages.length} non-system`);
       } else if (enhancedPrompt) {
         requestConfig.messages = [
           {
@@ -192,13 +210,13 @@ class AnthropicProvider extends ProviderPlugin {
             content: enhancedPrompt
           }
         ];
+        
+        // Add system message if provided (Anthropic uses system parameter)
+        if (systemMessage) {
+          requestConfig.system = systemMessage;
+        }
       } else {
         throw new Error('Either messages array or prompt must be provided');
-      }
-
-      // Add system message if provided (Anthropic uses system parameter)
-      if (systemMessage) {
-        requestConfig.system = systemMessage;
       }
 
       // Add tools if provided (transform from OpenAI format to Anthropic format)
