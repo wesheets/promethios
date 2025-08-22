@@ -477,6 +477,18 @@ router.post('/', async (req, res) => {
                             requestData
                         );
                         
+                        // 🔍 CRITICAL DEBUG: Log the exact ProviderRegistry response structure
+                        console.log('🔍 [CHAT-DEBUG] ProviderRegistry response structure:', {
+                            responseKeys: Object.keys(providerResponse),
+                            hasContent: !!providerResponse.content,
+                            hasResponse: !!providerResponse.response,
+                            contentLength: providerResponse.content?.length || 0,
+                            responseLength: providerResponse.response?.length || 0,
+                            hasToolCalls: !!providerResponse.has_tool_calls,
+                            toolResultsCount: providerResponse.tool_results?.length || 0,
+                            fullResponse: providerResponse
+                        });
+                        
                         // Debug: Log Provider Registry response
                         addDebugLog('info', 'provider', `Provider Registry response received`, {
                             providerId,
@@ -487,6 +499,13 @@ router.post('/', async (req, res) => {
                         });
                         
                         response = providerResponse.content || providerResponse.response;
+                        
+                        // 🔍 CRITICAL DEBUG: Log what response was extracted
+                        console.log('🔍 [CHAT-DEBUG] Extracted response:', {
+                            responseLength: response?.length || 0,
+                            responsePreview: response?.substring(0, 100) + '...',
+                            extractedFrom: providerResponse.content ? 'content' : 'response'
+                        });
                         
                         // Handle tool calls if present
                         if (providerResponse.has_tool_calls && providerResponse.tool_results) {
