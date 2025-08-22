@@ -235,6 +235,16 @@ class ProviderRegistry {
           tools: formattedTools
         };
         
+        // Inject tool instructions into system message
+        const toolNames = toolSchemas.map(schema => schema.function?.name || schema.name);
+        const toolInstructions = `\n\nTOOL ACCESS:\nYou have ${toolSchemas.length} tool(s) available: ${toolNames.join(', ')}. To use a tool, call it with the appropriate parameters. Always use tools when they can help answer user questions or provide current information.`;
+        
+        // Add tool instructions to system message
+        if (enhancedRequestData.messages && enhancedRequestData.messages[0]?.role === 'system') {
+          enhancedRequestData.messages[0].content += toolInstructions;
+          console.log(`🛠️ ProviderRegistry: Added tool instructions to system message for ${providerId}`);
+        }
+        
         addDebugLog('debug', 'tool_schema', `Tools added to request data`, {
           providerId,
           toolCount: formattedTools.length,
