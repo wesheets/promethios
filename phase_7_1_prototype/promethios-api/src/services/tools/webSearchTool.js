@@ -236,30 +236,7 @@ class WebSearchTool {
     return baseResults.slice(0, Math.min(maxResults, baseResults.length));
   }
 
-  // Method to integrate with real search APIs (for future implementation)
-  async performRealSearch(query, maxResults) {
-    // Example integration with Google Custom Search API
-    // const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-    // const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
-    // 
-    // if (!apiKey || !searchEngineId) {
-    //   throw new Error('Google Search API credentials not configured');
-    // }
-    // 
-    // const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&num=${maxResults}`;
-    // 
-    // const response = await fetch(url);
-    // const data = await response.json();
-    // 
-    // return data.items?.map(item => ({
-    //   title: item.title,
-    //   url: item.link,
-    //   snippet: item.snippet,
-    //   source: new URL(item.link).hostname
-    // })) || [];
-    
-    throw new Error('Real search API not implemented yet');
-  }
+  // Note: Real search implementation is above using DuckDuckGo API
 }
 
 module.exports = new WebSearchTool();

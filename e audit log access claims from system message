@@ -1,0 +1,112 @@
+[33mcommit a107f8acf59e6c6b4b088afc5247549b4cbcff91[m
+Author: Promethios Agent <agent@promethios.ai>
+Date:   Thu Aug 21 10:42:37 2025 -0400
+
+    🔧 Implement tool call processing in chat interface
+    
+    - Add tool call detection and execution logic to Anthropic provider
+    - Process tool calls from AI responses using ToolIntegrationService
+    - Execute tools via backend /api/tools/execute endpoint
+    - Integrate tool results back into conversation with follow-up API calls
+    - Add comprehensive logging for tool execution flow
+    - Connect frontend tool integration with working backend API
+    
+    This bridges the gap between AI tool calls and actual tool execution,
+    enabling agents to use web search, document generation, and other tools.
+
+[1mdiff --git a/phase_7_1_prototype/promethios-ui/src/components/AdvancedChatComponent.tsx b/phase_7_1_prototype/promethios-ui/src/components/AdvancedChatComponent.tsx[m
+[1mindex c52568d9..b1e60ef9 100644[m
+[1m--- a/phase_7_1_prototype/promethios-ui/src/components/AdvancedChatComponent.tsx[m
+[1m+++ b/phase_7_1_prototype/promethios-ui/src/components/AdvancedChatComponent.tsx[m
+[36m@@ -2232,10 +2232,89 @@[m [mYou have access to various tools that can help you assist users. When you need t[m
+           console.log('🔧 ANTHROPIC DEBUG: Response data received:', {[m
+             hasResponse: !!data.response,[m
+             responseLength: data.response?.length,[m
+[31m-            dataKeys: Object.keys(data)[m
+[32m+[m[32m            dataKeys: Object.keys(data),[m
+[32m+[m[32m            hasToolCalls: !!data.tool_calls[m
+           });[m
+           [m
+[31m-          const finalResponse = data.response || 'No response received';[m
+[32m+[m[32m          let finalResponse = data.response || 'No response received';[m
+[32m+[m[41m          [m
+[32m+[m[32m          // 🔧 TOOL PROCESSING: Check for tool calls in the response[m
+[32m+[m[32m          if (data.tool_calls && Array.isArray(data.tool_calls) && data.tool_calls.length > 0) {[m
+[32m+[m[32m            console.log('🔧 [ToolIntegration] Tool calls detected in Anthropic response:', data.tool_calls);[m
+[32m+[m[41m            [m
+[32m+[m[32m            // Process each tool call[m
+[32m+[m[32m            const toolResults: ToolResult[] = [];[m
+[32m+[m[32m            for (const toolCall of data.tool_calls) {[m
+[32m+[m[32m              try {[m
+[32m+[m[32m                console.log(`🔧 [ToolIntegration] Executing tool: ${toolCall.function.name}`);[m
+[32m+[m[32m                const toolResult = await toolIntegrationService.executeToolCall([m
+[32m+[m[32m                  toolCall,[m
+[32m+[m[32m                  message,[m
+[32m+[m[32m                  { agentId: agent.id, provider: 'anthropic' }[m
+[32m+[m[32m                );[m
+[32m+[m[32m                toolResults.push(toolResult);[m
+[32m+[m[32m                console.log(`✅ [ToolIntegration] Tool executed successfully: ${toolCall.function.name}`);[m
+[32m+[m[32m              } catch (toolError) {[m
+[32m+[m[32m                console.error(`❌ [ToolIntegration] Tool execution failed: ${toolCall.function.name}`, toolError);[m
+[32m+[m[32m                // Create error result[m
+[32m+[m[32m                toolResults.push({[m
+[32m+[m[32m                  tool_call_id: toolCall.id,[m
+[32m+[m[32m                  role: 'tool',[m
+[32m+[m[32m                  name: toolCall.function.name,[m
+[32m+[m[32m                  content: `Error: ${toolError.message}`[m
+[32m+[m[32m                });[m
+[32m+[m[32m              }[m
+[32m+[m[32m            }[m
+[32m+[m[41m            [m
+[32m+[m[32m            // If we have tool results, make another API call with the results[m
+[32m+[m[32m            if (toolResults.length > 0) {[m
+[32m+[m[32m              console.log('🔧 [ToolIntegration] Making follow-up Anthropic API call with tool results');[m
+[32m+[m[41m              [m
+[32m+[m[32m              // Add tool calls and results to conversation history[m
+[32m+[m[32m              const updatedHistory = [[m
+[32m+[m[32m                ...conversationHistory.map(msg => ({[m
+[32m+[m[32m                  role: msg.sender === 'user' ? 'user' : 'assistant',[m
+[32m+[m[32m                  content: msg.content[m
+[32m+[m[32m                })),[m
+[32m+[m[32m                { role: 'user', content: message },[m
+[32m+[m[32m                { role: 'assistant', content: finalResponse, tool_calls: data.tool_calls },[m
+[32m+[m[32m                ...toolResults.map(result => ({[m
+[32m+[m[32m                  role: 'tool',[m
+[32m+[m[32m                  tool_call_id: result.tool_call_id,[m
+[32m+[m[32m                  name: result.name,[m
+[32m+[m[32m                  content: result.content[m
+[32m+[m[32m                }))[m
+[32m+[m[32m              ];[m
+[32m+[m[41m              [m
+[32m+[m[32m              // Make follow-up API call with tool results[m
+[32m+[m[32m              try {[m
+[32m+[m[32m                const followUpResponse = await fetch(`${API_BASE_URL}/api/chat`, {[m
+[32m+[m[32m                  method: 'POST',[m
+[32m+[m[32m                  headers: {[m
+[32m+[m[32m                    'Content-Type': 'application/json'[m
+[32m+[m[32m                  },[m
+[32m+[m[32m                  body: JSON.stringify({[m
+[32m+[m[32m                    agent_id: selectedAgent?.id || 'default',[m
+[32m+[m[32m                    user_id: currentUser?.uid || 'anonymous',[m
+[32m+[m[32m                    message: '', // Empty message for continuation[m
+[32m+[m[32m                    provider: 'anthropic',[m
+[32m+[m[32m                    model: selectedModel,[m
+[32m+[m[32m                    conversation_history: updatedHistory.slice(-30), // Keep last 30 messages[m
+[32m+[m[32m                    tool_results: toolResults[m
+[32m+[m[32m                  })[m
+[32m+[m[32m                });[m
+[32m+[m[41m                [m
+[32m+[m[32m                if (followUpResponse.ok) {[m
+[32m+[m[32m                  const followUpData = await followUpResponse.json();[m
+[32m+[m[32m                  finalResponse = followUpData.response || finalResponse;[m
+[32m+[m[32m                  console.log('✅ [ToolIntegration] Follow-up Anthropic response received with tool integration');[m
+[32m+[m[32m                }[m
+[32m+[m[32m              } catch (followUpError) {[m
+[32m+[m[32m                console.error('❌ [ToolIntegration] Follow-up Anthropic API call failed:', followUpError);[m
+[32m+[m[32m              }[m
+[32m+[m[32m            }[m
+[32m+[m[32m          }[m
+[32m+[m[41m          [m
+           console.log('🔧 ANTHROPIC DEBUG: Final response length:', finalResponse.length);[m
+           return finalResponse;[m
+           [m
