@@ -1,11 +1,14 @@
 /**
  * Document Generation Tool
  * 
- * Generates documents in various formats (PDF, DOCX, TXT)
+ * Generates documents in various formats (PDF, DOCX, TXT, XLSX)
  */
 
 const fs = require('fs');
 const path = require('path');
+const PDFDocument = require('pdfkit');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel } = require('docx');
+const XLSX = require('xlsx');
 
 class DocumentGenerationTool {
   constructor() {
@@ -21,7 +24,7 @@ class DocumentGenerationTool {
         },
         format: {
           type: 'string',
-          enum: ['pdf', 'docx', 'txt', 'html'],
+          enum: ['pdf', 'docx', 'txt', 'html', 'xlsx'],
           description: 'The document format to generate',
           default: 'txt'
         },
@@ -64,6 +67,10 @@ class DocumentGenerationTool {
           documentData = await this.generateDOCX(content, title);
           mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
           break;
+        case 'xlsx':
+          documentData = await this.generateXLSX(content, title);
+          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          break;
         case 'html':
           documentData = this.generateHTML(content, title);
           mimeType = 'text/html';
@@ -77,16 +84,31 @@ class DocumentGenerationTool {
 
       console.log(`✅ [DocumentGen] Document generated successfully: ${finalFilename}.${format}`);
 
+      // For binary formats, encode as base64 for transmission
+      let documentDataForResponse;
+      let fileSize;
+      
+      if (format === 'pdf' || format === 'docx' || format === 'xlsx') {
+        documentDataForResponse = documentData.toString('base64');
+        fileSize = documentData.length;
+      } else {
+        documentDataForResponse = documentData;
+        fileSize = Buffer.byteLength(documentData, 'utf8');
+      }
+
       return {
+        success: true,
         title,
         format,
         filename: `${finalFilename}.${format}`,
         content_length: content.length,
-        document_size: documentData.length,
+        file_size: fileSize,
         mime_type: mimeType,
-        document_data: documentData, // In production, you might save to file system and return URL
+        document_data: documentDataForResponse,
+        encoding: (format === 'pdf' || format === 'docx' || format === 'xlsx') ? 'base64' : 'utf8',
         timestamp: new Date().toISOString(),
-        note: 'Document generated successfully. In production, this would be saved to file system.'
+        note: `Real ${format.toUpperCase()} document generated successfully using professional libraries.`,
+        download_ready: true
       };
 
     } catch (error) {
@@ -145,82 +167,177 @@ class DocumentGenerationTool {
   }
 
   async generatePDF(content, title) {
-    // For a real implementation, you would use a library like puppeteer, jsPDF, or PDFKit
-    // This is a mock implementation
-    console.log('📄 [DocumentGen] PDF generation is mocked - would use puppeteer/PDFKit in production');
-    
-    const mockPDFContent = `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
->>
-endobj
-
-4 0 obj
-<<
-/Length ${content.length + title.length + 100}
->>
-stream
-BT
-/F1 12 Tf
-72 720 Td
-(${title}) Tj
-0 -24 Td
-(${content.substring(0, 100)}...) Tj
-ET
-endstream
-endobj
-
-xref
-0 5
-0000000000 65535 f 
-0000000010 00000 n 
-0000000053 00000 n 
-0000000125 00000 n 
-0000000185 00000 n 
-trailer
-<<
-/Size 5
-/Root 1 0 R
->>
-startxref
-${300 + content.length}
-%%EOF`;
-
-    return mockPDFContent;
+    return new Promise((resolve, reject) => {
+      try {
+        console.log('📄 [DocumentGen] Generating real PDF using PDFKit');
+        
+        // Create a new PDF document
+        const doc = new PDFDocument();
+        const chunks = [];
+        
+        // Collect the PDF data
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => {
+          const pdfBuffer = Buffer.concat(chunks);
+          resolve(pdfBuffer);
+        });
+        doc.on('error', reject);
+        
+        // Add title
+        doc.fontSize(20)
+           .font('Helvetica-Bold')
+           .text(title, 50, 50);
+        
+        // Add a line under the title
+        doc.moveTo(50, 80)
+           .lineTo(550, 80)
+           .stroke();
+        
+        // Add content
+        doc.fontSize(12)
+           .font('Helvetica')
+           .text(content, 50, 100, {
+             width: 500,
+             align: 'left'
+           });
+        
+        // Add footer
+        const now = new Date();
+        doc.fontSize(10)
+           .text(`Generated on: ${now.toLocaleString()}`, 50, doc.page.height - 50);
+        
+        // Finalize the PDF
+        doc.end();
+        
+      } catch (error) {
+        console.error('❌ [DocumentGen] PDF generation failed:', error);
+        reject(error);
+      }
+    });
   }
 
   async generateDOCX(content, title) {
-    // For a real implementation, you would use a library like docx or officegen
-    // This is a mock implementation
-    console.log('📄 [DocumentGen] DOCX generation is mocked - would use docx library in production');
-    
-    const mockDOCXContent = `Mock DOCX Content:
-Title: ${title}
-Content: ${content}
-Generated: ${new Date().toISOString()}
+    try {
+      console.log('📄 [DocumentGen] Generating real DOCX using docx library');
+      
+      // Create a new document
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            // Title
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: title,
+                  bold: true,
+                  size: 32, // 16pt
+                }),
+              ],
+              heading: HeadingLevel.TITLE,
+            }),
+            
+            // Empty line
+            new Paragraph({
+              children: [new TextRun({ text: "" })],
+            }),
+            
+            // Content paragraphs
+            ...content.split('\n').map(paragraph => 
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: paragraph,
+                    size: 24, // 12pt
+                  }),
+                ],
+              })
+            ),
+            
+            // Empty line
+            new Paragraph({
+              children: [new TextRun({ text: "" })],
+            }),
+            
+            // Footer
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Generated on: ${new Date().toLocaleString()}`,
+                  size: 20, // 10pt
+                  italics: true,
+                }),
+              ],
+            }),
+          ],
+        }],
+      });
+      
+      // Generate the document buffer
+      const buffer = await Packer.toBuffer(doc);
+      return buffer;
+      
+    } catch (error) {
+      console.error('❌ [DocumentGen] DOCX generation failed:', error);
+      throw error;
+    }
+  }
 
-Note: This is a mock DOCX. In production, use the 'docx' npm package to generate real DOCX files.`;
-
-    return mockDOCXContent;
+  async generateXLSX(content, title) {
+    try {
+      console.log('📄 [DocumentGen] Generating real XLSX using xlsx library');
+      
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new();
+      
+      // Parse content into rows (assuming CSV-like or line-separated data)
+      const lines = content.split('\n').filter(line => line.trim());
+      
+      // If content looks like tabular data, parse it
+      let worksheetData;
+      if (lines.some(line => line.includes('\t') || line.includes(','))) {
+        // Parse as CSV/TSV
+        worksheetData = lines.map(line => {
+          // Try tab-separated first, then comma-separated
+          const separator = line.includes('\t') ? '\t' : ',';
+          return line.split(separator).map(cell => cell.trim());
+        });
+      } else {
+        // Create a simple two-column layout
+        worksheetData = [
+          ['Item', 'Description'],
+          ...lines.map((line, index) => [`Item ${index + 1}`, line])
+        ];
+      }
+      
+      // Add title row if provided
+      if (title && title !== 'Generated Document') {
+        worksheetData.unshift([title]);
+        worksheetData.unshift([]); // Empty row for spacing
+      }
+      
+      // Add metadata
+      worksheetData.push([]);
+      worksheetData.push(['Generated on:', new Date().toLocaleString()]);
+      
+      // Create worksheet
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      
+      // Add some basic styling (column widths)
+      const columnWidths = worksheetData[0]?.map(() => ({ wch: 20 })) || [{ wch: 20 }];
+      worksheet['!cols'] = columnWidths;
+      
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+      
+      // Generate buffer
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      return buffer;
+      
+    } catch (error) {
+      console.error('❌ [DocumentGen] XLSX generation failed:', error);
+      throw error;
+    }
   }
 }
 

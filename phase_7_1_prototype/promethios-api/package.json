@@ -17,15 +17,21 @@
     "@huggingface/inference": "^4.0.6",
     "@mistralai/mistralai": "^1.7.5",
     "axios": "^1.11.0",
+    "canvas": "^3.2.0",
+    "chart.js": "^4.5.0",
     "cohere-ai": "^7.17.1",
     "cors": "^2.8.5",
+    "docx": "^9.5.1",
     "dotenv": "^16.0.3",
     "express": "^4.17.3",
     "firebase-admin": "^11.5.0",
     "mongoose": "^6.9.0",
     "multer": "^2.0.2",
     "openai": "^5.5.1",
-    "uuid": "^9.0.0"
+    "pdfkit": "^0.17.1",
+    "pptxgenjs": "^4.0.1",
+    "uuid": "^9.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "jest": "^29.3.1",
