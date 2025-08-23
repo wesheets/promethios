@@ -1,11 +1,14 @@
 /**
  * Web Search Tool
  * 
- * Provides web search capabilities using search APIs
+ * Provides web search capabilities using Google Custom Search API
  */
 
 const https = require('https');
 const { URL } = require('url');
+
+// For Node.js versions that don't have fetch built-in
+const fetch = globalThis.fetch || require('node-fetch');
 
 class WebSearchTool {
   constructor() {
@@ -71,25 +74,68 @@ class WebSearchTool {
 
   async performRealSearch(query, maxResults) {
     try {
-      // For now, we'll implement a simple approach that returns empty results
-      // rather than fake content. In production, this should integrate with:
-      // - Google Custom Search API
-      // - Bing Search API  
-      // - NewsAPI for news content
-      // - Or other legitimate search services
+      const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
+      const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
       
-      console.log(`🔍 [WebSearch] Attempting real search for: "${query}"`);
+      if (!apiKey || !searchEngineId) {
+        console.log(`⚠️ [WebSearch] Google Search API credentials not configured`);
+        return [];
+      }
       
-      // TODO: Implement real search API integration
-      // This requires proper API keys and configuration
+      console.log(`🔍 [WebSearch] Using Google Custom Search API for: "${query}"`);
       
-      console.log(`⚠️ [WebSearch] Real search API not yet configured - returning empty results`);
+      // Construct Google Custom Search API URL
+      const searchUrl = new URL('https://www.googleapis.com/customsearch/v1');
+      searchUrl.searchParams.set('key', apiKey);
+      searchUrl.searchParams.set('cx', searchEngineId);
+      searchUrl.searchParams.set('q', query);
+      searchUrl.searchParams.set('num', Math.min(maxResults, 10).toString());
       
-      return [];
+      // Make the API request
+      const response = await fetch(searchUrl.toString());
+      
+      if (!response.ok) {
+        throw new Error(`Google Search API error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Parse the search results
+      const results = this.parseGoogleSearchResults(data, maxResults);
+      
+      console.log(`✅ [WebSearch] Google Search returned ${results.length} results`);
+      
+      return results;
       
     } catch (error) {
-      console.error('❌ [WebSearch] Real search failed:', error);
+      console.error('❌ [WebSearch] Google Search failed:', error);
       return [];
+    }
+  }
+
+  parseGoogleSearchResults(data, maxResults) {
+    const results = [];
+    
+    if (data.items && Array.isArray(data.items)) {
+      for (const item of data.items.slice(0, maxResults)) {
+        results.push({
+          title: item.title || 'No title',
+          url: item.link || '',
+          snippet: item.snippet || 'No description available',
+          source: this.extractDomain(item.link) || 'Unknown source'
+        });
+      }
+    }
+    
+    return results;
+  }
+
+  extractDomain(url) {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname.replace('www.', '');
+    } catch (error) {
+      return 'Unknown source';
     }
   }
 
