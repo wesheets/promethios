@@ -705,10 +705,10 @@ router.post('/', async (req, res) => {
         };
 
         // Add attachments if any tools generated files
-        if (toolResults && toolResults.length > 0) {
+        if (providerResponse.tool_results && providerResponse.tool_results.length > 0) {
             const attachments = [];
             
-            toolResults.forEach(result => {
+            providerResponse.tool_results.forEach(result => {
                 if (result.attachment) {
                     attachments.push(result.attachment);
                     console.log(`📎 [Chat] Adding attachment: ${result.attachment.name}`);
