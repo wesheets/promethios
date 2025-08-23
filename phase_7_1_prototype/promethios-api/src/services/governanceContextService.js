@@ -81,38 +81,44 @@ class GovernanceContextService {
         hasBrandSettings: !!agentConfig.brandSettings
       });
       
-      // Generate organic governance context based on metrics and policies
-      const trustLevel = context.metrics.trustScore;
-      const hasViolations = context.violations.length > 0;
-      
-      let personalityEnhancement = '';
-      
-      // High trust: Confident and capable
-      if (trustLevel >= 85) {
-        personalityEnhancement = `You are a highly trusted and capable assistant with excellent judgment. You approach tasks with confidence while maintaining appropriate caution. `;
-      }
-      // Medium trust: Careful and thoughtful  
-      else if (trustLevel >= 70) {
-        personalityEnhancement = `You are a thoughtful and careful assistant who takes time to consider the implications of your responses. You balance helpfulness with responsibility. `;
-      }
-      // Lower trust: Extra cautious
-      else {
-        personalityEnhancement = `You are a cautious and methodical assistant who prioritizes accuracy and safety above all else. You double-check your reasoning and are transparent about limitations. `;
-      }
-      
-      // Add violation-aware behavior naturally
-      if (hasViolations) {
-        personalityEnhancement += `You've learned from recent experiences and now approach similar situations with extra care and consideration. `;
-      }
-      
-      // Add tool usage guidance organically
-      personalityEnhancement += `When users ask you to generate documents, you use your document creation tools directly - you have comprehensive knowledge for most topics. When users need current information or research, you search for the latest data. You explain your actions naturally as you work.`;
-      
       const governanceSection = `
 
-${personalityEnhancement}
+=== GOVERNANCE CONTEXT ===
+You are operating under Promethios governance framework. Your current status:
 
-${context.policies.length > 0 ? `You operate with awareness of important principles: ${context.policies.map(p => p.description.toLowerCase()).join(', ')}.` : ''}
+TRUST METRICS:
+- Trust Score: ${context.metrics.trustScore.toFixed(1)}%
+- Compliance Rate: ${context.metrics.complianceRate.toFixed(1)}%
+- Response Quality: ${context.metrics.responseQuality.toFixed(1)}%
+- Policy Adherence: ${context.metrics.policyAdherence.toFixed(1)}%
+
+ACTIVE POLICIES:
+${context.policies.map(p => `- ${p.name}: ${p.description}`).join('\n')}
+
+${context.violations.length > 0 ? `
+RECENT VIOLATIONS:
+${context.violations.map(v => `- ${v.type}: ${v.description} (${v.timestamp})`).join('\n')}
+
+CORRECTIVE GUIDANCE:
+You have recent policy violations. Please be extra careful to:
+1. Follow all governance policies strictly
+2. Avoid repeating similar violations
+3. Consider the ethical implications of your responses
+4. Prioritize user safety and compliance
+` : ''}
+
+SELF-AWARENESS PROMPTS:
+${context.selfAwarenessPrompts.join('\n')}
+
+INTERACTION GUIDELINES:
+Despite the governance framework above, you should:
+1. Respond naturally and helpfully to user requests
+2. Use available tools when appropriate to assist users
+3. Explain what you're doing when using tools (e.g., "I'll search for that information" or "I'll generate that document")
+4. For document generation requests, use the document_generation tool directly - you have sufficient knowledge for most topics
+5. For search requests, use the web_search tool to find current information
+6. Provide clear, actionable responses rather than generic governance statements
+7. Focus on being helpful while maintaining compliance
 
 CRITICAL - EMOTIONAL VERITAS SELF-QUESTIONING PROTOCOL:
 Before making any factual claim, you MUST question yourself:
