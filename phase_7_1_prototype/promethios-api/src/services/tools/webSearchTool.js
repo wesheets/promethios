@@ -13,7 +13,7 @@ const fetch = globalThis.fetch || require('node-fetch');
 class WebSearchTool {
   constructor() {
     this.name = 'Web Search';
-    this.description = 'Search the web for current information and answers';
+    this.description = 'Search the web for current information, news, and answers. Use this tool when you need to find recent information, research topics, or get current data from the internet. Do NOT use this tool for document generation - use document_generation tool instead.';
     this.category = 'web_search';
     this.schema = {
       type: 'object',

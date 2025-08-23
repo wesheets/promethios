@@ -13,14 +13,14 @@ const XLSX = require('xlsx');
 class DocumentGenerationTool {
   constructor() {
     this.name = 'Document Generation';
-    this.description = 'Generate PDF, Word, and other document formats';
+    this.description = 'Generate and create documents in PDF, DOCX, XLSX, HTML, and TXT formats. Use this tool when the user asks to create, generate, or produce a document, report, or file. This tool creates the actual document content and file.';
     this.category = 'content';
     this.schema = {
       type: 'object',
       properties: {
         content: {
           type: 'string',
-          description: 'The content to include in the document'
+          description: 'The main content/text to include in the document. For topics you are familiar with, provide comprehensive content directly. For current events or specific research, you may search first then generate the document.'
         },
         format: {
           type: 'string',
