@@ -972,6 +972,8 @@ class AnthropicProvider extends ProviderPlugin {
    * @returns {boolean} True if response has tool calls
    */
   hasToolCalls(response) {
+    console.log(`🔍 [HASTOOLCALLS-DEBUG] Method called for Anthropic provider`);
+    
     // Check Anthropic's actual response format for tool calls
     const hasToolUseStopReason = response.raw_response?.stop_reason === 'tool_use';
     const hasToolUseBlocks = response.raw_response?.content && 
@@ -979,6 +981,14 @@ class AnthropicProvider extends ProviderPlugin {
                             response.raw_response.content.some(block => block.type === 'tool_use');
     
     const hasTools = hasToolUseStopReason || hasToolUseBlocks;
+    
+    console.log(`🔍 [HASTOOLCALLS-DEBUG] Result: ${hasTools}`, {
+      stopReason: response.raw_response?.stop_reason,
+      contentBlocks: response.raw_response?.content?.length || 0,
+      toolUseBlocks: response.raw_response?.content?.filter(block => block.type === 'tool_use').length || 0,
+      hasToolUseStopReason,
+      hasToolUseBlocks
+    });
     
     addDebugLog('debug', 'anthropic_provider', `Checking for tool calls in response`, {
       hasToolCalls: hasTools,
