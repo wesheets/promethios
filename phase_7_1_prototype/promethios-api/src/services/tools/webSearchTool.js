@@ -99,9 +99,16 @@ class WebSearchTool {
       const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
       const searchEngineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
       
+      console.log(`🔍 [WebSearch] Google Search API Status:`, {
+        hasApiKey: !!apiKey,
+        apiKeyLength: apiKey ? apiKey.length : 0,
+        hasSearchEngineId: !!searchEngineId,
+        searchEngineId: searchEngineId ? searchEngineId.substring(0, 10) + '...' : 'missing'
+      });
+      
       if (!apiKey || !searchEngineId) {
-        console.log(`⚠️ [WebSearch] Google Search API credentials not configured`);
-        return [];
+        console.log(`⚠️ [WebSearch] Google Search API credentials not configured - falling back to DuckDuckGo`);
+        throw new Error('Google Search API credentials not configured');
       }
       
       console.log(`🔍 [WebSearch] Using Google Custom Search API for: "${query}"`);
