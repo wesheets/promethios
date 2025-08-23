@@ -650,9 +650,11 @@ router.post('/', async (req, res) => {
                 providerId = providerMapping[providerId.toLowerCase()];
             }
             
+            let providerResponse = null; // Declare outside try block to fix scope issue
+            
             try {
                 console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
-                const providerResponse = await providerRegistry.generateResponse(
+                providerResponse = await providerRegistry.generateResponse(
                     providerId, 
                     agent_id, 
                     userId, 
@@ -705,7 +707,7 @@ router.post('/', async (req, res) => {
         };
 
         // Add attachments if any tools generated files
-        if (providerResponse.tool_results && providerResponse.tool_results.length > 0) {
+        if (providerResponse && providerResponse.tool_results && providerResponse.tool_results.length > 0) {
             const attachments = [];
             
             providerResponse.tool_results.forEach(result => {
