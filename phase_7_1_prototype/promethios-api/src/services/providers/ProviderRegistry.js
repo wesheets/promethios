@@ -307,6 +307,17 @@ class ProviderRegistry {
         // Process tool calls
         const toolCalls = provider.extractToolCalls(response);
         
+        // 🔍 DEBUG: Check toolCalls value and structure
+        console.log(`🔍 [TOOLCALLS-DEBUG] Tool calls extracted:`, {
+          toolCalls: toolCalls,
+          isArray: Array.isArray(toolCalls),
+          length: toolCalls?.length,
+          type: typeof toolCalls,
+          hasToolCalls: !!(toolCalls && toolCalls.length > 0),
+          responseHasToolCalls: !!response.tool_calls,
+          responseToolCallsLength: response.tool_calls?.length || 0
+        });
+        
         addDebugLog('debug', 'tool_execution', `Extracted tool calls from response`, {
           providerId,
           toolCallsCount: toolCalls?.length || 0,
