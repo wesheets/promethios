@@ -451,6 +451,8 @@ router.post('/', async (req, res) => {
                         governanceEnabled: governance_enabled
                     });
                     
+                    let providerResponse = null; // Declare outside try block to fix scope issue
+                    
                     try {
                         console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
                         
@@ -470,7 +472,7 @@ router.post('/', async (req, res) => {
                             }
                         });
                         
-                        const providerResponse = await providerRegistry.generateResponse(
+                        providerResponse = await providerRegistry.generateResponse(
                             providerId, 
                             agent_id, 
                             userId, 
