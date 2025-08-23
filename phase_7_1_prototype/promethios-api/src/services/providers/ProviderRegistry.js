@@ -329,6 +329,9 @@ class ProviderRegistry {
           const updatedMessages = [...enhancedRequestData.messages];
           
           // Provider-specific tool result formatting
+          console.log(`🔍 [PROVIDER-DEBUG] Checking providerId for tool result formatting: "${providerId}" (type: ${typeof providerId}, length: ${providerId?.length})`);
+          console.log(`🔍 [PROVIDER-DEBUG] Comparison result: providerId === 'anthropic' is ${providerId === 'anthropic'}`);
+          
           if (providerId === 'anthropic') {
             // Anthropic format: need both assistant message with tool_use AND user message with tool_result
             // 1. Add original assistant message with tool calls
