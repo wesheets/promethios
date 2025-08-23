@@ -321,6 +321,15 @@ class ProviderRegistry {
           successfulCalls: toolResults?.filter(result => !result.content?.includes('error')).length || 0
         });
         
+        // 🔍 DEBUG: Check toolResults value and structure
+        console.log(`🔍 [TOOLRESULTS-DEBUG] Tool results value:`, {
+          toolResults: toolResults,
+          isArray: Array.isArray(toolResults),
+          length: toolResults?.length,
+          type: typeof toolResults,
+          hasResults: !!(toolResults && toolResults.length > 0)
+        });
+        
         // Generate follow-up response with tool results
         if (toolResults && toolResults.length > 0) {
           console.log(`🔄 ProviderRegistry: Generating follow-up response with tool results for ${providerId}`);
