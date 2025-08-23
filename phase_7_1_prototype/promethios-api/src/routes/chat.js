@@ -17,6 +17,44 @@ const HuggingFaceProvider = require('../services/providers/HuggingFaceProvider')
 const GrokProvider = require('../services/providers/GrokProvider');
 const PerplexityProvider = require('../services/providers/PerplexityProvider');
 
+// 🛠️ TOOL INTEGRATION: Import available tools
+const webSearchTool = require('../services/tools/webSearchTool');
+const documentGenerationTool = require('../services/tools/documentGenerationTool');
+const dataVisualizationTool = require('../services/tools/dataVisualizationTool');
+const codingTool = require('../services/tools/codingTool');
+
+// Available tools registry
+const AVAILABLE_TOOLS = {
+  'web_search': webSearchTool,
+  'document_generation': documentGenerationTool,
+  'data_visualization': dataVisualizationTool,
+  'coding_programming': codingTool
+};
+
+// 🛠️ Helper function to format tools for AI providers
+function formatToolsForProvider(enabledTools = []) {
+  if (!enabledTools || enabledTools.length === 0) {
+    return [];
+  }
+  
+  return enabledTools.map(toolId => {
+    const tool = AVAILABLE_TOOLS[toolId];
+    if (!tool) {
+      console.warn(`⚠️ [Tools] Unknown tool: ${toolId}`);
+      return null;
+    }
+    
+    return {
+      type: 'function',
+      function: {
+        name: toolId,
+        description: tool.description,
+        parameters: tool.schema
+      }
+    };
+  }).filter(Boolean);
+}
+
 const providerRegistry = new ProviderRegistry();
 
 // Initialize providers synchronously and track initialization status
@@ -397,6 +435,16 @@ router.post('/', async (req, res) => {
                     // Combine governance context with RAG context
                     const finalSystemMessage = governanceEnhancedSystemMessage + ragContext;
                     
+                    // 🛠️ TOOL INTEGRATION: Get enabled tools from agent configuration
+                    const enabledTools = agent_configuration?.enabledTools || ['web_search']; // Default to web search
+                    const formattedTools = formatToolsForProvider(enabledTools);
+                    
+                    console.log(`🛠️ [Tools] Enabled tools for agent ${agent_id}:`, {
+                        enabledTools,
+                        formattedToolsCount: formattedTools.length,
+                        toolNames: formattedTools.map(t => t.function.name)
+                    });
+                    
                     // Use Provider Registry for tool-enabled response generation
                     const requestData = {
                         messages: [
@@ -405,7 +453,8 @@ router.post('/', async (req, res) => {
                             { role: 'user', content: message }
                         ],
                         model: model || agent_configuration?.apiDetails?.selectedModel || 'gpt-4',
-                        attachments: attachments
+                        attachments: attachments,
+                        tools: formattedTools // 🛠️ ADD TOOLS HERE
                     };
                     
                     // Determine provider from agent configuration or fallback logic
@@ -599,6 +648,16 @@ router.post('/', async (req, res) => {
             
             const finalSystemMessage = agentSpecificSystemMessage + ragContext;
             
+            // 🛠️ TOOL INTEGRATION: Get enabled tools from agent configuration
+            const enabledTools = agent_configuration?.enabledTools || ['web_search']; // Default to web search
+            const formattedTools = formatToolsForProvider(enabledTools);
+            
+            console.log(`🛠️ [Tools] Enabled tools for agent ${agent_id} (non-governance):`, {
+                enabledTools,
+                formattedToolsCount: formattedTools.length,
+                toolNames: formattedTools.map(t => t.function.name)
+            });
+            
             const requestData = {
                 messages: [
                     { role: 'system', content: finalSystemMessage },
@@ -606,7 +665,8 @@ router.post('/', async (req, res) => {
                     { role: 'user', content: message }
                 ],
                 model: model || agent_configuration?.apiDetails?.selectedModel || 'gpt-4',
-                attachments: attachments
+                attachments: attachments,
+                tools: formattedTools // 🛠️ ADD TOOLS HERE
             };
             
             // DEBUGGER: Let's see what model is being used
