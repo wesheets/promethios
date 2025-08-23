@@ -6,8 +6,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
-const { Document, Packer, Paragraph, TextRun, HeadingLevel } = require('docx');
+const { Document, Paragraph, TextRun, Packer } = require('docx');
 const XLSX = require('xlsx');
 
 class DocumentGenerationTool {
@@ -15,6 +16,12 @@ class DocumentGenerationTool {
     this.name = 'Document Generation';
     this.description = 'Generate and create documents in PDF, DOCX, XLSX, HTML, and TXT formats. Use this tool when the user asks to create, generate, or produce a document, report, or file. This tool creates the actual document content and file.';
     this.category = 'content';
+    
+    // Setup file storage directory
+    this.storageDir = path.join(process.cwd(), 'temp_files');
+    if (!fs.existsSync(this.storageDir)) {
+      fs.mkdirSync(this.storageDir, { recursive: true });
+    }
     this.schema = {
       type: 'object',
       properties: {
