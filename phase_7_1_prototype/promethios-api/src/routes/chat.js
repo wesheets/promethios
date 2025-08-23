@@ -709,6 +709,12 @@ router.post('/', async (req, res) => {
         };
 
         // Add attachments if any tools generated files
+        console.log('🔍 [DEBUG] About to check providerResponse for attachments:', {
+            providerResponseExists: !!providerResponse,
+            providerResponseType: typeof providerResponse,
+            providerResponseKeys: providerResponse ? Object.keys(providerResponse) : 'N/A'
+        });
+        
         if (providerResponse && providerResponse.tool_results && providerResponse.tool_results.length > 0) {
             const attachments = [];
             
