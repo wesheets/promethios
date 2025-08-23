@@ -1104,16 +1104,6 @@ function buildAgentSystemMessage(baseSystemMessage, agentConfiguration) {
         systemMessage += `\n\nTOOLS: You have access to the following tools: ${agentConfiguration.enabledTools.join(', ')}. Use these tools when appropriate to assist users.`;
     }
     
-    // Add explicit tool usage rules to prevent wrong tool selection
-    systemMessage += `\n\nTOOL USAGE RULES:
-- When users ask to CREATE, GENERATE, or PRODUCE documents (PDF, DOCX, XLSX, etc.) → ALWAYS use 'document_generation' tool
-- When users ask to SEARCH, RESEARCH, or FIND information → ALWAYS use 'web_search' tool
-- When users ask for data visualization or charts → use 'data_visualization' tool
-- When users ask for coding or programming help → use 'coding_programming' tool
-- NEVER use 'web_search' for document creation tasks
-- NEVER use 'document_generation' for information gathering tasks`;
-    
-    
     console.log('✅ [Backend] Agent-specific system message built:', {
         originalLength: baseSystemMessage.length,
         enhancedLength: systemMessage.length,
