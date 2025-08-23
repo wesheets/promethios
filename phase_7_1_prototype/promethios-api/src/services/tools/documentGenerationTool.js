@@ -50,7 +50,7 @@ class DocumentGenerationTool {
 
   async execute(parameters, context = {}) {
     try {
-      const { content, format = 'txt', title = 'Generated Document', filename } = parameters;
+      const { content, format = 'pdf', title = 'Generated Document', filename } = parameters;
       
       if (!content || typeof content !== 'string') {
         throw new Error('Content parameter is required and must be a string');
@@ -58,13 +58,18 @@ class DocumentGenerationTool {
 
       console.log(`📄 [DocumentGen] Generating ${format.toUpperCase()} document: "${title}"`);
 
+      // Generate unique file ID and filename
+      const fileId = uuidv4();
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const defaultFilename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}`;
       const finalFilename = filename || defaultFilename;
+      const fullFilename = `${finalFilename}.${format}`;
+      const filePath = path.join(this.storageDir, `${fileId}_${fullFilename}`);
 
-      let documentData;
       let mimeType;
+      let documentData;
 
+      // Generate document based on format
       switch (format.toLowerCase()) {
         case 'pdf':
           documentData = await this.generatePDF(content, title);
@@ -89,38 +94,48 @@ class DocumentGenerationTool {
           break;
       }
 
-      console.log(`✅ [DocumentGen] Document generated successfully: ${finalFilename}.${format}`);
-
-      // For binary formats, encode as base64 for transmission
-      let documentDataForResponse;
-      let fileSize;
-      
+      // Save file to disk
       if (format === 'pdf' || format === 'docx' || format === 'xlsx') {
-        documentDataForResponse = documentData.toString('base64');
-        fileSize = documentData.length;
+        // Binary data - write as buffer
+        fs.writeFileSync(filePath, documentData);
       } else {
-        documentDataForResponse = documentData;
-        fileSize = Buffer.byteLength(documentData, 'utf8');
+        // Text data - write as string
+        fs.writeFileSync(filePath, documentData, 'utf8');
       }
 
+      // Get file stats
+      const stats = fs.statSync(filePath);
+
+      console.log(`✅ [DocumentGen] Document saved successfully: ${fullFilename} (${stats.size} bytes)`);
+
+      // Return attachment object for frontend
       return {
         success: true,
         title,
         format,
-        filename: `${finalFilename}.${format}`,
-        content_length: content.length,
-        file_size: fileSize,
+        filename: fullFilename,
+        file_id: fileId,
+        file_size: stats.size,
         mime_type: mimeType,
-        document_data: documentDataForResponse,
-        encoding: (format === 'pdf' || format === 'docx' || format === 'xlsx') ? 'base64' : 'utf8',
+        download_url: `/api/files/download/${fileId}`,
         timestamp: new Date().toISOString(),
-        note: `Real ${format.toUpperCase()} document generated successfully using professional libraries.`,
-        download_ready: true
+        note: `${format.toUpperCase()} document generated successfully and ready for download.`,
+        attachment: {
+          id: fileId,
+          name: fullFilename,
+          type: mimeType,
+          url: `/api/files/download/${fileId}`,
+          size: stats.size
+        }
       };
 
     } catch (error) {
       console.error('❌ [DocumentGen] Document generation failed:', error);
-      throw new Error(`Document generation failed: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+        note: 'Document generation failed. Please try again or contact support.'
+      };
     }
   }
 

@@ -694,15 +694,34 @@ router.post('/', async (req, res) => {
             governance_metrics: governance_metrics
         });
 
-        // Return response with governance data
-        res.status(200).json({
+        // Return response with governance data and attachments
+        const responseData = {
             session_id: chatSessionId,
             agent_id: agent_id,
             response: response,
             governance_enabled: governance_enabled,
             governance_metrics: governance_metrics,
             timestamp: new Date().toISOString()
-        });
+        };
+
+        // Add attachments if any tools generated files
+        if (toolResults && toolResults.length > 0) {
+            const attachments = [];
+            
+            toolResults.forEach(result => {
+                if (result.attachment) {
+                    attachments.push(result.attachment);
+                    console.log(`📎 [Chat] Adding attachment: ${result.attachment.name}`);
+                }
+            });
+            
+            if (attachments.length > 0) {
+                responseData.attachments = attachments;
+                console.log(`📎 [Chat] Response includes ${attachments.length} attachment(s)`);
+            }
+        }
+
+        res.status(200).json(responseData);
 
     } catch (error) {
         console.error('=== CHAT ERROR DETAILS ===');
