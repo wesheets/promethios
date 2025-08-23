@@ -234,6 +234,8 @@ const governance_core = new PrometheusGovernanceCore();
 
 // POST / — Real-time chat with agents (governed or ungoverned)
 router.post('/', async (req, res) => {
+    let providerResponse = null; // Declare at top level to ensure it's always accessible
+    
     try {
         const { 
             agent_id, 
@@ -451,8 +453,6 @@ router.post('/', async (req, res) => {
                         governanceEnabled: governance_enabled
                     });
                     
-                    let providerResponse = null; // Declare outside try block to fix scope issue
-                    
                     try {
                         console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
                         
@@ -651,13 +651,10 @@ router.post('/', async (req, res) => {
             if (providerMapping[providerId?.toLowerCase()]) {
                 providerId = providerMapping[providerId.toLowerCase()];
             }
-            
-            let providerResponse = null; // Declare outside try block to fix scope issue
-            
             try {
                 console.log(`🔧 [Chat] Using Provider Registry with provider: ${providerId}`);
-                providerResponse = await providerRegistry.generateResponse(
-                    providerId, 
+                
+                providerResponse = await providerRegistry.generateResponse(                 providerId, 
                     agent_id, 
                     userId, 
                     requestData
