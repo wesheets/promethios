@@ -284,6 +284,8 @@ class ProviderRegistry {
       
       // Process tool calls if present
       if (provider.hasToolCalls(response)) {
+        console.log(`🔍 [TOOL-PROCESSING-DEBUG] Tool processing block entered for provider ${providerId}`);
+        
         addDebugLog('info', 'tool_execution', `Tool calls detected in provider response`, {
           providerId,
           responseType: typeof response
