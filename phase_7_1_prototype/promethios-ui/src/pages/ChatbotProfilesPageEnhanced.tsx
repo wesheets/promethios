@@ -99,6 +99,7 @@ import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/Widget
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
 import { ChatSharingService } from '../services/ChatSharingService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
+import ChatInterfacePanel from '../components/chat/ChatInterfacePanel';
 import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 import { conversationalReceiptSearchService } from '../services/ConversationalReceiptSearchService';
@@ -1904,13 +1905,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 
                 {/* Command Panel Tabs */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {[
+                  [
                     { key: 'chats', label: 'CHATS' },
                     { key: 'analytics', label: 'ANALYTICS' },
                     { key: 'customize', label: 'CUSTOMIZE' },
                     { key: 'personality', label: 'PERSONALITY' },
                     { key: 'knowledge', label: 'AI KNOWLEDGE' },
                     { key: 'tools', label: 'TOOLS' },
+                    { key: 'chat_interface', label: 'CHAT INTERFACE' },
                     { key: 'integrations', label: 'INTEGRATIONS' },
                     { key: 'rag_policy', label: 'RAG + POLICY' },
                     { key: 'automation', label: 'AUTOMATION' },
@@ -1920,7 +1922,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'live_agent', label: 'LIVE AGENT' },
                     { key: 'governance', label: 'GOVERNANCE' },
                     { key: 'debug', label: 'DEBUG' }
-                  ].map((tab) => (
+                  ]].map((tab) => (
                     <Button
                       key={tab.key}
                       size="small"
@@ -2157,6 +2159,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       }
                     }}
                   />
+                )}
+                
+                {rightPanelType === 'chat_interface' && (
+                  <ChatInterfacePanel />
                 )}
                 
                 {rightPanelType === 'integrations' && (

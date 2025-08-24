@@ -54,6 +54,9 @@ class ResponseFormatter {
             case 'web_search':
               formattedResponse += this.formatSearchResults(resultData);
               break;
+            case 'web_scraping':
+              formattedResponse += this.formatWebScrapingResults(resultData);
+              break;
             case 'document_generation':
               formattedResponse += this.formatDocumentGeneration(resultData);
               if (result.attachment) {
@@ -116,6 +119,67 @@ class ResponseFormatter {
         formatted += `**Source**: [${result.url}](${result.url})\n\n`;
       }
     });
+
+    return formatted;
+  }
+
+  /**
+   * Format web scraping results with clean summary and verification option
+   */
+  formatWebScrapingResults(scrapingData) {
+    if (!scrapingData || !scrapingData.success) {
+      return `## ${this.sectionEmojis.error} Web Scraping Failed\n\n${scrapingData?.error || 'Unable to scrape the requested URL.'}\n\n`;
+    }
+
+    const result = scrapingData.result;
+    let formatted = `## 📰 Article Summary\n\n`;
+
+    // Article title and source
+    if (result.title) {
+      formatted += `**${result.title}**\n\n`;
+    }
+    
+    if (result.url) {
+      const domain = new URL(result.url).hostname.replace('www.', '');
+      formatted += `**Source**: ${domain}\n`;
+    }
+
+    if (result.scraped_at) {
+      const scrapedDate = new Date(result.scraped_at).toLocaleDateString();
+      formatted += `**Scraped**: ${scrapedDate}\n\n`;
+    }
+
+    // Clean content summary
+    if (result.data?.text_content?.content) {
+      const content = result.data.text_content.content;
+      // Create a clean summary (first 500 characters)
+      const summary = content.length > 500 
+        ? content.substring(0, 500) + '...' 
+        : content;
+      
+      formatted += `### Summary\n${summary}\n\n`;
+    }
+
+    // Article metrics
+    if (result.data?.text_content?.length) {
+      const wordCount = Math.round(result.data.text_content.length / 5); // Rough word count
+      formatted += `**Length**: ~${wordCount} words\n`;
+    }
+
+    if (result.data?.links?.total_count) {
+      formatted += `**Links**: ${result.data.links.total_count} found\n`;
+    }
+
+    if (result.data?.images?.images?.length) {
+      formatted += `**Images**: ${result.data.images.images.length} found\n`;
+    }
+
+    // Verification button
+    formatted += `\n---\n\n`;
+    formatted += `🔍 **Want to verify this article's credibility?**\n\n`;
+    formatted += `Click below to get a comprehensive fact-check with multiple sources:\n\n`;
+    formatted += `[🛡️ Verify Article Credibility](#verify-credibility)\n\n`;
+    formatted += `*This will research claims across authoritative sources and provide a governance-backed analysis.*\n\n`;
 
     return formatted;
   }
