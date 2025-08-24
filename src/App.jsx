@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 // Import cube images and flame assets
@@ -16,9 +16,16 @@ function App() {
   const [cubePosition, setCubePosition] = useState({ x: 70, y: 45 });
   const [connectedCubes, setConnectedCubes] = useState([]);
   const [wireframePulse, setWireframePulse] = useState('');
+  const hasStartedAnimation = useRef(false);
 
   // Phase progression - show flame loader every time for brand recognition
   useEffect(() => {
+    // Prevent multiple executions
+    if (hasStartedAnimation.current) {
+      return;
+    }
+    hasStartedAnimation.current = true;
+
     const phases = [
       { delay: 7000, phase: 2 }, // Flame to cube (7 seconds)
       { delay: 2000, phase: 3 }, // Cube positioning
@@ -35,7 +42,10 @@ function App() {
       timeouts.push(timeout);
     });
 
-    return () => timeouts.forEach(clearTimeout);
+    return () => {
+      timeouts.forEach(clearTimeout);
+      hasStartedAnimation.current = false;
+    };
   }, []);
 
   // Cube positioning animation (Phase 2) - removed to prevent jumping
