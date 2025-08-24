@@ -9,7 +9,7 @@ import orangeCube from './assets/orangecube.png';
 import yellowCube from './assets/yellowcube.png';
 import purpleCube from './assets/purplecube.png';
 import flameVideo from './assets/0801.mp4';
-import promethiosLogo from './assets/promethioslogonew1.png';
+import promethiosLogo from './assets/promethiosnoflame.png';
 
 function App() {
   const [currentPhase, setCurrentPhase] = useState(1);
