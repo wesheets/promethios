@@ -42,39 +42,17 @@ body {
   pointer-events: none;
 }
 
-.flame-logo {
-  width: 80px;
-  height: 80px;
-  background: radial-gradient(circle, #ff6b35, #f7931e, #3b82f6);
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  animation: flameFlicker 2s ease-in-out infinite alternate;
-  margin-bottom: 20px;
-  position: relative;
+.flame-video {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  margin-bottom: 30px;
 }
 
-.flame-logo::before {
-  content: '';
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 60px;
-  height: 60px;
-  background: radial-gradient(circle, #ffaa44, #ff6b35);
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  animation: flameFlicker 1.5s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes flameFlicker {
-  0% { transform: scale(1) rotate(-2deg); }
-  100% { transform: scale(1.1) rotate(2deg); }
-}
-
-.promethios-text {
-  font-size: 2.5rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: #ffffff;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+.promethios-logo {
+  width: 300px;
+  height: auto;
+  object-fit: contain;
 }
 
 /* Header */

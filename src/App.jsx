@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-// Import cube images
+// Import cube images and flame assets
 import wireframeCube from './assets/wireframecube.png';
 import redCube from './assets/redcube.png';
 import greenCube from './assets/greencube.png';
 import orangeCube from './assets/orangecube.png';
 import yellowCube from './assets/yellowcube.png';
 import purpleCube from './assets/purplecube.png';
+import flameVideo from './assets/0801.mp4';
+import promethiosLogo from './assets/promethioslogonew1.png';
 
 function App() {
   const [currentPhase, setCurrentPhase] = useState(1);
@@ -18,7 +20,7 @@ function App() {
   // Phase progression
   useEffect(() => {
     const phases = [
-      { delay: 3000, phase: 2 }, // Flame to cube
+      { delay: 5000, phase: 2 }, // Flame to cube (5 seconds)
       { delay: 2000, phase: 3 }, // Cube positioning
       { delay: 1000, phase: 4 }, // UI reveal
       { delay: 1000, phase: 5 }  // Cubes appear
@@ -79,8 +81,16 @@ function App() {
 
   const FlameAnimation = () => (
     <div className={`flame-container ${currentPhase > 1 ? 'fade-out' : ''}`}>
-      <div className="flame-logo"></div>
-      <div className="promethios-text">PROMETHIOS</div>
+      <video 
+        className="flame-video"
+        autoPlay 
+        muted 
+        loop
+        playsInline
+      >
+        <source src={flameVideo} type="video/mp4" />
+      </video>
+      <img src={promethiosLogo} alt="Promethios" className="promethios-logo" />
     </div>
   );
 
