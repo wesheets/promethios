@@ -13,7 +13,7 @@ import promethiosLogo from './assets/promethiosnoflame.png';
 
 function App() {
   const [currentPhase, setCurrentPhase] = useState(1);
-  const [cubePosition, setCubePosition] = useState({ x: 50, y: 50 });
+  const [cubePosition, setCubePosition] = useState({ x: 70, y: 45 });
   const [connectedCubes, setConnectedCubes] = useState([]);
   const [wireframePulse, setWireframePulse] = useState('');
 
@@ -36,13 +36,7 @@ function App() {
     return () => timeouts.forEach(clearTimeout);
   }, []);
 
-  // Cube positioning animation (Phase 2)
-  useEffect(() => {
-    if (currentPhase >= 3) {
-      // Move cube to center position between text and governance cubes
-      setCubePosition({ x: 70, y: 45 });
-    }
-  }, [currentPhase]);
+  // Cube positioning animation (Phase 2) - removed to prevent jumping
 
   const [draggedCube, setDraggedCube] = useState(null);
   const [absorbedCubes, setAbsorbedCubes] = useState([]);
