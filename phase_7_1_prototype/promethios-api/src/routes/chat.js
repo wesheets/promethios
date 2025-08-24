@@ -436,7 +436,12 @@ router.post('/', async (req, res) => {
                     const finalSystemMessage = governanceEnhancedSystemMessage + ragContext;
                     
                     // 🛠️ TOOL INTEGRATION: Get enabled tools from agent configuration
-                    const enabledTools = agent_configuration?.enabledTools || ['web_search']; // Default to web search
+                    const enabledTools = agent_configuration?.enabledTools || [
+                        'web_search', 
+                        'document_generation', 
+                        'data_visualization', 
+                        'coding_programming'
+                    ]; // Default to all available tools
                     const formattedTools = formatToolsForProvider(enabledTools);
                     
                     console.log(`🛠️ [Tools] Enabled tools for agent ${agent_id}:`, {
@@ -649,7 +654,12 @@ router.post('/', async (req, res) => {
             const finalSystemMessage = agentSpecificSystemMessage + ragContext;
             
             // 🛠️ TOOL INTEGRATION: Get enabled tools from agent configuration
-            const enabledTools = agent_configuration?.enabledTools || ['web_search']; // Default to web search
+            const enabledTools = agent_configuration?.enabledTools || [
+                'web_search', 
+                'document_generation', 
+                'data_visualization', 
+                'coding_programming'
+            ]; // Default to all available tools
             const formattedTools = formatToolsForProvider(enabledTools);
             
             console.log(`🛠️ [Tools] Enabled tools for agent ${agent_id} (non-governance):`, {
@@ -1170,13 +1180,32 @@ function buildAgentSystemMessage(baseSystemMessage, agentConfiguration) {
     if (agentConfiguration.enabledTools?.length > 0) {
         systemMessage += `\n\nTOOLS: You have access to the following tools: ${agentConfiguration.enabledTools.join(', ')}. Use these tools when appropriate to assist users.
 
+TOOL USAGE GUIDELINES:
+- web_search: For finding current information, news, facts, or research on any topic
+- document_generation: For creating documents, reports, summaries, or formatted content (PDF, DOCX, TXT, HTML, XLSX)
+- data_visualization: For creating charts, graphs, or visual data representations
+- coding_programming: For writing code, debugging, or technical programming tasks
+
+WHEN TO USE DOCUMENT GENERATION:
+- User asks to "create a document", "put in a document", "generate a report"
+- User wants to "attach", "save", or "download" content
+- User requests formatted output like PDFs, Word docs, or structured documents
+- User asks to "summarize and document" search results
+
+MULTI-STEP TOOL USAGE (Tool Chaining):
+- For requests like "research X and create a document about it", use web_search FIRST, then document_generation
+- For "create a chart showing data about X", use web_search to get data, then data_visualization
+- Always use tools in logical sequence: gather information first, then process/format it
+- You can call multiple tools in a single response to complete complex requests
+
 CRITICAL TOOL USAGE INSTRUCTIONS:
 - When you receive tool results, you MUST incorporate them into your response to the user
 - Present search results clearly with titles, URLs, and summaries
 - Do NOT say you will search again if you already have search results
 - Do NOT ignore tool results - they contain the information the user requested
 - Format tool results in a user-friendly way with clear headings and bullet points
-- If tool results contain an error, explain the error to the user and suggest alternatives`;
+- If tool results contain an error, explain the error to the user and suggest alternatives
+- When creating documents, include comprehensive content based on your knowledge or search results`;
     }
     
     console.log('✅ [Backend] Agent-specific system message built:', {

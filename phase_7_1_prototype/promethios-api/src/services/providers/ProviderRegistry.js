@@ -912,12 +912,20 @@ class ProviderRegistry {
       console.log(`✅ ProviderRegistry: Tool executed successfully: ${toolName}`);
       
       // Return in the format expected by providers
-      return {
+      const toolResult = {
         tool_call_id: toolCall.id,
         role: 'tool',
         name: toolName,
         content: JSON.stringify(result.data)
       };
+      
+      // 🔧 ATTACHMENT FIX: Preserve attachment if present
+      if (result.data && result.data.attachment) {
+        toolResult.attachment = result.data.attachment;
+        console.log(`📎 ProviderRegistry: Preserving attachment for tool ${toolName}:`, result.data.attachment.name);
+      }
+      
+      return toolResult;
       
     } catch (error) {
       console.error(`❌ ProviderRegistry: Tool execution failed:`, error);
