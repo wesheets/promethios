@@ -38,6 +38,9 @@ body {
   height: 800px;
   object-fit: contain;
   animation: flameAnimation 7s ease-in-out forwards;
+  /* Slow down the video playback */
+  filter: none;
+  transform-origin: center;
 }
 
 .promethios-logo {

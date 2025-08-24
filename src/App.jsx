@@ -77,6 +77,11 @@ function App() {
             muted 
             loop
             playsInline
+            ref={(video) => {
+              if (video) {
+                video.playbackRate = 0.7; // Slow down to 70% speed
+              }
+            }}
           >
             <source src={flameVideo} type="video/mp4" />
           </video>
