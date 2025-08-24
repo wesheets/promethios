@@ -17,16 +17,29 @@ import {
   RuntimeConfiguration,
   ConfigurationOverride
 } from '../types/AgentConfigurationTypes';
-import { AgentToolProfile } from '../types/ToolTypes';
+import { AgentToolProfile, DEFAULT_ENABLED_TOOLS, AVAILABLE_TOOLS } from '../types/ToolTypes';
 import { WidgetConfig } from '../context/WidgetCustomizerContext';
+import FirebaseConfigurationService from './FirebaseConfigurationService';
 
 export class AgentConfigurationService {
   private configurations: Map<string, AgentConfiguration> = new Map();
   private versions: Map<string, ConfigurationVersion[]> = new Map();
   private templates: Map<string, ConfigurationTemplate> = new Map();
+  private firebaseService: FirebaseConfigurationService | null = null;
 
-  constructor() {
+  constructor(userId?: string, organizationId?: string) {
+    if (userId) {
+      this.firebaseService = new FirebaseConfigurationService(userId, organizationId);
+    }
     this.loadConfigurations();
+  }
+
+  /**
+   * Initialize Firebase service with user context
+   */
+  initializeFirebase(userId: string, organizationId: string = 'default'): void {
+    this.firebaseService = new FirebaseConfigurationService(userId, organizationId);
+    console.log(`🔥 [Config] Firebase service initialized for user ${userId}`);
   }
 
   // ============================================================================
@@ -52,33 +65,58 @@ export class AgentConfigurationService {
     }
   }
 
-  async saveConfiguration(agentId: string, configuration: AgentConfiguration): Promise<void> {
+  async saveConfiguration(agentId: string, configuration: Partial<AgentConfiguration>): Promise<void> {
     try {
+      console.log(`💾 [Config] Saving configuration for agent ${agentId}`);
+
+      // Get existing configuration or create new one
+      const existingConfig = await this.loadConfiguration(agentId);
+      const fullConfiguration: AgentConfiguration = existingConfig ? {
+        ...existingConfig,
+        ...configuration,
+        updatedAt: new Date().toISOString()
+      } : {
+        identity: {
+          id: agentId,
+          name: `Agent ${agentId}`,
+          description: 'AI Assistant with comprehensive tool access',
+          organizationId: 'default',
+          version: '1.0.0',
+          ...configuration.identity
+        },
+        toolProfile: configuration.toolProfile || this.getDefaultToolProfile(),
+        governanceSettings: configuration.governanceSettings || this.getDefaultGovernanceSettings(),
+        personalitySettings: configuration.personalitySettings || this.getDefaultPersonalitySettings(),
+        deploymentSettings: configuration.deploymentSettings || this.getDefaultDeploymentSettings(),
+        widgetCustomization: configuration.widgetCustomization || this.getDefaultWidgetConfig(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        version: configuration.version || 1
+      };
+
       // Validate configuration
-      await this.validateConfiguration(configuration);
+      await this.validateConfiguration(fullConfiguration);
+
+      // Save to Firebase if available, otherwise use localStorage
+      if (this.firebaseService) {
+        await this.firebaseService.saveConfiguration(agentId, fullConfiguration);
+      } else {
+        await this.persistConfiguration(agentId, fullConfiguration);
+      }
+
+      // Update memory cache
+      this.configurations.set(agentId, fullConfiguration);
 
       // Create version entry
-      const version = this.createVersionEntry(agentId, configuration);
-      
-      // Save configuration
-      this.configurations.set(agentId, {
-        ...configuration,
-        updatedAt: new Date().toISOString(),
-        version: version.version
-      });
-
-      // Save version history
+      const version = this.createVersionEntry(agentId, fullConfiguration);
       const versions = this.versions.get(agentId) || [];
       versions.push(version);
       this.versions.set(agentId, versions);
 
-      // Persist to storage
-      await this.persistConfiguration(agentId, configuration);
-
       // Notify Universal Governance Adapter of configuration change
-      await this.notifyConfigurationChange(agentId, configuration);
+      await this.notifyConfigurationChange(agentId, fullConfiguration);
 
-      console.log(`✅ [Config] Saved configuration for agent ${agentId}`);
+      console.log(`✅ [Config] Configuration saved successfully for agent ${agentId}`);
     } catch (error) {
       console.error(`❌ [Config] Failed to save configuration for agent ${agentId}:`, error);
       throw error;
@@ -87,18 +125,36 @@ export class AgentConfigurationService {
 
   async loadConfiguration(agentId: string): Promise<AgentConfiguration | null> {
     try {
+      console.log(`📁 [Config] Loading configuration for agent ${agentId}`);
+      
       // Try to load from memory cache first
       let configuration = this.configurations.get(agentId);
       
       if (!configuration) {
-        // Load from persistent storage
-        configuration = await this.loadFromStorage(agentId);
+        // Load from Firebase if available, otherwise use localStorage
+        if (this.firebaseService) {
+          configuration = await this.firebaseService.loadConfiguration(agentId);
+        } else {
+          configuration = await this.loadFromStorage(agentId);
+        }
+        
         if (configuration) {
           this.configurations.set(agentId, configuration);
         }
       }
 
-      return configuration || null;
+      if (configuration) {
+        console.log(`✅ [Config] Configuration loaded successfully for agent ${agentId}`);
+        return configuration;
+      } else {
+        console.log(`ℹ️ [Config] No configuration found for agent ${agentId}, creating default configuration`);
+        
+        // Create default configuration
+        const defaultConfig = this.createDefaultConfiguration(agentId);
+        await this.saveConfiguration(agentId, defaultConfig);
+        
+        return defaultConfig;
+      }
     } catch (error) {
       console.error(`❌ [Config] Failed to load configuration for agent ${agentId}:`, error);
       return null;
@@ -106,13 +162,35 @@ export class AgentConfigurationService {
   }
 
   async updateToolProfile(agentId: string, toolProfile: AgentToolProfile): Promise<void> {
-    const configuration = await this.loadConfiguration(agentId);
-    if (!configuration) {
-      throw new Error(`Agent configuration not found: ${agentId}`);
-    }
+    try {
+      console.log(`🛠️ [Config] Updating tool profile for agent ${agentId}`);
 
-    configuration.toolProfile = toolProfile;
-    await this.saveConfiguration(agentId, configuration);
+      // Update via Firebase if available
+      if (this.firebaseService) {
+        await this.firebaseService.updateToolProfile(agentId, toolProfile);
+      } else {
+        // Fallback to full configuration update
+        const configuration = await this.loadConfiguration(agentId);
+        if (!configuration) {
+          throw new Error(`Agent configuration not found: ${agentId}`);
+        }
+        configuration.toolProfile = toolProfile;
+        await this.saveConfiguration(agentId, configuration);
+      }
+
+      // Update memory cache
+      const cachedConfig = this.configurations.get(agentId);
+      if (cachedConfig) {
+        cachedConfig.toolProfile = toolProfile;
+        cachedConfig.updatedAt = new Date().toISOString();
+        this.configurations.set(agentId, cachedConfig);
+      }
+
+      console.log(`✅ [Config] Tool profile updated successfully for agent ${agentId}`);
+    } catch (error) {
+      console.error(`❌ [Config] Failed to update tool profile for agent ${agentId}:`, error);
+      throw error;
+    }
   }
 
   async updateGovernanceSettings(agentId: string, governanceSettings: GovernanceConfiguration): Promise<void> {
@@ -385,13 +463,50 @@ export class AgentConfigurationService {
   // DEFAULT CONFIGURATIONS
   // ============================================================================
 
-  private getDefaultToolProfile(): AgentToolProfile {
+  /**
+   * Create a default configuration for a new agent
+   */
+  private createDefaultConfiguration(agentId: string): AgentConfiguration {
     return {
-      enabledTools: [],
-      toolCategories: [],
-      credentials: {},
-      usageLimits: {},
-      lastUpdated: new Date().toISOString()
+      identity: {
+        id: agentId,
+        name: `Agent ${agentId}`,
+        description: 'AI Assistant with comprehensive tool access',
+        organizationId: 'default',
+        version: '1.0.0'
+      },
+      toolProfile: this.getDefaultToolProfile(),
+      governanceSettings: this.getDefaultGovernanceSettings(),
+      personalitySettings: this.getDefaultPersonalitySettings(),
+      deploymentSettings: this.getDefaultDeploymentSettings(),
+      widgetCustomization: this.getDefaultWidgetConfig(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      version: 1
+    };
+  }
+
+  private getDefaultToolProfile(): AgentToolProfile {
+    // Enable all tools by default (since we removed payment gates)
+    const enabledTools = DEFAULT_ENABLED_TOOLS.map(toolId => {
+      const tool = AVAILABLE_TOOLS.find(t => t.id === toolId);
+      return {
+        name: tool?.name || toolId,
+        enabled: true,
+        tier: tool?.tier || 'basic',
+        category: tool?.category || 'general',
+        configuration: tool?.configuration || {},
+        credentials: tool?.credentials || {}
+      };
+    });
+
+    return {
+      agentId: '',
+      enabledTools,
+      toolConfigurations: {},
+      lastUpdated: new Date(),
+      totalToolsEnabled: enabledTools.length,
+      enterpriseToolsEnabled: enabledTools.filter(t => t.tier === 'enterprise').length
     };
   }
 

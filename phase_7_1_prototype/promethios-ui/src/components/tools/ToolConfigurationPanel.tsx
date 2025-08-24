@@ -150,30 +150,39 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
     try {
       setSaveStatus('saving');
       
-      // Create updated configuration
-      const updatedConfig: Partial<AgentConfiguration> = {
-        toolProfile: {
-          ...toolProfile,
-          lastUpdated: new Date(),
-          totalToolsEnabled: toolProfile.enabledTools.filter(t => t.enabled).length,
-          enterpriseToolsEnabled: toolProfile.enabledTools.filter(t => t.enabled && t.tier === 'enterprise').length
-        }
+      console.log('💾 [ToolPanel] Starting configuration save process');
+      
+      // Initialize Firebase service with user context if not already done
+      // TODO: Get actual user ID from auth context
+      const userId = 'current_user_id'; // Replace with actual user ID from auth
+      configService.initializeFirebase(userId, chatbot.identity.organizationId || 'default');
+      
+      // Create updated tool profile
+      const updatedToolProfile: AgentToolProfile = {
+        ...toolProfile,
+        agentId: chatbot.identity.id,
+        lastUpdated: new Date(),
+        totalToolsEnabled: toolProfile.enabledTools.filter(t => t.enabled).length,
+        enterpriseToolsEnabled: toolProfile.enabledTools.filter(t => t.enabled && t.tier === 'enterprise').length
       };
 
-      // Save configuration
-      await configService.saveConfiguration(chatbot.identity.id, updatedConfig);
+      // Save tool profile to Firebase
+      await configService.updateToolProfile(chatbot.identity.id, updatedToolProfile);
+      
+      // Update local state
+      setToolProfile(updatedToolProfile);
       
       // Notify parent component
       if (onSave) {
-        onSave(updatedConfig);
+        onSave(updatedToolProfile);
       }
 
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 2000);
       
-      console.log('✅ Tool configuration saved successfully');
+      console.log('✅ [ToolPanel] Tool configuration saved successfully to Firebase');
     } catch (error) {
-      console.error('❌ Failed to save tool configuration:', error);
+      console.error('❌ [ToolPanel] Failed to save tool configuration:', error);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
@@ -304,24 +313,37 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       <Card
         key={tool.id}
         sx={{
-          height: '100%',
-          border: isEnabled ? '2px solid #3b82f6' : '1px solid #334155',
-          bgcolor: isEnabled ? 'rgba(59, 130, 246, 0.05)' : '#1e293b',
+          width: '100%',
+          maxWidth: '100%',
+          border: isEnabled ? '2px solid #3b82f6' : '1px solid #1e293b',
+          bgcolor: isEnabled ? 'rgba(59, 130, 246, 0.08)' : '#1e293b',
           transition: 'all 0.2s ease',
+          overflow: 'hidden',
           '&:hover': {
             transform: 'translateY(-2px)',
-            boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.4)',
+            bgcolor: isEnabled ? 'rgba(59, 130, 246, 0.12)' : '#334155',
           }
         }}
       >
-        <CardContent sx={{ p: 2 }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar sx={{ bgcolor: getTierColor(tool.tier), width: 40, height: 40 }}>
-                <IconComponent sx={{ fontSize: 20 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
+              <Avatar sx={{ bgcolor: getTierColor(tool.tier), width: 32, height: 32, flexShrink: 0 }}>
+                <IconComponent sx={{ fontSize: 16 }} />
               </Avatar>
-              <Box>
-                <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography 
+                  variant="subtitle1" 
+                  sx={{ 
+                    color: 'white', 
+                    fontWeight: 600, 
+                    fontSize: '0.9rem',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {tool.name}
                 </Typography>
                 <Chip
@@ -331,7 +353,9 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
                     bgcolor: tierColors.bg,
                     color: tierColors.text,
                     fontWeight: 600,
-                    fontSize: '0.7rem',
+                    fontSize: '0.65rem',
+                    height: '20px',
+                    mt: 0.5
                   }}
                 />
               </Box>
@@ -339,7 +363,9 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
             <Switch
               checked={isEnabled}
               onChange={() => toggleTool(tool)}
+              size="small"
               sx={{
+                flexShrink: 0,
                 '& .MuiSwitch-switchBase.Mui-checked': {
                   color: '#3b82f6',
                 },
@@ -350,32 +376,36 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
             />
           </Box>
 
-          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3, lineHeight: 1.5 }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#94a3b8', 
+              mb: 2, 
+              lineHeight: 1.4,
+              fontSize: '0.8rem',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
+          >
             {tool.description}
           </Typography>
 
-          {tool.pricing && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
-                Pricing:
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#f1f5f9', fontWeight: 500 }}>
-                ${tool.pricing.monthly}/month
-                {tool.pricing.usage_based && ' + usage'}
-              </Typography>
-            </Box>
-          )}
-
-          <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
             {isEnabled && (
               <Button
                 variant="outlined"
                 size="small"
-                startIcon={<SettingsIcon />}
+                startIcon={<SettingsIcon sx={{ fontSize: '14px !important' }} />}
                 onClick={() => openConfiguration(tool)}
                 sx={{
                   borderColor: '#3b82f6',
                   color: '#3b82f6',
+                  fontSize: '0.75rem',
+                  minWidth: 'auto',
+                  px: 1.5,
+                  py: 0.5,
                   '&:hover': {
                     borderColor: '#2563eb',
                     bgcolor: 'rgba(59, 130, 246, 0.1)',
@@ -386,8 +416,8 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
               </Button>
             )}
             <Tooltip title={`View ${tool.name} details`}>
-              <IconButton size="small" sx={{ color: '#64748b' }}>
-                <InfoIcon />
+              <IconButton size="small" sx={{ color: '#64748b', p: 0.5 }}>
+                <InfoIcon sx={{ fontSize: '16px' }} />
               </IconButton>
             </Tooltip>
           </Box>
@@ -408,26 +438,27 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
         fullWidth
         PaperProps={{
           sx: {
-            bgcolor: '#1e293b',
+            bgcolor: '#0f172a',
             color: 'white',
+            border: '1px solid #1e293b'
           }
         }}
       >
-        <DialogTitle sx={{ borderBottom: '1px solid #334155' }}>
+        <DialogTitle sx={{ borderBottom: '1px solid #1e293b' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar sx={{ bgcolor: getTierColor(selectedTool.tier) }}>
               {React.createElement(getIconComponent(selectedTool.icon))}
             </Avatar>
             <Box>
               <Typography variant="h6">{selectedTool.name} Configuration</Typography>
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
                 Configure settings and credentials for this tool
               </Typography>
             </Box>
           </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent sx={{ p: 3, bgcolor: '#0f172a' }}>
           <Stack spacing={3}>
             {/* Configuration Settings */}
             <Box>
@@ -444,12 +475,12 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
                   variant="outlined"
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      bgcolor: '#0f172a',
+                      bgcolor: '#1e293b',
                       '& fieldset': { borderColor: '#334155' },
                       '&:hover fieldset': { borderColor: '#475569' },
                       '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
                     },
-                    '& .MuiInputLabel-root': { color: '#94a3b8' },
+                    '& .MuiInputLabel-root': { color: '#64748b' },
                     '& .MuiInputBase-input': { color: 'white' },
                   }}
                 />
@@ -463,7 +494,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
                   <SecurityIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
                   Credentials & API Keys
                 </Typography>
-                <Alert severity="info" sx={{ mb: 2, bgcolor: 'rgba(59, 130, 246, 0.1)' }}>
+                <Alert severity="info" sx={{ mb: 2, bgcolor: 'rgba(59, 130, 246, 0.1)', border: '1px solid #1e293b' }}>
                   Credentials are encrypted and stored securely. They are only used for API calls.
                 </Alert>
                 {Object.entries(selectedTool.credentials).map(([key, value]) => (
@@ -478,12 +509,12 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
                     placeholder={`Enter your ${key.replace(/_/g, ' ')}`}
                     sx={{
                       '& .MuiOutlinedInput-root': {
-                        bgcolor: '#0f172a',
+                        bgcolor: '#1e293b',
                         '& fieldset': { borderColor: '#334155' },
                         '&:hover fieldset': { borderColor: '#475569' },
                         '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
                       },
-                      '& .MuiInputLabel-root': { color: '#94a3b8' },
+                      '& .MuiInputLabel-root': { color: '#64748b' },
                       '& .MuiInputBase-input': { color: 'white' },
                     }}
                   />
@@ -493,7 +524,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
           </Stack>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3, borderTop: '1px solid #334155' }}>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid #1e293b', bgcolor: '#0f172a' }}>
           <Button onClick={() => setConfigDialogOpen(false)} sx={{ color: '#94a3b8' }}>
             Cancel
           </Button>
@@ -518,10 +549,17 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       maxHeight: '100vh',
       display: 'flex', 
       flexDirection: 'column',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      bgcolor: '#0f172a', // Dark background like receipts tab
+      color: 'white'
     }}>
       {/* Header */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
+      <Box sx={{ 
+        p: 3, 
+        borderBottom: '1px solid #1e293b', 
+        flexShrink: 0,
+        bgcolor: '#0f172a'
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Avatar sx={{ bgcolor: '#3b82f6' }}>
@@ -531,12 +569,12 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
               <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
                 Tool Configuration
               </Typography>
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
                 {chatbot.identity.name} • {toolProfile.totalToolsEnabled} tools enabled
               </Typography>
             </Box>
           </Box>
-          <IconButton onClick={onClose} sx={{ color: '#94a3b8' }}>
+          <IconButton onClick={onClose} sx={{ color: '#64748b' }}>
             <ExpandMoreIcon sx={{ transform: 'rotate(90deg)' }} />
           </IconButton>
         </Box>
@@ -548,7 +586,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
               <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 700 }}>
                 {toolProfile.totalToolsEnabled}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
                 Total Tools
               </Typography>
             </Box>
@@ -558,7 +596,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
               <Typography variant="h4" sx={{ color: '#8b5cf6', fontWeight: 700 }}>
                 {toolProfile.enterpriseToolsEnabled}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
                 Enterprise
               </Typography>
             </Box>
@@ -568,7 +606,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
               <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 700 }}>
                 {TOOL_CATEGORIES.length}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
                 Categories
               </Typography>
             </Box>
@@ -577,7 +615,12 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       </Box>
 
       {/* Search */}
-      <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
+      <Box sx={{ 
+        p: 3, 
+        borderBottom: '1px solid #1e293b', 
+        flexShrink: 0,
+        bgcolor: '#0f172a'
+      }}>
         <TextField
           fullWidth
           placeholder="Search tools..."
@@ -588,7 +631,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
           }}
           sx={{
             '& .MuiOutlinedInput-root': {
-              bgcolor: '#0f172a',
+              bgcolor: '#1e293b',
               '& fieldset': { borderColor: '#334155' },
               '&:hover fieldset': { borderColor: '#475569' },
               '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
@@ -599,7 +642,11 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       </Box>
 
       {/* Category Tabs */}
-      <Box sx={{ borderBottom: '1px solid #334155', flexShrink: 0 }}>
+      <Box sx={{ 
+        borderBottom: '1px solid #1e293b', 
+        flexShrink: 0,
+        bgcolor: '#0f172a'
+      }}>
         <Tabs
           value={selectedTab}
           onChange={(e, newValue) => setSelectedTab(newValue)}
@@ -621,19 +668,43 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       </Box>
 
       {/* Tools Grid */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
-        <Grid container spacing={2}>
+      <Box sx={{ 
+        flex: 1, 
+        overflow: 'auto', 
+        p: 2,
+        maxWidth: '100%',
+        bgcolor: '#0f172a', // Dark background
+        '&::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '&::-webkit-scrollbar-track': {
+          background: '#1e293b',
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: '#334155',
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: '#475569',
+        },
+      }}>
+        <Stack spacing={2} sx={{ maxWidth: '100%' }}>
           {getFilteredTools(selectedTab === 0 ? undefined : TOOL_CATEGORIES[selectedTab - 1]?.id)
             .map((tool) => (
-              <Grid item xs={12} key={tool.id}>
+              <Box key={tool.id} sx={{ width: '100%' }}>
                 {renderToolCard(tool)}
-              </Grid>
+              </Box>
             ))}
-        </Grid>
+        </Stack>
       </Box>
 
       {/* Footer */}
-      <Box sx={{ p: 3, borderTop: '1px solid #334155', flexShrink: 0 }}>
+      <Box sx={{ 
+        p: 3, 
+        borderTop: '1px solid #1e293b', 
+        flexShrink: 0,
+        bgcolor: '#0f172a'
+      }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="outlined"
