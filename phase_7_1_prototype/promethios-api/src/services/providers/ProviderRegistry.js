@@ -457,6 +457,13 @@ class ProviderRegistry {
           
           console.log(`🎯 ProviderRegistry: Final response updated to follow-up response (${finalResponse.content?.length || 0} chars)`);
           console.log(`🔍 ProviderRegistry: Final response content preview: "${finalResponse.content?.substring(0, 100) || 'NO CONTENT'}"`);
+          
+          // 🔍 VALIDATION: Check if AI actually used the tool results
+          const responseUsesToolResults = this.validateToolResultUsage(finalResponse, toolResults);
+          if (!responseUsesToolResults) {
+            console.log(`⚠️ ProviderRegistry: AI did not incorporate tool results, enhancing response`);
+            finalResponse = this.enhanceResponseWithToolResults(finalResponse, toolResults);
+          }
         } else {
           // Add tool results to response (fallback if no follow-up needed)
           finalResponse.tool_results = toolResults;
@@ -926,6 +933,148 @@ class ProviderRegistry {
         })
       };
     }
+  }
+
+  /**
+   * Validate if the AI response actually incorporates tool results
+   * @param {Object} response - AI response
+   * @param {Array} toolResults - Tool execution results
+   * @returns {boolean} True if response uses tool results
+   */
+  validateToolResultUsage(response, toolResults) {
+    if (!toolResults || toolResults.length === 0) {
+      return true; // No validation needed if no tool results
+    }
+    
+    if (!response.content || response.content.trim() === '') {
+      console.log(`🔍 [VALIDATION] Empty response, likely not using tool results`);
+      return false;
+    }
+
+    const content = response.content.toLowerCase();
+    const contentLength = response.content.length;
+
+    // Check if response is suspiciously short (likely not using tool results)
+    if (contentLength < 100) {
+      console.log(`🔍 [VALIDATION] Response too short (${contentLength} chars), likely not using tool results`);
+      return false;
+    }
+
+    // Check for common patterns that indicate tool results are not being used
+    const ignoringPatterns = [
+      'i\'ll search',
+      'let me search',
+      'i\'ll do another search',
+      'i\'ll look that up',
+      'searching for',
+      'let me find'
+    ];
+
+    for (const pattern of ignoringPatterns) {
+      if (content.includes(pattern)) {
+        console.log(`🔍 [VALIDATION] Found ignoring pattern: "${pattern}"`);
+        return false;
+      }
+    }
+
+    // Check if response contains evidence of using tool results
+    const usingPatterns = [
+      'search results',
+      'found',
+      'according to',
+      'based on',
+      'here are',
+      'here\'s what',
+      'the results show',
+      'i found'
+    ];
+
+    for (const pattern of usingPatterns) {
+      if (content.includes(pattern)) {
+        console.log(`🔍 [VALIDATION] Found using pattern: "${pattern}"`);
+        return true;
+      }
+    }
+
+    // If we have web search results, check for URLs or titles
+    for (const result of toolResults) {
+      try {
+        const resultData = JSON.parse(result.content);
+        if (resultData.results && Array.isArray(resultData.results)) {
+          for (const searchResult of resultData.results) {
+            if (searchResult.title && content.includes(searchResult.title.toLowerCase())) {
+              console.log(`🔍 [VALIDATION] Found search result title in response`);
+              return true;
+            }
+            if (searchResult.url && content.includes(searchResult.url)) {
+              console.log(`🔍 [VALIDATION] Found search result URL in response`);
+              return true;
+            }
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
+    }
+
+    console.log(`🔍 [VALIDATION] No evidence of tool result usage found`);
+    return false;
+  }
+
+  /**
+   * Enhance response with tool results if AI didn't use them
+   * @param {Object} response - Original AI response
+   * @param {Array} toolResults - Tool execution results
+   * @returns {Object} Enhanced response
+   */
+  enhanceResponseWithToolResults(response, toolResults) {
+    let enhancedContent = response.content || '';
+    
+    // Add a separator if there's existing content
+    if (enhancedContent.trim()) {
+      enhancedContent += '\n\n';
+    }
+
+    // Process each tool result
+    for (const result of toolResults) {
+      try {
+        const resultData = JSON.parse(result.content);
+        
+        if (result.name === 'web_search' && resultData.results) {
+          enhancedContent += `## Search Results\n\n`;
+          enhancedContent += `I searched for: "${resultData.query}"\n\n`;
+          
+          if (resultData.results.length === 0) {
+            enhancedContent += `No results found for this search query.\n\n`;
+          } else {
+            for (const searchResult of resultData.results) {
+              enhancedContent += `**${searchResult.title}**\n`;
+              enhancedContent += `${searchResult.snippet}\n`;
+              enhancedContent += `Source: ${searchResult.url}\n\n`;
+            }
+          }
+        } else if (result.name === 'document_generation' && resultData.file_path) {
+          enhancedContent += `## Document Generated\n\n`;
+          enhancedContent += `I've created a document for you: ${resultData.file_path}\n\n`;
+        } else {
+          // Generic tool result formatting
+          enhancedContent += `## ${result.name} Results\n\n`;
+          enhancedContent += `${JSON.stringify(resultData, null, 2)}\n\n`;
+        }
+      } catch (error) {
+        // If we can't parse the result, show it as-is
+        enhancedContent += `## ${result.name} Results\n\n`;
+        enhancedContent += `${result.content}\n\n`;
+      }
+    }
+
+    console.log(`✅ ProviderRegistry: Enhanced response with tool results (${enhancedContent.length} chars)`);
+    
+    return {
+      ...response,
+      content: enhancedContent,
+      enhanced_with_tool_results: true
+    };
   }
 }
 

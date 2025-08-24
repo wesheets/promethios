@@ -1168,7 +1168,15 @@ function buildAgentSystemMessage(baseSystemMessage, agentConfiguration) {
     
     // Add enabled tools context
     if (agentConfiguration.enabledTools?.length > 0) {
-        systemMessage += `\n\nTOOLS: You have access to the following tools: ${agentConfiguration.enabledTools.join(', ')}. Use these tools when appropriate to assist users.`;
+        systemMessage += `\n\nTOOLS: You have access to the following tools: ${agentConfiguration.enabledTools.join(', ')}. Use these tools when appropriate to assist users.
+
+CRITICAL TOOL USAGE INSTRUCTIONS:
+- When you receive tool results, you MUST incorporate them into your response to the user
+- Present search results clearly with titles, URLs, and summaries
+- Do NOT say you will search again if you already have search results
+- Do NOT ignore tool results - they contain the information the user requested
+- Format tool results in a user-friendly way with clear headings and bullet points
+- If tool results contain an error, explain the error to the user and suggest alternatives`;
     }
     
     console.log('✅ [Backend] Agent-specific system message built:', {
