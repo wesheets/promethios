@@ -34,7 +34,15 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  transition: opacity 1s ease-out;
+  opacity: 0;
+  animation: flameIntro 7s ease-in-out forwards;
+}
+
+@keyframes flameIntro {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .flame-container.fade-out {
@@ -46,13 +54,31 @@ body {
   width: 800px;
   height: 800px;
   object-fit: contain;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: flameVideoFade 7s ease-in-out forwards;
+}
+
+@keyframes flameVideoFade {
+  0% { opacity: 0; transform: scale(0.9); }
+  15% { opacity: 1; transform: scale(1); }
+  85% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
 }
 
 .promethios-logo {
-  width: 400px;
+  width: 200px;
   height: auto;
   object-fit: contain;
+  opacity: 0;
+  animation: logoFade 7s ease-in-out forwards;
+}
+
+@keyframes logoFade {
+  0% { opacity: 0; transform: translateY(20px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
 }
 
 /* Header */

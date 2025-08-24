@@ -20,7 +20,7 @@ function App() {
   // Phase progression
   useEffect(() => {
     const phases = [
-      { delay: 5000, phase: 2 }, // Flame to cube (5 seconds)
+      { delay: 7000, phase: 2 }, // Flame to cube (7 seconds)
       { delay: 2000, phase: 3 }, // Cube positioning
       { delay: 1000, phase: 4 }, // UI reveal
       { delay: 1000, phase: 5 }  // Cubes appear
