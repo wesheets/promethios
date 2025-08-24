@@ -123,9 +123,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Extract data from websites and web pages',
     category: 'web_search',
     icon: 'Globe',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 29, annual: 290 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       max_pages: 100,
       respect_robots_txt: true,
@@ -138,9 +137,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Analyze website SEO performance and recommendations',
     category: 'web_search',
     icon: 'TrendingUp',
-    enabled: false,
-    tier: 'enterprise',
-    pricing: { monthly: 99, annual: 990 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       analysis_depth: 'comprehensive',
       competitor_analysis: true
@@ -154,7 +152,7 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Send emails via SMTP, SendGrid, or Mailgun',
     category: 'communication',
     icon: 'Mail',
-    enabled: false,
+    enabled: true,
     tier: 'basic',
     configuration: {
       provider: 'sendgrid',
@@ -172,9 +170,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Send SMS messages via Twilio or similar services',
     category: 'communication',
     icon: 'MessageSquare',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 19, annual: 190, usage_based: true },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       provider: 'twilio',
       country_codes: ['US', 'CA', 'UK']
@@ -191,9 +188,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Post messages and interact with Slack workspaces',
     category: 'communication',
     icon: 'MessageCircle',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 15, annual: 150 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       default_channel: '#general',
       mention_users: false
@@ -211,9 +207,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Manage products, orders, and inventory on Shopify',
     category: 'ecommerce',
     icon: 'ShoppingBag',
-    enabled: false,
-    tier: 'enterprise',
-    pricing: { monthly: 79, annual: 790 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       store_url: '',
       webhook_endpoints: [],
@@ -231,9 +226,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Process payments and manage billing with Stripe',
     category: 'ecommerce',
     icon: 'CreditCard',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 39, annual: 390 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       currency: 'USD',
       capture_method: 'automatic'
@@ -250,9 +244,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Manage WooCommerce store products and orders',
     category: 'ecommerce',
     icon: 'Store',
-    enabled: false,
-    tier: 'enterprise',
-    pricing: { monthly: 59, annual: 590 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       store_url: '',
       version: 'v3'
@@ -270,9 +263,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Manage leads, contacts, and opportunities in Salesforce',
     category: 'business',
     icon: 'Users',
-    enabled: false,
-    tier: 'enterprise',
-    pricing: { monthly: 149, annual: 1490 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       instance_url: '',
       api_version: '58.0'
@@ -291,9 +283,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Schedule meetings and manage calendar events',
     category: 'business',
     icon: 'Calendar',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 25, annual: 250 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       timezone: 'UTC',
       default_duration: 30
@@ -325,9 +316,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Post tweets and manage Twitter/X presence',
     category: 'social_media',
     icon: 'Twitter',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 35, annual: 350 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       auto_hashtags: false,
       character_limit: 280
@@ -345,9 +335,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Share content and manage LinkedIn company pages',
     category: 'social_media',
     icon: 'Linkedin',
-    enabled: false,
-    tier: 'enterprise',
-    pricing: { monthly: 89, annual: 890 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       post_types: ['text', 'image', 'article'],
       auto_publish: false
@@ -366,9 +355,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Access website analytics and performance data',
     category: 'analytics',
     icon: 'BarChart3',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 45, annual: 450 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       property_id: '',
       date_range: '30d'
@@ -414,9 +402,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Connect with 5000+ apps via Zapier workflows',
     category: 'automation',
     icon: 'Zap',
-    enabled: false,
-    tier: 'enterprise',
-    pricing: { monthly: 199, annual: 1990 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       webhook_url: '',
       trigger_events: []
@@ -431,9 +418,8 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
     description: 'Create custom automated workflows and tasks',
     category: 'automation',
     icon: 'GitBranch',
-    enabled: false,
-    tier: 'professional',
-    pricing: { monthly: 69, annual: 690 },
+    enabled: true,
+    tier: 'basic',
     configuration: {
       max_workflows: 50,
       execution_timeout: 300
@@ -443,10 +429,40 @@ export const AVAILABLE_TOOLS: ToolConfiguration[] = [
 
 // Default tools that should be enabled for all new agents
 export const DEFAULT_ENABLED_TOOLS = [
+  // Core tools
   'web_search',
   'document_generation', 
   'data_visualization',
-  'coding_programming'
+  'coding_programming',
+  
+  // Web & Search tools
+  'web_scraping',
+  'seo_analysis',
+  
+  // Communication tools
+  'email_sending',
+  'sms_messaging',
+  'slack_integration',
+  
+  // E-commerce tools
+  'shopify_integration',
+  'stripe_payments',
+  'woocommerce_integration',
+  
+  // Business tools
+  'salesforce_crm',
+  'google_calendar',
+  
+  // Social media tools
+  'twitter_posting',
+  'linkedin_posting',
+  
+  // Analytics tools
+  'google_analytics',
+  
+  // Automation tools
+  'zapier_integration',
+  'workflow_automation'
 ];
 
 export interface ToolUsageMetrics {

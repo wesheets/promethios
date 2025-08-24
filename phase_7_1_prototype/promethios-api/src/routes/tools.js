@@ -13,13 +13,58 @@ const webSearchTool = require('../services/tools/webSearchTool');
 const documentGenerationTool = require('../services/tools/documentGenerationTool');
 const dataVisualizationTool = require('../services/tools/dataVisualizationTool');
 const codingTool = require('../services/tools/codingTool');
+const webScrapingTool = require('../services/tools/webScrapingTool');
+const seoAnalysisTool = require('../services/tools/seoAnalysisTool');
+
+// Communication tools
+const emailSendingTool = require('../services/tools/emailSendingTool');
+const smsMessagingTool = require('../services/tools/smsMessagingTool');
+const slackIntegrationTool = require('../services/tools/slackIntegrationTool');
+
+// E-commerce tools
+const shopifyIntegrationTool = require('../services/tools/shopifyIntegrationTool');
+const stripePaymentsTool = require('../services/tools/stripePaymentsTool');
+
+// Business tools
+const googleCalendarTool = require('../services/tools/googleCalendarTool');
+
+// Social media tools
+const twitterPostingTool = require('../services/tools/twitterPostingTool');
+const linkedinPostingTool = require('../services/tools/linkedinPostingTool');
+
+// Analytics tools
+const googleAnalyticsTool = require('../services/tools/googleAnalyticsTool');
 
 // Available tools registry
 const AVAILABLE_TOOLS = {
+  // Core tools (enabled by default)
   'web_search': webSearchTool,
   'document_generation': documentGenerationTool,
   'data_visualization': dataVisualizationTool,
-  'coding_programming': codingTool
+  'coding_programming': codingTool,
+  
+  // Web & Search tools
+  'web_scraping': webScrapingTool,
+  'seo_analysis': seoAnalysisTool,
+  
+  // Communication tools
+  'email_sending': emailSendingTool,
+  'sms_messaging': smsMessagingTool,
+  'slack_integration': slackIntegrationTool,
+  
+  // E-commerce tools
+  'shopify_integration': shopifyIntegrationTool,
+  'stripe_payments': stripePaymentsTool,
+  
+  // Business tools
+  'google_calendar': googleCalendarTool,
+  
+  // Social media tools
+  'twitter_posting': twitterPostingTool,
+  'linkedin_posting': linkedinPostingTool,
+  
+  // Analytics tools
+  'google_analytics': googleAnalyticsTool
 };
 
 /**
