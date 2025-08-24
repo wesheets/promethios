@@ -2,6 +2,7 @@ services:
   - type: web
     name: promethios-landing
     env: static
+    runtime: node
     buildCommand: pnpm install && pnpm run build
     staticPublishPath: ./dist
     routes:
