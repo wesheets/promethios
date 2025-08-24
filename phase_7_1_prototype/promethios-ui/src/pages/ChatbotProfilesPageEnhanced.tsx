@@ -1905,7 +1905,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 
                 {/* Command Panel Tabs */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  [
+                  {[
                     { key: 'chats', label: 'CHATS' },
                     { key: 'analytics', label: 'ANALYTICS' },
                     { key: 'customize', label: 'CUSTOMIZE' },
@@ -1922,7 +1922,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'live_agent', label: 'LIVE AGENT' },
                     { key: 'governance', label: 'GOVERNANCE' },
                     { key: 'debug', label: 'DEBUG' }
-                  ]].map((tab) => (
+                  ].map((tab) => (
                     <Button
                       key={tab.key}
                       size="small"
