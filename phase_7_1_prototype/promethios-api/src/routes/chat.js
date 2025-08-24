@@ -4,6 +4,7 @@ const llmService = require('../services/llmService');
 const policyEnforcementService = require('../services/policyEnforcementService');
 const governanceContextService = require('../services/governanceContextService'); // CRITICAL FIX: Import governance context service
 const ragService = require('../services/ragService'); // RAG service for knowledge base integration
+const ResponseFormatter = require('../services/ResponseFormatter'); // Response formatting service
 
 // Import Provider Registry for tool-enabled LLM calls
 // 🎯 OFFICIAL FLOW: All LLM calls should go through Provider Registry
@@ -757,10 +758,27 @@ router.post('/', async (req, res) => {
             };
         }
 
+        // 🎨 FORMAT RESPONSE: Apply structured formatting to improve readability
+        const responseFormatter = new ResponseFormatter();
+        let formattedResponse = response;
+        
+        // Format response if we have tool results
+        if (providerResponse && providerResponse.tool_results && providerResponse.tool_results.length > 0) {
+            console.log('🎨 [Chat] Formatting response with tool results');
+            formattedResponse = responseFormatter.formatResponse(
+                response, 
+                providerResponse.tool_results,
+                { includeAttachments: false } // Attachments handled separately
+            );
+        } else {
+            // Apply basic formatting to plain responses
+            formattedResponse = responseFormatter.formatBasicResponse(response);
+        }
+
         // Add assistant response to session
         activeChatSessions[chatSessionId].messages.push({
             role: 'assistant',
-            content: response,
+            content: formattedResponse, // Use formatted response
             timestamp: new Date().toISOString(),
             governance_metrics: governance_metrics
         });
@@ -769,7 +787,7 @@ router.post('/', async (req, res) => {
         const responseData = {
             session_id: chatSessionId,
             agent_id: agent_id,
-            response: response,
+            response: formattedResponse, // Use formatted response
             governance_enabled: governance_enabled,
             governance_metrics: governance_metrics,
             timestamp: new Date().toISOString()

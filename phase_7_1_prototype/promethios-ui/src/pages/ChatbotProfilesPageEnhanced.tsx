@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import MarkdownRenderer from '../components/MarkdownRenderer';
+import AttachmentRenderer from '../components/AttachmentRenderer';
 import {
   Box,
   Container,
@@ -1340,7 +1342,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             {/* Command Center Layout - Chat on Left, Panels on Right */}
             <Box sx={{ display: 'flex', height: '100%' }}>
               {/* Left Side - Chat Interface */}
-              <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#1e293b' }}>
+              <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}>
                 {/* Chat Header */}
               <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
@@ -1528,70 +1530,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           }}
                         >
                           {/* Message Content */}
-                          <Typography variant="body2" sx={{ 
-                            fontSize: '0.9rem',
-                            color: 'white',
-                            mb: 0.5
-                          }}>
-                            {message.content}
-                          </Typography>
+                          <MarkdownRenderer 
+                            content={message.content}
+                            sx={{ 
+                              fontSize: '0.9rem',
+                              mb: 0.5
+                            }}
+                          />
                           
                           {/* Attachments Display */}
-                          {message.attachments && message.attachments.length > 0 && (
-                            <Box sx={{ mt: 1, mb: 1 }}>
-                              {message.attachments.map((file, index) => {
-                                const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
-                                const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
-                                
-                                if (isImage) {
-                                  // Display image preview
-                                  const imageUrl = URL.createObjectURL(file);
-                                  return (
-                                    <Box key={index} sx={{ mt: 1 }}>
-                                      <img
-                                        src={imageUrl}
-                                        alt={file.name}
-                                        style={{
-                                          maxWidth: '200px',
-                                          maxHeight: '200px',
-                                          borderRadius: '8px',
-                                          cursor: 'pointer'
-                                        }}
-                                        onClick={() => window.open(imageUrl, '_blank')}
-                                      />
-                                    </Box>
-                                  );
-                                } else {
-                                  // Display file as downloadable link
-                                  const fileUrl = URL.createObjectURL(file);
-                                  return (
-                                    <Box key={index} sx={{ mt: 1 }}>
-                                      <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => {
-                                          const a = document.createElement('a');
-                                          a.href = fileUrl;
-                                          a.download = file.name;
-                                          a.click();
-                                        }}
-                                        sx={{
-                                          color: '#3b82f6',
-                                          borderColor: '#3b82f6',
-                                          '&:hover': {
-                                            borderColor: '#2563eb',
-                                            bgcolor: 'rgba(59, 130, 246, 0.1)'
-                                          }
-                                        }}
-                                      >
-                                        📎 {file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name}
-                                      </Button>
-                                    </Box>
-                                  );
-                                }
-                              })}
-                            </Box>
-                          )}
+                          <AttachmentRenderer 
+                            attachments={message.attachments || []}
+                            sx={{ mt: 1 }}
+                          />
                           
                           {/* Timestamp */}
                           <Typography variant="caption" sx={{ 
