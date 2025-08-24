@@ -21,7 +21,7 @@ import {
   orderBy,
   limit
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { db } from '../firebase/config';
 import { AgentConfiguration } from '../types/AgentConfigurationTypes';
 import { AgentToolProfile } from '../types/ToolTypes';
 
