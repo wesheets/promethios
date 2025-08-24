@@ -21,15 +21,11 @@ function App() {
 
   // Phase progression - show flame loader every time for brand recognition
   useEffect(() => {
-    console.log('useEffect running, hasStartedAnimation:', hasStartedAnimation.current, 'completed:', animationCompleted.current);
-    
     // Never restart if animation has completed or already started
     if (hasStartedAnimation.current || animationCompleted.current) {
-      console.log('Animation already started or completed, skipping');
       return;
     }
     hasStartedAnimation.current = true;
-    console.log('Starting flame animation sequence');
 
     const phases = [
       { delay: 7000, phase: 2 }, // Flame to cube (7 seconds)
@@ -42,19 +38,16 @@ function App() {
     phases.forEach(({ delay, phase }, index) => {
       const totalDelay = phases.slice(0, index + 1).reduce((sum, p) => sum + p.delay, 0);
       const timeout = setTimeout(() => {
-        console.log('Setting phase to:', phase);
         setCurrentPhase(phase);
         // Mark as completed when reaching final phase
         if (phase === 5) {
           animationCompleted.current = true;
-          console.log('Animation sequence completed');
         }
       }, totalDelay);
       timeouts.push(timeout);
     });
 
     return () => {
-      console.log('Cleaning up timeouts');
       timeouts.forEach(clearTimeout);
       // Don't reset hasStartedAnimation on cleanup to prevent restart
     };
