@@ -1,8 +1,0 @@
-{
-  "type": "trust_requirements",
-  "sourceAgentId": "promethios-agent",
-  "targetAgentId": "external-agent",
-  "reason": "Memory integrity required but not provided",
-  "timestamp": "2025-05-27T02:37:48.566Z",
-  "id": "dispute_018c28ee-b598-4000-b205-d61ec2551387"
-}

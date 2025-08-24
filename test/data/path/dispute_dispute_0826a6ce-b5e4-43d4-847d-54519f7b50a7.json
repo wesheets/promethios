@@ -1,8 +1,0 @@
-{
-  "type": "invalid_proof",
-  "sourceAgentId": "promethios-agent",
-  "targetAgentId": "external-agent",
-  "reason": "Missing governance proof",
-  "timestamp": "2025-05-27T02:13:32.627Z",
-  "id": "dispute_0826a6ce-b5e4-43d4-847d-54519f7b50a7"
-}

@@ -1,8 +1,0 @@
-{
-  "type": "invalid_proof",
-  "sourceAgentId": "strict-agent",
-  "targetAgentId": "minimal-agent",
-  "reason": "Missing governance proof",
-  "timestamp": "2025-05-27T02:23:47.339Z",
-  "id": "dispute_486ed83d-c41c-48ab-a803-5ecdba56c8a5"
-}

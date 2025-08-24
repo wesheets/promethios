@@ -1,8 +1,0 @@
-{
-  "type": "invalid_proof",
-  "sourceAgentId": "promethios-agent",
-  "targetAgentId": "external-agent",
-  "reason": "Invalid signature format",
-  "timestamp": "2025-05-27T01:58:38.390Z",
-  "id": "dispute_33a63368-0eed-499f-a89a-0bdf1c077c7a"
-}
