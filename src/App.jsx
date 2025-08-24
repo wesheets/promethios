@@ -12,13 +12,26 @@ import flameVideo from './assets/0801.mp4';
 import promethiosLogo from './assets/promethiosnoflame.png';
 
 function App() {
-  const [currentPhase, setCurrentPhase] = useState(1);
+  // Check if flame has been shown in this session to prevent loops
+  const [hasShownFlameThisSession, setHasShownFlameThisSession] = useState(() => {
+    return sessionStorage.getItem('promethios-flame-session') === 'true';
+  });
+  
+  const [currentPhase, setCurrentPhase] = useState(hasShownFlameThisSession ? 5 : 1);
   const [cubePosition, setCubePosition] = useState({ x: 70, y: 45 });
   const [connectedCubes, setConnectedCubes] = useState([]);
   const [wireframePulse, setWireframePulse] = useState('');
 
-  // Phase progression - show flame loader every time for brand recognition
+  // Phase progression - prevent loops within same session, but show on new sessions
   useEffect(() => {
+    if (hasShownFlameThisSession) {
+      return; // Skip if already shown this session
+    }
+
+    // Mark as shown for this session only
+    sessionStorage.setItem('promethios-flame-session', 'true');
+    setHasShownFlameThisSession(true);
+
     const phases = [
       { delay: 7000, phase: 2 }, // Flame to cube (7 seconds)
       { delay: 2000, phase: 3 }, // Cube positioning
@@ -36,7 +49,7 @@ function App() {
     });
 
     return () => timeouts.forEach(clearTimeout);
-  }, []);
+  }, []); // Empty dependency array to run only once per mount
 
   // Cube positioning animation (Phase 2) - removed to prevent jumping
 
@@ -76,18 +89,20 @@ function App() {
   };
 
   const FlameAnimation = () => (
-    <div className={`flame-container ${currentPhase > 1 ? 'fade-out' : ''}`}>
-      <video 
-        className="flame-video"
-        autoPlay 
-        muted 
-        loop
-        playsInline
-      >
-        <source src={flameVideo} type="video/mp4" />
-      </video>
-      <img src={promethiosLogo} alt="Promethios" className="promethios-logo" />
-    </div>
+    !hasShownFlameThisSession && (
+      <div className={`flame-container ${currentPhase > 1 ? 'fade-out' : ''}`}>
+        <video 
+          className="flame-video"
+          autoPlay 
+          muted 
+          loop
+          playsInline
+        >
+          <source src={flameVideo} type="video/mp4" />
+        </video>
+        <img src={promethiosLogo} alt="Promethios" className="promethios-logo" />
+      </div>
+    )
   );
 
   const WireframeCube = () => (
