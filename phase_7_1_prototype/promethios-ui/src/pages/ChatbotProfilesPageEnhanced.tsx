@@ -961,12 +961,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         startTime: new Date(),
         messageCount: 0,
         trustScore: 0.75,
-        autonomyLevel: 'Supervised',
         governanceMetrics: {
-          averageTrustScore: 0.75,
-          totalMessages: 0,
-          policyViolations: 0,
-          riskLevel: 'Low'
+          violations: 0,
+          warnings: 0,
+          complianceScore: 1.0
         }
       };
       updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { activeSession: fallbackSession });
