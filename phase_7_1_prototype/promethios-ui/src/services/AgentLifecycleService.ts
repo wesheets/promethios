@@ -250,7 +250,7 @@ export class AgentLifecycleService {
    */
   async getProductionAgentsWithLifecycleStatus(userId: string): Promise<AgentWithLifecycleStatus[]> {
     try {
-      console.log('🔍 Loading production agents with lifecycle status for user:', userId);
+      smartLogger.smartLog('🔍 Loading production agents with lifecycle status for user:', userId);
       
       // Set user context for agent storage service
       this.agentStorageService.setCurrentUser(userId);

@@ -477,11 +477,11 @@ export class ChatbotStorageService {
    */
   private async persistChatbot(chatbot: ChatbotProfile): Promise<void> {
     try {
-      console.log('🔥 Persisting chatbot to unified storage:', chatbot.identity.id);
+      smartLogger.smartLog('🔥 Persisting chatbot to unified storage:', chatbot.identity.id);
       
       // Create the storage key using the same format as getChatbots expects
       const storageKey = `${chatbot.identity.ownerId}_${chatbot.identity.id}`;
-      console.log('🔥 Using storage key:', storageKey);
+      smartLogger.smartLog('🔥 Using storage key:', storageKey);
       
       // Save to unified storage under 'agents' namespace with chatbot- prefix
       await unifiedStorage.set('agents', storageKey, chatbot);

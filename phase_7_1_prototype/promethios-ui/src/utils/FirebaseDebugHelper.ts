@@ -32,7 +32,7 @@ export class FirebaseDebugHelper {
       result.canWrite = true;
       result.success = true;
 
-      console.log('🔥 Firebase connection test successful');
+      smartLogger.smartLog('🔥 Firebase connection test successful');
       return result;
 
     } catch (error) {
@@ -78,7 +78,7 @@ export class FirebaseDebugHelper {
           
           result.totalDocuments += snapshot.size;
           
-          console.log(`🔥 Collection ${collectionName}: ${snapshot.size} documents`);
+          smartLogger.smartLog(`🔥 Collection ${collectionName}: ${snapshot.size} documents`);
         } catch (collectionError) {
           console.warn(`Failed to query collection ${collectionName}:`, collectionError);
         }
@@ -142,7 +142,7 @@ export class FirebaseDebugHelper {
         }
       }
 
-      console.log(`🔥 Found ${result.totalFound} documents for user ${userId}`);
+      smartLogger.smartLog(`🔥 Found ${result.totalFound} documents for user ${userId}`);
       return result;
 
     } catch (error) {
@@ -216,7 +216,7 @@ export class FirebaseDebugHelper {
       totalDocuments: number;
     };
   }> {
-    console.log('🔥 Starting Firebase debug tests...');
+    smartLogger.smartLog('🔥 Starting Firebase debug tests...');
 
     const connection = await this.testConnection();
     const collections = await this.listCollections();
@@ -229,7 +229,7 @@ export class FirebaseDebugHelper {
       totalDocuments: collections.totalDocuments
     };
 
-    console.log('🔥 Firebase debug tests completed:', summary);
+    smartLogger.smartLog('🔥 Firebase debug tests completed:', summary);
 
     return {
       connection,

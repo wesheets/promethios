@@ -39,7 +39,7 @@ export class AgentConfigurationService {
    */
   initializeFirebase(userId: string, organizationId: string = 'default'): void {
     this.firebaseService = new FirebaseConfigurationService(userId, organizationId);
-    console.log(`🔥 [Config] Firebase service initialized for user ${userId}`);
+    smartLogger.smartLog(`🔥 [Config] Firebase service initialized for user ${userId}`);
   }
 
   // ============================================================================

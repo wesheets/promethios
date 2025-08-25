@@ -69,13 +69,13 @@ export const useUserPreferences = () => {
         return;
       }
 
-      console.log("🔥 useUserPreferences: Starting Firestore operations for user:", currentUser.uid);
+      smartLogger.smartLog("🔥 useUserPreferences: Starting Firestore operations for user:", currentUser.uid);
       setLoading(true);
       const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
-      console.log("🔥 useUserPreferences: Created document reference:", userPrefsRef.path);
+      smartLogger.smartLog("🔥 useUserPreferences: Created document reference:", userPrefsRef.path);
 
       const unsubscribe = onSnapshot(userPrefsRef, (docSnap) => {
-        console.log("🔥 useUserPreferences: onSnapshot triggered. Document exists:", docSnap.exists());
+        smartLogger.smartLog("🔥 useUserPreferences: onSnapshot triggered. Document exists:", docSnap.exists());
         
         if (!docSnap.exists()) {
           console.warn('⚠️ useUserPreferences: User preferences document does not exist for UID:', currentUser.uid, '. Checking localStorage for migration.');
@@ -86,7 +86,7 @@ export const useUserPreferences = () => {
             navigationCollapsed: localNavCollapsed === 'true',
           };
           
-          console.log('🔥 useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
+          smartLogger.smartLog('🔥 useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
           
           // Use retry logic for document creation (using .then() since onSnapshot callback can't be async)
           firestoreRetry.setDoc(
@@ -146,7 +146,7 @@ export const useUserPreferences = () => {
 
       // Update Firestore if user is logged in and db is available
       if (currentUser && db) {
-        console.log("🔥 useUserPreferences: Updating Firestore for user:", currentUser.uid);
+        smartLogger.smartLog("🔥 useUserPreferences: Updating Firestore for user:", currentUser.uid);
         const userPrefsRef = doc(db, 'userPreferences', currentUser.uid);
         
         // Use retry logic for document update

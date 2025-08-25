@@ -290,7 +290,7 @@ export class UserAgentStorageService {
 
       for (const key of userKeys) {
         try {
-          console.log('🔍 Loading production agent with key:', key);
+          smartLogger.smartLog('🔍 Loading production agent with key:', key);
           // Extract the key part after 'agents/' for the get() call
           const keyPart = key.replace('agents/', '');
           const agentData = await unifiedStorage.get<any>('agents', keyPart);
@@ -447,7 +447,7 @@ export class UserAgentStorageService {
     if (this.currentUserId && prioritizedAgents.length > 0) {
       const { universalCache } = await import('./UniversalDataCache');
       universalCache.set(this.currentUserId, prioritizedAgents, 'agents', 600); // Cache for 10 minutes
-      console.log(`💾 Cached ${prioritizedAgents.length} prioritized agents for OptimizedDataBridge access`);
+      smartLogger.smartLog(`💾 Cached ${prioritizedAgents.length} prioritized agents for OptimizedDataBridge access`);
       
       // Invalidate dashboard metrics cache so OptimizedDataBridge recalculates with fresh agent data
       const dashboardCacheKey = `dashboard-${this.currentUserId}`;

@@ -171,7 +171,7 @@ const AvailableAgentsTab: React.FC<{
       // Test Firebase availability
       if (agentsProvider.name === 'firebase') {
         const isFirebaseAvailable = await agentsProvider.isAvailable();
-        console.log('🔥 Firebase available for agents:', isFirebaseAvailable);
+        smartLogger.smartLog('🔥 Firebase available for agents:', isFirebaseAvailable);
       }
       
       // Get all agent keys for this user

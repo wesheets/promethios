@@ -6,7 +6,7 @@ import { AuthProvider } from './context/AuthContext';
 import AnalyticsProvider from './components/common/AnalyticsProvider';
 import App from './App';
 
-console.log('🔥 main.tsx is executing!');
+smartLogger.smartLog('🔥 main.tsx is executing!');
 console.log('React:', React);
 console.log('ReactDOM:', ReactDOM);
 
