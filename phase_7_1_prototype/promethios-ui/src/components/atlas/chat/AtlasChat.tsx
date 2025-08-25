@@ -8,6 +8,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AtlasChat.css';
 import VerificationHandler from '../../../utils/verificationHandler';
+import ActionStatusIndicator, { ActionStatus } from '../../chat/ActionStatusIndicator';
+import { actionStatusService } from '../../../services/ActionStatusService';
 
 // Global type declarations for verification handler
 declare global {
@@ -51,6 +53,7 @@ const AtlasChat: React.FC<AtlasChatProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [isExpanded, setIsExpanded] = useState(isOpen);
   const [isLoading, setIsLoading] = useState(false);
+  const [actionStatuses, setActionStatuses] = useState<ActionStatus[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Default welcome messages based on mode
@@ -89,6 +92,12 @@ const AtlasChat: React.FC<AtlasChatProps> = ({
         window.verificationHandler.startVerification(buttonElement);
       };
     }
+  }, []);
+
+  // Subscribe to action status updates
+  useEffect(() => {
+    const unsubscribe = actionStatusService.subscribe(setActionStatuses);
+    return unsubscribe;
   }, []);
 
   // Toggle chat expansion
@@ -204,6 +213,11 @@ const AtlasChat: React.FC<AtlasChatProps> = ({
           </div>
           
           <div className="chat-messages">
+            {/* Action Status Indicator */}
+            {actionStatuses.length > 0 && (
+              <ActionStatusIndicator actions={actionStatuses} />
+            )}
+            
             {messages.map((msg) => (
               <div key={msg.id} className={`message ${msg.role}`}>
                 {msg.role === 'atlas' && <div className="atlas-avatar"></div>}
@@ -215,7 +229,7 @@ const AtlasChat: React.FC<AtlasChatProps> = ({
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {isLoading && actionStatuses.length === 0 && (
               <div className="message atlas">
                 <div className="atlas-avatar"></div>
                 <div className="message-content">

@@ -5,6 +5,7 @@ const policyEnforcementService = require('../services/policyEnforcementService')
 const governanceContextService = require('../services/governanceContextService'); // CRITICAL FIX: Import governance context service
 const ragService = require('../services/ragService'); // RAG service for knowledge base integration
 const ResponseFormatter = require('../services/ResponseFormatter'); // Response formatting service
+const { actionStatusMiddleware } = require('../middleware/actionStatusMiddleware'); // Action status tracking
 
 // Import Provider Registry for tool-enabled LLM calls
 // 🎯 OFFICIAL FLOW: All LLM calls should go through Provider Registry
@@ -272,7 +273,7 @@ except Exception as e:
 const governance_core = new PrometheusGovernanceCore();
 
 // POST / — Real-time chat with agents (governed or ungoverned)
-router.post('/', async (req, res) => {
+router.post('/', actionStatusMiddleware, async (req, res) => {
     let providerResponse = null; // Declare at top level to ensure it's always accessible
     
     try {
