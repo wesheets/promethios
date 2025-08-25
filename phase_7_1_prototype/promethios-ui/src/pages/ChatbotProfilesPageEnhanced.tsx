@@ -1003,6 +1003,37 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       console.log(`📤 [ChatPanel] Sending message: "${messageInput}"`);
       
+      // Auto-create chat session if none exists (proactive creation)
+      if (!currentBotState?.currentChatSession && selectedChatbot && user?.uid) {
+        console.log('🆕 [AutoChat] No existing session, creating new chat session...');
+        try {
+          // Generate a smart chat name based on the first message
+          const smartChatName = messageInput.trim().length > 50 
+            ? `${messageInput.trim().substring(0, 47)}...`
+            : messageInput.trim();
+          
+          const newSession = await chatHistoryService.createChatSession(
+            selectedChatbot.id,
+            selectedChatbot.name,
+            user.uid,
+            smartChatName || `Chat with ${selectedChatbot.name}`
+          );
+          
+          updateBotState(selectedChatbot.id, { 
+            currentChatSession: newSession,
+            currentChatName: newSession.name
+          });
+          
+          // Trigger chat history panel refresh immediately
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+          
+          console.log(`✅ [AutoChat] Created new session: ${newSession.name} (${newSession.id})`);
+        } catch (sessionError) {
+          console.error('❌ [AutoChat] Failed to create chat session:', sessionError);
+          // Continue with the message even if session creation fails
+        }
+      }
+      
       // Check if this is a receipt search query
       const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(messageInput.trim());
       
@@ -1258,41 +1289,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         } catch (historyError) {
           console.warn('Failed to save to chat history:', historyError);
           // Don't break the chat flow if history fails
-        }
-      } else if (!currentBotState?.currentChatSession && selectedChatbot && user?.uid) {
-        try {
-          const newSession = await chatHistoryService.createChatSession(
-            selectedChatbot.id,
-            selectedChatbot.name,
-            user.uid
-          );
-          updateBotState(selectedChatbot.id, { currentChatSession: newSession });
-          
-          // Trigger chat history panel refresh
-          setChatHistoryRefreshTrigger(prev => prev + 1);
-          
-          // Add both messages to the new session
-          await chatHistoryService.addMessageToSession(newSession.id, {
-            id: userMessage.id,
-            content: userMessage.content,
-            sender: userMessage.sender,
-            timestamp: userMessage.timestamp,
-            agentId: selectedChatbot.id,
-            agentName: selectedChatbot.name,
-          });
-          
-          await chatHistoryService.addMessageToSession(newSession.id, {
-            id: response.id,
-            content: response.content,
-            sender: response.sender,
-            timestamp: response.timestamp,
-            agentId: selectedChatbot.id,
-            agentName: selectedChatbot.name,
-            governanceData: response.governanceData,
-            shadowGovernanceData: response.shadowGovernanceData,
-          });
-        } catch (sessionError) {
-          console.warn('Failed to create chat session:', sessionError);
         }
       }
       
