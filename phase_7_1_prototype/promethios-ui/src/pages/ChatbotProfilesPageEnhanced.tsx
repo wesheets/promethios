@@ -1489,7 +1489,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     Chat with Your Agent{currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748b' }}>
-                    {selectedChatbot.identity.name}
+                    {selectedChatbot?.identity?.name || 'Agent'}
                   </Typography>
                 </Box>
                 <Button
@@ -1701,7 +1701,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
                         <Paper sx={{ p: 3, bgcolor: '#374151', color: 'white', borderRadius: 2 }}>
                           <Typography variant="body1">
-                            {selectedChatbot.identity.name} is typing...
+                            {selectedChatbot?.identity?.name || 'Agent'} is typing...
                           </Typography>
                         </Paper>
                       </Box>
@@ -2035,11 +2035,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               <Box sx={{ p: 3, borderBottom: '1px solid #334155' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                   <Avatar sx={{ bgcolor: '#3b82f6' }}>
-                    {selectedChatbot.identity.name.charAt(0)}
+                    {selectedChatbot?.identity?.name?.charAt(0) || 'A'}
                   </Avatar>
                   <Box>
                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                      {selectedChatbot.identity.name} • Custom
+                      {selectedChatbot?.identity?.name || 'Agent'} • Custom
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#64748b' }}>
                       Live • Enterprise
@@ -3148,14 +3148,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                   borderColor: modelProvider.color
                                 }}
                               >
-                                {chatbot.identity.name.charAt(0)}
+                                {chatbot?.identity?.name?.charAt(0) || 'A'}
                               </Avatar>
                               <Box>
                                 <Typography variant="h6" sx={{ color: 'white', fontWeight: 600, fontSize: '1.1rem' }}>
-                                  {chatbot.identity.name}
+                                  {chatbot?.identity?.name || 'Agent'}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: '#cbd5e1', fontSize: '0.875rem' }}>
-                                  {chatbot.identity.role}
+                                  {chatbot?.identity?.role || 'Assistant'}
                                 </Typography>
                               </Box>
                             </Box>
