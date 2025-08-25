@@ -87,6 +87,7 @@ import { ChatbotStorageService } from '../services/ChatbotStorageService';
 import { connectedAppsService, ConnectedApp } from '../services/ConnectedAppsService';
 import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
 import ChatHistoryPanel from '../components/chat/ChatHistoryPanel';
+import ChatReferencePreview from '../components/chat/ChatReferencePreview';
 import { chatHistoryService, ChatSession as ChatHistorySession } from '../services/ChatHistoryService';
 import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
 import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
@@ -247,6 +248,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [connectedAppsMenuOpen, setConnectedAppsMenuOpen] = useState(false);
   const [connectedApps, setConnectedApps] = useState<ConnectedApp[]>([]);
+  
+  // Chat reference preview state
+  const [activeChatReference, setActiveChatReference] = useState<{
+    id: string;
+    name: string;
+    preview: string;
+    messageCount: number;
+    lastUpdated: Date;
+    topics?: string[];
+  } | null>(null);
   const [selectedConnectedApps, setSelectedConnectedApps] = useState<ConnectedApp[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -1053,7 +1064,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setChatLoading(true);
       setIsTyping(true);
       
-      console.log(`📤 [ChatPanel] Sending message: "${messageInput}"`);
+      // Prepare the final message content
+      let finalMessageContent = messageInput.trim();
+      
+      // If there's an active chat reference, combine it with the user's message
+      if (activeChatReference) {
+        console.log('🔗 [ChatReference] Combining chat reference with user message');
+        console.log('🔗 [ChatReference] Reference ID:', activeChatReference.id);
+        console.log('🔗 [ChatReference] User message:', finalMessageContent);
+        
+        // Combine the chat reference ID with the user's instruction
+        finalMessageContent = `${activeChatReference.id} ${finalMessageContent}`;
+        
+        // Clear the active chat reference after using it
+        setActiveChatReference(null);
+        
+        console.log('🔗 [ChatReference] Final combined message:', finalMessageContent);
+      }
+      
+      console.log(`📤 [ChatPanel] Sending message: "${finalMessageContent}"`);
       
       // Get fresh bot state to avoid stale closure issues
       const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
@@ -1073,7 +1102,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         console.log('🔍 [AutoChat] Fresh bot state:', freshBotState);
         console.log('🔍 [AutoChat] Has history session:', hasHistorySession);
         try {
-          // Generate a smart chat name based on the first message
+          // Generate a smart chat name based on the first message (use original messageInput, not combined)
           const smartChatName = messageInput.trim().length > 50 
             ? `${messageInput.trim().substring(0, 47)}...`
             : messageInput.trim();
@@ -1101,15 +1130,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
       
       // Check if this is a receipt search query
-      const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(messageInput.trim());
+      const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(finalMessageContent);
       
       // Check if this is a chat reference (for agent processing)
       const chatSharingService = ChatSharingService.getInstance();
-      const chatReferenceId = chatSharingService.detectChatReference(messageInput.trim());
+      const chatReferenceId = chatSharingService.detectChatReference(finalMessageContent);
       
       // Check if this is a receipt reference (for agent processing)
       const receiptSharingService = ReceiptSharingService.getInstance();
-      const receiptReferenceId = receiptSharingService.detectReceiptReference(messageInput.trim());
+      const receiptReferenceId = receiptSharingService.detectReceiptReference(finalMessageContent);
       
       if (isReceiptSearch && selectedChatbot && user?.uid) {
         console.log('🔍 [ReceiptSearch] Detected receipt search query');
@@ -1620,6 +1649,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       What can I do for you?
                     </Typography>
 
+                    {/* Chat Reference Preview */}
+                    {activeChatReference && (
+                      <Box sx={{ width: '100%', maxWidth: '700px', mb: 2 }}>
+                        <ChatReferencePreview
+                          chatReference={activeChatReference}
+                          onDismiss={() => setActiveChatReference(null)}
+                        />
+                      </Box>
+                    )}
+
                     {/* Centered Chat Input Box */}
                     <Box 
                       sx={{ 
@@ -1922,6 +1961,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         );
                       })}
                     </Stack>
+                  </Box>
+                )}
+                
+                {/* Chat Reference Preview */}
+                {activeChatReference && (
+                  <Box sx={{ mb: 2 }}>
+                    <ChatReferencePreview
+                      chatReference={activeChatReference}
+                      onDismiss={() => setActiveChatReference(null)}
+                    />
                   </Box>
                 )}
                 
@@ -2329,36 +2378,70 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       setMessageInput('');
                       setAttachedFiles([]);
                     }}
-                    onShareChat={(shareableId: string) => {
+                    onShareChat={async (shareableId: string) => {
                       console.log('🔗 [ShareChat] onShareChat callback triggered with shareableId:', shareableId);
                       
-                      // Use the shareable ID directly as the chat reference
-                      if (selectedChatbotId) {
+                      if (selectedChatbotId && user?.uid) {
                         console.log('🔗 [ShareChat] selectedChatbotId found:', selectedChatbotId);
                         
-                        // The shareableId IS the chat reference - use it directly
-                        const shareMessage = shareableId;
-                        console.log('🔗 [ShareChat] Using shareableId as share message:', shareMessage);
-                        
-                        // Populate the input bar with the chat reference
-                        console.log('🔗 [ShareChat] Setting message input to:', shareMessage);
-                        setMessageInput(shareMessage);
-                        
-                        // Focus the input field so user can immediately add their instruction
-                        const inputElement = document.querySelector('input[placeholder*="Type your message"], textarea[placeholder*="Type your message"]') as HTMLInputElement | HTMLTextAreaElement;
-                        console.log('🔗 [ShareChat] Found input element:', inputElement);
-                        if (inputElement) {
-                          inputElement.focus();
-                          // Position cursor at the end
-                          inputElement.setSelectionRange(shareMessage.length, shareMessage.length);
-                          console.log('🔗 [ShareChat] Input element focused and cursor positioned');
-                        } else {
-                          console.warn('🔗 [ShareChat] Input element not found');
+                        try {
+                          // Extract the session ID from the shareable ID (format: chat_timestamp_randomId)
+                          const sessionId = shareableId;
+                          console.log('🔗 [ShareChat] Attempting to get session data for:', sessionId);
+                          
+                          // Get the session data from ChatHistoryService
+                          const session = await chatHistoryService.getChatSessionById(sessionId);
+                          
+                          if (session) {
+                            console.log('🔗 [ShareChat] Session data retrieved:', session);
+                            
+                            // Extract preview text from the first few messages
+                            const previewText = session.messages
+                              .slice(0, 2)
+                              .map(msg => msg.content)
+                              .join(' ')
+                              .substring(0, 150) + (session.messages.length > 2 || session.messages.join(' ').length > 150 ? '...' : '');
+                            
+                            // Extract topics from message content (simple keyword extraction)
+                            const allText = session.messages.map(msg => msg.content).join(' ').toLowerCase();
+                            const commonTopics = ['audit', 'governance', 'compliance', 'security', 'data', 'policy', 'risk', 'logs', 'monitoring'];
+                            const detectedTopics = commonTopics.filter(topic => allText.includes(topic));
+                            
+                            // Set the active chat reference for visual preview
+                            setActiveChatReference({
+                              id: sessionId,
+                              name: session.name || `Chat ${sessionId.slice(-8)}`,
+                              preview: previewText,
+                              messageCount: session.messageCount || session.messages.length,
+                              lastUpdated: session.lastUpdated || new Date(),
+                              topics: detectedTopics.length > 0 ? detectedTopics : undefined
+                            });
+                            
+                            console.log('✅ Chat reference preview created for:', sessionId);
+                          } else {
+                            console.error('❌ [ShareChat] Session not found for ID:', sessionId);
+                            // Fallback: create a basic preview with just the ID
+                            setActiveChatReference({
+                              id: sessionId,
+                              name: `Chat ${sessionId.slice(-8)}`,
+                              preview: 'Chat content preview not available',
+                              messageCount: 0,
+                              lastUpdated: new Date()
+                            });
+                          }
+                        } catch (error) {
+                          console.error('❌ [ShareChat] Error retrieving session data:', error);
+                          // Fallback: create a basic preview
+                          setActiveChatReference({
+                            id: shareableId,
+                            name: `Chat ${shareableId.slice(-8)}`,
+                            preview: 'Chat content preview not available',
+                            messageCount: 0,
+                            lastUpdated: new Date()
+                          });
                         }
-                        
-                        console.log('✅ Chat reference added to input bar:', shareableId);
                       } else {
-                        console.error('❌ [ShareChat] No selectedChatbotId found');
+                        console.error('❌ [ShareChat] No selectedChatbotId or user found');
                       }
                     }}                />
                 )}
