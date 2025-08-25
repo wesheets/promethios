@@ -496,7 +496,13 @@ export class ChatHistoryService {
     session.name = newName;
     session.lastUpdated = new Date();
 
+    // Update the session
     await this.saveChatSession(session);
+
+    // Clear cache to force fresh reload
+    this.chatHistoryCache.clear();
+    this.cacheTimestamps.clear();
+
     console.log(`✏️ Renamed session ${sessionId} to: ${newName}`);
   }
 
@@ -519,6 +525,10 @@ export class ChatHistoryService {
 
       // Remove from active sessions
       this.activeSessions.delete(sessionId);
+
+      // Clear cache to force fresh reload
+      this.chatHistoryCache.clear();
+      this.cacheTimestamps.clear();
 
       // Remove shareable context if exists
       if (session.shareableId) {
