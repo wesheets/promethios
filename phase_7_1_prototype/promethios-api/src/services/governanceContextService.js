@@ -11,6 +11,64 @@ class GovernanceContextService {
   constructor() {
     this.metricsCache = new Map();
     this.cacheTimeout = 30000; // 30 seconds
+    
+    // CRITICAL: Temporal validation rules for hallucination prevention
+    this.temporalValidationRules = {
+      currentYear: new Date().getFullYear(),
+      currentDate: new Date().toISOString().split('T')[0],
+      validDateRange: {
+        min: '2020-01-01',
+        max: '2030-12-31' // Allow some future dates for planning
+      },
+      
+      // Patterns that indicate temporal hallucinations
+      hallucinationPatterns: [
+        /2025.*future/gi,
+        /impossible.*2025/gi,
+        /non-existent.*article.*2025/gi,
+        /hypothetical.*2025/gi,
+        /speculative.*2025/gi,
+        /cannot.*analyze.*current.*year/gi,
+        /article.*does.*not.*exist/gi
+      ],
+      
+      // Validate temporal claims in content
+      validateTemporalClaims(content) {
+        const currentYear = this.currentYear;
+        const detectedIssues = [];
+        
+        this.hallucinationPatterns.forEach((pattern, index) => {
+          if (pattern.test(content)) {
+            detectedIssues.push({
+              pattern: pattern.source,
+              type: 'temporal_hallucination',
+              severity: 'HIGH',
+              description: `AI incorrectly treating ${currentYear} as future or impossible`
+            });
+          }
+        });
+        
+        return {
+          hasIssues: detectedIssues.length > 0,
+          issues: detectedIssues,
+          currentYear: currentYear,
+          currentDate: this.currentDate
+        };
+      },
+      
+      // Generate temporal awareness context
+      generateTemporalContext() {
+        return `
+CRITICAL TEMPORAL VALIDATION RULES:
+- Current Date: ${this.currentDate}
+- Current Year: ${this.currentYear}
+- ${this.currentYear} is the CURRENT year, not future
+- All ${this.currentYear} dates are current/recent events
+- Do NOT claim ${this.currentYear} content is "impossible" or "future"
+- Treat all ${this.currentYear} articles and events as current information
+- If uncertain about dates, express uncertainty rather than false claims`;
+      }
+    };
   }
 
   /**
@@ -86,6 +144,8 @@ class GovernanceContextService {
 === GOVERNANCE CONTEXT ===
 You are operating under Promethios governance framework. Your current status:
 
+${this.temporalValidationRules.generateTemporalContext()}
+
 TRUST METRICS:
 - Trust Score: ${context.metrics.trustScore.toFixed(1)}%
 - Compliance Rate: ${context.metrics.complianceRate.toFixed(1)}%
@@ -127,6 +187,13 @@ Before making any factual claim, you MUST question yourself:
 3. "Could I be fabricating or hallucinating this information?"
 4. "Is this a recent claim (2020+) that I should be extra cautious about?"
 5. "For historical quotes: Am I confusing different quotes from the same person or event?"
+6. "Am I incorrectly treating current year (${this.temporalValidationRules.currentYear}) as future?"
+
+TEMPORAL HALLUCINATION PREVENTION:
+- NEVER claim ${this.temporalValidationRules.currentYear} content is "impossible" or "future"
+- NEVER dismiss ${this.temporalValidationRules.currentYear} articles as "non-existent"
+- ALWAYS treat ${this.temporalValidationRules.currentYear} dates as current events
+- If uncertain about temporal context, state uncertainty clearly
 
 If you have ANY doubt about a factual claim, you must:
 - Explicitly state your uncertainty
@@ -353,6 +420,81 @@ Remember: You are being monitored for governance compliance. Your responses will
       violations: [],
       selfAwarenessPrompts: ['- Operating under standard governance monitoring'],
       governanceInstructions: ['- Follow ethical AI principles and user safety guidelines']
+    };
+  }
+
+  /**
+   * Validate response for temporal hallucinations
+   * @param {string} response - AI response to validate
+   * @param {string} agentId - Agent ID for logging
+   * @returns {Object} Validation result with corrections if needed
+   */
+  validateTemporalClaims(response, agentId) {
+    console.log(`🔍 [Governance] Validating temporal claims for agent ${agentId}`);
+    
+    const validation = this.temporalValidationRules.validateTemporalClaims(response);
+    
+    if (validation.hasIssues) {
+      console.warn(`🚨 [Governance] Temporal hallucination detected for agent ${agentId}:`, validation.issues);
+      
+      // Generate governance alert
+      const alert = {
+        agentId,
+        timestamp: new Date().toISOString(),
+        type: 'TEMPORAL_HALLUCINATION',
+        severity: 'HIGH',
+        issues: validation.issues,
+        originalResponse: response,
+        governanceAction: 'CORRECTION_REQUIRED'
+      };
+      
+      // Log governance alert
+      this.logGovernanceAlert(alert);
+      
+      return {
+        isValid: false,
+        issues: validation.issues,
+        alert,
+        correctionRequired: true,
+        governanceOverride: true
+      };
+    }
+    
+    return {
+      isValid: true,
+      issues: [],
+      correctionRequired: false
+    };
+  }
+
+  /**
+   * Log governance alerts for audit trail
+   * @param {Object} alert - Alert details
+   */
+  logGovernanceAlert(alert) {
+    console.log(`🏛️ [Governance Alert] ${alert.type}:`, {
+      agentId: alert.agentId,
+      severity: alert.severity,
+      timestamp: alert.timestamp,
+      issueCount: alert.issues?.length || 0,
+      action: alert.governanceAction
+    });
+    
+    // In production, this would be stored in a governance audit database
+    // For now, we'll use console logging with structured format
+    console.log(`📋 [Audit Trail] Governance Alert Logged:`, JSON.stringify(alert, null, 2));
+  }
+
+  /**
+   * Get temporal validation rules for external use
+   * @returns {Object} Current temporal validation configuration
+   */
+  getTemporalValidationRules() {
+    return {
+      currentYear: this.temporalValidationRules.currentYear,
+      currentDate: this.temporalValidationRules.currentDate,
+      validDateRange: this.temporalValidationRules.validDateRange,
+      hallucinationPatterns: this.temporalValidationRules.hallucinationPatterns.map(p => p.source)
     };
   }
 

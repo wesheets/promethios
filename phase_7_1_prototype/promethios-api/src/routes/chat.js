@@ -378,6 +378,40 @@ router.post('/', actionStatusMiddleware, async (req, res) => {
             };
         }
 
+        // CRITICAL: Build comprehensive conversation history for AI memory
+        // Include both session messages AND provided conversation history
+        const sessionMessages = activeChatSessions[chatSessionId].messages || [];
+        const providedHistory = conversationHistory || [];
+        
+        // Combine and deduplicate conversation history
+        const fullConversationHistory = [...providedHistory];
+        
+        // Add recent session messages that aren't already in provided history
+        sessionMessages.forEach(sessionMsg => {
+            const isDuplicate = fullConversationHistory.some(histMsg => 
+                histMsg.content === sessionMsg.content && 
+                histMsg.role === sessionMsg.role
+            );
+            if (!isDuplicate) {
+                fullConversationHistory.push({
+                    role: sessionMsg.role,
+                    content: sessionMsg.content
+                });
+            }
+        });
+        
+        // Limit conversation history to last 20 messages to prevent token overflow
+        const recentHistory = fullConversationHistory.slice(-20);
+        
+        console.log('🧠 [Memory] Conversation history built:', {
+            sessionId: chatSessionId,
+            sessionMessagesCount: sessionMessages.length,
+            providedHistoryCount: providedHistory.length,
+            fullHistoryCount: fullConversationHistory.length,
+            recentHistoryCount: recentHistory.length,
+            lastUserMessage: recentHistory.filter(m => m.role === 'user').slice(-1)[0]?.content?.substring(0, 100)
+        });
+
         // Add user message to session
         activeChatSessions[chatSessionId].messages.push({
             role: 'user',
@@ -456,7 +490,7 @@ router.post('/', actionStatusMiddleware, async (req, res) => {
                     const requestData = {
                         messages: [
                             { role: 'system', content: finalSystemMessage },
-                            ...conversationHistory,
+                            ...recentHistory, // Use improved conversation history
                             { role: 'user', content: message }
                         ],
                         model: model || agent_configuration?.apiDetails?.selectedModel || 'gpt-4',
@@ -596,7 +630,7 @@ router.post('/', actionStatusMiddleware, async (req, res) => {
                             attachments: attachments,
                             provider: provider,
                             model: model,
-                            conversationHistory: conversationHistory
+                            conversationHistory: recentHistory // Use improved conversation history
                         });
                     }
                     
@@ -616,7 +650,7 @@ router.post('/', actionStatusMiddleware, async (req, res) => {
                     attachments: attachments,
                     provider: provider,
                     model: model,
-                    conversationHistory: conversationHistory
+                    conversationHistory: recentHistory // Use improved conversation history
                 });
                 const governanceWarning = "[Governance Warning: System temporarily unavailable, operating in fallback mode] ";
                 response = governanceWarning + response;
@@ -673,7 +707,7 @@ router.post('/', actionStatusMiddleware, async (req, res) => {
             const requestData = {
                 messages: [
                     { role: 'system', content: finalSystemMessage },
-                    ...conversationHistory,
+                    ...recentHistory, // Use improved conversation history
                     { role: 'user', content: message }
                 ],
                 model: model || agent_configuration?.apiDetails?.selectedModel || 'gpt-4',
@@ -747,7 +781,7 @@ router.post('/', actionStatusMiddleware, async (req, res) => {
                     attachments: attachments,
                     provider: provider,
                     model: model,
-                    conversationHistory: conversationHistory
+                    conversationHistory: recentHistory // Use improved conversation history
                 });
             }
             
@@ -1152,7 +1186,28 @@ router.get('/governance/metrics', async (req, res) => {
  * Build agent-specific system message based on configuration
  */
 function buildAgentSystemMessage(baseSystemMessage, agentConfiguration) {
-    let systemMessage = baseSystemMessage;
+    // CRITICAL: Add current date context to prevent temporal hallucinations
+    const currentDate = new Date().toISOString().split('T')[0]; // 2025-08-25
+    const currentYear = new Date().getFullYear(); // 2025
+    
+    let systemMessage = `${baseSystemMessage}
+
+CRITICAL TEMPORAL AWARENESS:
+- CURRENT DATE: ${currentDate}
+- CURRENT YEAR: ${currentYear}
+- ${currentYear} is the CURRENT year, not the future
+- Dates in ${currentYear} are current/recent events, NOT future or impossible
+- Do NOT dismiss ${currentYear} content as "impossible", "speculative", or "non-existent"
+- Analyze all ${currentYear} content as legitimate current information
+- If unsure about dates, state uncertainty rather than making false temporal claims
+- When analyzing articles or content from ${currentYear}, treat them as current events
+
+CONVERSATION MEMORY:
+- You have access to the full conversation history
+- Reference previous messages and context when relevant
+- Do NOT ask for information that was already provided in the conversation
+- Build upon previous discussions and maintain context continuity
+- If a user refers to something mentioned earlier, acknowledge and use that context`;
     
     console.log('🔧 [Backend] Building agent-specific system message:', {
         personality: agentConfiguration.personality,

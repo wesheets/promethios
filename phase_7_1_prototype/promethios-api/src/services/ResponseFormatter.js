@@ -25,6 +25,69 @@ class ResponseFormatter {
   }
 
   /**
+   * Detect and correct temporal hallucinations in AI responses
+   * @param {string} response - The AI response to check
+   * @returns {Object} Detection result and corrected response
+   */
+  detectTemporalHallucinations(response) {
+    const currentYear = new Date().getFullYear();
+    
+    const hallucinationPatterns = [
+      new RegExp(`${currentYear}.*future`, 'gi'),
+      new RegExp(`impossible.*${currentYear}`, 'gi'),
+      new RegExp(`non-existent.*article.*${currentYear}`, 'gi'),
+      new RegExp(`hypothetical.*${currentYear}`, 'gi'),
+      new RegExp(`speculative.*${currentYear}`, 'gi'),
+      /cannot.*analyze.*current.*year/gi,
+      /article.*does.*not.*exist/gi
+    ];
+    
+    const detectedPatterns = [];
+    hallucinationPatterns.forEach((pattern, index) => {
+      if (pattern.test(response)) {
+        detectedPatterns.push({
+          pattern: pattern.source,
+          type: 'temporal_hallucination'
+        });
+      }
+    });
+    
+    if (detectedPatterns.length > 0) {
+      console.warn('🚨 [Hallucination Detection] Temporal hallucination detected:', detectedPatterns);
+      
+      // Correct the hallucinations
+      let correctedResponse = response
+        .replace(new RegExp(`${currentYear}.*future`, 'gi'), `${currentYear} (current year)`)
+        .replace(new RegExp(`impossible.*${currentYear}`, 'gi'), `current ${currentYear} information`)
+        .replace(new RegExp(`non-existent.*article.*${currentYear}`, 'gi'), `current ${currentYear} article`)
+        .replace(new RegExp(`hypothetical.*${currentYear}`, 'gi'), `current ${currentYear} content`)
+        .replace(new RegExp(`speculative.*${currentYear}`, 'gi'), `current ${currentYear} information`)
+        .replace(/cannot.*analyze.*current.*year/gi, 'can analyze this current information')
+        .replace(/article.*does.*not.*exist/gi, 'article content');
+      
+      return {
+        hasHallucination: true,
+        detectedPatterns,
+        originalResponse: response,
+        correctedResponse,
+        governanceAlert: {
+          severity: 'HIGH',
+          type: 'TEMPORAL_HALLUCINATION',
+          message: `AI made false temporal claims about ${currentYear}`,
+          correctionApplied: true
+        }
+      };
+    }
+    
+    return {
+      hasHallucination: false,
+      detectedPatterns: [],
+      originalResponse: response,
+      correctedResponse: response
+    };
+  }
+
+  /**
    * Format a response based on tool results and content
    * @param {string} originalResponse - The original AI response
    * @param {Array} toolResults - Results from tool executions
@@ -34,6 +97,16 @@ class ResponseFormatter {
   formatResponse(originalResponse, toolResults = [], options = {}) {
     try {
       console.log('🎨 ResponseFormatter: Formatting response with', toolResults.length, 'tool results');
+      
+      // CRITICAL: Check for temporal hallucinations before formatting
+      const hallucinationCheck = this.detectTemporalHallucinations(originalResponse);
+      if (hallucinationCheck.hasHallucination) {
+        console.warn('🚨 [ResponseFormatter] Temporal hallucination detected and corrected');
+        originalResponse = hallucinationCheck.correctedResponse;
+        
+        // Log governance alert
+        console.log('🏛️ [Governance Alert]', hallucinationCheck.governanceAlert);
+      }
       
       // If no tool results, just format the original response
       if (!toolResults || toolResults.length === 0) {
