@@ -435,25 +435,34 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
         ) : chatSessions.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
-              {searchTerm ? 'No chats found matching your search.' : 'No chat history yet.'}
+              {searchTerm 
+                ? 'No chats found matching your search.' 
+                : selectedFilter === 'shared' 
+                  ? 'No chats shared yet.'
+                  : selectedFilter === 'recent'
+                    ? 'No recent chats (last 7 days).'
+                    : 'No chat history yet.'
+              }
             </Typography>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Add />}
-              onClick={() => setNewChatDialogOpen(true)}
-              sx={{
-                borderColor: '#334155',
-                color: '#94a3b8',
-                '&:hover': {
-                  borderColor: '#3b82f6',
-                  color: 'white',
-                  bgcolor: '#1e293b',
-                },
-              }}
-            >
-              Start First Chat
-            </Button>
+            {selectedFilter !== 'shared' && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Add />}
+                onClick={() => setNewChatDialogOpen(true)}
+                sx={{
+                  borderColor: '#334155',
+                  color: '#94a3b8',
+                  '&:hover': {
+                    borderColor: '#3b82f6',
+                    color: 'white',
+                    bgcolor: '#1e293b',
+                  },
+                }}
+              >
+                Start First Chat
+              </Button>
+            )}
           </Box>
         ) : (
           <List sx={{ p: 0 }}>
