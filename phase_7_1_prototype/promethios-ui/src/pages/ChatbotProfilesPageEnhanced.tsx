@@ -254,6 +254,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [sharedChatContext, setSharedChatContext] = useState<string | null>(null);
+  
+  // Enhanced action indicators
+  const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [actionStartTime, setActionStartTime] = useState<Date | null>(null);
 
   // Bot state helper functions
   const initializeBotState = (botId: string): BotState => {
@@ -1366,6 +1370,30 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
       
       // Regular message processing (existing logic)
+      
+      // Set dynamic action indicator based on message content
+      const messageContent = messageInput.trim().toLowerCase();
+      let actionText = "Agent is thinking...";
+      
+      if (messageContent.includes('research') || messageContent.includes('find') || messageContent.includes('search')) {
+        actionText = `Agent is researching "${messageInput.trim().substring(0, 30)}${messageInput.trim().length > 30 ? '...' : ''}"`;
+      } else if (messageContent.includes('analyze') || messageContent.includes('data') || messageContent.includes('report')) {
+        actionText = "Agent is analyzing data...";
+      } else if (messageContent.includes('code') || messageContent.includes('program') || messageContent.includes('script')) {
+        actionText = "Agent is writing code...";
+      } else if (messageContent.includes('image') || messageContent.includes('picture') || messageContent.includes('photo')) {
+        actionText = "Agent is processing images...";
+      } else if (messageContent.includes('web') || messageContent.includes('website') || messageContent.includes('url')) {
+        actionText = "Agent is browsing the web...";
+      } else if (messageContent.includes('calculate') || messageContent.includes('math') || messageContent.includes('number')) {
+        actionText = "Agent is calculating...";
+      } else if (messageContent.includes('write') || messageContent.includes('create') || messageContent.includes('generate')) {
+        actionText = "Agent is creating content...";
+      }
+      
+      setCurrentAction(actionText);
+      setActionStartTime(new Date());
+      
       const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
       
       // Add user message first
@@ -1447,6 +1475,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     } finally {
       setChatLoading(false);
       setIsTyping(false);
+      setCurrentAction(null);
+      setActionStartTime(null);
     }
   };
 
@@ -1698,12 +1728,87 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         </Box>
                       </Box>
                     ))}
-                    {isTyping && (
+                    {(isTyping || currentAction) && (
                       <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        <Paper sx={{ p: 3, bgcolor: '#374151', color: 'white', borderRadius: 2 }}>
-                          <Typography variant="body1">
-                            {selectedChatbot?.identity?.name || 'Agent'} is typing...
-                          </Typography>
+                        <Paper 
+                          sx={{ 
+                            p: 3, 
+                            bgcolor: '#374151', 
+                            color: 'white', 
+                            borderRadius: 2,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              bgcolor: '#4b5563',
+                              transform: 'translateY(-1px)',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                            }
+                          }}
+                          onClick={() => {
+                            if (actionStartTime) {
+                              const elapsed = Math.floor((new Date().getTime() - actionStartTime.getTime()) / 1000);
+                              console.log(`⏱️ Action "${currentAction}" has been running for ${elapsed} seconds`);
+                            }
+                          }}
+                        >
+                          {/* Animated background gradient */}
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: '-100%',
+                              width: '100%',
+                              height: '100%',
+                              background: 'linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent)',
+                              animation: 'shimmer 2s infinite',
+                              '@keyframes shimmer': {
+                                '0%': { left: '-100%' },
+                                '100%': { left: '100%' }
+                              }
+                            }}
+                          />
+                          
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative', zIndex: 1 }}>
+                            {/* Animated dots */}
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              {[0, 1, 2].map((i) => (
+                                <Box
+                                  key={i}
+                                  sx={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    bgcolor: '#3b82f6',
+                                    animation: 'pulse 1.5s infinite',
+                                    animationDelay: `${i * 0.2}s`,
+                                    '@keyframes pulse': {
+                                      '0%, 80%, 100%': { opacity: 0.3, transform: 'scale(0.8)' },
+                                      '40%': { opacity: 1, transform: 'scale(1.2)' }
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                            
+                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                              {currentAction || `${selectedChatbot?.identity?.name || 'Agent'} is typing...`}
+                            </Typography>
+                            
+                            {actionStartTime && (
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: '#9ca3af',
+                                  fontSize: '0.75rem',
+                                  opacity: 0.8
+                                }}
+                              >
+                                {Math.floor((new Date().getTime() - actionStartTime.getTime()) / 1000)}s
+                              </Typography>
+                            )}
+                          </Box>
                         </Paper>
                       </Box>
                     )}
