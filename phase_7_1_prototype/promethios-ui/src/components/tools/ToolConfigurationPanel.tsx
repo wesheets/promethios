@@ -315,21 +315,21 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
         sx={{
           width: '100%',
           maxWidth: '100%',
-          border: isEnabled ? '2px solid #3b82f6' : '1px solid #1e293b',
+          border: isEnabled ? '1px solid #3b82f6' : '1px solid #1e293b',
           bgcolor: isEnabled ? 'rgba(59, 130, 246, 0.08)' : '#1e293b',
           transition: 'all 0.2s ease',
           overflow: 'hidden',
           boxSizing: 'border-box',
           '&:hover': {
             transform: 'translateY(-1px)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             bgcolor: isEnabled ? 'rgba(59, 130, 246, 0.12)' : '#334155',
           }
         }}
       >
         <CardContent sx={{ 
-          p: 1.5, 
-          '&:last-child': { pb: 1.5 },
+          p: 1, 
+          '&:last-child': { pb: 1 },
           width: '100%',
           maxWidth: '100%',
           boxSizing: 'border-box'
@@ -338,26 +338,26 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
             display: 'flex', 
             alignItems: 'flex-start', 
             justifyContent: 'space-between', 
-            mb: 1,
+            mb: 0.5,
             width: '100%',
             maxWidth: '100%',
-            gap: 1
+            gap: 0.5
           }}>
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: 1, 
+              gap: 0.75, 
               flex: 1, 
               minWidth: 0,
-              maxWidth: 'calc(100% - 60px)' // Account for switch
+              maxWidth: 'calc(100% - 50px)' // Account for switch
             }}>
               <Avatar sx={{ 
                 bgcolor: getTierColor(tool.tier), 
-                width: 28, 
-                height: 28, 
+                width: 24, 
+                height: 24, 
                 flexShrink: 0 
               }}>
-                <IconComponent sx={{ fontSize: 14 }} />
+                <IconComponent sx={{ fontSize: 12 }} />
               </Avatar>
               <Box sx={{ minWidth: 0, flex: 1, maxWidth: '100%' }}>
                 <Typography 
@@ -365,11 +365,11 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
                   sx={{ 
                     color: 'white', 
                     fontWeight: 600, 
-                    fontSize: '0.8rem',
+                    fontSize: '0.75rem',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    lineHeight: 1.2,
+                    lineHeight: 1.1,
                     mb: 0.25
                   }}
                 >
@@ -379,39 +379,49 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
                   label={tool.tier.toUpperCase()}
                   size="small"
                   sx={{
-                    bgcolor: tierColors.bg,
-                    color: tierColors.text,
-                    fontWeight: 600,
-                    fontSize: '0.6rem',
+                    ...tierColors,
                     height: '16px',
-                    '& .MuiChip-label': { px: 0.75 }
+                    fontSize: '0.6rem',
+                    fontWeight: 600,
+                    '& .MuiChip-label': {
+                      px: 0.5,
+                      py: 0
+                    }
                   }}
                 />
               </Box>
             </Box>
-            <Switch
-              checked={isEnabled}
-              onChange={() => toggleTool(tool)}
-              size="small"
-              sx={{
-                flexShrink: 0,
-                '& .MuiSwitch-switchBase.Mui-checked': {
-                  color: '#3b82f6',
-                },
-                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                  backgroundColor: '#3b82f6',
-                },
-              }}
-            />
+
+            <Box sx={{ flexShrink: 0 }}>
+              <Switch
+                checked={isEnabled}
+                onChange={() => toggleTool(tool)}
+                size="small"
+                sx={{
+                  '& .MuiSwitch-switchBase': {
+                    color: '#64748b',
+                  },
+                  '& .MuiSwitch-switchBase.Mui-checked': {
+                    color: '#3b82f6',
+                  },
+                  '& .MuiSwitch-track': {
+                    backgroundColor: '#475569',
+                  },
+                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                    backgroundColor: '#3b82f6',
+                  },
+                }}
+              />
+            </Box>
           </Box>
 
           <Typography 
             variant="body2" 
             sx={{ 
               color: '#94a3b8', 
-              mb: 1.5, 
-              lineHeight: 1.3,
-              fontSize: '0.7rem',
+              mb: 1, 
+              lineHeight: 1.2,
+              fontSize: '0.65rem',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
@@ -424,7 +434,7 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
 
           <Box sx={{ 
             display: 'flex', 
-            gap: 0.75, 
+            gap: 0.5, 
             alignItems: 'center', 
             flexWrap: 'wrap',
             width: '100%'
@@ -433,23 +443,23 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
               <Button
                 variant="outlined"
                 size="small"
-                startIcon={<SettingsIcon sx={{ fontSize: '12px !important' }} />}
+                startIcon={<SettingsIcon sx={{ fontSize: '10px !important' }} />}
                 onClick={() => openConfiguration(tool)}
                 sx={{
                   borderColor: '#3b82f6',
                   color: '#3b82f6',
-                  fontSize: '0.65rem',
+                  fontSize: '0.6rem',
                   minWidth: 'auto',
-                  px: 1,
+                  px: 0.75,
                   py: 0.25,
-                  height: '24px',
+                  height: '20px',
                   '&:hover': {
                     borderColor: '#2563eb',
                     bgcolor: 'rgba(59, 130, 246, 0.1)',
                   }
                 }}
               >
-                Configure
+                Config
               </Button>
             )}
             <Tooltip title={`View ${tool.name} details`}>
@@ -457,10 +467,10 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
                 color: '#64748b', 
                 p: 0.25,
                 minWidth: 'auto',
-                width: '24px',
-                height: '24px'
+                width: '20px',
+                height: '20px'
               }}>
-                <InfoIcon sx={{ fontSize: '14px' }} />
+                <InfoIcon sx={{ fontSize: '12px' }} />
               </IconButton>
             </Tooltip>
           </Box>
@@ -588,16 +598,15 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
 
   return (
     <Box sx={{ 
-      height: '100vh', 
-      maxHeight: '100vh',
+      height: '100vh',
       width: '100%',
       maxWidth: '100%',
       display: 'flex', 
       flexDirection: 'column',
-      overflow: 'hidden',
       bgcolor: '#0f172a',
       color: 'white',
-      position: 'relative'
+      overflow: 'hidden', // Prevent any overflow from this container
+      boxSizing: 'border-box'
     }}>
       {/* Header */}
       <Box sx={{ 
@@ -750,11 +759,12 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
       <Box sx={{ 
         flex: 1, 
         overflow: 'auto', 
-        p: 1.5,
+        p: 1,
         width: '100%',
         maxWidth: '100%',
         bgcolor: '#0f172a',
         boxSizing: 'border-box',
+        minHeight: 0, // Important for flex child to allow scrolling
         '&::-webkit-scrollbar': {
           width: '6px',
         },
@@ -762,14 +772,18 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
           background: '#1e293b',
         },
         '&::-webkit-scrollbar-thumb': {
-          background: '#334155',
+          background: '#475569',
           borderRadius: '3px',
         },
         '&::-webkit-scrollbar-thumb:hover': {
-          background: '#475569',
+          background: '#64748b',
         },
       }}>
-        <Stack spacing={1.5} sx={{ width: '100%', maxWidth: '100%' }}>
+        <Stack spacing={1} sx={{ 
+          width: '100%', 
+          maxWidth: '100%',
+          boxSizing: 'border-box'
+        }}>
           {getFilteredTools(selectedTab === 0 ? undefined : TOOL_CATEGORIES[selectedTab - 1]?.id)
             .map((tool) => (
               <Box key={tool.id} sx={{ width: '100%', maxWidth: '100%' }}>
