@@ -49,6 +49,161 @@ import { GovernanceService } from '../services/GovernanceService';
 import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
 
+// Enhanced Action Indicator Component
+interface EnhancedActionIndicatorProps {
+  isMultiAgentMode: boolean;
+  agentName: string;
+  isSimulatingTyping: boolean;
+  typingProgress: number;
+  pacingMode: string;
+  lastUserMessage: string;
+  compact?: boolean;
+}
+
+const EnhancedActionIndicator: React.FC<EnhancedActionIndicatorProps> = ({
+  isMultiAgentMode,
+  agentName,
+  isSimulatingTyping,
+  typingProgress,
+  pacingMode,
+  lastUserMessage,
+  compact = false
+}) => {
+  const [currentAction, setCurrentAction] = useState('');
+  const [actionIcon, setActionIcon] = useState('🤔');
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Dynamic action detection based on user message content
+  const detectAction = useCallback((message: string) => {
+    const lowerMessage = message.toLowerCase();
+    
+    if (lowerMessage.includes('research') || lowerMessage.includes('find') || lowerMessage.includes('search')) {
+      return { action: 'researching information', icon: '🔍' };
+    } else if (lowerMessage.includes('analyze') || lowerMessage.includes('analysis')) {
+      return { action: 'analyzing data', icon: '📊' };
+    } else if (lowerMessage.includes('write') || lowerMessage.includes('create') || lowerMessage.includes('generate')) {
+      return { action: 'generating content', icon: '✍️' };
+    } else if (lowerMessage.includes('code') || lowerMessage.includes('program') || lowerMessage.includes('script')) {
+      return { action: 'writing code', icon: '💻' };
+    } else if (lowerMessage.includes('explain') || lowerMessage.includes('how') || lowerMessage.includes('what')) {
+      return { action: 'formulating explanation', icon: '💡' };
+    } else if (lowerMessage.includes('calculate') || lowerMessage.includes('math') || lowerMessage.includes('number')) {
+      return { action: 'performing calculations', icon: '🧮' };
+    } else if (lowerMessage.includes('plan') || lowerMessage.includes('strategy') || lowerMessage.includes('organize')) {
+      return { action: 'developing strategy', icon: '📋' };
+    } else if (lowerMessage.includes('fox news') || lowerMessage.includes('news')) {
+      return { action: 'researching Fox News', icon: '📺' };
+    } else if (lowerMessage.includes('weather')) {
+      return { action: 'checking weather data', icon: '🌤️' };
+    } else if (lowerMessage.includes('stock') || lowerMessage.includes('market')) {
+      return { action: 'analyzing market data', icon: '📈' };
+    } else {
+      return { action: 'thinking', icon: '🤔' };
+    }
+  }, []);
+
+  // Update action based on user message
+  useEffect(() => {
+    if (lastUserMessage) {
+      const { action, icon } = detectAction(lastUserMessage);
+      setCurrentAction(action);
+      setActionIcon(icon);
+    } else {
+      setCurrentAction('thinking');
+      setActionIcon('🤔');
+    }
+  }, [lastUserMessage, detectAction]);
+
+  // Progress-based action updates
+  useEffect(() => {
+    if (isSimulatingTyping && typingProgress > 0) {
+      if (typingProgress < 30) {
+        setCurrentAction(prev => prev.includes('researching') ? 'researching information' : 'processing request');
+        setActionIcon('🔄');
+      } else if (typingProgress < 70) {
+        setCurrentAction(prev => prev.includes('researching') ? 'analyzing findings' : 'formulating response');
+        setActionIcon('⚡');
+      } else {
+        setCurrentAction('finalizing response');
+        setActionIcon('✨');
+      }
+    }
+  }, [typingProgress, isSimulatingTyping]);
+
+  const getStatusText = () => {
+    if (isMultiAgentMode) {
+      return `Agents are ${currentAction}...`;
+    } else {
+      return `${agentName} is ${currentAction}...`;
+    }
+  };
+
+  const getModeInfo = () => {
+    switch (pacingMode) {
+      case 'realtime': return { text: 'Real-time mode', icon: '⚡' };
+      case 'natural': return { text: 'Natural pacing', icon: '💬' };
+      default: return { text: 'Thoughtful mode', icon: '🤔' };
+    }
+  };
+
+  const modeInfo = getModeInfo();
+
+  return (
+    <Box
+      sx={{
+        transition: 'all 0.3s ease',
+        transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+        cursor: 'pointer'
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Typography 
+        variant={compact ? "caption" : "body2"} 
+        sx={{ 
+          fontStyle: 'italic', 
+          mb: compact ? 0.5 : 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          color: isHovered ? DARK_THEME.primary : DARK_THEME.text.primary,
+          transition: 'color 0.3s ease'
+        }}
+      >
+        <span style={{ fontSize: compact ? '14px' : '16px' }}>{actionIcon}</span>
+        {getStatusText()}
+      </Typography>
+      
+      {isSimulatingTyping && (
+        <Box sx={{ mt: compact ? 0.5 : 1 }}>
+          <Typography variant="caption" sx={{ 
+            color: isHovered ? DARK_THEME.primary : DARK_THEME.text.secondary, 
+            display: 'block',
+            mb: 0.5,
+            transition: 'color 0.3s ease'
+          }}>
+            {modeInfo.icon} {modeInfo.text} • {Math.round(typingProgress)}% complete
+          </Typography>
+          <LinearProgress 
+            variant="determinate" 
+            value={typingProgress} 
+            sx={{
+              height: compact ? 3 : 4,
+              borderRadius: 2,
+              backgroundColor: DARK_THEME.border,
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: isHovered ? DARK_THEME.accent : DARK_THEME.primary,
+                borderRadius: 2,
+                transition: 'background-color 0.3s ease'
+              }
+            }}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 // Tool types
 interface ToolCall {
   id: string;
@@ -152,6 +307,7 @@ export const DARK_THEME = {
     secondary: '#a0aec0'
   },
   primary: '#3182ce',
+  accent: '#4299e1',
   success: '#38a169',
   warning: '#d69e2e',
   error: '#e53e3e'
@@ -5127,38 +5283,14 @@ To use a tool, call it using standard function calling format. The system will e
                 <BotIcon />
               </Avatar>
               <Box className="message-content">
-                <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1 }}>
-                  {isMultiAgentMode 
-                    ? `Agents are ${isSimulatingTyping ? 'collaborating' : 'thinking'}...` 
-                    : `${selectedAgent?.identity.name || selectedSystem?.name || 'Agent'} is ${isSimulatingTyping ? 'formulating response' : 'thinking'}...`}
-                </Typography>
-                
-                {isSimulatingTyping && (
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="caption" sx={{ 
-                      color: DARK_THEME.text.secondary, 
-                      display: 'block',
-                      mb: 0.5
-                    }}>
-                      {pacingMode === 'realtime' ? '⚡ Real-time mode' : 
-                       pacingMode === 'natural' ? '💬 Natural pacing' : 
-                       '🤔 Thoughtful mode'} • {Math.round(typingProgress)}% complete
-                    </Typography>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={typingProgress} 
-                      sx={{
-                        height: 4,
-                        borderRadius: 2,
-                        backgroundColor: DARK_THEME.border,
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: DARK_THEME.primary,
-                          borderRadius: 2
-                        }
-                      }}
-                    />
-                  </Box>
-                )}
+                <EnhancedActionIndicator 
+                  isMultiAgentMode={isMultiAgentMode}
+                  agentName={selectedAgent?.identity.name || selectedSystem?.name || 'Agent'}
+                  isSimulatingTyping={isSimulatingTyping}
+                  typingProgress={typingProgress}
+                  pacingMode={pacingMode}
+                  lastUserMessage={messages[messages.length - 1]?.content || ''}
+                />
               </Box>
             </MessageBubble>
           )}
@@ -5706,18 +5838,14 @@ To use a tool, call it using standard function calling format. The system will e
                 
                 {isSimulatingTyping && (
                   <Box sx={{ mt: 2 }}>
-                    <Typography variant="caption" sx={{ color: DARK_THEME.text.secondary, mb: 1, display: 'block' }}>
-                      Agent is thinking... ({Math.round(typingProgress)}%)
-                    </Typography>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={typingProgress} 
-                      sx={{
-                        backgroundColor: DARK_THEME.border,
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: DARK_THEME.primary
-                        }
-                      }}
+                    <EnhancedActionIndicator 
+                      isMultiAgentMode={false}
+                      agentName="Agent"
+                      isSimulatingTyping={isSimulatingTyping}
+                      typingProgress={typingProgress}
+                      pacingMode={pacingMode}
+                      lastUserMessage=""
+                      compact={true}
                     />
                   </Box>
                 )}

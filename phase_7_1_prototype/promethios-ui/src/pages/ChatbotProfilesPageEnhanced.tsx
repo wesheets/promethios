@@ -1055,9 +1055,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       console.log(`📤 [ChatPanel] Sending message: "${messageInput}"`);
       
+      // Get fresh bot state to avoid stale closure issues
+      const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+      
       // Auto-create chat session if none exists (proactive creation)
-      if (!currentBotState?.currentChatSession && selectedChatbot && user?.uid) {
+      if (!freshBotState?.currentChatSession && selectedChatbot && user?.uid) {
         console.log('🆕 [AutoChat] No existing session, creating new chat session...');
+        console.log('🔍 [AutoChat] Fresh bot state:', freshBotState);
         try {
           // Generate a smart chat name based on the first message
           const smartChatName = messageInput.trim().length > 50 
@@ -1075,6 +1079,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             currentChatSession: newSession,
             currentChatName: newSession.name
           });
+          
+          // Force immediate UI refresh for chat title
+          setSelectedChatbotId(selectedChatbot.id);
           
           // Trigger chat history panel refresh immediately
           setChatHistoryRefreshTrigger(prev => prev + 1);
@@ -1154,9 +1161,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         }
         
         // Save to chat history
-        if (currentBotState?.currentChatSession) {
+        const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+        if (currentFreshBotState?.currentChatSession) {
           try {
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
               id: userMessage.id,
               content: userMessage.content,
               sender: userMessage.sender,
@@ -1165,7 +1173,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentName: selectedChatbot.name,
             });
             
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
               id: agentResponse.id,
               content: agentResponse.content,
               sender: agentResponse.sender,
@@ -1174,6 +1182,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentName: selectedChatbot.name,
               metadata: agentResponse.metadata
             });
+            
+            // Update bot state with new message count immediately
+            const updatedSession = await chatHistoryService.getChatSessionById(currentFreshBotState.currentChatSession.id);
+            if (updatedSession) {
+              updateBotState(selectedChatbot.id, {
+                currentChatSession: updatedSession,
+                currentChatName: updatedSession.name
+              });
+            }
             
             // Trigger chat history panel refresh after adding messages
             setChatHistoryRefreshTrigger(prev => prev + 1);
@@ -1332,9 +1349,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         }
         
         // Save to chat history
-        if (currentBotState?.currentChatSession) {
+        const receiptRefFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+        if (receiptRefFreshBotState?.currentChatSession) {
           try {
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(receiptRefFreshBotState.currentChatSession.id, {
               id: userMessage.id,
               content: userMessage.content,
               sender: userMessage.sender,
@@ -1343,7 +1361,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentName: selectedChatbot.name,
             });
             
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(receiptRefFreshBotState.currentChatSession.id, {
               id: agentResponse.id,
               content: agentResponse.content,
               sender: agentResponse.sender,
@@ -1352,6 +1370,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentName: selectedChatbot.name,
               metadata: agentResponse.metadata
             });
+            
+            // Update bot state with new message count immediately
+            const updatedSession = await chatHistoryService.getChatSessionById(receiptRefFreshBotState.currentChatSession.id);
+            if (updatedSession) {
+              updateBotState(selectedChatbot.id, {
+                currentChatSession: updatedSession,
+                currentChatName: updatedSession.name
+              });
+            }
             
             // Trigger chat history panel refresh
             setChatHistoryRefreshTrigger(prev => prev + 1);
@@ -1432,9 +1459,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
       
       // Save to chat history
-      if (currentBotState?.currentChatSession) {
+      const mainFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+      if (mainFreshBotState?.currentChatSession) {
         try {
-          await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+          await chatHistoryService.addMessageToSession(mainFreshBotState.currentChatSession.id, {
             id: userMessage.id,
             content: userMessage.content,
             sender: userMessage.sender,
@@ -1443,7 +1471,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             agentName: selectedChatbot.name,
           });
           
-          await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+          await chatHistoryService.addMessageToSession(mainFreshBotState.currentChatSession.id, {
             id: response.id,
             content: response.content,
             sender: response.sender,
@@ -1453,6 +1481,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             governanceData: response.governanceData,
             shadowGovernanceData: response.shadowGovernanceData,
           });
+          
+          // Update bot state with new message count immediately
+          const updatedSession = await chatHistoryService.getChatSessionById(mainFreshBotState.currentChatSession.id);
+          if (updatedSession) {
+            updateBotState(selectedChatbot.id, {
+              currentChatSession: updatedSession,
+              currentChatName: updatedSession.name
+            });
+          }
           
           // Trigger chat history panel refresh after adding messages
           setChatHistoryRefreshTrigger(prev => prev + 1);
@@ -2288,7 +2325,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     onShareChat={(contextId) => {
                       setSharedChatContext(contextId);
                       
-                      // Generate the chat reference message and send it to the chat interface
+                      // Generate the chat reference and populate the input bar (like Search Receipts)
                       if (selectedChatbotId) {
                         const chatSharingService = ChatSharingService.getInstance();
                         
@@ -2297,47 +2334,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           if (shareableContext) {
                             const shareMessage = chatSharingService.generateChatShareMessage(shareableContext as any);
                             
-                            // Add the share message to the current chat
-                            const shareMessageObj = {
-                              id: `share_${Date.now()}`,
-                              content: shareMessage,
-                              sender: 'user' as const,
-                              timestamp: new Date(),
-                              agentName: selectedChatbot?.name,
-                              agentId: selectedChatbot?.id,
-                            };
+                            // Instead of sending as message, populate the input bar
+                            setMessageInput(shareMessage);
                             
-                            // Update chat messages in bot state
-                            setBotStates(prev => {
-                              const newStates = new Map(prev);
-                              const currentState = newStates.get(selectedChatbotId) || initializeBotState(selectedChatbotId);
-                              const updatedMessages = [...(currentState.chatMessages || []), shareMessageObj];
-                              const updatedState = { ...currentState, chatMessages: updatedMessages };
-                              newStates.set(selectedChatbotId, updatedState);
-                              return newStates;
-                            });
-                            
-                            // Save to chat history if we have a current session
-                            if (currentBotState?.currentChatSession) {
-                              chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
-                                id: shareMessageObj.id,
-                                content: shareMessageObj.content,
-                                sender: shareMessageObj.sender,
-                                timestamp: shareMessageObj.timestamp,
-                                agentId: selectedChatbot.id,
-                                agentName: selectedChatbot.name,
-                              }).catch(error => {
-                                console.warn('Failed to save share message to chat history:', error);
-                              });
+                            // Focus the input field so user can immediately add their instruction
+                            const inputElement = document.querySelector('input[placeholder*="Type your message"], textarea[placeholder*="Type your message"]') as HTMLInputElement | HTMLTextAreaElement;
+                            if (inputElement) {
+                              inputElement.focus();
+                              // Position cursor at the end
+                              inputElement.setSelectionRange(shareMessage.length, shareMessage.length);
                             }
                             
-                            console.log('✅ Chat reference sent to chat interface:', contextId);
+                            console.log('✅ Chat reference added to input bar:', contextId);
                           }
                         }).catch(error => {
                           console.error('❌ Failed to generate chat share message:', error);
                         });
                       }
-                    }}
+                    }}}
                   />
                 )}
 
