@@ -2351,7 +2351,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           console.error('❌ Failed to generate chat share message:', error);
                         });
                       }
-                    }}}
+                    }}
                   />
                 )}
 
