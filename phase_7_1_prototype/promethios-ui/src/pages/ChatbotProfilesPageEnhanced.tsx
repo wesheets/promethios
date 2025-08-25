@@ -919,13 +919,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (!botStates.has(chatbotId)) {
       const newState = initializeBotState(chatbotId);
       newState.isWorkspaceMode = true;
-      newState.rightPanelType = 'analytics'; // Default to analytics panel
+      newState.rightPanelType = 'chats'; // Default to chats panel
       setBotStates(prev => new Map(prev).set(chatbotId, newState));
     } else {
       // Update existing state to workspace mode
       updateBotState(chatbotId, { 
         isWorkspaceMode: true,
-        rightPanelType: botStates.get(chatbotId)?.rightPanelType || 'analytics'
+        rightPanelType: botStates.get(chatbotId)?.rightPanelType || 'chats'
       });
     }
     
@@ -933,7 +933,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (!isRestoringFromURLRef.current) {
       setSearchParams({ 
         agent: chatbotId, 
-        panel: botStates.get(chatbotId)?.rightPanelType || 'analytics' 
+        panel: botStates.get(chatbotId)?.rightPanelType || 'chats' 
       });
     }
     
