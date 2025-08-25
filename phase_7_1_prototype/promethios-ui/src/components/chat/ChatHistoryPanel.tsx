@@ -84,6 +84,10 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   const [renameSessionId, setRenameSessionId] = useState<string | null>(null);
   const [renameChatName, setRenameChatName] = useState('');
   
+  // Inline editing states
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  
   // Menu states
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuSessionId, setMenuSessionId] = useState<string | null>(null);
@@ -183,6 +187,40 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       await loadChatSessions();
     } catch (error) {
       console.error('Failed to rename chat:', error);
+    }
+  };
+
+  // Inline editing functions
+  const handleStartInlineEdit = (sessionId: string, currentName: string) => {
+    setEditingSessionId(sessionId);
+    setEditingName(currentName);
+  };
+
+  const handleSaveInlineEdit = async () => {
+    if (!editingSessionId || !editingName.trim()) return;
+
+    try {
+      await chatHistoryService.renameChatSession(editingSessionId, editingName.trim());
+      setEditingSessionId(null);
+      setEditingName('');
+      
+      // Refresh the list
+      await loadChatSessions();
+    } catch (error) {
+      console.error('Failed to rename chat:', error);
+    }
+  };
+
+  const handleCancelInlineEdit = () => {
+    setEditingSessionId(null);
+    setEditingName('');
+  };
+
+  const handleInlineEditKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveInlineEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelInlineEdit();
     }
   };
 
@@ -444,19 +482,62 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                   <ListItemText
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: 'white',
-                            fontWeight: session.id === currentSessionId ? 600 : 400,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            flex: 1,
-                          }}
-                        >
-                          {session.name}
-                        </Typography>
+                        {editingSessionId === session.id ? (
+                          <TextField
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyDown={handleInlineEditKeyPress}
+                            onBlur={handleSaveInlineEdit}
+                            autoFocus
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              flex: 1,
+                              '& .MuiOutlinedInput-root': {
+                                bgcolor: '#1e293b',
+                                color: 'white',
+                                fontSize: '0.875rem',
+                                '& fieldset': {
+                                  borderColor: '#3b82f6',
+                                },
+                                '&:hover fieldset': {
+                                  borderColor: '#3b82f6',
+                                },
+                                '&.Mui-focused fieldset': {
+                                  borderColor: '#3b82f6',
+                                },
+                              },
+                              '& .MuiInputBase-input': {
+                                color: 'white',
+                                py: 0.5,
+                              },
+                            }}
+                          />
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartInlineEdit(session.id, session.name);
+                            }}
+                            sx={{
+                              color: 'white',
+                              fontWeight: session.id === currentSessionId ? 600 : 400,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              flex: 1,
+                              cursor: 'pointer',
+                              '&:hover': {
+                                bgcolor: 'rgba(59, 130, 246, 0.1)',
+                                borderRadius: 1,
+                                px: 0.5,
+                              },
+                            }}
+                          >
+                            {session.name}
+                          </Typography>
+                        )}
                         {session.isShared && (
                           <Tooltip title="Shared with agent">
                             <Share sx={{ fontSize: 14, color: '#10b981' }} />
@@ -492,22 +573,45 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                   />
                   
                   <ListItemSecondaryAction>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMenuOpen(e, session.id);
-                      }}
-                      sx={{ color: '#64748b' }}
-                    >
-                      {shareLoading === session.id ? (
-                        <CircularProgress size={16} sx={{ color: '#3b82f6' }} />
-                      ) : shareSuccess === session.id ? (
-                        <CheckCircle sx={{ fontSize: 16, color: '#10b981' }} />
-                      ) : (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {/* Quick Share Button */}
+                      <Tooltip title="Share with Agent - Send this chat as context">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleShareChat(session.id);
+                          }}
+                          sx={{ 
+                            color: session.isShared ? '#10b981' : '#64748b',
+                            '&:hover': { 
+                              color: '#10b981',
+                              bgcolor: 'rgba(16, 185, 129, 0.1)',
+                            },
+                          }}
+                        >
+                          {shareLoading === session.id ? (
+                            <CircularProgress size={16} sx={{ color: '#3b82f6' }} />
+                          ) : shareSuccess === session.id ? (
+                            <CheckCircle sx={{ fontSize: 16, color: '#10b981' }} />
+                          ) : (
+                            <Share sx={{ fontSize: 16 }} />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+                      
+                      {/* Menu Button */}
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMenuOpen(e, session.id);
+                        }}
+                        sx={{ color: '#64748b' }}
+                      >
                         <MoreVert sx={{ fontSize: 16 }} />
-                      )}
-                    </IconButton>
+                      </IconButton>
+                    </Box>
                   </ListItemSecondaryAction>
                 </ListItem>
                 {index < chatSessions.length - 1 && (

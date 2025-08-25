@@ -2014,8 +2014,56 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     }}
                     onShareChat={(contextId) => {
                       setSharedChatContext(contextId);
-                      // Show success message or notification
-                      console.log('Chat shared with agent:', contextId);
+                      
+                      // Generate the chat reference message and send it to the chat interface
+                      if (selectedChatbotId) {
+                        const chatSharingService = ChatSharingService.getInstance();
+                        
+                        // Find the shared chat session to get details
+                        chatHistoryService.getShareableContext(contextId).then(shareableContext => {
+                          if (shareableContext) {
+                            const shareMessage = chatSharingService.generateChatShareMessage(shareableContext as any);
+                            
+                            // Add the share message to the current chat
+                            const shareMessageObj = {
+                              id: `share_${Date.now()}`,
+                              content: shareMessage,
+                              sender: 'user' as const,
+                              timestamp: new Date(),
+                              agentName: selectedChatbot?.name,
+                              agentId: selectedChatbot?.id,
+                            };
+                            
+                            // Update chat messages in bot state
+                            setBotStates(prev => {
+                              const newStates = new Map(prev);
+                              const currentState = newStates.get(selectedChatbotId) || initializeBotState(selectedChatbotId);
+                              const updatedMessages = [...(currentState.chatMessages || []), shareMessageObj];
+                              const updatedState = { ...currentState, chatMessages: updatedMessages };
+                              newStates.set(selectedChatbotId, updatedState);
+                              return newStates;
+                            });
+                            
+                            // Save to chat history if we have a current session
+                            if (currentBotState?.currentChatSession) {
+                              chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+                                id: shareMessageObj.id,
+                                content: shareMessageObj.content,
+                                sender: shareMessageObj.sender,
+                                timestamp: shareMessageObj.timestamp,
+                                agentId: selectedChatbot.id,
+                                agentName: selectedChatbot.name,
+                              }).catch(error => {
+                                console.warn('Failed to save share message to chat history:', error);
+                              });
+                            }
+                            
+                            console.log('✅ Chat reference sent to chat interface:', contextId);
+                          }
+                        }).catch(error => {
+                          console.error('❌ Failed to generate chat share message:', error);
+                        });
+                      }
                     }}
                   />
                 )}
