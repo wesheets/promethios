@@ -2101,12 +2101,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     currentSessionId={currentBotState?.currentChatSession?.id}
                     refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0} // Use bot state refresh trigger
                     onChatSelect={(session) => {
+                      console.log(`🔄 [ChatHistory] Chat selected:`, session);
+                      console.log(`🔄 [ChatHistory] Session has ${session.messages?.length || 0} messages`);
+                      console.log(`🔄 [ChatHistory] Selected chatbot ID: ${selectedChatbotId}`);
+                      
                       if (selectedChatbotId) {
                         updateBotState(selectedChatbotId, { 
                           currentChatSession: session,
                           currentChatName: session.name || `Chat ${session.id.slice(-8)}`
                         });
+                        console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
                       }
+                      
                       // Load the chat messages into the current chat interface
                       const newMessages = session.messages.map(msg => ({
                         id: msg.id,
@@ -2119,6 +2125,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         governanceData: msg.governanceData,
                         shadowGovernanceData: msg.shadowGovernanceData,
                       }));
+                      
+                      console.log(`🔄 [ChatHistory] Mapped ${newMessages.length} messages:`, newMessages);
+                      
                       if (selectedChatbotId) {
                         console.log(`🔄 [ChatHistory] Loading ${newMessages.length} messages for bot: ${selectedChatbotId}`);
                         
@@ -2126,10 +2135,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         setBotStates(prev => {
                           const newStates = new Map(prev);
                           const currentState = newStates.get(selectedChatbotId) || initializeBotState(selectedChatbotId);
+                          console.log(`🔄 [ChatHistory] Current state before update:`, currentState);
+                          
                           const updatedState = { ...currentState, chatMessages: newMessages };
+                          console.log(`🔄 [ChatHistory] Updated state:`, updatedState);
+                          
                           newStates.set(selectedChatbotId, updatedState);
                           
                           console.log(`✅ [ChatHistory] Loaded ${newMessages.length} messages successfully`);
+                          console.log(`✅ [ChatHistory] Bot state updated for: ${selectedChatbotId}`);
                           return newStates;
                         });
                       }
