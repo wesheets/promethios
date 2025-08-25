@@ -7,6 +7,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import './AtlasChat.css';
+import VerificationHandler from '../../../utils/verificationHandler';
+
+// Global type declarations for verification handler
+declare global {
+  interface Window {
+    verificationHandler: VerificationHandler;
+    startVerification: (buttonElement: HTMLElement) => void;
+  }
+}
 
 export interface ChatMessage {
   id: string;
@@ -66,6 +75,21 @@ const AtlasChat: React.FC<AtlasChatProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Initialize verification handler
+  useEffect(() => {
+    // Initialize the verification handler for this chat instance
+    if (!window.verificationHandler) {
+      window.verificationHandler = new VerificationHandler();
+    }
+    
+    // Make startVerification globally available
+    if (!window.startVerification) {
+      window.startVerification = (buttonElement: HTMLElement) => {
+        window.verificationHandler.startVerification(buttonElement);
+      };
+    }
+  }, []);
 
   // Toggle chat expansion
   const toggleChat = () => {

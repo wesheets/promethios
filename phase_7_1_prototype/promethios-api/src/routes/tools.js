@@ -15,6 +15,7 @@ const dataVisualizationTool = require('../services/tools/dataVisualizationTool')
 const codingTool = require('../services/tools/codingTool');
 const webScrapingTool = require('../services/tools/webScrapingTool');
 const seoAnalysisTool = require('../services/tools/seoAnalysisTool');
+const articleVerificationTool = require('../services/tools/articleVerificationTool');
 
 // Communication tools
 const emailSendingTool = require('../services/tools/emailSendingTool');
@@ -46,6 +47,7 @@ const AVAILABLE_TOOLS = {
   // Web & Search tools
   'web_scraping': webScrapingTool,
   'seo_analysis': seoAnalysisTool,
+  'article_verification': articleVerificationTool,
   
   // Communication tools
   'email_sending': emailSendingTool,
