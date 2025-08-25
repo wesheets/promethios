@@ -98,6 +98,7 @@ import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
 import { ChatSharingService } from '../services/ChatSharingService';
+import { ReceiptSharingService } from '../services/ReceiptSharingService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import ChatInterfacePanel from '../components/chat/ChatInterfacePanel';
 import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
@@ -1088,7 +1089,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const chatReferenceId = chatSharingService.detectChatReference(messageInput.trim());
       
       // Check if this is a receipt reference (for agent processing)
-      const { ReceiptSharingService } = await import('../services/ReceiptSharingService');
       const receiptSharingService = ReceiptSharingService.getInstance();
       const receiptReferenceId = receiptSharingService.detectReceiptReference(messageInput.trim());
       
