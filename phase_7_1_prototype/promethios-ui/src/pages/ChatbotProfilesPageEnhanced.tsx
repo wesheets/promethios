@@ -1495,7 +1495,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={() => setIsWorkspaceMode(false)}
+                  onClick={() => {
+                    if (selectedChatbotId) {
+                      updateBotState(selectedChatbotId, { isWorkspaceMode: false });
+                    }
+                  }}
                   sx={{ color: '#64748b', borderColor: '#64748b' }}
                 >
                   ← Back to Agents

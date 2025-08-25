@@ -351,10 +351,14 @@ export class ChatHistoryService {
     const sessions: ChatSession[] = [];
     
     try {
+      console.log(`📚 Loading chat history from storage for user: ${userId}`);
+      
       // Try to get user's chat index first (use 2-segment path for Firebase)
       const userChatIndex = await unifiedStorage.get('chats', `user_${userId}_index`);
       
-      if (userChatIndex && Array.isArray(userChatIndex)) {
+      if (userChatIndex && Array.isArray(userChatIndex) && userChatIndex.length > 0) {
+        console.log(`📚 Found chat index with ${userChatIndex.length} sessions`);
+        
         // Load sessions from index
         for (const sessionId of userChatIndex) {
           try {
@@ -372,27 +376,58 @@ export class ChatHistoryService {
           }
         }
       } else {
-        // Fallback: try to load sessions directly (less efficient but works)
-        console.log('📚 No chat index found, attempting direct session loading');
+        console.log('📚 No chat index found or empty, checking for direct sessions');
         
-        // Try common session patterns (use 2-segment paths for Firebase)
-        for (let i = 0; i < 100; i++) { // Limit to prevent infinite loops
-          try {
-            const sessionData = await unifiedStorage.get('chats', `user_${userId}_chat_${i}`);
-            if (sessionData) {
-              const session = this.deserializeChatSession(sessionData);
-              if (this.matchesFilter(session, filter)) {
-                sessions.push(session);
+        // Try to find sessions using a more efficient approach
+        try {
+          // Get all keys in the chats namespace
+          const allKeys = await unifiedStorage.getKeys('chats');
+          const userSessionKeys = allKeys.filter(key => 
+            key.startsWith(`user_${userId}_`) && 
+            !key.endsWith('_index') &&
+            key.includes('chat_')
+          );
+          
+          console.log(`📚 Found ${userSessionKeys.length} potential session keys`);
+          
+          for (const key of userSessionKeys) {
+            try {
+              const sessionData = await unifiedStorage.get('chats', key.replace('chats/', ''));
+              if (sessionData) {
+                const session = this.deserializeChatSession(sessionData);
+                if (this.matchesFilter(session, filter)) {
+                  sessions.push(session);
+                }
               }
+            } catch (error) {
+              console.warn(`Failed to load session from key ${key}:`, error);
             }
-          } catch (error) {
-            // Session doesn't exist, continue
-            break;
+          }
+        } catch (keysError) {
+          console.log('📚 Could not get keys, trying fallback approach');
+          
+          // Final fallback: try common session patterns (limited to prevent hanging)
+          for (let i = 0; i < 10; i++) { // Reduced limit to prevent hanging
+            try {
+              const sessionData = await unifiedStorage.get('chats', `user_${userId}_chat_${i}`);
+              if (sessionData) {
+                const session = this.deserializeChatSession(sessionData);
+                if (this.matchesFilter(session, filter)) {
+                  sessions.push(session);
+                }
+              } else {
+                // No more sessions found, break early
+                break;
+              }
+            } catch (error) {
+              // Session doesn't exist, break
+              break;
+            }
           }
         }
       }
     } catch (storageError) {
-      console.warn('Storage access error, trying alternative approach:', storageError);
+      console.warn('Storage access error, using active sessions cache:', storageError);
       
       // Try to get sessions from active sessions cache
       for (const [sessionId, session] of this.activeSessions) {
@@ -405,7 +440,7 @@ export class ChatHistoryService {
     // Sort by last updated (most recent first) - chronological order
     sessions.sort((a, b) => b.lastUpdated.getTime() - a.lastUpdated.getTime());
 
-    console.log(`📚 Loaded ${sessions.length} chat sessions for user ${userId}`);
+    console.log(`✅ Successfully loaded ${sessions.length} chat sessions for user ${userId}`);
     
     // Update cache
     this.chatHistoryCache.set(cacheKey, sessions);
@@ -569,11 +604,36 @@ export class ChatHistoryService {
         }
         
         await unifiedStorage.set('chats', `user_${userId}_index`, index);
+        
+        // Invalidate cache to force refresh
+        this.invalidateUserChatCache(userId);
+        
+        console.log(`📚 Updated chat index for user ${userId}: ${index.length} sessions`);
       }
     } catch (error) {
       console.warn('Failed to update user chat index:', error);
       // Don't throw - this is not critical for chat functionality
     }
+  }
+
+  /**
+   * Invalidate chat cache for a user to force refresh
+   */
+  private invalidateUserChatCache(userId: string): void {
+    // Remove all cache entries for this user
+    const keysToRemove: string[] = [];
+    for (const [key] of this.chatHistoryCache) {
+      if (key.startsWith(`${userId}_`)) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    for (const key of keysToRemove) {
+      this.chatHistoryCache.delete(key);
+      this.cacheTimestamps.delete(key);
+    }
+    
+    console.log(`🗑️ Invalidated chat cache for user ${userId}`);
   }
 
   private serializeChatSession(session: ChatSession): any {

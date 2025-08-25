@@ -150,6 +150,8 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     if (!currentUser?.uid) return;
 
     try {
+      console.log('🆕 Creating new chat session...');
+      
       const chatName = newChatName.trim() || undefined;
       const session = await chatHistoryService.createChatSession(
         agentId,
@@ -158,17 +160,21 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
         chatName
       );
 
+      console.log(`✅ Created new chat session: ${session.name} (${session.id})`);
+
       setNewChatDialogOpen(false);
       setNewChatName('');
       
-      // Refresh the list
+      // Force refresh the list immediately
       await loadChatSessions();
       
       // Select the new chat and notify parent
       onChatSelect(session);
       onNewChat(session);
+      
+      console.log('✅ New chat creation completed successfully');
     } catch (error) {
-      console.error('Failed to create new chat:', error);
+      console.error('❌ Failed to create new chat:', error);
     }
   };
 
