@@ -1062,6 +1062,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Check both freshBotState and ChatHistoryService to ensure proper session management
       const hasHistorySession = freshBotState?.currentChatSession;
       
+      console.log('🔍 [AutoChat] Checking session state:');
+      console.log('🔍 [AutoChat] selectedChatbotId:', selectedChatbotId);
+      console.log('🔍 [AutoChat] freshBotState exists:', !!freshBotState);
+      console.log('🔍 [AutoChat] hasHistorySession:', !!hasHistorySession);
+      console.log('🔍 [AutoChat] hasHistorySession details:', hasHistorySession);
+      
       if (!hasHistorySession && selectedChatbot && user?.uid) {
         console.log('🆕 [AutoChat] No ChatHistoryService session, creating new chat session...');
         console.log('🔍 [AutoChat] Fresh bot state:', freshBotState);
