@@ -572,7 +572,7 @@ export class ChatHistoryService {
 
     // Load from storage using correct API
     try {
-      const sessionData = await unifiedStorage.get('chats', `sessions/${sessionId}`);
+      const sessionData = await unifiedStorage.get('chats', `session_${sessionId}`);
       
       if (sessionData) {
         const session = this.deserializeChatSession(sessionData);
