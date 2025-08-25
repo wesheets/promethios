@@ -993,6 +993,52 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  // Handle receipt sharing with agent
+  const handleReceiptShare = async (receiptId: string, context: any) => {
+    if (!selectedBot || !activeSession) return;
+
+    try {
+      console.log('🧾 Handling receipt share:', receiptId, context);
+
+      // Check if this is a receipt share context
+      if (context.type === 'receipt_share') {
+        // Add the receipt share message to the current chat
+        const shareMessage = context.shareMessage;
+        
+        // Add user message to chat history
+        const userMessage: ChatMessage = {
+          id: `msg_${Date.now()}_user`,
+          role: 'user',
+          content: shareMessage,
+          timestamp: new Date(),
+          sessionId: activeSession.sessionId,
+          agentId: selectedBot.id,
+          userId: user?.uid || '',
+          metadata: {
+            type: 'receipt_share',
+            receiptId,
+            shareableId: context.shareableId
+          }
+        };
+
+        // Update bot state with new message
+        updateBotState(selectedBot.id, {
+          messages: [...(botStates[selectedBot.id]?.messages || []), userMessage]
+        });
+
+        // Save message to chat history
+        await chatHistoryService.addMessage(activeSession.sessionId, userMessage);
+
+        // Trigger chat history refresh
+        setChatHistoryRefreshTrigger(prev => prev + 1);
+
+        console.log('✅ Receipt share message added to chat');
+      }
+    } catch (error) {
+      console.error('❌ Failed to handle receipt share:', error);
+    }
+  };
+
   // Chat functionality - Real Universal Governance Adapter Integration
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeSession || chatLoading) return;
@@ -1040,6 +1086,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Check if this is a chat reference (for agent processing)
       const chatSharingService = ChatSharingService.getInstance();
       const chatReferenceId = chatSharingService.detectChatReference(messageInput.trim());
+      
+      // Check if this is a receipt reference (for agent processing)
+      const { ReceiptSharingService } = await import('../services/ReceiptSharingService');
+      const receiptSharingService = ReceiptSharingService.getInstance();
+      const receiptReferenceId = receiptSharingService.detectReceiptReference(messageInput.trim());
       
       if (isReceiptSearch && selectedChatbot && user?.uid) {
         console.log('🔍 [ReceiptSearch] Detected receipt search query');
@@ -1212,6 +1263,95 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             });
           } catch (historyError) {
             console.warn('Failed to save chat reference to chat history:', historyError);
+          }
+        }
+        
+        // Clear input and attachments
+        setMessageInput('');
+        setAttachedFiles([]);
+        setChatLoading(false);
+        setIsTyping(false);
+        
+        return;
+      } else if (receiptReferenceId && selectedChatbot && user?.uid) {
+        console.log('🧾 [ReceiptReference] Detected receipt reference:', receiptReferenceId);
+        
+        // Process receipt reference for agent context loading
+        const receiptReferenceResult = await receiptSharingService.processReceiptReference(
+          receiptReferenceId,
+          user.uid,
+          selectedChatbot.id,
+          messageInput.trim()
+        );
+        
+        // Add user message
+        const userMessage: ChatMessage = {
+          id: `user_${Date.now()}`,
+          content: messageInput.trim(),
+          sender: 'user',
+          timestamp: new Date(),
+          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+        };
+        
+        // Create agent response with receipt analysis
+        const agentResponse: ChatMessage = {
+          id: `agent_${Date.now()}`,
+          content: receiptReferenceResult.agentResponse,
+          sender: 'assistant',
+          timestamp: new Date(),
+          metadata: {
+            receiptContext: receiptReferenceResult.context,
+            originalReceiptId: receiptReferenceResult.originalReceiptId,
+            analysisOptions: receiptReferenceResult.analysisOptions
+          }
+        };
+        
+        // Update chat messages in bot state
+        if (selectedChatbot) {
+          const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+          console.log(`🔄 [ReceiptReference] Updating chat messages for bot: ${botId}`);
+          
+          setBotStates(prev => {
+            const newStates = new Map(prev);
+            const currentState = newStates.get(botId) || initializeBotState(botId);
+            
+            const latestMessages = currentState.chatMessages || [];
+            const updatedMessages = [...latestMessages, userMessage, agentResponse];
+            
+            const updatedState = { ...currentState, chatMessages: updatedMessages };
+            newStates.set(botId, updatedState);
+            
+            console.log(`✅ [ReceiptReference] State updated successfully`);
+            return newStates;
+          });
+        }
+        
+        // Save to chat history
+        if (currentBotState?.currentChatSession) {
+          try {
+            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+              id: userMessage.id,
+              content: userMessage.content,
+              sender: userMessage.sender,
+              timestamp: userMessage.timestamp,
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+            });
+            
+            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+              id: agentResponse.id,
+              content: agentResponse.content,
+              sender: agentResponse.sender,
+              timestamp: agentResponse.timestamp,
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+              metadata: agentResponse.metadata
+            });
+            
+            // Trigger chat history panel refresh
+            setChatHistoryRefreshTrigger(prev => prev + 1);
+          } catch (historyError) {
+            console.warn('Failed to save receipt reference to chat history:', historyError);
           }
         }
         
@@ -2273,7 +2413,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
                 
                 {rightPanelType === 'receipts' && (
-                  <AgentReceiptViewer />
+                  <AgentReceiptViewer 
+                    agentId={selectedBot?.id || ''}
+                    agentName={selectedBot?.name || 'Agent'}
+                    onClose={() => setRightPanelType(null)}
+                    onReceiptClick={handleReceiptShare}
+                    enableInteractiveMode={true}
+                    currentUserId={user?.uid || ''}
+                    currentSessionId={botStates[selectedBot?.id || '']?.currentSessionId || ''}
+                  />
                 )}
                 
                 {rightPanelType === 'memory' && (

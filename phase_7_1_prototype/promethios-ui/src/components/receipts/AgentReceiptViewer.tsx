@@ -460,6 +460,47 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
     }
   };
 
+  const handleShareReceipt = async (receiptId: string, event: React.MouseEvent) => {
+    // Prevent accordion expansion when clicking share button
+    event.stopPropagation();
+    
+    try {
+      console.log('🧾 Sharing receipt with agent:', receiptId);
+      
+      // Import the receipt sharing service
+      const { ReceiptSharingService } = await import('../../services/ReceiptSharingService');
+      const receiptSharingService = ReceiptSharingService.getInstance();
+      
+      // Generate shareable reference
+      const shareableReference = await receiptSharingService.generateReceiptShareReference(
+        receiptId,
+        currentUserId,
+        agentId
+      );
+      
+      // Generate share message
+      const shareMessage = receiptSharingService.generateReceiptShareMessage(shareableReference);
+      
+      // Send to chat interface (similar to chat sharing)
+      if (onReceiptClick) {
+        // Create a special context for sharing
+        const shareContext = {
+          type: 'receipt_share' as const,
+          receiptId,
+          shareMessage,
+          shareableId: shareableReference.shareableId
+        };
+        
+        onReceiptClick(receiptId, shareContext);
+      }
+      
+      console.log('✅ Receipt shared successfully:', shareableReference.shareableId);
+    } catch (error) {
+      console.error('❌ Failed to share receipt:', error);
+      // TODO: Show error notification to user
+    }
+  };
+
   const handleReceiptSelect = (receiptId: string, selected: boolean) => {
     const newSelection = new Set(selectedReceipts);
     if (selected) {
@@ -1190,6 +1231,18 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
                   {/* Interactive action buttons */}
                   {enableInteractiveMode && (
                     <Box display="flex" gap={1}>
+                      <Tooltip title="Share with Agent - Send this receipt as context">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleShareReceipt(receipt.receiptId, e)}
+                          sx={{
+                            color: '#10b981',
+                            '&:hover': { bgcolor: '#059669', color: 'white' },
+                          }}
+                        >
+                          <Chat />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Load into chat">
                         <IconButton
                           size="small"
@@ -1199,7 +1252,7 @@ const AgentReceiptViewer: React.FC<AgentReceiptViewerProps> = ({
                             '&:hover': { bgcolor: '#1e40af', color: 'white' },
                           }}
                         >
-                          <Chat />
+                          <Link />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Show thinking process">
