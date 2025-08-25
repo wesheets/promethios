@@ -2493,12 +2493,6 @@ You operate with governance oversight that monitors your interactions for safety
 
   // REMOVED ALL DUPLICATE STUB METHODS - These were duplicates of methods already defined earlier in the class
   // The original implementations are kept in their proper locations throughout the class
-}
-
-// Export singleton instance for easy use
-export const universalGovernanceAdapter = UniversalGovernanceAdapter.getInstance();
-
-
 
   // ============================================================================
   // 🧾 HYBRID AUDIT SYSTEM: Tool Execution Receipt Generation
@@ -2760,4 +2754,8 @@ export const universalGovernanceAdapter = UniversalGovernanceAdapter.getInstance
       // Don't throw - receipt generation shouldn't break the main flow
     }
   }
+}
+
+// Export singleton instance for easy use
+export const universalGovernanceAdapter = UniversalGovernanceAdapter.getInstance();
 
