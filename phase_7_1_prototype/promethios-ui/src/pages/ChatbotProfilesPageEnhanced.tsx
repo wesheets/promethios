@@ -1058,10 +1058,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Get fresh bot state to avoid stale closure issues
       const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
       
-      // Auto-create chat session if none exists (proactive creation)
-      if (!freshBotState?.currentChatSession && selectedChatbot && user?.uid) {
-        console.log('🆕 [AutoChat] No existing session, creating new chat session...');
+      // Auto-create ChatHistoryService session if none exists (proactive creation)
+      // Check both freshBotState and ChatHistoryService to ensure proper session management
+      const hasHistorySession = freshBotState?.currentChatSession;
+      
+      if (!hasHistorySession && selectedChatbot && user?.uid) {
+        console.log('🆕 [AutoChat] No ChatHistoryService session, creating new chat session...');
         console.log('🔍 [AutoChat] Fresh bot state:', freshBotState);
+        console.log('🔍 [AutoChat] Has history session:', hasHistorySession);
         try {
           // Generate a smart chat name based on the first message
           const smartChatName = messageInput.trim().length > 50 
@@ -1086,7 +1090,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           // Trigger chat history panel refresh immediately
           setChatHistoryRefreshTrigger(prev => prev + 1);
           
-          console.log(`✅ [AutoChat] Created new session: ${newSession.name} (${newSession.id})`);
+          console.log(`✅ [AutoChat] Created new ChatHistoryService session: ${newSession.name} (${newSession.id})`);
         } catch (sessionError) {
           console.error('❌ [AutoChat] Failed to create chat session:', sessionError);
           // Continue with the message even if session creation fails
