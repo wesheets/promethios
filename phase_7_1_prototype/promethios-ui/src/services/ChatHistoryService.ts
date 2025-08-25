@@ -277,6 +277,16 @@ export class ChatHistoryService {
   }
 
   /**
+   * Get chat sessions for user with filtering (public interface for ChatHistoryPanel)
+   */
+  async getChatSessions(
+    userId: string,
+    filter?: ChatHistoryFilter
+  ): Promise<ChatSession[]> {
+    return await this.getUserChatHistory(userId, filter);
+  }
+
+  /**
    * Get chat sessions for user with filtering
    */
   async getUserChatHistory(

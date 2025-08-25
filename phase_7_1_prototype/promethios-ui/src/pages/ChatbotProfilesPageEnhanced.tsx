@@ -1087,6 +1087,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentName: selectedChatbot.name,
               metadata: agentResponse.metadata
             });
+            
+            // Trigger chat history panel refresh after adding messages
+            setChatHistoryRefreshTrigger(prev => prev + 1);
           } catch (historyError) {
             console.warn('Failed to save receipt search to chat history:', historyError);
           }
@@ -1227,10 +1230,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save messages to chat history if we have a current session
-      if (currentBotState?.currentChatSession && selectedChatbot && user?.uid) {
+      // Save to chat history
+      if (currentBotState?.currentChatSession) {
         try {
-          // Add user message to chat history
           await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
             id: userMessage.id,
             content: userMessage.content,
@@ -1240,7 +1242,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             agentName: selectedChatbot.name,
           });
           
-          // Add agent response to chat history
           await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
             id: response.id,
             content: response.content,
@@ -1251,12 +1252,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             governanceData: response.governanceData,
             shadowGovernanceData: response.shadowGovernanceData,
           });
+          
+          // Trigger chat history panel refresh after adding messages
+          setChatHistoryRefreshTrigger(prev => prev + 1);
         } catch (historyError) {
           console.warn('Failed to save to chat history:', historyError);
           // Don't break the chat flow if history fails
         }
       } else if (!currentBotState?.currentChatSession && selectedChatbot && user?.uid) {
-        // Auto-create a new chat session if none exists
         try {
           const newSession = await chatHistoryService.createChatSession(
             selectedChatbot.id,

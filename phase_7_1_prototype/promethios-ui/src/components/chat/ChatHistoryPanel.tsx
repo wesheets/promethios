@@ -304,9 +304,15 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      bgcolor: '#0f172a', // Dark background to match chat interface
+      color: 'white'
+    }}>
       {/* Header */}
-      <Box sx={{ p: 2, borderBottom: '1px solid #334155', flexShrink: 0 }}>
+      <Box sx={{ p: 2, borderBottom: '1px solid #334155', flexShrink: 0, bgcolor: '#0f172a' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
             Chat History
@@ -343,11 +349,15 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
           sx={{
             mb: 2,
             '& .MuiOutlinedInput-root': {
-              bgcolor: '#0f172a',
+              bgcolor: '#1e293b', // Darker input background
               color: 'white',
               '& fieldset': { borderColor: '#334155' },
               '&:hover fieldset': { borderColor: '#3b82f6' },
               '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
+            },
+            '& .MuiInputBase-input::placeholder': {
+              color: '#64748b',
+              opacity: 1,
             },
           }}
         />
@@ -373,10 +383,10 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       </Box>
 
       {/* Chat List */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#0f172a' }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress size={24} />
+            <CircularProgress size={24} sx={{ color: '#3b82f6' }} />
           </Box>
         ) : chatSessions.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -394,6 +404,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                 '&:hover': {
                   borderColor: '#3b82f6',
                   color: 'white',
+                  bgcolor: '#1e293b',
                 },
               }}
             >
@@ -412,7 +423,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                     px: 2,
                     bgcolor: session.id === currentSessionId ? '#1e293b' : 'transparent',
                     '&:hover': {
-                      bgcolor: session.id === currentSessionId ? '#1e293b' : '#0f172a',
+                      bgcolor: session.id === currentSessionId ? '#1e293b' : '#1e293b',
                     },
                     borderLeft: session.id === currentSessionId ? '3px solid #3b82f6' : '3px solid transparent',
                   }}
@@ -490,7 +501,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                       sx={{ color: '#64748b' }}
                     >
                       {shareLoading === session.id ? (
-                        <CircularProgress size={16} />
+                        <CircularProgress size={16} sx={{ color: '#3b82f6' }} />
                       ) : shareSuccess === session.id ? (
                         <CheckCircle sx={{ fontSize: 16, color: '#10b981' }} />
                       ) : (
@@ -517,19 +528,20 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
           sx: {
             bgcolor: '#1e293b',
             border: '1px solid #334155',
+            color: 'white',
           },
         }}
       >
-        <MenuItem onClick={handleMenuRename} sx={{ color: 'white' }}>
+        <MenuItem onClick={handleMenuRename} sx={{ color: 'white', '&:hover': { bgcolor: '#374151' } }}>
           <Edit sx={{ mr: 1, fontSize: 16 }} />
           Rename
         </MenuItem>
-        <MenuItem onClick={handleMenuShare} sx={{ color: 'white' }}>
+        <MenuItem onClick={handleMenuShare} sx={{ color: 'white', '&:hover': { bgcolor: '#374151' } }}>
           <Share sx={{ mr: 1, fontSize: 16 }} />
           Share with Agent
         </MenuItem>
         <Divider sx={{ bgcolor: '#334155' }} />
-        <MenuItem onClick={handleMenuDelete} sx={{ color: '#ef4444' }}>
+        <MenuItem onClick={handleMenuDelete} sx={{ color: '#ef4444', '&:hover': { bgcolor: '#374151' } }}>
           <Delete sx={{ mr: 1, fontSize: 16 }} />
           Delete
         </MenuItem>
@@ -543,13 +555,14 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
           sx: {
             bgcolor: '#1e293b',
             border: '1px solid #334155',
+            color: 'white',
           },
         }}
       >
-        <DialogTitle sx={{ color: 'white' }}>
+        <DialogTitle sx={{ color: 'white', bgcolor: '#1e293b' }}>
           Start New Chat
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ bgcolor: '#1e293b' }}>
           <TextField
             autoFocus
             fullWidth
@@ -570,10 +583,14 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                 color: '#94a3b8',
                 '&.Mui-focused': { color: '#3b82f6' },
               },
+              '& .MuiInputBase-input::placeholder': {
+                color: '#64748b',
+                opacity: 1,
+              },
             }}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ bgcolor: '#1e293b' }}>
           <Button onClick={() => setNewChatDialogOpen(false)} sx={{ color: '#94a3b8' }}>
             Cancel
           </Button>
@@ -598,13 +615,14 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
           sx: {
             bgcolor: '#1e293b',
             border: '1px solid #334155',
+            color: 'white',
           },
         }}
       >
-        <DialogTitle sx={{ color: 'white' }}>
+        <DialogTitle sx={{ color: 'white', bgcolor: '#1e293b' }}>
           Rename Chat
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ bgcolor: '#1e293b' }}>
           <TextField
             autoFocus
             fullWidth
@@ -627,7 +645,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
             }}
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ bgcolor: '#1e293b' }}>
           <Button onClick={() => setRenameDialogOpen(false)} sx={{ color: '#94a3b8' }}>
             Cancel
           </Button>
