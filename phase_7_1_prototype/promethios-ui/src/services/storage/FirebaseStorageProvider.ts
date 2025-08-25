@@ -135,7 +135,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         return null;
       }
 
-      console.log(`🔥 Retrieved from Firebase: ${key}`);
+      // Removed excessive Firebase retrieval logging to prevent console spam
       return data.value;
 
     } catch (error) {
@@ -209,9 +209,10 @@ export class FirebaseStorageProvider implements StorageProvider {
       const docRef = doc(db, collectionName, documentId);
       await setDoc(docRef, sanitizedItem);
 
-      console.log(`🔥 Stored to Firebase: ${key} (sanitized)`);
+      // Stored to Firebase successfully
+      return true;
 
-      // Also store in fallback for redundancy if available
+      // Store in fallback for redundancy if available
       if (this.fallbackProvider && options?.redundantStorage !== false) {
         try {
           await this.fallbackProvider.set(key, value, options);
@@ -250,10 +251,10 @@ export class FirebaseStorageProvider implements StorageProvider {
       
       const docRef = doc(db, collectionName, documentId);
       await deleteDoc(docRef);
+      // Deleted from Firebase successfully
+      return true;
 
-      console.log(`🔥 Deleted from Firebase: ${key}`);
-
-      // Also delete from fallback if available
+      // Delete from fallback if available
       if (this.fallbackProvider) {
         try {
           await this.fallbackProvider.delete(key);
@@ -329,7 +330,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         // Query common collections that might contain user data
         const collections = ['agents', 'multiAgentSystems', 'user', 'singleAgentChats', 'multiAgentChats', 'governance', 'preferences', 'notifications'];
         
-        console.log(`🔥 Querying ${collections.length} Firebase collections for keys...`);
+        // Querying Firebase collections for keys...
         
         for (const collectionName of collections) {
           try {
@@ -342,22 +343,22 @@ export class FirebaseStorageProvider implements StorageProvider {
               keys.push(key);
             });
             
-            console.log(`🔥 Found ${snapshot.size} documents in collection: ${collectionName}`);
+            // Found documents in collection
           } catch (collectionError) {
             console.warn(`Failed to query collection ${collectionName}:`, collectionError);
           }
         }
 
-        console.log(`🔥 Retrieved ${keys.length} keys from Firebase collections`);
+        // Retrieved keys from Firebase collections
         
         // If we got keys from Firebase, return them
         if (keys.length > 0) {
-          console.log(`🔥 Returning ${keys.length} keys from Firebase`);
+          // Returning keys from Firebase
           return keys;
         }
         
         // If Firebase returned no keys, fall back to localStorage
-        console.log(`🔥 Firebase returned 0 keys, falling back to localStorage...`);
+        // Firebase returned 0 keys, falling back to localStorage...
         if (this.fallbackProvider) {
           const fallbackKeys = await this.fallbackProvider.keys();
           console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys`);
@@ -370,7 +371,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         console.error('Firebase keys query error:', queryError);
         
         // Fall back to localStorage on any Firebase error
-        console.log(`🔥 Firebase query failed, falling back to localStorage...`);
+        // Firebase query failed, falling back to localStorage...
         if (this.fallbackProvider) {
           const fallbackKeys = await this.fallbackProvider.keys();
           console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys after Firebase error`);
