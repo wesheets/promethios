@@ -2189,12 +2189,62 @@ You operate with governance oversight that monitors your interactions for safety
 
   /**
    * Process governance response after backend interaction
+   * 🎯 HYBRID AUDIT APPROACH: Creates both unified interaction logs AND granular tool receipts
    */
   private async processGovernanceResponse(agentId: string, result: any, context: any): Promise<void> {
     try {
       // Update trust scores based on interaction results
       if (result.governance_metrics?.trust_score) {
         await this.updateTrustScore(agentId, result.governance_metrics.trust_score);
+      }
+
+      // 🧾 HYBRID AUDIT IMPLEMENTATION: Process tool execution results and generate receipts
+      if (result.tool_executions && Array.isArray(result.tool_executions)) {
+        console.log(`🔧 [Universal] Processing ${result.tool_executions.length} tool execution(s) for receipt generation`);
+        
+        for (const toolExecution of result.tool_executions) {
+          try {
+            await this.generateToolExecutionReceipt(agentId, toolExecution, context, result);
+          } catch (receiptError) {
+            console.warn(`⚠️ [Universal] Failed to generate receipt for tool ${toolExecution.tool_name}:`, receiptError);
+          }
+        }
+      }
+
+      // 🔍 FALLBACK: Check if response contains search results (web scraping tool execution)
+      if (result.response && result.response.includes('Search Results') && result.response.includes('Source:')) {
+        console.log(`🔍 [Universal] Detected web search execution, generating research receipt`);
+        
+        try {
+          // Extract search results from response for receipt generation
+          const searchResults = this.extractSearchResultsFromResponse(result.response);
+          const syntheticToolExecution = {
+            tool_name: 'web_search',
+            tool_id: 'web_scraping_tool',
+            execution_id: `search_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            parameters: {
+              query: this.extractSearchQueryFromContext(context),
+              search_type: 'web_research'
+            },
+            results: {
+              success: true,
+              data: searchResults,
+              sources: this.extractSourcesFromResponse(result.response),
+              result_count: searchResults.length
+            },
+            execution_time_ms: result.processing_time || 2000,
+            timestamp: new Date().toISOString(),
+            governance_metadata: {
+              trust_score: result.governance_metrics?.trust_score || 0.85,
+              compliance_score: result.governance_metrics?.compliance_score || 0.9,
+              risk_level: 'low'
+            }
+          };
+          
+          await this.generateToolExecutionReceipt(agentId, syntheticToolExecution, context, result);
+        } catch (searchReceiptError) {
+          console.warn(`⚠️ [Universal] Failed to generate search receipt:`, searchReceiptError);
+        }
       }
 
       // Process any governance alerts or warnings
@@ -2447,4 +2497,267 @@ You operate with governance oversight that monitors your interactions for safety
 
 // Export singleton instance for easy use
 export const universalGovernanceAdapter = UniversalGovernanceAdapter.getInstance();
+
+
+
+  // ============================================================================
+  // 🧾 HYBRID AUDIT SYSTEM: Tool Execution Receipt Generation
+  // ============================================================================
+
+  /**
+   * Generate comprehensive tool execution receipt with cryptographic linking
+   * 🎯 HYBRID APPROACH: Individual tool receipts linked to main interaction audit
+   */
+  private async generateToolExecutionReceipt(agentId: string, toolExecution: any, context: any, mainResult: any): Promise<void> {
+    try {
+      console.log(`🧾 [Universal] Generating receipt for tool: ${toolExecution.tool_name}`);
+
+      // 1. Create comprehensive receipt data structure
+      const receiptData = {
+        // Core Receipt Information
+        receipt_id: `receipt_${toolExecution.execution_id || Date.now()}`,
+        tool_name: toolExecution.tool_name,
+        tool_id: toolExecution.tool_id,
+        execution_id: toolExecution.execution_id,
+        
+        // Execution Context
+        agent_id: agentId,
+        session_id: context.sessionId,
+        user_id: context.userId || 'unknown',
+        timestamp: toolExecution.timestamp || new Date().toISOString(),
+        
+        // Tool Execution Details
+        parameters: toolExecution.parameters || {},
+        results: toolExecution.results || {},
+        execution_time_ms: toolExecution.execution_time_ms || 0,
+        success: toolExecution.results?.success !== false,
+        
+        // Governance & Audit Data
+        governance_metadata: {
+          trust_score: toolExecution.governance_metadata?.trust_score || mainResult.governance_metrics?.trust_score || 0.75,
+          compliance_score: toolExecution.governance_metadata?.compliance_score || mainResult.governance_metrics?.compliance_score || 0.85,
+          risk_level: toolExecution.governance_metadata?.risk_level || 'low',
+          policy_violations: toolExecution.governance_metadata?.policy_violations || [],
+          audit_trail_hash: mainResult.audit_trail?.hash || null
+        },
+        
+        // Categorization for Receipt Panel
+        category: this.categorizeToolExecution(toolExecution.tool_name),
+        subcategory: this.getToolSubcategory(toolExecution.tool_name, toolExecution.parameters),
+        
+        // Cryptographic Linking to Main Interaction
+        linked_interaction_id: context.interactionId || `interaction_${Date.now()}`,
+        main_audit_hash: mainResult.audit_trail?.hash || null,
+        
+        // Receipt Metadata
+        receipt_version: '1.0',
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + (365 * 24 * 60 * 60 * 1000)).toISOString() // 1 year retention
+      };
+
+      // 2. Generate cryptographic hash for receipt integrity
+      const receiptHash = await this.generateReceiptHash(receiptData);
+      receiptData.cryptographic_hash = receiptHash;
+
+      // 3. Store receipt in unified storage system
+      await this.storeToolExecutionReceipt(receiptData);
+
+      // 4. Create audit entry for receipt generation
+      await this.createCryptographicAuditLog('tool_receipt_generated', {
+        receipt_id: receiptData.receipt_id,
+        tool_name: toolExecution.tool_name,
+        agent_id: agentId,
+        linked_to_interaction: receiptData.linked_interaction_id
+      }, agentId);
+
+      console.log(`✅ [Universal] Tool execution receipt generated: ${receiptData.receipt_id}`);
+
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to generate tool execution receipt:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Extract search results from response text for receipt generation
+   */
+  private extractSearchResultsFromResponse(response: string): any[] {
+    try {
+      const results = [];
+      const lines = response.split('\n');
+      let currentResult = null;
+
+      for (const line of lines) {
+        // Detect result headers (e.g., "### 1. Title")
+        const headerMatch = line.match(/^###?\s*(\d+)\.\s*(.+)$/);
+        if (headerMatch) {
+          if (currentResult) {
+            results.push(currentResult);
+          }
+          currentResult = {
+            index: parseInt(headerMatch[1]),
+            title: headerMatch[2].trim(),
+            description: '',
+            source: ''
+          };
+        }
+        // Detect source lines
+        else if (line.includes('**Source**:') || line.includes('Source:')) {
+          const sourceMatch = line.match(/\*\*Source\*\*:\s*\[([^\]]+)\]\(([^)]+)\)|Source:\s*([^\s]+)/);
+          if (sourceMatch && currentResult) {
+            currentResult.source = sourceMatch[2] || sourceMatch[3] || '';
+          }
+        }
+        // Accumulate description
+        else if (currentResult && line.trim() && !line.includes('Search Results')) {
+          currentResult.description += line.trim() + ' ';
+        }
+      }
+
+      if (currentResult) {
+        results.push(currentResult);
+      }
+
+      return results.map(result => ({
+        ...result,
+        description: result.description.trim()
+      }));
+
+    } catch (error) {
+      console.warn('⚠️ [Universal] Failed to extract search results:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Extract search query from interaction context
+   */
+  private extractSearchQueryFromContext(context: any): string {
+    // Try to extract from various context sources
+    if (context.originalMessage) {
+      return context.originalMessage;
+    }
+    if (context.userMessage) {
+      return context.userMessage;
+    }
+    if (context.query) {
+      return context.query;
+    }
+    return 'AI governance research query';
+  }
+
+  /**
+   * Extract source URLs from response text
+   */
+  private extractSourcesFromResponse(response: string): string[] {
+    try {
+      const sources = [];
+      const sourceMatches = response.match(/\*\*Source\*\*:\s*\[([^\]]+)\]\(([^)]+)\)|Source:\s*(https?:\/\/[^\s]+)/g);
+      
+      if (sourceMatches) {
+        for (const match of sourceMatches) {
+          const urlMatch = match.match(/https?:\/\/[^\s)]+/);
+          if (urlMatch) {
+            sources.push(urlMatch[0]);
+          }
+        }
+      }
+
+      return [...new Set(sources)]; // Remove duplicates
+
+    } catch (error) {
+      console.warn('⚠️ [Universal] Failed to extract sources:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Categorize tool execution for receipt panel organization
+   */
+  private categorizeToolExecution(toolName: string): string {
+    const toolCategories = {
+      'web_search': 'Research',
+      'web_scraping': 'Research', 
+      'seo_analysis': 'Research',
+      'document_generation': 'Documents',
+      'data_visualization': 'Analytics',
+      'email_sending': 'Communication',
+      'sms_messaging': 'Communication',
+      'slack_integration': 'Communication',
+      'twitter_posting': 'Social Media',
+      'linkedin_posting': 'Social Media',
+      'shopify_integration': 'E-commerce',
+      'stripe_payments': 'E-commerce',
+      'google_calendar': 'Business',
+      'salesforce_crm': 'Business',
+      'google_analytics': 'Analytics',
+      'zapier_integration': 'Automation',
+      'workflow_automation': 'Automation'
+    };
+
+    return toolCategories[toolName] || 'General';
+  }
+
+  /**
+   * Get tool subcategory for detailed classification
+   */
+  private getToolSubcategory(toolName: string, parameters: any): string {
+    switch (toolName) {
+      case 'web_search':
+        return parameters?.search_type || 'Web Research';
+      case 'document_generation':
+        return parameters?.document_type || 'Document Creation';
+      case 'email_sending':
+        return parameters?.email_type || 'Email Communication';
+      default:
+        return 'Standard Execution';
+    }
+  }
+
+  /**
+   * Generate cryptographic hash for receipt integrity
+   */
+  private async generateReceiptHash(receiptData: any): Promise<string> {
+    try {
+      // Create deterministic string representation
+      const hashInput = JSON.stringify(receiptData, Object.keys(receiptData).sort());
+      
+      // Generate SHA-256 hash
+      const encoder = new TextEncoder();
+      const data = encoder.encode(hashInput);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      return `receipt_${hashHex.substring(0, 16)}`;
+
+    } catch (error) {
+      console.warn('⚠️ [Universal] Failed to generate receipt hash:', error);
+      return `receipt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+  }
+
+  /**
+   * Store tool execution receipt in unified storage system
+   */
+  private async storeToolExecutionReceipt(receiptData: any): Promise<void> {
+    try {
+      // Store in Firebase via backend API
+      const storageRequest = {
+        type: 'tool_execution_receipt',
+        agent_id: receiptData.agent_id,
+        receipt_data: receiptData,
+        storage_key: `receipts.${receiptData.agent_id}.${receiptData.receipt_id}`,
+        retention_policy: 'long_term' // 1 year retention
+      };
+
+      await this.callBackendAPI('/api/storage/store', storageRequest);
+      
+      console.log(`💾 [Universal] Tool execution receipt stored: ${receiptData.receipt_id}`);
+
+    } catch (error) {
+      console.error(`❌ [Universal] Failed to store tool execution receipt:`, error);
+      // Don't throw - receipt generation shouldn't break the main flow
+    }
+  }
 
