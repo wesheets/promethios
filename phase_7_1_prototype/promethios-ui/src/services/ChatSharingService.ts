@@ -86,8 +86,8 @@ export class ChatSharingService {
       const shareableReference: ShareableChatReference = {
         chatId,
         chatName: chatSession.name,
-        participantCount: chatSession.participants.length,
-        messageCount: chatSession.messages.length,
+        participantCount: 2, // User + Agent (since ChatSession doesn't have participants array)
+        messageCount: chatSession.messages?.length || 0,
         lastActivity: chatSession.lastUpdated,
         shareableId,
         cryptographicHash,
@@ -764,12 +764,12 @@ ${messageCount} messages • ${timeAgo}
     return {
       chatId,
       chatName: chatSession.name,
-      participants: chatSession.participants,
+      participants: [chatSession.userId, chatSession.agentId], // Derive participants from userId and agentId
       messageHistory: chatSession.messages.map(msg => ({
-        role: msg.role,
+        role: msg.sender, // Use sender instead of role
         content: msg.content,
         timestamp: msg.timestamp,
-        metadata: msg.metadata
+        metadata: msg.governanceData || {} // Use governanceData as metadata fallback
       })),
       chatSummary,
       keyTopics,
