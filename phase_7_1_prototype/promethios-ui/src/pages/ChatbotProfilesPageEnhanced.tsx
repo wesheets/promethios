@@ -253,6 +253,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // File attachment and voice recording states
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [sharedChatContext, setSharedChatContext] = useState<string | null>(null);
 
   // Bot state helper functions
   const initializeBotState = (botId: string): BotState => {

@@ -291,7 +291,7 @@ export class ChatHistoryService {
     await this.saveChatSession(session);
 
     // Store shareable context separately for agent access
-    await unifiedStorage.set('chats', `shareable_contexts/${contextId}`, shareableContext);
+    await unifiedStorage.set('chats', `shareable_context_${contextId}`, shareableContext);
 
     console.log(`🔗 Created shareable context: ${contextId} for session ${sessionId}`);
     return shareableContext;
@@ -532,7 +532,7 @@ export class ChatHistoryService {
 
       // Remove shareable context if exists
       if (session.shareableId) {
-        await unifiedStorage.delete('chats', `shareable_contexts/${session.shareableId}`);
+        await unifiedStorage.delete('chats', `shareable_context_${session.shareableId}`);
       }
 
       console.log(`🗑️ Deleted chat session: ${sessionId}`);
@@ -559,7 +559,7 @@ export class ChatHistoryService {
    */
   async getShareableContext(contextId: string): Promise<ShareableChatContext | null> {
     try {
-      const context = await unifiedStorage.get('chats', `shareable_contexts/${contextId}`);
+      const context = await unifiedStorage.get('chats', `shareable_context_${contextId}`);
       return context ? context as ShareableChatContext : null;
     } catch (error) {
       console.error('❌ Failed to get shareable context:', error);
