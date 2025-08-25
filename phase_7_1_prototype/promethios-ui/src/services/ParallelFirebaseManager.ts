@@ -56,7 +56,7 @@ export class ParallelFirebaseManager {
     
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      smartLogger.smartLog(`⚡ Processing chunk ${i + 1}: ${chunk.length} queries`);
+      console.log(`⚡ Processing chunk ${i + 1}: ${chunk.length} queries`);
       const chunkResults = await this.executeQueriesInParallel<T>(chunk);
       chunkResults.forEach((result, id) => {
         results.set(id, result);
@@ -132,7 +132,7 @@ export class ParallelFirebaseManager {
    * Preload critical data for faster page loads
    */
   async preloadCriticalData(userId: string): Promise<void> {
-    smartLogger.smartLog(`🔥 Preloading critical data for user: ${userId}`);
+    console.log(`🔥 Preloading critical data for user: ${userId}`);
     
     const criticalQueries: FirebaseQuery[] = [
       {
@@ -220,7 +220,7 @@ export class ParallelFirebaseManager {
     // Process queries in chunks to respect concurrency limits
     for (let i = 0; i < queries.length; i += this.maxConcurrent) {
       const chunk = queries.slice(i, i + this.maxConcurrent);
-      smartLogger.smartLog(`⚡ Processing chunk ${Math.floor(i / this.maxConcurrent) + 1}: ${chunk.length} queries`);
+      console.log(`⚡ Processing chunk ${Math.floor(i / this.maxConcurrent) + 1}: ${chunk.length} queries`);
       
       const chunkPromises = chunk.map(async query => {
         try {

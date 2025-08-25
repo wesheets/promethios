@@ -28,7 +28,7 @@ export class FirebaseStorageProvider implements StorageProvider {
       const available = await this.isAvailable();
       if (available) {
         this.isInitialized = true;
-        smartLogger.smartLog('🔥 FirebaseStorageProvider initialized successfully');
+        console.log('🔥 FirebaseStorageProvider initialized successfully');
       } else {
         this.isInitialized = false;
         console.warn('⚠️ FirebaseStorageProvider initialization failed - Firebase not available, will use fallback');
@@ -56,7 +56,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         return false;
       }
 
-      smartLogger.smartLog('🔥 Testing Firebase connection...');
+      console.log('🔥 Testing Firebase connection...');
       
       // Test Firebase connection by trying to read from a test document
       const testDoc = doc(db, 'system', 'health_check');
@@ -135,7 +135,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         return null;
       }
 
-      smartLogger.smartLog(`🔥 Retrieved from Firebase: ${key}`);
+      console.log(`🔥 Retrieved from Firebase: ${key}`);
       return data.value;
 
     } catch (error) {
@@ -209,7 +209,7 @@ export class FirebaseStorageProvider implements StorageProvider {
       const docRef = doc(db, collectionName, documentId);
       await setDoc(docRef, sanitizedItem);
 
-      smartLogger.smartLog(`🔥 Stored to Firebase: ${key} (sanitized)`);
+      console.log(`🔥 Stored to Firebase: ${key} (sanitized)`);
 
       // Also store in fallback for redundancy if available
       if (this.fallbackProvider && options?.redundantStorage !== false) {
@@ -251,7 +251,7 @@ export class FirebaseStorageProvider implements StorageProvider {
       const docRef = doc(db, collectionName, documentId);
       await deleteDoc(docRef);
 
-      smartLogger.smartLog(`🔥 Deleted from Firebase: ${key}`);
+      console.log(`🔥 Deleted from Firebase: ${key}`);
 
       // Also delete from fallback if available
       if (this.fallbackProvider) {
@@ -329,7 +329,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         // Query common collections that might contain user data
         const collections = ['agents', 'multiAgentSystems', 'user', 'singleAgentChats', 'multiAgentChats', 'governance', 'preferences', 'notifications'];
         
-        smartLogger.smartLog(`🔥 Querying ${collections.length} Firebase collections for keys...`);
+        console.log(`🔥 Querying ${collections.length} Firebase collections for keys...`);
         
         for (const collectionName of collections) {
           try {
@@ -342,22 +342,22 @@ export class FirebaseStorageProvider implements StorageProvider {
               keys.push(key);
             });
             
-            smartLogger.smartLog(`🔥 Found ${snapshot.size} documents in collection: ${collectionName}`);
+            console.log(`🔥 Found ${snapshot.size} documents in collection: ${collectionName}`);
           } catch (collectionError) {
             console.warn(`Failed to query collection ${collectionName}:`, collectionError);
           }
         }
 
-        smartLogger.smartLog(`🔥 Retrieved ${keys.length} keys from Firebase collections`);
+        console.log(`🔥 Retrieved ${keys.length} keys from Firebase collections`);
         
         // If we got keys from Firebase, return them
         if (keys.length > 0) {
-          smartLogger.smartLog(`🔥 Returning ${keys.length} keys from Firebase`);
+          console.log(`🔥 Returning ${keys.length} keys from Firebase`);
           return keys;
         }
         
         // If Firebase returned no keys, fall back to localStorage
-        smartLogger.smartLog(`🔥 Firebase returned 0 keys, falling back to localStorage...`);
+        console.log(`🔥 Firebase returned 0 keys, falling back to localStorage...`);
         if (this.fallbackProvider) {
           const fallbackKeys = await this.fallbackProvider.keys();
           console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys`);
@@ -370,7 +370,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         console.error('Firebase keys query error:', queryError);
         
         // Fall back to localStorage on any Firebase error
-        smartLogger.smartLog(`🔥 Firebase query failed, falling back to localStorage...`);
+        console.log(`🔥 Firebase query failed, falling back to localStorage...`);
         if (this.fallbackProvider) {
           const fallbackKeys = await this.fallbackProvider.keys();
           console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys after Firebase error`);
@@ -589,7 +589,7 @@ export class FirebaseStorageProvider implements StorageProvider {
         return result;
       }
 
-      smartLogger.smartLog('🔥 Firebase debug test completed successfully');
+      console.log('🔥 Firebase debug test completed successfully');
       return result;
 
     } catch (error) {

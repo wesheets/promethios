@@ -138,7 +138,7 @@ export class BasicAuditLogger implements AuditLogger {
     await this.writeLogEntry(logEntry);
 
     if (event.severity === 'critical' || event.severity === 'error') {
-      smartLogger.smartLog(`🔥 Critical governance event: ${event.description} (${logEntry.id})`);
+      console.log(`🔥 Critical governance event: ${event.description} (${logEntry.id})`);
     }
   }
 

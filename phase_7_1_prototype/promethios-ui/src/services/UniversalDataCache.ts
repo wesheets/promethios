@@ -89,7 +89,7 @@ export class UniversalDataCache {
     };
 
     this.cache.set(fullKey, entry);
-    smartLogger.smartLog(`💾 Cached: ${fullKey} (expires in ${config.ttl / 1000}s)`);
+    console.log(`💾 Cached: ${fullKey} (expires in ${config.ttl / 1000}s)`);
   }
 
   /**
@@ -235,7 +235,7 @@ export const cacheWarmers = {
    * Warm cache with user-specific data
    */
   async warmUserCache(userId: string): Promise<void> {
-    smartLogger.smartLog(`🔥 Warming cache for user: ${userId}`);
+    console.log(`🔥 Warming cache for user: ${userId}`);
     
     // This will be called when user logs in to preload their data
     await universalCache.preload([
@@ -262,7 +262,7 @@ export const cacheWarmers = {
    * Warm cache with system-wide data
    */
   async warmSystemCache(): Promise<void> {
-    smartLogger.smartLog(`🔥 Warming system cache...`);
+    console.log(`🔥 Warming system cache...`);
     
     await universalCache.preload([
       {

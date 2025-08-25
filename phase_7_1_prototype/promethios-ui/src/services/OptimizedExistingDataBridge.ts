@@ -220,7 +220,7 @@ export class OptimizedExistingDataBridge {
    * Preload user data for faster subsequent requests
    */
   private async preloadUserData(userId: string): Promise<void> {
-    smartLogger.smartLog(`🔥 Preloading data for user: ${userId}`);
+    console.log(`🔥 Preloading data for user: ${userId}`);
     
     try {
       await parallelFirebaseManager.preloadCriticalData(userId);

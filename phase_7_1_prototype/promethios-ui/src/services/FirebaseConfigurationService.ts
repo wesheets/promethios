@@ -48,7 +48,7 @@ export class FirebaseConfigurationService {
    */
   async saveConfiguration(agentId: string, configuration: AgentConfiguration): Promise<void> {
     try {
-      smartLogger.smartLog(`🔥 [Firebase] Saving configuration for agent ${agentId}`);
+      console.log(`🔥 [Firebase] Saving configuration for agent ${agentId}`);
 
       const docRef = doc(db, this.COLLECTION_NAME, this.getDocumentId(agentId));
       
@@ -77,7 +77,7 @@ export class FirebaseConfigurationService {
    */
   async loadConfiguration(agentId: string): Promise<AgentConfiguration | null> {
     try {
-      smartLogger.smartLog(`🔥 [Firebase] Loading configuration for agent ${agentId}`);
+      console.log(`🔥 [Firebase] Loading configuration for agent ${agentId}`);
 
       const docRef = doc(db, this.COLLECTION_NAME, this.getDocumentId(agentId));
       const docSnap = await getDoc(docRef);
@@ -109,7 +109,7 @@ export class FirebaseConfigurationService {
    */
   async updateToolProfile(agentId: string, toolProfile: AgentToolProfile): Promise<void> {
     try {
-      smartLogger.smartLog(`🔥 [Firebase] Updating tool profile for agent ${agentId}`);
+      console.log(`🔥 [Firebase] Updating tool profile for agent ${agentId}`);
 
       const docRef = doc(db, this.COLLECTION_NAME, this.getDocumentId(agentId));
       
@@ -130,7 +130,7 @@ export class FirebaseConfigurationService {
    */
   async deleteConfiguration(agentId: string): Promise<void> {
     try {
-      smartLogger.smartLog(`🔥 [Firebase] Deleting configuration for agent ${agentId}`);
+      console.log(`🔥 [Firebase] Deleting configuration for agent ${agentId}`);
 
       const docRef = doc(db, this.COLLECTION_NAME, this.getDocumentId(agentId));
       await deleteDoc(docRef);
@@ -147,7 +147,7 @@ export class FirebaseConfigurationService {
    */
   async listConfigurations(): Promise<AgentConfiguration[]> {
     try {
-      smartLogger.smartLog(`🔥 [Firebase] Loading all configurations for user ${this.userId}`);
+      console.log(`🔥 [Firebase] Loading all configurations for user ${this.userId}`);
 
       const q = query(
         collection(db, this.COLLECTION_NAME),
@@ -184,7 +184,7 @@ export class FirebaseConfigurationService {
    * Subscribe to real-time configuration updates
    */
   subscribeToConfiguration(agentId: string, callback: (config: AgentConfiguration | null) => void): () => void {
-    smartLogger.smartLog(`🔥 [Firebase] Subscribing to real-time updates for agent ${agentId}`);
+    console.log(`🔥 [Firebase] Subscribing to real-time updates for agent ${agentId}`);
 
     const docRef = doc(db, this.COLLECTION_NAME, this.getDocumentId(agentId));
     
@@ -209,7 +209,7 @@ export class FirebaseConfigurationService {
    * Subscribe to all user configurations
    */
   subscribeToAllConfigurations(callback: (configs: AgentConfiguration[]) => void): () => void {
-    smartLogger.smartLog(`🔥 [Firebase] Subscribing to all configurations for user ${this.userId}`);
+    console.log(`🔥 [Firebase] Subscribing to all configurations for user ${this.userId}`);
 
     const q = query(
       collection(db, this.COLLECTION_NAME),
@@ -306,7 +306,7 @@ export class FirebaseConfigurationService {
    */
   async batchUpdateConfigurations(updates: { agentId: string; configuration: Partial<AgentConfiguration> }[]): Promise<void> {
     try {
-      smartLogger.smartLog(`🔥 [Firebase] Batch updating ${updates.length} configurations`);
+      console.log(`🔥 [Firebase] Batch updating ${updates.length} configurations`);
 
       const batch = writeBatch(db);
 
