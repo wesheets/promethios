@@ -1137,10 +1137,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         console.log('🗨️ [ChatReference] Detected chat reference:', chatReferenceId);
         
         // Process chat reference for agent context loading
-        const chatContext = await chatSharingService.processChatReference(
+        const chatReferenceResult = await chatSharingService.processChatReference(
           chatReferenceId,
           user.uid,
-          selectedChatbot.id
+          selectedChatbot.id,
+          messageInput.trim()
         );
         
         // Add user message
@@ -1155,13 +1156,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         // Create agent response with chat context
         const agentResponse: ChatMessage = {
           id: `agent_${Date.now()}`,
-          content: chatContext.agentResponse,
+          content: chatReferenceResult.agentResponse,
           sender: 'assistant',
           timestamp: new Date(),
           metadata: {
-            chatContext: chatContext.context,
-            originalChatId: chatContext.originalChatId,
-            continuationOptions: chatContext.continuationOptions
+            chatContext: chatReferenceResult.context,
+            originalChatId: chatReferenceResult.originalChatId,
+            continuationOptions: chatReferenceResult.continuationOptions
           }
         };
         

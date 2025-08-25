@@ -127,8 +127,15 @@ ${messageCount} messages • ${timeAgo}
    */
   async processChatReference(
     shareableId: string,
-    agentId: string
-  ): Promise<ChatContextForAgent | null> {
+    userId: string,
+    agentId: string,
+    userMessage?: string
+  ): Promise<{
+    agentResponse: string;
+    context: ChatContextForAgent | null;
+    originalChatId: string | null;
+    continuationOptions: Array<{action: string, description: string}>;
+  }> {
     try {
       console.log(`🤖 Agent processing chat reference: ${shareableId}`);
 
@@ -136,7 +143,12 @@ ${messageCount} messages • ${timeAgo}
       const shareableContext = await this.chatHistoryService.getShareableContext(shareableId);
       if (!shareableContext || shareableContext.contextType !== 'chat_reference') {
         console.warn(`Chat reference not found: ${shareableId}`);
-        return null;
+        return {
+          agentResponse: "❌ I couldn't find that chat reference. It may have expired or been removed.",
+          context: null,
+          originalChatId: null,
+          continuationOptions: []
+        };
       }
 
       const shareableReference = shareableContext as ShareableChatReference;
@@ -145,7 +157,12 @@ ${messageCount} messages • ${timeAgo}
       const isValid = await this.verifyCryptographicHash(shareableReference);
       if (!isValid) {
         console.error(`Chat reference integrity check failed: ${shareableId}`);
-        return null;
+        return {
+          agentResponse: "⚠️ This chat reference failed integrity verification. For security reasons, I cannot access this conversation.",
+          context: null,
+          originalChatId: null,
+          continuationOptions: []
+        };
       }
 
       // Load full chat context for agent
@@ -154,12 +171,554 @@ ${messageCount} messages • ${timeAgo}
         agentId
       );
 
+      // Analyze user intent from the message containing the chat reference
+      const userIntent = this.analyzeUserIntentForChatReference(userMessage || '');
+      
+      // Generate appropriate response based on user intent
+      const agentResponse = await this.generateContextualChatResponse(chatContext, userIntent);
+
       console.log(`✅ Loaded chat context for agent: ${shareableReference.chatName}`);
-      return chatContext;
+      return {
+        agentResponse,
+        context: chatContext,
+        originalChatId: shareableReference.chatId,
+        continuationOptions: chatContext.continuationOptions
+      };
     } catch (error) {
       console.error('❌ Failed to process chat reference:', error);
-      return null;
+      return {
+        agentResponse: "❌ I encountered an error while trying to access that chat. Please try sharing it again or contact support if the issue persists.",
+        context: null,
+        originalChatId: null,
+        continuationOptions: []
+      };
     }
+  }
+
+  /**
+   * Analyze user intent when sharing a chat reference
+   */
+  private analyzeUserIntentForChatReference(userMessage: string): 'continue' | 'summarize' | 'analyze' | 'unclear' {
+    const message = userMessage.toLowerCase();
+    
+    // Check for specific intent keywords
+    if (message.includes('continue') || message.includes('pick up') || message.includes('where we left off')) {
+      return 'continue';
+    }
+    
+    if (message.includes('summarize') || message.includes('summary') || message.includes('recap')) {
+      return 'summarize';
+    }
+    
+    if (message.includes('analyze') || message.includes('review') || message.includes('look at') || message.includes('examine')) {
+      return 'analyze';
+    }
+    
+    // If the message only contains the chat reference (auto-generated), intent is unclear
+    if (message.includes('🧾') && message.includes('chat reference') && message.split(' ').length < 10) {
+      return 'unclear';
+    }
+    
+    return 'unclear';
+  }
+
+  /**
+   * Generate contextual response based on user intent
+   */
+  private async generateContextualChatResponse(
+    chatContext: ChatContextForAgent,
+    userIntent: 'continue' | 'summarize' | 'analyze' | 'unclear'
+  ): Promise<string> {
+    const timeAgo = this.getTimeAgo(chatContext.lastActivity);
+    const messageCount = chatContext.messageHistory.length;
+    
+    // Perform intelligent search and context extraction
+    const searchResults = await this.performIntelligentChatSearch(chatContext);
+    
+    let response = `✅ **I've loaded our previous conversation!**\n\n`;
+    response += `📝 **"${chatContext.chatName}"**\n`;
+    response += `💬 ${messageCount} messages • Last active ${timeAgo}\n\n`;
+    
+    // Add intelligent search insights
+    if (searchResults.keyInsights.length > 0) {
+      response += `🔍 **Key insights I found**:\n`;
+      searchResults.keyInsights.forEach(insight => {
+        response += `• ${insight}\n`;
+      });
+      response += `\n`;
+    }
+    
+    switch (userIntent) {
+      case 'continue':
+        response += `🚀 **Ready to continue where we left off!**\n\n`;
+        if (searchResults.unfinishedTasks.length > 0) {
+          response += `📋 **Unfinished items from our conversation**:\n`;
+          searchResults.unfinishedTasks.forEach(task => {
+            response += `• ${task}\n`;
+          });
+          response += `\n`;
+        }
+        if (chatContext.nextSteps.length > 0) {
+          response += `📋 **Suggested next steps**:\n`;
+          chatContext.nextSteps.forEach(step => {
+            response += `• ${step}\n`;
+          });
+          response += `\n`;
+        }
+        response += `💡 What would you like to explore further?`;
+        break;
+        
+      case 'summarize':
+        response += `📋 **Summary**: ${chatContext.chatSummary}\n\n`;
+        if (chatContext.keyTopics.length > 0) {
+          response += `🏷️ **Key Topics**: ${chatContext.keyTopics.join(', ')}\n\n`;
+        }
+        if (searchResults.importantDecisions.length > 0) {
+          response += `⚡ **Important decisions made**:\n`;
+          searchResults.importantDecisions.forEach(decision => {
+            response += `• ${decision}\n`;
+          });
+          response += `\n`;
+        }
+        response += `💡 Would you like me to elaborate on any of these topics?`;
+        break;
+        
+      case 'analyze':
+        response += `🔍 **Analysis of our conversation**:\n\n`;
+        response += `📋 **Summary**: ${chatContext.chatSummary}\n\n`;
+        if (chatContext.keyTopics.length > 0) {
+          response += `🏷️ **Key Topics Discussed**: ${chatContext.keyTopics.join(', ')}\n\n`;
+        }
+        if (searchResults.patterns.length > 0) {
+          response += `📊 **Patterns I noticed**:\n`;
+          searchResults.patterns.forEach(pattern => {
+            response += `• ${pattern}\n`;
+          });
+          response += `\n`;
+        }
+        if (searchResults.actionableItems.length > 0) {
+          response += `📋 **Actionable items identified**:\n`;
+          searchResults.actionableItems.forEach(item => {
+            response += `• ${item}\n`;
+          });
+          response += `\n`;
+        }
+        response += `💡 What specific aspect would you like me to analyze further?`;
+        break;
+        
+      case 'unclear':
+      default:
+        response += `🤔 **What would you like to do with this conversation?**\n\n`;
+        
+        // Provide intelligent suggestions based on search results
+        const smartSuggestions = this.generateSmartSuggestions(searchResults);
+        if (smartSuggestions.length > 0) {
+          response += `💡 **Based on what I found, you might want to**:\n`;
+          smartSuggestions.forEach(suggestion => {
+            response += `• ${suggestion}\n`;
+          });
+          response += `\n`;
+        }
+        
+        response += `🔧 **I can help you**:\n`;
+        chatContext.continuationOptions.forEach(option => {
+          response += `• ${option.description}\n`;
+        });
+        response += `\n📋 **Quick options**:\n`;
+        response += `• Type "continue" to pick up where we left off\n`;
+        response += `• Type "summarize" for a recap of our discussion\n`;
+        response += `• Type "analyze" for a detailed review\n`;
+        response += `• Type "search [topic]" to find specific information\n`;
+        response += `• Or just tell me what you'd like to explore!\n\n`;
+        response += `💡 **What interests you most?**`;
+        break;
+    }
+    
+    return response;
+  }
+
+  /**
+   * Perform intelligent search and context extraction within chat
+   */
+  private async performIntelligentChatSearch(chatContext: ChatContextForAgent): Promise<{
+    keyInsights: string[];
+    unfinishedTasks: string[];
+    importantDecisions: string[];
+    patterns: string[];
+    actionableItems: string[];
+    questions: string[];
+    resources: string[];
+  }> {
+    const messages = chatContext.messageHistory;
+    const allText = messages.map(m => m.content).join(' ').toLowerCase();
+    
+    return {
+      keyInsights: this.extractKeyInsights(messages),
+      unfinishedTasks: this.extractUnfinishedTasks(messages),
+      importantDecisions: this.extractImportantDecisions(messages),
+      patterns: this.extractPatterns(messages),
+      actionableItems: this.extractActionableItems(messages),
+      questions: this.extractUnansweredQuestions(messages),
+      resources: this.extractResources(messages)
+    };
+  }
+
+  /**
+   * Extract key insights from conversation
+   */
+  private extractKeyInsights(messages: any[]): string[] {
+    const insights: string[] = [];
+    const insightKeywords = ['discovered', 'learned', 'found out', 'realized', 'important', 'key point', 'insight'];
+    
+    messages.forEach(message => {
+      const content = message.content.toLowerCase();
+      insightKeywords.forEach(keyword => {
+        if (content.includes(keyword)) {
+          // Extract sentence containing the keyword
+          const sentences = message.content.split(/[.!?]+/);
+          const relevantSentence = sentences.find(s => s.toLowerCase().includes(keyword));
+          if (relevantSentence && relevantSentence.trim().length > 20) {
+            insights.push(relevantSentence.trim());
+          }
+        }
+      });
+    });
+    
+    return insights.slice(0, 3); // Limit to top 3 insights
+  }
+
+  /**
+   * Extract unfinished tasks or topics
+   */
+  private extractUnfinishedTasks(messages: any[]): string[] {
+    const tasks: string[] = [];
+    const taskKeywords = ['need to', 'should', 'will', 'plan to', 'next', 'todo', 'follow up', 'continue'];
+    
+    messages.forEach(message => {
+      const content = message.content.toLowerCase();
+      taskKeywords.forEach(keyword => {
+        if (content.includes(keyword)) {
+          const sentences = message.content.split(/[.!?]+/);
+          const relevantSentence = sentences.find(s => s.toLowerCase().includes(keyword));
+          if (relevantSentence && relevantSentence.trim().length > 15) {
+            tasks.push(relevantSentence.trim());
+          }
+        }
+      });
+    });
+    
+    return tasks.slice(0, 3); // Limit to top 3 tasks
+  }
+
+  /**
+   * Extract important decisions made
+   */
+  private extractImportantDecisions(messages: any[]): string[] {
+    const decisions: string[] = [];
+    const decisionKeywords = ['decided', 'chose', 'selected', 'agreed', 'concluded', 'determined'];
+    
+    messages.forEach(message => {
+      const content = message.content.toLowerCase();
+      decisionKeywords.forEach(keyword => {
+        if (content.includes(keyword)) {
+          const sentences = message.content.split(/[.!?]+/);
+          const relevantSentence = sentences.find(s => s.toLowerCase().includes(keyword));
+          if (relevantSentence && relevantSentence.trim().length > 20) {
+            decisions.push(relevantSentence.trim());
+          }
+        }
+      });
+    });
+    
+    return decisions.slice(0, 3); // Limit to top 3 decisions
+  }
+
+  /**
+   * Extract conversation patterns
+   */
+  private extractPatterns(messages: any[]): string[] {
+    const patterns: string[] = [];
+    
+    // Analyze message frequency and topics
+    const userMessages = messages.filter(m => m.role === 'user');
+    const assistantMessages = messages.filter(m => m.role === 'assistant');
+    
+    if (userMessages.length > assistantMessages.length) {
+      patterns.push('User-driven conversation with many questions');
+    }
+    
+    // Check for recurring topics
+    const allText = messages.map(m => m.content).join(' ').toLowerCase();
+    const commonTopics = ['policy', 'governance', 'security', 'compliance', 'data', 'ai', 'automation'];
+    const mentionedTopics = commonTopics.filter(topic => allText.includes(topic));
+    
+    if (mentionedTopics.length > 2) {
+      patterns.push(`Focus on ${mentionedTopics.slice(0, 3).join(', ')} topics`);
+    }
+    
+    return patterns.slice(0, 2); // Limit to top 2 patterns
+  }
+
+  /**
+   * Extract actionable items
+   */
+  private extractActionableItems(messages: any[]): string[] {
+    const items: string[] = [];
+    const actionKeywords = ['action', 'implement', 'create', 'build', 'develop', 'design', 'review', 'update'];
+    
+    messages.forEach(message => {
+      const content = message.content.toLowerCase();
+      actionKeywords.forEach(keyword => {
+        if (content.includes(keyword)) {
+          const sentences = message.content.split(/[.!?]+/);
+          const relevantSentence = sentences.find(s => s.toLowerCase().includes(keyword));
+          if (relevantSentence && relevantSentence.trim().length > 15) {
+            items.push(relevantSentence.trim());
+          }
+        }
+      });
+    });
+    
+    return items.slice(0, 3); // Limit to top 3 items
+  }
+
+  /**
+   * Extract unanswered questions
+   */
+  private extractUnansweredQuestions(messages: any[]): string[] {
+    const questions: string[] = [];
+    
+    messages.forEach(message => {
+      if (message.role === 'user' && message.content.includes('?')) {
+        const questionSentences = message.content.split(/[.!]+/).filter(s => s.includes('?'));
+        questions.push(...questionSentences.map(q => q.trim()));
+      }
+    });
+    
+    return questions.slice(0, 3); // Limit to top 3 questions
+  }
+
+  /**
+   * Extract resources mentioned
+   */
+  private extractResources(messages: any[]): string[] {
+    const resources: string[] = [];
+    const allText = messages.map(m => m.content).join(' ');
+    
+    // Look for URLs
+    const urlRegex = /https?:\/\/[^\s]+/g;
+    const urls = allText.match(urlRegex) || [];
+    resources.push(...urls);
+    
+    // Look for file references
+    const fileRegex = /\b\w+\.(pdf|doc|docx|txt|csv|xlsx)\b/gi;
+    const files = allText.match(fileRegex) || [];
+    resources.push(...files);
+    
+    return resources.slice(0, 3); // Limit to top 3 resources
+  }
+
+  /**
+   * Generate smart suggestions based on search results
+   */
+  private generateSmartSuggestions(searchResults: any): string[] {
+    const suggestions: string[] = [];
+    
+    if (searchResults.unfinishedTasks.length > 0) {
+      suggestions.push('Continue working on the unfinished tasks we identified');
+    }
+    
+    if (searchResults.questions.length > 0) {
+      suggestions.push('Get answers to the questions that came up');
+    }
+    
+    if (searchResults.actionableItems.length > 0) {
+      suggestions.push('Create an action plan based on our discussion');
+    }
+    
+    if (searchResults.resources.length > 0) {
+      suggestions.push('Review the resources and links we mentioned');
+    }
+    
+    if (searchResults.importantDecisions.length > 0) {
+      suggestions.push('Document the decisions we made for future reference');
+    }
+    
+    return suggestions.slice(0, 3); // Limit to top 3 suggestions
+  }
+
+  /**
+   * Search for specific information within a shared chat
+   */
+  async searchWithinSharedChat(
+    shareableId: string,
+    searchQuery: string,
+    userId: string,
+    agentId: string
+  ): Promise<{
+    agentResponse: string;
+    searchResults: Array<{
+      messageId: string;
+      content: string;
+      sender: string;
+      timestamp: Date;
+      relevanceScore: number;
+    }>;
+    suggestions: string[];
+  }> {
+    try {
+      console.log(`🔍 Searching within shared chat: ${shareableId} for: "${searchQuery}"`);
+
+      // Get shareable context
+      const shareableContext = await this.chatHistoryService.getShareableContext(shareableId);
+      if (!shareableContext || shareableContext.contextType !== 'chat_reference') {
+        return {
+          agentResponse: "❌ I couldn't find that chat reference to search within.",
+          searchResults: [],
+          suggestions: []
+        };
+      }
+
+      const shareableReference = shareableContext as ShareableChatReference;
+
+      // Load full chat context
+      const chatContext = await this.loadChatContextForAgent(shareableReference.chatId, agentId);
+
+      // Perform targeted search
+      const searchResults = this.performTargetedSearch(chatContext.messageHistory, searchQuery);
+
+      // Generate response with search results
+      const agentResponse = this.generateSearchResponse(chatContext, searchQuery, searchResults);
+
+      // Generate follow-up suggestions
+      const suggestions = this.generateSearchSuggestions(searchResults, searchQuery);
+
+      return {
+        agentResponse,
+        searchResults,
+        suggestions
+      };
+    } catch (error) {
+      console.error('❌ Failed to search within shared chat:', error);
+      return {
+        agentResponse: "❌ I encountered an error while searching. Please try again.",
+        searchResults: [],
+        suggestions: []
+      };
+    }
+  }
+
+  /**
+   * Perform targeted search within chat messages
+   */
+  private performTargetedSearch(messages: any[], searchQuery: string): Array<{
+    messageId: string;
+    content: string;
+    sender: string;
+    timestamp: Date;
+    relevanceScore: number;
+  }> {
+    const query = searchQuery.toLowerCase();
+    const searchTerms = query.split(' ').filter(term => term.length > 2);
+    
+    const results = messages.map(message => {
+      const content = message.content.toLowerCase();
+      let relevanceScore = 0;
+      
+      // Exact phrase match (highest score)
+      if (content.includes(query)) {
+        relevanceScore += 10;
+      }
+      
+      // Individual term matches
+      searchTerms.forEach(term => {
+        if (content.includes(term)) {
+          relevanceScore += 3;
+        }
+      });
+      
+      // Bonus for keyword density
+      const wordCount = content.split(' ').length;
+      const matchCount = searchTerms.reduce((count, term) => {
+        return count + (content.split(term).length - 1);
+      }, 0);
+      
+      if (wordCount > 0) {
+        relevanceScore += (matchCount / wordCount) * 5;
+      }
+      
+      return {
+        messageId: message.id,
+        content: message.content,
+        sender: message.role || message.sender,
+        timestamp: message.timestamp,
+        relevanceScore
+      };
+    }).filter(result => result.relevanceScore > 0)
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, 5); // Top 5 results
+    
+    return results;
+  }
+
+  /**
+   * Generate response for search results
+   */
+  private generateSearchResponse(
+    chatContext: ChatContextForAgent,
+    searchQuery: string,
+    searchResults: any[]
+  ): string {
+    let response = `🔍 **Search results for "${searchQuery}" in "${chatContext.chatName}"**\n\n`;
+    
+    if (searchResults.length === 0) {
+      response += `❌ No direct matches found for "${searchQuery}".\n\n`;
+      response += `💡 **Try searching for**:\n`;
+      response += `• Related terms or synonyms\n`;
+      response += `• Key topics: ${chatContext.keyTopics.join(', ')}\n`;
+      response += `• Or ask me to summarize the conversation\n\n`;
+      response += `🤔 **What specific information are you looking for?**`;
+      return response;
+    }
+    
+    response += `✅ **Found ${searchResults.length} relevant message${searchResults.length > 1 ? 's' : ''}**:\n\n`;
+    
+    searchResults.forEach((result, index) => {
+      const timeAgo = this.getTimeAgo(result.timestamp);
+      const preview = result.content.length > 150 
+        ? result.content.substring(0, 150) + '...'
+        : result.content;
+      
+      response += `**${index + 1}.** *${result.sender}* • ${timeAgo}\n`;
+      response += `${preview}\n\n`;
+    });
+    
+    response += `💡 **What would you like to do with this information?**\n`;
+    response += `• Ask follow-up questions about these messages\n`;
+    response += `• Search for related topics\n`;
+    response += `• Continue the conversation from where we left off\n`;
+    response += `• Get more context around these messages`;
+    
+    return response;
+  }
+
+  /**
+   * Generate search suggestions based on results
+   */
+  private generateSearchSuggestions(searchResults: any[], originalQuery: string): string[] {
+    const suggestions: string[] = [];
+    
+    if (searchResults.length > 0) {
+      suggestions.push(`Tell me more about the context around "${originalQuery}"`);
+      suggestions.push(`What decisions were made regarding "${originalQuery}"?`);
+      suggestions.push(`What were the next steps for "${originalQuery}"?`);
+    } else {
+      suggestions.push('Search for related terms or topics');
+      suggestions.push('Ask me to summarize the conversation');
+      suggestions.push('Continue where we left off in the conversation');
+    }
+    
+    return suggestions;
   }
 
   /**
