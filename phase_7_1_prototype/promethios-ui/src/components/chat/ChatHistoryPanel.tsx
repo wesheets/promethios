@@ -481,7 +481,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                         fontSize: '0.75rem',
                       }}
                     >
-                      {agentName.charAt(0)}
+                      {agentName?.charAt(0) || 'A'}
                     </Avatar>
                   </ListItemIcon>
                   
@@ -677,7 +677,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
             autoFocus
             fullWidth
             label="Chat Name (optional)"
-            placeholder={`Chat with ${agentName} - ${new Date().toLocaleDateString()}`}
+            placeholder={`Chat with ${agentName || 'Agent'} - ${new Date().toLocaleDateString()}`}
             value={newChatName}
             onChange={(e) => setNewChatName(e.target.value)}
             sx={{
