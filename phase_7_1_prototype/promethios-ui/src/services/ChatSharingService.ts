@@ -785,9 +785,22 @@ ${messageCount} messages • ${timeAgo}
    * Detect chat references in messages (for agent processing)
    */
   detectChatReference(message: string): string | null {
-    const chatReferencePattern = /🧾\s*\*\*Chat Reference\*\*:\s*([a-zA-Z0-9_]+)/;
-    const match = message.match(chatReferencePattern);
-    return match ? match[1] : null;
+    // First try the formatted pattern (for backwards compatibility)
+    const formattedPattern = /🧾\s*\*\*Chat Reference\*\*:\s*([a-zA-Z0-9_]+)/;
+    const formattedMatch = message.match(formattedPattern);
+    if (formattedMatch) {
+      return formattedMatch[1];
+    }
+    
+    // Then try to detect bare chat references (chat_XXXXXXXXX_XXXXXXX format)
+    const barePattern = /(chat_\d+_[a-zA-Z0-9]+)/;
+    const bareMatch = message.match(barePattern);
+    if (bareMatch) {
+      console.log('🔍 [ChatReference] Detected bare chat reference:', bareMatch[1]);
+      return bareMatch[1];
+    }
+    
+    return null;
   }
 
   /**
