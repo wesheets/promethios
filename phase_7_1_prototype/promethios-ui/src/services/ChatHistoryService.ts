@@ -463,6 +463,13 @@ export class ChatHistoryService {
 
     console.log(`✅ Successfully loaded ${sessions.length} chat sessions for user ${userId}`);
     
+    // Debug: Check what's in the sessions
+    if (sessions.length > 0) {
+      console.log(`🔍 [Debug] First session:`, sessions[0]);
+      console.log(`🔍 [Debug] First session messages:`, sessions[0].messages);
+      console.log(`🔍 [Debug] First session message count:`, sessions[0].messages?.length || 0);
+    }
+    
     // Update cache
     this.chatHistoryCache.set(cacheKey, sessions);
     this.cacheTimestamps.set(cacheKey, now);
