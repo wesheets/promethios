@@ -131,9 +131,9 @@ export class ChatHistoryService {
 
     const session: ChatSession = {
       id: sessionId,
-      name: sessionName || `Chat with ${agentName} - ${now.toLocaleDateString()}`,
+      name: sessionName || `Chat with ${agentName || 'Agent'} - ${now.toLocaleDateString()}`,
       agentId,
-      agentName,
+      agentName: agentName || 'Agent',
       userId,
       messages: [],
       createdAt: now,

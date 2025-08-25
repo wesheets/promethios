@@ -2030,9 +2030,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             </Box>
 
             {/* Right Side - Command Panels */}
-            <Box sx={{ flex: '0 0 40%', bgcolor: '#1e293b', borderLeft: '1px solid #334155' }}>
+            <Box sx={{ 
+              flex: '0 0 40%', 
+              bgcolor: '#1e293b', 
+              borderLeft: '1px solid #334155',
+              height: '100vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
               {/* Panel Header */}
-              <Box sx={{ p: 3, borderBottom: '1px solid #334155' }}>
+              <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                   <Avatar sx={{ bgcolor: '#3b82f6' }}>
                     {selectedChatbot?.identity?.name?.charAt(0) || 'A'}
@@ -2093,7 +2101,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               </Box>
 
               {/* Panel Content */}
-              <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+              <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {rightPanelType === 'chats' && selectedChatbot && (
                   <ChatHistoryPanel
                     agentId={selectedChatbot.id}
