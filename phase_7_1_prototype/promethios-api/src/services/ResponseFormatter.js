@@ -177,26 +177,11 @@ class ResponseFormatter {
       formatted += `**Images**: ${result.data.images.images.length} found\n`;
     }
 
-    // Verification button with data attributes for frontend handling
+    // Clean verification section without HTML
     formatted += `\n---\n\n`;
     formatted += `🔍 **Want to verify this article's credibility?**\n\n`;
     formatted += `Click below to get a comprehensive fact-check with multiple sources:\n\n`;
-    
-    // Create a verification button with embedded data
-    const verificationData = {
-      article_url: result.url,
-      article_title: result.title,
-      article_content: result.data?.text_content?.content || '',
-      verification_id: `verify_${Date.now()}`
-    };
-    
-    formatted += `<div class="verification-section" data-verification='${JSON.stringify(verificationData)}'>\n`;
-    formatted += `<button class="verify-credibility-btn" onclick="startVerification(this)">\n`;
-    formatted += `🛡️ Verify Article Credibility\n`;
-    formatted += `</button>\n`;
-    formatted += `<div class="verification-results" style="display: none;"></div>\n`;
-    formatted += `</div>\n\n`;
-    
+    formatted += `[🛡️ Verify Article Credibility](#verify-credibility)\n\n`;
     formatted += `*This will research claims across authoritative sources and provide a governance-backed analysis.*\n\n`;
 
     return formatted;
@@ -402,6 +387,17 @@ class ResponseFormatter {
    */
   formatRawToolResult(toolName, content) {
     const emoji = this.sectionEmojis[toolName] || this.sectionEmojis.info;
+    
+    // Special handling for web scraping to avoid showing raw JSON
+    if (toolName === 'web_scraping') {
+      try {
+        const data = JSON.parse(content);
+        return this.formatWebScrapingResults(data);
+      } catch (e) {
+        return `## ${emoji} Web Scraping Results\n\n${this.sectionEmojis.error} Unable to process web scraping results.\n\n`;
+      }
+    }
+    
     return `## ${emoji} ${this.capitalizeFirst(toolName.replace('_', ' '))} Results\n\n${content}\n\n`;
   }
 
