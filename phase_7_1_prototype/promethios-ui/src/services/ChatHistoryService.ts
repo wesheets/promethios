@@ -379,28 +379,18 @@ export class ChatHistoryService {
       
       if (userChatIndex && Array.isArray(userChatIndex) && userChatIndex.length > 0) {
         console.log(`📚 Found chat index with ${userChatIndex.length} sessions`);
-        console.log(`🔍 [Debug] Chat index contents:`, userChatIndex.slice(0, 5)); // Show first 5 session IDs
         
         // Load sessions from index
         for (const sessionId of userChatIndex) {
           try {
-            const storageKey = `user_${userId}_${sessionId}`;
-            console.log(`🔍 [Debug] Attempting to load session with key: ${storageKey}`);
-            
-            const sessionData = await unifiedStorage.get('chats', storageKey);
+            const sessionData = await unifiedStorage.get('chats', `user_${userId}_${sessionId}`);
             if (sessionData) {
-              console.log(`✅ [Debug] Successfully loaded session data for ${sessionId}`);
               const session = this.deserializeChatSession(sessionData);
               
               // Apply filters
               if (this.matchesFilter(session, filter)) {
                 sessions.push(session);
-                console.log(`✅ [Debug] Session ${sessionId} passed filters and added to results`);
-              } else {
-                console.log(`⚠️ [Debug] Session ${sessionId} filtered out`);
               }
-            } else {
-              console.log(`❌ [Debug] No session data found for key: ${storageKey}`);
             }
           } catch (error) {
             console.warn(`Failed to load chat session ${sessionId}:`, error);
