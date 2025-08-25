@@ -1577,7 +1577,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
               {/* Chat Messages Area */}
               <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
-                {chatMessages.length === 0 ? (
+                {chatMessages.length === 0 && !currentBotState?.currentChatSession ? (
                   <Box 
                     sx={{ 
                       display: 'flex', 
