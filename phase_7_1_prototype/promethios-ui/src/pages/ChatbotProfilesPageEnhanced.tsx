@@ -2323,45 +2323,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       setMessageInput('');
                       setAttachedFiles([]);
                     }}
-                    onShareChat={(contextId: string) => {
-                      console.log('🔗 [ShareChat] onShareChat callback triggered with contextId:', contextId);
+                    onShareChat={(shareableId: string) => {
+                      console.log('🔗 [ShareChat] onShareChat callback triggered with shareableId:', shareableId);
                       
-                      // Generate the chat reference and populate the input bar (like Search Receipts)
+                      // Use the shareable ID directly as the chat reference
                       if (selectedChatbotId) {
                         console.log('🔗 [ShareChat] selectedChatbotId found:', selectedChatbotId);
-                        const chatSharingService = ChatSharingService.getInstance();
                         
-                        // Find the shared chat session to get details
-                        console.log('🔗 [ShareChat] Attempting to get shareable context for:', contextId);
-                        chatHistoryService.getShareableContext(contextId).then(shareableContext => {
-                          console.log('🔗 [ShareChat] Shareable context retrieved:', shareableContext);
-                          if (shareableContext) {
-                            const shareMessage = chatSharingService.generateChatShareMessage(shareableContext as any);
-                            console.log('🔗 [ShareChat] Generated share message:', shareMessage);
-                            
-                            // Instead of sending as message, populate the input bar
-                            console.log('🔗 [ShareChat] Setting message input to:', shareMessage);
-                            setMessageInput(shareMessage);
-                            
-                            // Focus the input field so user can immediately add their instruction
-                            const inputElement = document.querySelector('input[placeholder*="Type your message"], textarea[placeholder*="Type your message"]') as HTMLInputElement | HTMLTextAreaElement;
-                            console.log('🔗 [ShareChat] Found input element:', inputElement);
-                            if (inputElement) {
-                              inputElement.focus();
-                              // Position cursor at the end
-                              inputElement.setSelectionRange(shareMessage.length, shareMessage.length);
-                              console.log('🔗 [ShareChat] Input element focused and cursor positioned');
-                            } else {
-                              console.warn('🔗 [ShareChat] Input element not found');
-                            }
-                            
-                            console.log('✅ Chat reference added to input bar:', contextId);
-                          } else {
-                            console.error('❌ [ShareChat] No shareable context found for:', contextId);
-                          }
-                        }).catch(error => {
-                          console.error('❌ Failed to generate chat share message:', error);
-                        });
+                        // The shareableId IS the chat reference - use it directly
+                        const shareMessage = shareableId;
+                        console.log('🔗 [ShareChat] Using shareableId as share message:', shareMessage);
+                        
+                        // Populate the input bar with the chat reference
+                        console.log('🔗 [ShareChat] Setting message input to:', shareMessage);
+                        setMessageInput(shareMessage);
+                        
+                        // Focus the input field so user can immediately add their instruction
+                        const inputElement = document.querySelector('input[placeholder*="Type your message"], textarea[placeholder*="Type your message"]') as HTMLInputElement | HTMLTextAreaElement;
+                        console.log('🔗 [ShareChat] Found input element:', inputElement);
+                        if (inputElement) {
+                          inputElement.focus();
+                          // Position cursor at the end
+                          inputElement.setSelectionRange(shareMessage.length, shareMessage.length);
+                          console.log('🔗 [ShareChat] Input element focused and cursor positioned');
+                        } else {
+                          console.warn('🔗 [ShareChat] Input element not found');
+                        }
+                        
+                        console.log('✅ Chat reference added to input bar:', shareableId);
                       } else {
                         console.error('❌ [ShareChat] No selectedChatbotId found');
                       }
