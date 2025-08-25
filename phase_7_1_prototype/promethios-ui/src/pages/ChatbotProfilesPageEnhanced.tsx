@@ -995,7 +995,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Handle receipt sharing with agent
   const handleReceiptShare = async (receiptId: string, context: any) => {
-    if (!selectedBot || !activeSession) return;
+    if (!selectedChatbot || !activeSession) return;
 
     try {
       console.log('🧾 Handling receipt share:', receiptId, context);
@@ -1012,7 +1012,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           content: shareMessage,
           timestamp: new Date(),
           sessionId: activeSession.sessionId,
-          agentId: selectedBot.id,
+          agentId: selectedChatbot.id,
           userId: user?.uid || '',
           metadata: {
             type: 'receipt_share',
@@ -1022,8 +1022,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         };
 
         // Update bot state with new message
-        updateBotState(selectedBot.id, {
-          messages: [...(botStates[selectedBot.id]?.messages || []), userMessage]
+        updateBotState(selectedChatbot.id, {
+          messages: [...(botStates[selectedChatbot.id]?.messages || []), userMessage]
         });
 
         // Save message to chat history
@@ -2418,13 +2418,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 
                 {rightPanelType === 'receipts' && (
                   <AgentReceiptViewer 
-                    agentId={selectedBot?.id || ''}
-                    agentName={selectedBot?.name || 'Agent'}
-                    onClose={() => setRightPanelType(null)}
+                    agentId={selectedChatbot?.id || ''}
+                    agentName={selectedChatbot?.name || 'Agent'}
+                    onClose={() => {
+                      if (selectedChatbotId) {
+                        updateBotState(selectedChatbotId, { rightPanelType: null });
+                      }
+                    }}
                     onReceiptClick={handleReceiptShare}
                     enableInteractiveMode={true}
                     currentUserId={user?.uid || ''}
-                    currentSessionId={botStates[selectedBot?.id || '']?.currentSessionId || ''}
+                    currentSessionId={currentBotState?.currentSessionId || ''}
                   />
                 )}
                 
