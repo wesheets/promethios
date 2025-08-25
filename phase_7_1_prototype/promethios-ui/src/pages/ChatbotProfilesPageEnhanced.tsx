@@ -1079,13 +1079,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             smartChatName || `Chat with ${selectedChatbot.name}`
           );
           
-          updateBotState(selectedChatbot.id, { 
+          updateBotState(selectedChatbot.id, {
             currentChatSession: newSession,
             currentChatName: newSession.name
           });
-          
-          // Force immediate UI refresh for chat title
-          setSelectedChatbotId(selectedChatbot.id);
           
           // Trigger chat history panel refresh immediately
           setChatHistoryRefreshTrigger(prev => prev + 1);
