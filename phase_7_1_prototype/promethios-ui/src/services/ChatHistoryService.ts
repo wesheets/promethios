@@ -10,6 +10,7 @@ import { ChatMessage, FileAttachment } from './ChatStorageService';
 import { universalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { unifiedStorage } from './UnifiedStorageService';
 import { ComprehensiveToolReceiptExtension } from '../extensions/ComprehensiveToolReceiptExtension';
+import { firebaseDebugger } from '../utils/firebaseDebugger';
 
 export interface ChatSession {
   id: string;
@@ -114,8 +115,19 @@ export class ChatHistoryService {
     userId: string,
     sessionName?: string
   ): Promise<ChatSession> {
+    console.log('🔍 [Firebase Debug] Starting createChatSession');
+    console.log('  - Agent ID:', agentId);
+    console.log('  - Agent Name:', agentName);
+    console.log('  - User ID:', userId);
+    console.log('  - Session Name:', sessionName);
+
+    // Debug Firebase connection before creating chat
+    await firebaseDebugger.debugChatOperations(userId);
+
     const sessionId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date();
+
+    console.log('🔍 [Firebase Debug] Generated session ID:', sessionId);
 
     const session: ChatSession = {
       id: sessionId,
@@ -141,14 +153,23 @@ export class ChatHistoryService {
       },
     };
 
-    // Store in unified storage
-    await this.saveChatSession(session);
-    
-    // Track active session
-    this.activeSessions.set(sessionId, session);
+    console.log('🔍 [Firebase Debug] Created session object, now saving...');
 
-    console.log(`💬 Created new chat session: ${sessionName} (${sessionId})`);
-    return session;
+    try {
+      // Store in unified storage
+      await this.saveChatSession(session);
+      console.log('🔍 [Firebase Debug] ✅ saveChatSession completed successfully');
+      
+      // Track active session
+      this.activeSessions.set(sessionId, session);
+      console.log('🔍 [Firebase Debug] ✅ Added to active sessions');
+
+      console.log(`💬 Created new chat session: ${sessionName} (${sessionId})`);
+      return session;
+    } catch (error) {
+      console.error('🔍 [Firebase Debug] ❌ createChatSession failed:', error);
+      throw error;
+    }
   }
 
   /**
@@ -566,51 +587,77 @@ export class ChatHistoryService {
   }
 
   private async saveChatSession(session: ChatSession): Promise<void> {
+    console.log('🔍 [Firebase Debug] Starting saveChatSession for:', session.id);
+    
     try {
       const serializedSession = this.serializeChatSession(session);
+      console.log('🔍 [Firebase Debug] ✅ Session serialized successfully');
       
       // Save to user's chat collection using correct API
+      console.log('🔍 [Firebase Debug] Saving to user chat collection...');
       await unifiedStorage.set('chats', `user_${session.userId}_${session.id}`, serializedSession);
+      console.log('🔍 [Firebase Debug] ✅ User chat collection save completed');
 
       // Also save to sessions collection for direct access (use 2-segment path)
+      console.log('🔍 [Firebase Debug] Saving to sessions collection...');
       await unifiedStorage.set('chats', `session_${session.id}`, serializedSession);
+      console.log('🔍 [Firebase Debug] ✅ Sessions collection save completed');
 
       // Update user's chat index for efficient loading
+      console.log('🔍 [Firebase Debug] Updating user chat index...');
       await this.updateUserChatIndex(session.userId, session.id);
+      console.log('🔍 [Firebase Debug] ✅ User chat index updated');
 
       // Update active session
       this.activeSessions.set(session.id, session);
+      console.log('🔍 [Firebase Debug] ✅ Active session updated');
       
       console.log(`💾 Saved chat session: ${session.name} (${session.id})`);
     } catch (error) {
+      console.error('🔍 [Firebase Debug] ❌ saveChatSession failed at step:', error);
       console.error('❌ Failed to save chat session:', error);
       throw error;
     }
   }
 
   private async updateUserChatIndex(userId: string, sessionId: string): Promise<void> {
+    console.log('🔍 [Firebase Debug] Starting updateUserChatIndex');
+    console.log('  - User ID:', userId);
+    console.log('  - Session ID:', sessionId);
+    
     try {
       // Get existing index (use 2-segment path for Firebase)
+      console.log('🔍 [Firebase Debug] Getting existing user chat index...');
       const existingIndex = await unifiedStorage.get('chats', `user_${userId}_index`) || [];
+      console.log('🔍 [Firebase Debug] Existing index:', existingIndex);
+      
       const index = Array.isArray(existingIndex) ? existingIndex : [];
       
       // Add session ID if not already present
       if (!index.includes(sessionId)) {
         index.unshift(sessionId); // Add to beginning for chronological order
+        console.log('🔍 [Firebase Debug] Updated index:', index);
         
         // Limit to last 100 sessions to prevent unlimited growth
         if (index.length > 100) {
           index.splice(100);
         }
         
+        // Save updated index
+        console.log('🔍 [Firebase Debug] Saving updated index...');
         await unifiedStorage.set('chats', `user_${userId}_index`, index);
+        console.log('🔍 [Firebase Debug] ✅ Index saved successfully');
         
         // Invalidate cache to force refresh
         this.invalidateUserChatCache(userId);
+        console.log('🔍 [Firebase Debug] ✅ Cache invalidated');
         
         console.log(`📚 Updated chat index for user ${userId}: ${index.length} sessions`);
+      } else {
+        console.log('🔍 [Firebase Debug] Session already in index, skipping update');
       }
     } catch (error) {
+      console.error('🔍 [Firebase Debug] ❌ updateUserChatIndex failed:', error);
       console.warn('Failed to update user chat index:', error);
       // Don't throw - this is not critical for chat functionality
     }
