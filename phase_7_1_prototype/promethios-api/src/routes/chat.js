@@ -6,6 +6,7 @@ const governanceContextService = require('../services/governanceContextService')
 const ragService = require('../services/ragService'); // RAG service for knowledge base integration
 const ResponseFormatter = require('../services/ResponseFormatter'); // Response formatting service
 const { actionStatusMiddleware } = require('../middleware/actionStatusMiddleware'); // Action status tracking
+const hallucinationValidationMiddleware = require('../middleware/hallucinationValidationMiddleware'); // Hallucination validation
 
 // Import Provider Registry for tool-enabled LLM calls
 // 🎯 OFFICIAL FLOW: All LLM calls should go through Provider Registry
@@ -796,6 +797,63 @@ router.post('/', actionStatusMiddleware, async (req, res) => {
         // 🎨 FORMAT RESPONSE: Apply structured formatting to improve readability
         const responseFormatter = new ResponseFormatter();
         let formattedResponse = response;
+        
+        // 🏛️ COMPREHENSIVE HALLUCINATION VALIDATION: Multi-layer validation system
+        console.log('🔍 [Validation] Starting comprehensive hallucination validation...');
+        
+        const validationContext = {
+            userQuery: message,
+            toolsUsed: providerResponse?.tool_results?.map(r => r.name) || [],
+            conversationHistory: recentHistory,
+            governanceEnabled: governance_enabled
+        };
+        
+        const validationResult = await hallucinationValidationMiddleware.validateResponse(
+            response, 
+            agent_id, 
+            validationContext
+        );
+        
+        // Apply corrections if validation found issues
+        if (validationResult.correctionApplied) {
+            console.log('✅ [Validation] Applied hallucination corrections');
+            response = validationResult.correctedResponse;
+            
+            // Update governance metrics to reflect validation
+            if (governance_metrics) {
+                governance_metrics.validation_performed = true;
+                governance_metrics.issues_detected = validationResult.issues.length;
+                governance_metrics.correction_applied = validationResult.correctionApplied;
+                governance_metrics.confidence_score = validationResult.confidenceScore;
+                governance_metrics.escalation_required = validationResult.escalationRequired;
+            }
+        }
+        
+        // Additional governance validation for governance-enabled agents
+        if (governance_enabled) {
+            console.log('🔍 [Governance] Additional governance validation...');
+            const governanceValidation = await governanceContextService.validateTemporalClaims(response, agent_id);
+            
+            if (!governanceValidation.isValid) {
+                console.warn('🚨 [Governance] Secondary validation failed, applying additional corrections');
+                
+                // Apply governance override if needed
+                if (governanceValidation.correctionRequired) {
+                    // Use ResponseFormatter's hallucination detection and correction
+                    const hallucinationCheck = responseFormatter.detectTemporalHallucinations(response);
+                    if (hallucinationCheck.hasHallucination) {
+                        response = hallucinationCheck.correctedResponse;
+                        console.log('✅ [Governance] Applied additional temporal hallucination corrections');
+                        
+                        // Update governance metrics to reflect additional correction
+                        if (governance_metrics) {
+                            governance_metrics.secondary_validation = true;
+                            governance_metrics.governance_override = true;
+                        }
+                    }
+                }
+            }
+        }
         
         // Format response if we have tool results
         if (providerResponse && providerResponse.tool_results && providerResponse.tool_results.length > 0) {

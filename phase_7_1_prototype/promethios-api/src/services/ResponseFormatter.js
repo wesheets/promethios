@@ -501,9 +501,19 @@ class ResponseFormatter {
       return '';
     }
 
-    // Add some basic structure to plain responses
+    // CRITICAL: Check for temporal hallucinations in basic responses too
+    const hallucinationCheck = this.detectTemporalHallucinations(response);
     let formatted = response;
+    
+    if (hallucinationCheck.hasHallucination) {
+      console.warn('🚨 [ResponseFormatter] Temporal hallucination detected in basic response');
+      formatted = hallucinationCheck.correctedResponse;
+      
+      // Log governance alert for basic responses too
+      console.log('🏛️ [Governance Alert]', hallucinationCheck.governanceAlert);
+    }
 
+    // Add some basic structure to plain responses
     // Add emoji to common patterns
     formatted = formatted.replace(/^(Error|Failed|Problem)/gm, `${this.sectionEmojis.error} $1`);
     formatted = formatted.replace(/^(Success|Complete|Done)/gm, `${this.sectionEmojis.success} $1`);
