@@ -2619,15 +2619,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       maxRows={4}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          bgcolor: 'white',
+                          bgcolor: '#0f172a',
+                          color: 'white',
                           '& fieldset': { 
-                            borderColor: autonomousStarsActive ? '#f59e0b' : '#d1d5db',
+                            borderColor: autonomousStarsActive ? '#f59e0b' : '#334155',
                             borderWidth: 1
                           },
-                          '&:hover fieldset': { borderColor: '#9ca3af' },
+                          '&:hover fieldset': { borderColor: '#3b82f6' },
                           '&.Mui-focused fieldset': { 
                             borderColor: autonomousStarsActive ? '#f59e0b' : '#3b82f6',
                             borderWidth: 2
+                          },
+                          '& input::placeholder': {
+                            color: '#9ca3af',
+                            opacity: 1
                           }
                         }
                       }}
