@@ -91,29 +91,78 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         
         console.log('🔍 [Team] Initializing team panel for user:', user?.uid);
         
-        // Initialize all services
-        humanChatService.initialize(currentUserId);
+        // Initialize all services with individual error handling
+        try {
+          console.log('🔍 [Team] Initializing HumanChatService...');
+          humanChatService.initialize(currentUserId);
+          console.log('✅ [Team] HumanChatService initialized');
+        } catch (error) {
+          console.error('❌ [Team] HumanChatService failed:', error);
+        }
         
-        // Use the correct method for collaboration service
-        const userName = user?.displayName || user?.email || `User ${currentUserId}`;
-        const state = await collaborationService.initializeUserCollaboration(currentUserId, userName);
-        setCollaborationState(state);
+        try {
+          console.log('🔍 [Team] Initializing TeamCollaborationIntegrationService...');
+          const userName = user?.displayName || user?.email || `User ${currentUserId}`;
+          const state = await collaborationService.initializeUserCollaboration(currentUserId, userName);
+          setCollaborationState(state);
+          console.log('✅ [Team] TeamCollaborationIntegrationService initialized');
+        } catch (error) {
+          console.error('❌ [Team] TeamCollaborationIntegrationService failed:', error);
+        }
         
-        // OrganizationManagementService doesn't need initialization
+        // Load initial data with individual error handling
+        try {
+          console.log('🔍 [Team] Loading team data...');
+          loadTeamData();
+          console.log('✅ [Team] Team data loaded');
+        } catch (error) {
+          console.error('❌ [Team] Team data loading failed:', error);
+        }
         
-        // Load initial data
-        loadTeamData();
-        loadOrganizationData();
-        loadAiTeammates();
-        loadFavoriteAgents();
+        try {
+          console.log('🔍 [Team] Loading organization data...');
+          loadOrganizationData();
+          console.log('✅ [Team] Organization data loaded');
+        } catch (error) {
+          console.error('❌ [Team] Organization data loading failed:', error);
+        }
         
-        // Set user as online
-        humanChatService.updateUserStatus('online');
+        try {
+          console.log('🔍 [Team] Loading AI teammates...');
+          loadAiTeammates();
+          console.log('✅ [Team] AI teammates loading initiated');
+        } catch (error) {
+          console.error('❌ [Team] AI teammates loading failed:', error);
+        }
+        
+        try {
+          console.log('🔍 [Team] Loading favorite agents...');
+          loadFavoriteAgents();
+          console.log('✅ [Team] Favorite agents loaded');
+        } catch (error) {
+          console.error('❌ [Team] Favorite agents loading failed:', error);
+        }
+        
+        try {
+          console.log('🔍 [Team] Setting user status to online...');
+          humanChatService.updateUserStatus('online');
+          console.log('✅ [Team] User status set to online');
+        } catch (error) {
+          console.error('❌ [Team] Setting user status failed:', error);
+        }
 
-        // Set up real-time listeners
-        setupRealtimeListeners();
+        try {
+          console.log('🔍 [Team] Setting up real-time listeners...');
+          setupRealtimeListeners();
+          console.log('✅ [Team] Real-time listeners set up');
+        } catch (error) {
+          console.error('❌ [Team] Real-time listeners setup failed:', error);
+        }
+        
+        console.log('✅ [Team] Team panel initialization completed');
       } catch (error) {
         console.error('❌ [Team] Failed to initialize team collaboration:', error);
+        console.error('❌ [Team] Error details:', error.message, error.stack);
       }
     };
 
@@ -121,8 +170,12 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
     // Cleanup on unmount
     return () => {
-      humanChatService.updateUserStatus('offline');
-      cleanupListeners();
+      try {
+        humanChatService.updateUserStatus('offline');
+        cleanupListeners();
+      } catch (error) {
+        console.error('❌ [Team] Cleanup failed:', error);
+      }
     };
   }, [user?.uid, authLoading]); // Depend on user and authLoading like the working page
 
