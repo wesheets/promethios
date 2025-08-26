@@ -247,7 +247,7 @@ export class TeamCollaborationIntegrationService {
       const guestSessions = await this.guestService.getActiveSessions(userId);
 
       // Load shared repositories
-      const sharedRepositories = await this.repoManager.listRepositories(userId);
+      const sharedRepositories = await this.repoManager.listRepositories(userId) || [];
 
       // Load pending approvals
       const pendingApprovals = await this.guestService.getPendingApprovals(userId);
@@ -958,8 +958,8 @@ export class TeamCollaborationIntegrationService {
    * Calculate active collaborations
    */
   private calculateActiveCollaborations(sessions: GuestSession[], repositories: WorkflowRepository[]): number {
-    const activeSessions = sessions.filter(s => s.status === 'active').length;
-    const activeRepos = repositories.filter(r => r.status === 'active').length;
+    const activeSessions = (sessions || []).filter(s => s.status === 'active').length;
+    const activeRepos = (repositories || []).filter(r => r.status === 'active').length;
     return activeSessions + activeRepos;
   }
 
