@@ -80,6 +80,15 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Debug effect to track aiTeammates changes
+  useEffect(() => {
+    console.log('🔍 [AI Teammates] aiTeammates state changed:', aiTeammates.length, 'agents');
+    console.log('🔍 [AI Teammates] Current aiTeammates:', aiTeammates);
+    if (aiTeammates.length > 0) {
+      console.log('🔍 [AI Teammates] First agent in state:', aiTeammates[0]);
+    }
+  }, [aiTeammates]);
+
   useEffect(() => {
     const initializeTeamPanel = async () => {
       try {
@@ -373,9 +382,11 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       
       console.log('🔍 [AI Teammates] getChatbots returned:', agents.length, 'agents');
       console.log('🔍 [AI Teammates] Agent data:', agents);
+      console.log('🔍 [AI Teammates] Sample agent structure:', agents[0]);
       
       setAiTeammates(agents);
       console.log('✅ [AI Teammates] Successfully loaded', agents.length, 'AI teammates');
+      console.log('🔍 [AI Teammates] setAiTeammates called with:', agents);
     } catch (error) {
       console.error('❌ [AI Teammates] Failed to load:', error);
       // Set empty array on error
