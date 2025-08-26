@@ -79,8 +79,6 @@ const ChatbotProfilesPage: React.FC = () => {
   const [healthFilter, setHealthFilter] = useState('all');
   const [chatbotProfiles, setChatbotProfiles] = useState<ChatbotProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [testChatOpen, setTestChatOpen] = useState(false);
-  const [selectedChatbotId, setSelectedChatbotId] = useState<string | null>(null);
   
   // Right panel state
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
@@ -181,8 +179,7 @@ const ChatbotProfilesPage: React.FC = () => {
 
   // Handle actions
   const handleTestChat = (chatbotId: string) => {
-    setSelectedChatbotId(chatbotId);
-    setTestChatOpen(true);
+    navigate(`/ui/chat/chatbots?agent=chatbot_${chatbotId}`);
   };
 
   const handleViewAnalytics = (chatbotId: string) => {
@@ -524,7 +521,7 @@ const ChatbotProfilesPage: React.FC = () => {
                         fontSize: '0.75rem',
                       }}
                     >
-                      Test Chat
+                      Command Center
                     </Button>
                     <Button
                       size="small"
@@ -559,32 +556,6 @@ const ChatbotProfilesPage: React.FC = () => {
           );
         })}
       </Grid>
-
-      {/* Test Chat Dialog */}
-      <Dialog
-        open={testChatOpen}
-        onClose={() => setTestChatOpen(false)}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            backgroundColor: '#1f2937',
-            color: 'white',
-          },
-        }}
-      >
-        <DialogTitle>Test Chatbot</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-            Chat interface will be implemented here.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTestChatOpen(false)} sx={{ color: 'white' }}>
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Right Panel Drawer */}
       <Drawer
