@@ -248,10 +248,13 @@ export class TeamCollaborationIntegrationService {
 
       // Load shared repositories
       console.log('🔍 [Team] Loading repositories...');
-      const sharedRepositories = await this.repoManager.listRepositories(userId) || [];
-      console.log('🔍 [Team] Repositories result:', sharedRepositories);
-      console.log('🔍 [Team] Repositories type:', typeof sharedRepositories);
-      console.log('🔍 [Team] Is array:', Array.isArray(sharedRepositories));
+      const repositoriesResult = await this.repoManager.listRepositories(userId) || { repositories: [] };
+      console.log('🔍 [Team] Repositories result:', repositoriesResult);
+      console.log('🔍 [Team] Repositories type:', typeof repositoriesResult);
+      console.log('🔍 [Team] Is array:', Array.isArray(repositoriesResult));
+      
+      // Extract the actual repositories array from the result object
+      const sharedRepositories = repositoriesResult.repositories || [];
 
       // Load pending approvals
       const pendingApprovals = await this.guestService.getPendingApprovals(userId);
