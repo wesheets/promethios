@@ -4,44 +4,42 @@
  * Provides team messaging, member management, and collaboration features
  * for the right panel of the Agent Command Center.
  */
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
   List,
   ListItem,
-  ListItemAvatar,
   ListItemText,
+  ListItemAvatar,
   Avatar,
   Badge,
-  IconButton,
-  TextField,
-  Button,
-  Paper,
-  Divider,
   Chip,
-  Menu,
-  MenuItem,
-  Card,
-  CardContent,
+  TextField,
   InputAdornment,
-  Tooltip
+  IconButton,
+  Tooltip,
+  Button,
+  Divider,
+  Paper
 } from '@mui/material';
 import {
+  Search,
   Send,
-  MoreVert,
-  Person,
   Group,
   Circle,
-  Search,
   Add,
-  Share,
-  AttachFile
+  Settings,
+  Notifications,
+  Star,
+  StarBorder,
+  SmartToy,
+  Launch
 } from '@mui/icons-material';
 import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../../services/HumanChatService';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../../services/TeamCollaborationIntegrationService';
-import { OrganizationManagementService, Organization } from '../../services/OrganizationManagementService';
+import { OrganizationManagementService } from '../../services/OrganizationManagementService';
+import { ChatbotStorageService, ChatbotProfile } from '../../services/ChatbotStorageService';
 
 interface TeamPanelProps {
   currentUserId?: string;
@@ -72,6 +70,11 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   
+  // AI Teammates state
+  const [aiTeammates, setAiTeammates] = useState<ChatbotProfile[]>([]);
+  const [favoriteAgents, setFavoriteAgents] = useState<Set<string>>(new Set());
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,6 +93,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         // Load initial data
         loadTeamData();
         loadOrganizationData();
+        loadAiTeammates();
+        loadFavoriteAgents();
         
         // Set user as online
         humanChatService.updateUserStatus('online');
@@ -243,6 +248,60 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
     return timestamp.toLocaleDateString();
+  };
+
+  // AI Teammates functions
+  const loadAiTeammates = async () => {
+    try {
+      setAgentsLoading(true);
+      const chatbotService = ChatbotStorageService.getInstance();
+      const agents = await chatbotService.getChatbots(currentUserId);
+      setAiTeammates(agents);
+      console.log('✅ [AI Teammates] Loaded', agents.length, 'AI teammates');
+    } catch (error) {
+      console.error('❌ [AI Teammates] Failed to load:', error);
+    } finally {
+      setAgentsLoading(false);
+    }
+  };
+
+  const loadFavoriteAgents = () => {
+    try {
+      const saved = localStorage.getItem(`favoriteAgents_${currentUserId}`);
+      if (saved) {
+        setFavoriteAgents(new Set(JSON.parse(saved)));
+      }
+    } catch (error) {
+      console.error('❌ [AI Teammates] Failed to load favorites:', error);
+    }
+  };
+
+  const toggleFavoriteAgent = (agentId: string) => {
+    const newFavorites = new Set(favoriteAgents);
+    if (newFavorites.has(agentId)) {
+      newFavorites.delete(agentId);
+    } else {
+      newFavorites.add(agentId);
+    }
+    setFavoriteAgents(newFavorites);
+    localStorage.setItem(`favoriteAgents_${currentUserId}`, JSON.stringify([...newFavorites]));
+  };
+
+  const handleAgentCommandCenter = (agentId: string) => {
+    // Navigate to agent's command center
+    window.open(`/chat/chatbots/agent-chatbot-${agentId}?panel=team`, '_blank');
+  };
+
+  const getAgentStatus = (agent: ChatbotProfile) => {
+    // Determine agent status based on health and activity
+    if (agent.health?.overall >= 90) return 'online';
+    if (agent.health?.overall >= 70) return 'away';
+    return 'offline';
+  };
+
+  const getAgentStatusColor = (agent: ChatbotProfile) => {
+    const status = getAgentStatus(agent);
+    return getStatusColor(status);
   };
 
   if (activeConversation) {
@@ -569,6 +628,103 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                   </Box>
                 }
               />
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+
+      {/* AI Teammates section */}
+      <Box sx={{ flex: 1, overflowY: 'auto', p: 2, borderTop: '1px solid #334155' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ color: '#9ca3af', fontWeight: 'bold' }}>
+            <SmartToy sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
+            AI Teammates ({aiTeammates.length})
+          </Typography>
+          {agentsLoading && (
+            <Typography variant="caption" sx={{ color: '#6b7280' }}>
+              Loading...
+            </Typography>
+          )}
+        </Box>
+        
+        <List sx={{ p: 0 }}>
+          {aiTeammates.map((agent) => (
+            <ListItem
+              key={agent.id}
+              sx={{
+                p: 1,
+                borderRadius: 1,
+                mb: 0.5,
+                '&:hover': { bgcolor: '#374151' }
+              }}
+            >
+              <ListItemAvatar>
+                <Badge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  badgeContent={
+                    <Circle sx={{ 
+                      color: getAgentStatusColor(agent), 
+                      fontSize: 10,
+                      border: '2px solid #1e293b',
+                      borderRadius: '50%'
+                    }} />
+                  }
+                >
+                  <Avatar sx={{ bgcolor: '#8b5cf6', width: 32, height: 32 }}>
+                    <SmartToy sx={{ fontSize: 18 }} />
+                  </Avatar>
+                </Badge>
+              </ListItemAvatar>
+              <ListItemText
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                      {agent.name}
+                    </Typography>
+                    {favoriteAgents.has(agent.id) && (
+                      <Star sx={{ fontSize: 14, color: '#fbbf24' }} />
+                    )}
+                  </Box>
+                }
+                secondary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Chip
+                      label={agent.model || 'AI Agent'}
+                      size="small"
+                      sx={{
+                        bgcolor: getAgentStatusColor(agent),
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        height: 16
+                      }}
+                    />
+                    <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                      {agent.health?.overall || 0}% health
+                    </Typography>
+                  </Box>
+                }
+              />
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Tooltip title={favoriteAgents.has(agent.id) ? 'Remove from favorites' : 'Add to favorites'}>
+                  <IconButton
+                    size="small"
+                    onClick={() => toggleFavoriteAgent(agent.id)}
+                    sx={{ color: favoriteAgents.has(agent.id) ? '#fbbf24' : '#6b7280' }}
+                  >
+                    {favoriteAgents.has(agent.id) ? <Star sx={{ fontSize: 16 }} /> : <StarBorder sx={{ fontSize: 16 }} />}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Open Command Center">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleAgentCommandCenter(agent.id)}
+                    sx={{ color: '#6b7280', '&:hover': { color: '#3b82f6' } }}
+                  >
+                    <Launch sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </ListItem>
           ))}
         </List>
