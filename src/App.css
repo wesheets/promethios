@@ -666,31 +666,15 @@ body {
   height: 120px; /* 2x larger (was 80px) */
   animation: nodeAppear 0.8s ease-out both;
   transition: all 0.3s ease;
-  /* Position nodes on left side of scorecard */
-  left: -200px; /* Position to the left of the scorecard */
+  /* Position is set via inline styles in JSX */
 }
 
-/* Vertical positioning for each node */
-.governance-node:nth-child(1) { 
-  animation-delay: 1.2s; 
-  top: 10%; /* Trust Score */
-}
-.governance-node:nth-child(2) { 
-  animation-delay: 1.4s; 
-  top: 25%; /* Security Audit Logs */
-}
-.governance-node:nth-child(3) { 
-  animation-delay: 1.6s; 
-  top: 40%; /* Real-time Monitoring */
-}
-.governance-node:nth-child(4) { 
-  animation-delay: 1.8s; 
-  top: 55%; /* Compliance */
-}
-.governance-node:nth-child(5) { 
-  animation-delay: 2.0s; 
-  top: 70%; /* Memory */
-}
+/* Animation delays for each node */
+.governance-node:nth-child(1) { animation-delay: 1.2s; }
+.governance-node:nth-child(2) { animation-delay: 1.4s; }
+.governance-node:nth-child(3) { animation-delay: 1.6s; }
+.governance-node:nth-child(4) { animation-delay: 1.8s; }
+.governance-node:nth-child(5) { animation-delay: 2.0s; }
 
 @keyframes nodeAppear {
   0% {

@@ -55,14 +55,14 @@ function App() {
     { id: 'grok', name: 'Grok', image: grokLogo }
   ];
 
-  // Governance nodes data
+  // Governance nodes data - Left side vertical stack
   const governanceNodes = [
     { 
       id: 'trust', 
       label: 'Trust Score', 
       image: trustNode, 
       color: '#6366f1', // indigo
-      position: { top: '20%', left: '20%' },
+      position: { top: '10%', left: '-180px' },
       metric: 'trust'
     },
     { 
@@ -70,7 +70,7 @@ function App() {
       label: 'Security Audit Logs', 
       image: cryptographicLogs, 
       color: '#f59e0b', // amber
-      position: { top: '20%', right: '20%' },
+      position: { top: '25%', left: '-180px' },
       metric: 'security'
     },
     { 
@@ -78,7 +78,7 @@ function App() {
       label: 'Real-time Monitoring', 
       image: realtimeMonitoring, 
       color: '#3b82f6', // blue
-      position: { bottom: '30%', left: '15%' },
+      position: { top: '40%', left: '-180px' },
       metric: 'monitoring'
     },
     { 
@@ -86,7 +86,7 @@ function App() {
       label: 'Compliance', 
       image: complianceNode, 
       color: '#10b981', // green
-      position: { bottom: '30%', right: '15%' },
+      position: { top: '55%', left: '-180px' },
       metric: 'compliance'
     },
     { 
@@ -94,7 +94,7 @@ function App() {
       label: 'Memory', 
       image: memoryNode, 
       color: '#ef4444', // red
-      position: { top: '50%', left: '10%' },
+      position: { top: '70%', left: '-180px' },
       metric: 'memory'
     }
   ];
@@ -369,7 +369,6 @@ function App() {
                     }}
                   >
                     <img src={node.image} alt={node.label} />
-                    <div className="node-label">{node.label}</div>
                   </div>
                 ))}
               </section>
