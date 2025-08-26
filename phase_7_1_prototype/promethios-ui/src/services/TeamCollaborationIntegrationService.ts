@@ -15,7 +15,7 @@
 
 import { UnifiedStorageService } from './UnifiedStorageService';
 import { OrganizationManagementService, Organization, TeamMember } from './OrganizationManagementService';
-import { HumanChatService, HumanChat, HumanMessage } from './HumanChatService';
+import HumanChatService, { HumanMessage, TeamConversation as HumanChat } from './HumanChatService';
 import { GuestAgentService, GuestSession, ApprovalRequest } from './GuestAgentService';
 import { WorkflowRepositoryManager, WorkflowRepository } from './WorkflowRepositoryManager';
 import { AdvancedCollaborationService } from './AdvancedCollaborationService';

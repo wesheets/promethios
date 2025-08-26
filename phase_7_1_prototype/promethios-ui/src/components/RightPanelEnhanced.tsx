@@ -52,7 +52,8 @@ import {
   BugReport as BugReportIcon,
   Group as GroupIcon,
   Notifications as NotificationsIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 
 // Import existing components (these would be the existing right panel components)
@@ -76,6 +77,7 @@ import DebugPanel from './debug/DebugPanel';
 
 // Import new team collaboration components
 import TeamPanel from './team/TeamPanel';
+import TabCustomizationModal, { TabConfig } from './TabCustomizationModal';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
 
 interface RightPanelEnhancedProps {
@@ -120,6 +122,10 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Tab customization state
+  const [showTabCustomization, setShowTabCustomization] = useState(false);
+  const [visibleTabs, setVisibleTabs] = useState<string[]>([]);
+  
   // Collaboration state
   const [collaborationState, setCollaborationState] = useState<TeamCollaborationState | null>(null);
   const [notifications, setNotifications] = useState<CollaborationNotification[]>([]);
@@ -132,6 +138,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
 
   useEffect(() => {
     initializeCollaboration();
+    initializeTabPreferences();
     
     // Cleanup on unmount
     return () => {
@@ -204,11 +211,33 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
     }
   };
 
+  const initializeTabPreferences = () => {
+    try {
+      // Load tab preferences from localStorage
+      const storageKey = `tab_preferences_${userId}`;
+      const savedPreferences = localStorage.getItem(storageKey);
+      
+      if (savedPreferences) {
+        const parsedPreferences = JSON.parse(savedPreferences);
+        setVisibleTabs(parsedPreferences);
+      } else {
+        // Default: show all tabs
+        const allTabIds = getAllTabConfigs().map(tab => tab.id);
+        setVisibleTabs(allTabIds);
+      }
+    } catch (err) {
+      console.error('Error loading tab preferences:', err);
+      // Fallback: show all tabs
+      const allTabIds = getAllTabConfigs().map(tab => tab.id);
+      setVisibleTabs(allTabIds);
+    }
+  };
+
   // =====================================
   // TAB CONFIGURATION
   // =====================================
 
-  const getTabConfigs = (): TabConfig[] => {
+  const getAllTabConfigs = (): TabConfig[] => {
     const unreadMessages = collaborationState?.unreadMessages || 0;
     const pendingApprovals = collaborationState?.pendingApprovals.length || 0;
     const unreadNotifications = notifications.filter(n => !n.read).length;
@@ -219,104 +248,121 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         label: 'Chats',
         icon: <ChatIcon />,
         component: ChatHistoryPanel,
+        category: 'core',
         badgeCount: unreadMessages
       },
       {
         id: 'analytics',
         label: 'Analytics',
         icon: <AnalyticsIcon />,
-        component: AnalyticsPanel
+        component: AnalyticsPanel,
+        category: 'core'
       },
       {
         id: 'customize',
         label: 'Customize',
         icon: <PaletteIcon />,
-        component: CustomizePanel
+        component: CustomizePanel,
+        category: 'advanced'
       },
       {
         id: 'personality',
         label: 'Personality',
         icon: <PsychologyIcon />,
-        component: PersonalityPanel
+        component: PersonalityPanel,
+        category: 'advanced'
       },
       {
         id: 'ai_knowledge',
         label: 'AI Knowledge',
         icon: <SchoolIcon />,
-        component: AIKnowledgePanel
+        component: AIKnowledgePanel,
+        category: 'advanced'
       },
       {
         id: 'tools',
         label: 'Tools',
         icon: <BuildIcon />,
-        component: ToolsPanel
+        component: ToolsPanel,
+        category: 'core'
       },
       {
         id: 'chat_interface',
         label: 'Chat Interface',
         icon: <ForumIcon />,
-        component: ChatInterfacePanel
+        component: ChatInterfacePanel,
+        category: 'advanced'
       },
       {
         id: 'integrations',
         label: 'Integrations',
         icon: <ExtensionIcon />,
-        component: IntegrationsPanel
+        component: IntegrationsPanel,
+        category: 'advanced'
       },
       {
         id: 'rag_policy',
         label: 'RAG + Policy',
         icon: <PolicyIcon />,
-        component: RAGPolicyPanel
+        component: RAGPolicyPanel,
+        category: 'enterprise'
       },
       {
         id: 'automation',
         label: 'Automation',
         icon: <AutoModeIcon />,
-        component: AutomationPanel
+        component: AutomationPanel,
+        category: 'advanced'
       },
       {
         id: 'receipts',
         label: 'Receipts',
         icon: <ReceiptIcon />,
-        component: ReceiptsPanel
+        component: ReceiptsPanel,
+        category: 'advanced'
       },
       {
         id: 'memory',
         label: 'Memory',
         icon: <MemoryIcon />,
-        component: MemoryPanel
+        component: MemoryPanel,
+        category: 'advanced'
       },
       {
         id: 'sandbox',
         label: 'Sandbox',
         icon: <TerminalIcon />,
-        component: SandboxPanel
+        component: SandboxPanel,
+        category: 'debug'
       },
       {
         id: 'live_agent',
         label: 'Live Agent',
         icon: <SmartToyIcon />,
-        component: LiveAgentPanel
+        component: LiveAgentPanel,
+        category: 'core'
       },
       {
         id: 'governance',
         label: 'Governance',
         icon: <SecurityIcon />,
         component: GovernancePanel,
+        category: 'enterprise',
         badgeCount: pendingApprovals
       },
       {
         id: 'workflows',
         label: 'Workflows',
         icon: <AccountTreeIcon />,
-        component: WorkflowsPanel
+        component: WorkflowsPanel,
+        category: 'enterprise'
       },
       {
         id: 'team',
         label: 'Team',
         icon: <GroupIcon />,
         component: TeamPanel,
+        category: 'enterprise',
         badgeCount: unreadNotifications,
         isNew: true,
         tooltip: 'Team Collaboration - NEW!'
@@ -325,9 +371,15 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         id: 'debug',
         label: 'Debug',
         icon: <BugReportIcon />,
-        component: DebugPanel
+        component: DebugPanel,
+        category: 'debug'
       }
     ];
+  };
+
+  const getVisibleTabConfigs = (): TabConfig[] => {
+    const allTabs = getAllTabConfigs();
+    return allTabs.filter(tab => visibleTabs.includes(tab.id));
   };
 
   // =====================================
@@ -357,6 +409,18 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
 
     } catch (err) {
       console.error('Error marking notifications as read:', err);
+    }
+  };
+
+  const handleTabVisibilityChange = (newVisibleTabs: string[]) => {
+    setVisibleTabs(newVisibleTabs);
+    
+    // If current active tab is now hidden, switch to first visible tab
+    if (!newVisibleTabs.includes(activeTab)) {
+      const firstVisibleTab = newVisibleTabs[0];
+      if (firstVisibleTab) {
+        setActiveTab(firstVisibleTab as RightPanelTab);
+      }
     }
   };
 
@@ -422,7 +486,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
   };
 
   const renderActiveTabContent = () => {
-    const tabConfigs = getTabConfigs();
+    const tabConfigs = getVisibleTabConfigs();
     const activeConfig = tabConfigs.find(config => config.id === activeTab);
     
     if (!activeConfig) {
@@ -482,7 +546,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
     );
   }
 
-  const tabConfigs = getTabConfigs();
+  const tabConfigs = getVisibleTabConfigs();
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -500,6 +564,20 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         </Typography>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Tab customization settings */}
+          <Tooltip title="Customize tabs">
+            <IconButton 
+              size="small" 
+              onClick={() => setShowTabCustomization(true)}
+              sx={{ 
+                color: 'text.secondary',
+                '&:hover': { color: 'primary.main' }
+              }}
+            >
+              <SettingsIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          
           {/* Collaboration status indicator */}
           {collaborationState && (
             <Tooltip title={`${collaborationState.activeCollaborations} active collaborations`}>
@@ -626,6 +704,16 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
           </Typography>
         </Alert>
       </Snackbar>
+
+      {/* Tab Customization Modal */}
+      <TabCustomizationModal
+        open={showTabCustomization}
+        onClose={() => setShowTabCustomization(false)}
+        availableTabs={getAllTabConfigs()}
+        visibleTabs={visibleTabs}
+        onTabVisibilityChange={handleTabVisibilityChange}
+        userId={userId}
+      />
     </Box>
   );
 };

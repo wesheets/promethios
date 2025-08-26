@@ -791,7 +791,7 @@ export class AutonomousRiskAssessment {
     }
     
     // Determine risk level
-    const level = riskScore <= 0.3 ? 'low' : riskScore <= 0.6 ? 'medium' : r'high';
+    const level = riskScore <= 0.3 ? 'low' : riskScore <= 0.6 ? 'medium' : 'high';
     
     return {
       level,

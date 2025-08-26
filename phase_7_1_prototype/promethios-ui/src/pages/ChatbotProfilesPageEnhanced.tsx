@@ -2618,13 +2618,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       maxRows={4}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          bgcolor: '#0f172a',
-                          color: 'white',
+                          bgcolor: 'white',
                           '& fieldset': { 
-                            borderColor: autonomousStarsActive ? '#f59e0b' : '#334155',
+                            borderColor: autonomousStarsActive ? '#f59e0b' : '#d1d5db',
                             borderWidth: 1
                           },
-                          '&:hover fieldset': { borderColor: '#3b82f6' },
+                          '&:hover fieldset': { borderColor: '#9ca3af' },
                           '&.Mui-focused fieldset': { 
                             borderColor: autonomousStarsActive ? '#f59e0b' : '#3b82f6',
                             borderWidth: 2
@@ -2642,13 +2641,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           left: 0,
                           right: 0,
                           zIndex: 1000,
-                          bgcolor: '#1e293b',
-                          border: '1px solid #334155',
+                          bgcolor: 'white',
+                          border: '1px solid #e5e7eb',
                           borderRadius: 1,
                           mt: 0.5,
-                          maxHeight: 240,
+                          maxHeight: 200,
                           overflow: 'auto',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
                         }}
                       >
                         {smartSuggestions.map((suggestion, index) => (
@@ -2658,21 +2657,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             sx={{
                               p: 1.5,
                               cursor: 'pointer',
-                              bgcolor: selectedSuggestionIndex === index ? '#334155' : 'transparent',
-                              borderLeft: selectedSuggestionIndex === index ? '3px solid #f59e0b' : 'none',
-                              '&:hover': { bgcolor: '#334155' },
+                              bgcolor: selectedSuggestionIndex === index ? '#f3f4f6' : 'transparent',
+                              '&:hover': { bgcolor: '#f9fafb' },
                               display: 'flex',
                               alignItems: 'center',
-                              gap: 1
+                              gap: 1.5,
+                              borderBottom: index < smartSuggestions.length - 1 ? '1px solid #f3f4f6' : 'none'
                             }}
                           >
-                            <Box sx={{ color: '#f59e0b', fontSize: '14px' }}>
+                            <Box sx={{ color: '#6b7280', fontSize: '16px', minWidth: '20px' }}>
                               {suggestion.includes('Create') ? '💡' : 
                                suggestion.includes('team') ? '👥' : 
                                suggestion.includes('project') ? '📁' : 
-                               suggestion.includes('task') ? '🚀' : '⭐'}
+                               suggestion.includes('task') ? '🚀' : 
+                               suggestion.includes('Continue') ? '▶️' : 
+                               suggestion.includes('Check') ? '📬' : '⭐'}
                             </Box>
-                            <Typography variant="body2" sx={{ color: 'white', flex: 1 }}>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                color: '#374151', 
+                                flex: 1,
+                                fontSize: '14px',
+                                fontWeight: selectedSuggestionIndex === index ? 500 : 400
+                              }}
+                            >
                               {suggestion}
                             </Typography>
                           </Box>
@@ -3323,40 +3332,35 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     )}
 
                     {/* Team Collaboration Analytics */}
-                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
-                      <CardContent sx={{ p: 2 }}>
-                        <Typography variant="body1" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
-                          Team Collaboration Metrics
-                        </Typography>
-                        <Grid container spacing={2}>
-                          <Grid item xs={6}>
-                            <Box sx={{ textAlign: 'center' }}>
-                              <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
-                                {teamMembers.length}
-                              </Typography>
-                              <Typography variant="body2" sx={{ color: '#64748b' }}>
-                                Team Members
-                              </Typography>
-                            </Box>
-                          </Grid>
-                          <Grid item xs={6}>
-                            <Box sx={{ textAlign: 'center' }}>
-                              <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
-                                {teamConversations.length}
-                              </Typography>
-                              <Typography variant="body2" sx={{ color: '#64748b' }}>
-                                Active Chats
-                              </Typography>
-                            </Box>
-                          </Grid>
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                              Resolution Rate
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body1" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
+                              Team Collaboration Metrics
                             </Typography>
-                            <Typography variant="h5" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
-                              {getRealMetricsSync(selectedChatbot).resolutionRate}%
-                            </Typography>
+                            <Grid container spacing={2}>
+                              <Grid item xs={6}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                  <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                                    {teamMembers.length}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                    Team Members
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                              <Grid item xs={6}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                  <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                                    {teamConversations.length}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                    Active Chats
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            </Grid>
                           </CardContent>
                         </Card>
                       </Grid>
