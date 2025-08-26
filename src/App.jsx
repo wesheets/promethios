@@ -62,7 +62,7 @@ function App() {
       label: 'Trust Score', 
       image: trustNode, 
       color: '#6366f1', // indigo
-      position: { top: '10%', left: '-180px' },
+      position: { top: '15%', left: '-120px' },
       metric: 'trust'
     },
     { 
@@ -70,7 +70,7 @@ function App() {
       label: 'Security Audit Logs', 
       image: cryptographicLogs, 
       color: '#f59e0b', // amber
-      position: { top: '25%', left: '-180px' },
+      position: { top: '27%', left: '-120px' },
       metric: 'security'
     },
     { 
@@ -78,7 +78,7 @@ function App() {
       label: 'Real-time Monitoring', 
       image: realtimeMonitoring, 
       color: '#3b82f6', // blue
-      position: { top: '40%', left: '-180px' },
+      position: { top: '39%', left: '-120px' },
       metric: 'monitoring'
     },
     { 
@@ -86,7 +86,7 @@ function App() {
       label: 'Compliance', 
       image: complianceNode, 
       color: '#10b981', // green
-      position: { top: '55%', left: '-180px' },
+      position: { top: '51%', left: '-120px' },
       metric: 'compliance'
     },
     { 
@@ -94,7 +94,7 @@ function App() {
       label: 'Memory', 
       image: memoryNode, 
       color: '#ef4444', // red
-      position: { top: '70%', left: '-180px' },
+      position: { top: '63%', left: '-120px' },
       metric: 'memory'
     }
   ];
@@ -342,17 +342,13 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Connection Lines */}
+                  {/* Push-Down Effects */}
                   {governanceNodes.map(node => (
                     <div
                       key={node.id}
-                      className={`connection-line ${activeConnections.includes(node.id) ? 'active' : ''}`}
+                      className={`push-down-effect ${activeConnections.includes(node.id) ? 'active' : ''}`}
                       style={{
-                        '--line-color': node.color,
-                        '--start-top': node.position.top || 'auto',
-                        '--start-bottom': node.position.bottom || 'auto',
-                        '--start-left': node.position.left || 'auto',
-                        '--start-right': node.position.right || 'auto'
+                        '--effect-color': node.color
                       }}
                     />
                   ))}
