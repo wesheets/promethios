@@ -247,7 +247,7 @@ export class TeamCollaborationIntegrationService {
       const guestSessions = await this.guestService.getActiveSessions(userId);
 
       // Load shared repositories
-      const sharedRepositories = await this.repoManager.getUserRepositories(userId);
+      const sharedRepositories = await this.repoManager.listRepositories(userId);
 
       // Load pending approvals
       const pendingApprovals = await this.guestService.getPendingApprovals(userId);
