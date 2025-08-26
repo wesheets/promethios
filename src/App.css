@@ -7,23 +7,11 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background-image: url('./assets/gradient-background.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background: #000000;
   color: #ffffff;
   overflow-x: hidden;
   margin: 0;
   padding: 0;
-}
-
-html {
-  background-image: url('./assets/gradient-background.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
 }
 .app {
   min-height: 100vh;
@@ -178,6 +166,11 @@ html {
 .main-content {
   min-height: 100vh;
   padding-top: 80px;
+  background-image: url('./assets/gradient-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .content-container {
