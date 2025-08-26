@@ -411,28 +411,29 @@ body {
   }
 }
 
-/* Metrics Panel - Fixed Size Inside Scorecard */
+/* Metrics Panel - Vertical Stack Centered in Scorecard */
 .metrics-panel {
   position: absolute;
-  bottom: 100px;
+  bottom: 120px;
   left: 50%;
   transform: translateX(-50%);
-  width: 500px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   font-size: 0.75rem;
 }
 
 .metric {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem;
+  padding: 0.4rem 0.8rem;
   background: rgba(0, 0, 0, 0.8);
   border-radius: 0.5rem;
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
+  height: 45px;
 }
 
 .metric.active {
