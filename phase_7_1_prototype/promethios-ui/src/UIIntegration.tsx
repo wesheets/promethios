@@ -103,6 +103,20 @@ import HostedApiSetup from './components/chat/setup/HostedApiSetup';
 // Import chatbot management page
 import ChatbotProfilesPageEnhanced from './pages/ChatbotProfilesPageEnhanced';
 import ChatbotProfilesPage from './pages/ChatbotProfilesPage';
+
+// Conditional routing component for chatbots
+const ChatbotRoutingComponent: React.FC = () => {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const agentParam = searchParams.get('agent');
+  
+  // If agent parameter exists, show chat interface, otherwise show scorecard page
+  if (agentParam) {
+    return <ChatbotProfilesPageEnhanced />;
+  } else {
+    return <ChatbotProfilesPage />;
+  }
+};
 import BringYourOwnKeySetup from './components/chat/setup/BringYourOwnKeySetup';
 import BYOKGovernancePricing from './components/chat/setup/BYOKGovernancePricing';
 import EnterpriseSetup from './components/chat/setup/EnterpriseSetup';
@@ -337,7 +351,7 @@ const UIIntegration: React.FC = () => {
         <Route path="chat/chatbots" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <ChatbotProfilesPage />
+              <ChatbotRoutingComponent />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
