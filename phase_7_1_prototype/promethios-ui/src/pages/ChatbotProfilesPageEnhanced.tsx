@@ -88,6 +88,7 @@ import {
   Refresh,
   Download,
   Upload,
+  Alert,
   Share,
   Delete,
   PlayArrow,
@@ -335,6 +336,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [liveAgentPanelOpen, setLiveAgentPanelOpen] = useState(false);
   const [autonomousMode, setAutonomousMode] = useState(false);
   const [autonomousStarsActive, setAutonomousStarsActive] = useState(false);
+  
+  // Autonomous Stars state
+  const [smartSuggestions, setSmartSuggestions] = useState<string[]>([]);
+  const [contextPredictions, setContextPredictions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [proactiveAssistance, setProactiveAssistance] = useState<string | null>(null);
   
   // Add metrics caching to prevent repeated calculations
   const metricsCache = useRef<Map<string, { metrics: ChatbotMetrics; timestamp: number }>>(new Map());
@@ -1409,6 +1417,120 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  // Autonomous Stars functionality
+  const generateSmartSuggestions = useCallback(async (input: string, context: any) => {
+    if (!autonomousStarsActive || !input.trim()) {
+      setSmartSuggestions([]);
+      return;
+    }
+
+    try {
+      const suggestions: string[] = [];
+      
+      // Context-aware suggestions based on current state
+      if (projects.length > 0) {
+        suggestions.push(`Continue working on ${projects[0].name}`);
+        suggestions.push(`Create a new feature for ${projects[0].name}`);
+      }
+      
+      if (teamMembers.length > 0) {
+        suggestions.push(`Share this with ${teamMembers[0].name}`);
+        suggestions.push(`Ask team for feedback on this`);
+      }
+      
+      if (autonomousMode && currentTaskPlan) {
+        suggestions.push(`Show me the current task progress`);
+        suggestions.push(`What's the next step in this task?`);
+      }
+      
+      // Input-based suggestions
+      const lowerInput = input.toLowerCase();
+      if (lowerInput.includes('create') || lowerInput.includes('build')) {
+        suggestions.push('Create a new React application');
+        suggestions.push('Build a REST API with Flask');
+        suggestions.push('Set up a database schema');
+      }
+      
+      if (lowerInput.includes('help') || lowerInput.includes('how')) {
+        suggestions.push('Show me available project templates');
+        suggestions.push('Explain the autonomous workflow');
+        suggestions.push('Guide me through team collaboration');
+      }
+      
+      setSmartSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
+      setShowSuggestions(suggestions.length > 0);
+    } catch (error) {
+      console.error('❌ [AutonomousStars] Failed to generate suggestions:', error);
+    }
+  }, [autonomousStarsActive, projects, teamMembers, autonomousMode, currentTaskPlan]);
+
+  const handleInputChange = useCallback((value: string) => {
+    setMessageInput(value);
+    
+    // Generate smart suggestions with debouncing
+    if (autonomousStarsActive) {
+      const timeoutId = setTimeout(() => {
+        generateSmartSuggestions(value, {
+          selectedChatbot,
+          projects,
+          teamMembers,
+          autonomousMode,
+          currentTaskPlan
+        });
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [autonomousStarsActive, generateSmartSuggestions, selectedChatbot, projects, teamMembers, autonomousMode, currentTaskPlan]);
+
+  const handleSuggestionSelect = useCallback((suggestion: string) => {
+    setMessageInput(suggestion);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+  }, []);
+
+  const handleKeyNavigation = useCallback((e: React.KeyboardEvent) => {
+    if (!showSuggestions || smartSuggestions.length === 0) return;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => 
+        prev < smartSuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => 
+        prev > 0 ? prev - 1 : smartSuggestions.length - 1
+      );
+    } else if (e.key === 'Tab' && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+    }
+  }, [showSuggestions, smartSuggestions, selectedSuggestionIndex, handleSuggestionSelect]);
+
+  // Proactive assistance based on context
+  useEffect(() => {
+    if (!autonomousStarsActive) return;
+    
+    const checkProactiveAssistance = () => {
+      if (projects.length === 0 && !messageInput.trim()) {
+        setProactiveAssistance("💡 Start by creating a new project from our templates!");
+      } else if (autonomousMode && !liveAgentPanelOpen) {
+        setProactiveAssistance("🤖 Your agent is working autonomously. Click LIVE AGENT to monitor progress.");
+      } else if (unreadTeamCount > 0) {
+        setProactiveAssistance(`👥 You have ${unreadTeamCount} unread team messages.`);
+      } else {
+        setProactiveAssistance(null);
+      }
+    };
+    
+    const timeoutId = setTimeout(checkProactiveAssistance, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [autonomousStarsActive, projects.length, messageInput, autonomousMode, liveAgentPanelOpen, unreadTeamCount]);
+
   // Chat functionality - Real Universal Governance Adapter Integration
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeSession || chatLoading) return;
@@ -2417,7 +2539,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   </Box>
                 )}
                 
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, position: 'relative' }}>
+                  {/* Autonomous Stars Toggle */}
+                  <Tooltip title={autonomousStarsActive ? "Disable Autonomous Stars" : "Enable Autonomous Stars"}>
+                    <IconButton
+                      onClick={() => setAutonomousStarsActive(!autonomousStarsActive)}
+                      sx={{ 
+                        color: autonomousStarsActive ? '#f59e0b' : '#94a3b8',
+                        mb: 0.5,
+                        '&:hover': { color: autonomousStarsActive ? '#d97706' : '#3b82f6' }
+                      }}
+                    >
+                      {autonomousStarsActive ? (
+                        <Badge badgeContent="⭐" color="warning">
+                          <AutoAwesome />
+                        </Badge>
+                      ) : (
+                        <AutoAwesome />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+
                   {/* Add Menu Button */}
                   <IconButton
                     onClick={(e) => setAddMenuAnchor(e.currentTarget)}
@@ -2426,27 +2568,123 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     <Add />
                   </IconButton>
                   
-                  <TextField
-                    fullWidth
-                    placeholder="Type your message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                    onPaste={handlePaste}
-                    variant="outlined"
-                    disabled={chatLoading}
-                    multiline
-                    maxRows={4}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        bgcolor: '#0f172a',
-                        color: 'white',
-                        '& fieldset': { borderColor: '#334155' },
-                        '&:hover fieldset': { borderColor: '#3b82f6' },
-                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                      }
-                    }}
-                  />
+                  {/* Enhanced Text Input with Smart Suggestions */}
+                  <Box sx={{ flex: 1, position: 'relative' }}>
+                    <TextField
+                      fullWidth
+                      placeholder={autonomousStarsActive ? "Type your message... ⭐ Smart suggestions enabled" : "Type your message..."}
+                      value={messageInput}
+                      onChange={(e) => handleInputChange(e.target.value)}
+                      onKeyDown={handleKeyNavigation}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          if (showSuggestions && selectedSuggestionIndex >= 0) {
+                            e.preventDefault();
+                            handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+                          } else {
+                            handleSendMessage();
+                          }
+                        }
+                      }}
+                      onPaste={handlePaste}
+                      onFocus={() => {
+                        if (autonomousStarsActive && messageInput.trim()) {
+                          setShowSuggestions(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        // Delay hiding suggestions to allow clicking
+                        setTimeout(() => setShowSuggestions(false), 200);
+                      }}
+                      variant="outlined"
+                      disabled={chatLoading}
+                      multiline
+                      maxRows={4}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          bgcolor: '#0f172a',
+                          color: 'white',
+                          '& fieldset': { 
+                            borderColor: autonomousStarsActive ? '#f59e0b' : '#334155',
+                            borderWidth: autonomousStarsActive ? 2 : 1
+                          },
+                          '&:hover fieldset': { borderColor: '#3b82f6' },
+                          '&.Mui-focused fieldset': { 
+                            borderColor: autonomousStarsActive ? '#f59e0b' : '#3b82f6',
+                            borderWidth: 2
+                          }
+                        }
+                      }}
+                    />
+                    
+                    {/* Smart Suggestions Dropdown */}
+                    {showSuggestions && smartSuggestions.length > 0 && (
+                      <Paper
+                        sx={{
+                          position: 'absolute',
+                          top: -10,
+                          left: 0,
+                          right: 0,
+                          zIndex: 1000,
+                          bgcolor: '#1e293b',
+                          border: '1px solid #334155',
+                          borderRadius: 1,
+                          transform: 'translateY(-100%)',
+                          maxHeight: 200,
+                          overflow: 'auto'
+                        }}
+                      >
+                        <Box sx={{ p: 1 }}>
+                          <Typography variant="caption" sx={{ color: '#64748b', px: 1 }}>
+                            ⭐ Smart Suggestions
+                          </Typography>
+                        </Box>
+                        {smartSuggestions.map((suggestion, index) => (
+                          <Box
+                            key={index}
+                            onClick={() => handleSuggestionSelect(suggestion)}
+                            sx={{
+                              p: 1.5,
+                              cursor: 'pointer',
+                              bgcolor: selectedSuggestionIndex === index ? '#334155' : 'transparent',
+                              borderLeft: selectedSuggestionIndex === index ? '3px solid #f59e0b' : '3px solid transparent',
+                              '&:hover': { bgcolor: '#334155' }
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ color: 'white' }}>
+                              {suggestion}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Paper>
+                    )}
+                    
+                    {/* Proactive Assistance Alert */}
+                    {proactiveAssistance && !messageInput.trim() && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: -50,
+                          left: 0,
+                          right: 0,
+                          zIndex: 999
+                        }}
+                      >
+                        <Alert 
+                          severity="info" 
+                          sx={{ 
+                            bgcolor: '#1e293b', 
+                            color: '#94a3b8',
+                            border: '1px solid #334155',
+                            '& .MuiAlert-icon': { color: '#f59e0b' }
+                          }}
+                          onClose={() => setProactiveAssistance(null)}
+                        >
+                          {proactiveAssistance}
+                        </Alert>
+                      </Box>
+                    )}
+                  </Box>
                   
                   {/* Voice Recording Button */}
                   <IconButton
@@ -2965,10 +3203,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 {rightPanelType === 'analytics' && selectedChatbot && (
                   <Box>
                     <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
-                      Analytics Dashboard
+                      Enhanced Analytics Dashboard
                     </Typography>
                     
-                    {/* Key Metrics */}
+                    {/* Real-time Status */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                          <Box sx={{ 
+                            width: 8, 
+                            height: 8, 
+                            borderRadius: '50%', 
+                            bgcolor: autonomousMode ? '#10b981' : '#6b7280',
+                            animation: autonomousMode ? 'pulse 2s infinite' : 'none'
+                          }} />
+                          <Typography variant="body1" sx={{ color: 'white', fontWeight: 600 }}>
+                            Agent Status: {autonomousMode ? 'Autonomous Mode Active' : 'Interactive Mode'}
+                          </Typography>
+                        </Box>
+                        {currentTaskPlan && (
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Current Task: {currentTaskPlan.goal}
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Enhanced Key Metrics */}
                     <Grid container spacing={1} sx={{ mb: 2 }}>
                       <Grid item xs={6}>
                         <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
@@ -2978,6 +3239,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             </Typography>
                             <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
                               {getRealMetricsSync(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Avg last 24h
                             </Typography>
                           </CardContent>
                         </Card>
@@ -2991,13 +3255,108 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1rem' }}>
                               {getRealMetricsSync(selectedChatbot).satisfactionScore.toFixed(1)}/5
                             </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              User feedback
+                            </Typography>
                           </CardContent>
                         </Card>
                       </Grid>
                       <Grid item xs={6}>
                         <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
-                          <CardContent sx={{ p: 2 }}>
-                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Autonomous Tasks
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {projects.length}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Active projects
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Team Collaboration
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {unreadTeamCount}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Unread messages
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Autonomous Mode Analytics */}
+                    {autonomousMode && currentTaskPlan && (
+                      <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="body1" sx={{ color: 'white', mb: 1, fontWeight: 600 }}>
+                            Autonomous Execution Analytics
+                          </Typography>
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                Progress
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#10b981' }}>
+                                {Math.round((currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100)}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={(currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100}
+                              sx={{ 
+                                bgcolor: '#334155',
+                                '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                              }}
+                            />
+                          </Box>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Phase {currentTaskPlan.currentPhaseId} of {currentTaskPlan.phases.length}: {
+                              currentTaskPlan.phases.find(p => p.id === currentTaskPlan.currentPhaseId)?.title || 'Unknown'
+                            }
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Team Collaboration Analytics */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="body1" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
+                          Team Collaboration Metrics
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Box sx={{ textAlign: 'center' }}>
+                              <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                                {teamMembers.length}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                Team Members
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Box sx={{ textAlign: 'center' }}>
+                              <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                                {teamConversations.length}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                Active Chats
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
                               Resolution Rate
                             </Typography>
                             <Typography variant="h5" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
