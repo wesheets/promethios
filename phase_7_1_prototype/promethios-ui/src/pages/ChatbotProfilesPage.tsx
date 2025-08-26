@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../services/ChatbotStorageService';
+import TeamPanel from '../components/team/TeamPanel';
 import {
   Box,
   Container,
@@ -28,6 +29,10 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
+  Drawer,
+  Tabs,
+  Tab,
+  Paper,
 } from '@mui/material';
 import {
   Search,
@@ -53,6 +58,10 @@ import {
   Api,
   Chat as Slack,
   Microsoft,
+  Group,
+  History,
+  Analytics,
+  Close,
 } from '@mui/icons-material';
 
 const ChatbotProfilesPage: React.FC = () => {
@@ -72,6 +81,10 @@ const ChatbotProfilesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [testChatOpen, setTestChatOpen] = useState(false);
   const [selectedChatbotId, setSelectedChatbotId] = useState<string | null>(null);
+  
+  // Right panel state
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState(0);
 
   const loadChatbots = useCallback(async () => {
     console.log('🔍 loadChatbots called, user:', user?.uid);
@@ -188,6 +201,20 @@ const ChatbotProfilesPage: React.FC = () => {
     loadChatbots();
   };
 
+  // Right panel handlers
+  const handleOpenRightPanel = (tab: number = 0) => {
+    setRightPanelTab(tab);
+    setRightPanelOpen(true);
+  };
+
+  const handleCloseRightPanel = () => {
+    setRightPanelOpen(false);
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setRightPanelTab(newValue);
+  };
+
   // Empty state - only show when user is available and no chatbots found
   if (!loading && user?.uid && chatbotProfiles.length === 0) {
     return (
@@ -244,6 +271,18 @@ const ChatbotProfilesPage: React.FC = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            startIcon={<Group />}
+            onClick={() => handleOpenRightPanel(0)}
+            sx={{ 
+              color: 'white', 
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              '&:hover': { borderColor: 'rgba(255, 255, 255, 0.5)' }
+            }}
+          >
+            Team
+          </Button>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
@@ -546,6 +585,97 @@ const ChatbotProfilesPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Right Panel Drawer */}
+      <Drawer
+        anchor="right"
+        open={rightPanelOpen}
+        onClose={handleCloseRightPanel}
+        PaperProps={{
+          sx: {
+            width: 400,
+            backgroundColor: '#1e293b',
+            color: 'white',
+          },
+        }}
+      >
+        <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          {/* Header */}
+          <Box sx={{ 
+            p: 2, 
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+              Collaboration Hub
+            </Typography>
+            <IconButton
+              onClick={handleCloseRightPanel}
+              sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+
+          {/* Tabs */}
+          <Box sx={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <Tabs
+              value={rightPanelTab}
+              onChange={handleTabChange}
+              sx={{
+                '& .MuiTab-root': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  '&.Mui-selected': {
+                    color: '#3182ce',
+                  },
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#3182ce',
+                },
+              }}
+            >
+              <Tab 
+                icon={<Group />} 
+                label="Team" 
+                sx={{ minHeight: 48 }}
+              />
+              <Tab 
+                icon={<History />} 
+                label="History" 
+                sx={{ minHeight: 48 }}
+              />
+              <Tab 
+                icon={<Analytics />} 
+                label="Analytics" 
+                sx={{ minHeight: 48 }}
+              />
+            </Tabs>
+          </Box>
+
+          {/* Tab Content */}
+          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            {rightPanelTab === 0 && (
+              <TeamPanel currentUserId={user?.uid} />
+            )}
+            {rightPanelTab === 1 && (
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Chat history will be implemented here.
+                </Typography>
+              </Box>
+            )}
+            {rightPanelTab === 2 && (
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Analytics dashboard will be implemented here.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      </Drawer>
     </Container>
   );
 };
