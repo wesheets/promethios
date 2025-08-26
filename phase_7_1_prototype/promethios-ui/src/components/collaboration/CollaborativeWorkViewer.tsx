@@ -117,7 +117,6 @@ import {
   DonutLarge,
   FolderOpen,
   Folder,
-  Description,
   Code,
   BugReport,
   Build,

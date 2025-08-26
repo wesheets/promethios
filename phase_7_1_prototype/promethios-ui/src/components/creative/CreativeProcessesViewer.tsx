@@ -57,8 +57,6 @@ import {
   Step,
   StepLabel,
   StepContent,
-  List,
-  ListItem,
   ListItemText,
   ListItemIcon
 } from '@mui/material';

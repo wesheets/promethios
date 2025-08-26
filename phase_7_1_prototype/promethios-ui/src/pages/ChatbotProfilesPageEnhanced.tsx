@@ -116,7 +116,6 @@ import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
 import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
 import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
 import { SimplifiedKnowledgeViewer } from '../components/knowledge/SimplifiedKnowledgeViewer';
-import { ChatbotProfile } from '../types/ChatbotTypes';
 import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
