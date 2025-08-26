@@ -414,14 +414,25 @@ body {
 /* Metrics Panel - Vertical Stack Centered in Scorecard */
 .metrics-panel {
   position: absolute;
-  bottom: 120px;
-  left: 50%;
+  bottom: 140px;
+  left: 53%;
   transform: translateX(-50%);
   width: 320px;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
   font-size: 0.75rem;
+}
+
+.metrics-panel::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .metric {
