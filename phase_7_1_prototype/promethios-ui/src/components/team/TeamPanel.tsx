@@ -811,7 +811,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 primary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                      {agent.name}
+                      {agent.identity?.name || agent.name || 'AI Agent'}
                     </Typography>
                     {favoriteAgents.has(agent.id) && (
                       <Star sx={{ fontSize: 14, color: '#fbbf24' }} />
@@ -821,7 +821,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 secondary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Chip
-                      label={agent.model || 'AI Agent'}
+                      label={agent.configuration?.selectedModel || agent.model || 'AI Agent'}
                       size="small"
                       sx={{
                         bgcolor: getAgentStatusColor(agent),
