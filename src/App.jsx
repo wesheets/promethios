@@ -219,7 +219,7 @@ function App() {
           {/* Main Content Area */}
           <main className="main-content">
             <div className="content-container">
-              {/* Hero Section */}
+              {/* Left Side - Hero Text */}
               <section className="hero-section">
                 <h1 className="hero-title">
                   Transform Any AI Into<br />
@@ -236,8 +236,8 @@ function App() {
                 </div>
               </section>
 
-              {/* Animation Area */}
-              <section className="animation-area">
+              {/* Right Side - Full Width Animation */}
+              <section className="animation-section">
                 {/* Center Scorecard */}
                 <div className="center-scorecard-container">
                   <div 
@@ -258,7 +258,7 @@ function App() {
                       />
                     </div>
 
-                    {/* Metrics Panel */}
+                    {/* Metrics Panel Inside Scorecard */}
                     <div className="metrics-panel">
                       <div 
                         className={`metric ${activeConnections.includes('trust') ? 'active' : ''}`}

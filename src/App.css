@@ -167,12 +167,12 @@ body {
 }
 
 .content-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  gap: 0;
   align-items: center;
   min-height: calc(100vh - 80px);
 }
@@ -180,6 +180,13 @@ body {
 /* Hero Section */
 .hero-section {
   animation: heroAppear 1s ease-out 0.5s both;
+  padding: 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: 2rem;
 }
 
 .hero-title {
@@ -242,14 +249,26 @@ body {
   background: rgba(59, 130, 246, 0.1);
 }
 
-@keyframes heroAppear {
-  0% {
+/* Animation Section - Full Width Right Side */
+.animation-section {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: calc(100vh - 80px);
+  width: 100%;
+  animation: animationAppear 1s ease-out 1s both;
+}
+
+@keyframes animationAppear {
+  from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateX(50px);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
@@ -273,12 +292,9 @@ body {
 
 /* Center Scorecard */
 .center-scorecard-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 700px;
-  height: 700px;
+  position: relative;
+  width: 800px;
+  height: 800px;
 }
 
 .center-scorecard {
@@ -395,10 +411,10 @@ body {
   }
 }
 
-/* Metrics Panel */
+/* Metrics Panel - Fixed Size Inside Scorecard */
 .metrics-panel {
   position: absolute;
-  top: 85%;
+  bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
   width: 500px;
