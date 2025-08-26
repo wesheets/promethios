@@ -15,6 +15,7 @@ import anthropicLogo from './assets/cdnlogo.com_anthropic.png';
 import googleGeminiLogo from './assets/google-gemini-1024.png';
 import cohereLogo from './assets/Cohere-Logo-500x281.png';
 import perplexityLogo from './assets/Perplexity-Logo.png';
+import grokLogo from './assets/groklogo.png';
 import huggingfaceLogo from './assets/huggingface-logo.png';
 
 // Import background
