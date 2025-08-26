@@ -111,7 +111,7 @@ function App() {
 
       // After all metrics and final transformation, switch to next logo
       setTimeout(() => {
-        setCurrentLogoIndex(prev => (prev + 1) % llmLogos.length);
+        setCurrentLogoIndex(prev => (prev + 1) % aiCompanies.length);
       }, (metricsOrder.length + 4) * 1000);
     };
 
@@ -204,8 +204,8 @@ function App() {
                     {/* LLM Logo Slider */}
                     <div className="logo-slider">
                       <img 
-                        src={llmLogos[currentLogoIndex].image} 
-                        alt={llmLogos[currentLogoIndex].name}
+                        src={aiCompanies[currentLogoIndex].logo} 
+                        alt={aiCompanies[currentLogoIndex].name}
                         className="current-logo"
                         key={currentLogoIndex}
                       />
