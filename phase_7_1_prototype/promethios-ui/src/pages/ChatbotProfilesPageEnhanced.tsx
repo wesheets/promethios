@@ -6,6 +6,12 @@ import AttachmentRenderer from '../components/AttachmentRenderer';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
 import { OrganizationManagementService, Organization } from '../services/OrganizationManagementService';
 import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../services/HumanChatService';
+// Autonomous systems imports
+import { AutonomousGovernanceExtension, AutonomousTaskPlan, AutonomousPhase, AutonomousExecutionState } from '../services/AutonomousGovernanceExtension';
+import { AutonomousTaskPlanningEngine } from '../services/AutonomousTaskPlanningEngine';
+import { AutonomousComplianceMonitor } from '../services/AutonomousComplianceMonitor';
+import { AutonomousRiskAssessment } from '../services/AutonomousRiskAssessment';
+import { AutonomousApprovalWorkflow } from '../services/AutonomousApprovalWorkflow';
 import {
   Box,
   Container,
@@ -43,7 +49,7 @@ import {
   Palette,
   Psychology,
   Settings,
-  Close,
+  Close as CloseIcon,
   Chat,
   Rocket,
   MoreVert,
@@ -183,6 +189,42 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     globalComponentInstance = componentId.current;
     console.log(`🔍 ChatbotProfilesPageEnhanced component mounting... (${componentId.current})`);
     
+    // Initialize autonomous systems
+    const initializeAutonomousSystems = async () => {
+      try {
+        console.log('🤖 [Autonomous] Initializing autonomous systems...');
+        
+        // Initialize autonomous governance
+        const governance = new AutonomousGovernanceExtension();
+        setAutonomousGovernance(governance);
+        
+        // Set up autonomous event listeners
+        governance.onTaskPlanCreated((taskPlan: AutonomousTaskPlan) => {
+          console.log('🤖 [Autonomous] Task plan created:', taskPlan);
+          setCurrentTaskPlan(taskPlan);
+          setAutonomousMode(true);
+          setLiveAgentPanelOpen(true); // Auto-open Live Agent panel
+        });
+        
+        governance.onExecutionStateChanged((state: AutonomousExecutionState) => {
+          console.log('🤖 [Autonomous] Execution state changed:', state);
+          setAutonomousExecutionState(state);
+        });
+        
+        governance.onTaskCompleted((taskPlan: AutonomousTaskPlan) => {
+          console.log('🤖 [Autonomous] Task completed:', taskPlan);
+          setAutonomousMode(false);
+          // Keep Live Agent panel open to show completion status
+        });
+        
+        console.log('✅ [Autonomous] Autonomous systems initialized successfully');
+      } catch (error) {
+        console.error('❌ [Autonomous] Failed to initialize autonomous systems:', error);
+      }
+    };
+    
+    initializeAutonomousSystems();
+    
     return () => {
       mountedRef.current = false;
       if (globalComponentInstance === componentId.current) {
@@ -253,6 +295,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [unreadTeamCount, setUnreadTeamCount] = useState(0);
+  
+  // Autonomous systems state
+  const [autonomousGovernance, setAutonomousGovernance] = useState<AutonomousGovernanceExtension | null>(null);
+  const [currentTaskPlan, setCurrentTaskPlan] = useState<AutonomousTaskPlan | null>(null);
+  const [autonomousExecutionState, setAutonomousExecutionState] = useState<AutonomousExecutionState | null>(null);
+  const [liveAgentPanelOpen, setLiveAgentPanelOpen] = useState(false);
+  const [autonomousMode, setAutonomousMode] = useState(false);
+  const [autonomousStarsActive, setAutonomousStarsActive] = useState(false);
   
   // Add metrics caching to prevent repeated calculations
   const metricsCache = useRef<Map<string, { metrics: ChatbotMetrics; timestamp: number }>>(new Map());
@@ -428,6 +478,50 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         isOpen: !prev.sidePanel.isOpen
       }
     }));
+  };
+
+  // Live Agent panel control functions
+  const toggleLiveAgentPanel = () => {
+    setLiveAgentPanelOpen(prev => !prev);
+  };
+
+  const handleLiveAgentTabClick = () => {
+    toggleLiveAgentPanel();
+  };
+
+  const startAutonomousMode = async (goal: string) => {
+    if (!autonomousGovernance) {
+      console.error('❌ [Autonomous] Governance system not initialized');
+      return;
+    }
+
+    try {
+      console.log('🤖 [Autonomous] Starting autonomous mode with goal:', goal);
+      setAutonomousStarsActive(true);
+      
+      // Create task plan
+      const taskPlan = await autonomousGovernance.createTaskPlan({
+        goal,
+        description: `Autonomous task: ${goal}`,
+        agentId: selectedChatbotId || 'default',
+        userId: user?.uid || 'anonymous'
+      });
+      
+      // Auto-open Live Agent panel
+      setLiveAgentPanelOpen(true);
+      
+      console.log('✅ [Autonomous] Autonomous mode started successfully');
+    } catch (error) {
+      console.error('❌ [Autonomous] Failed to start autonomous mode:', error);
+    }
+  };
+
+  const stopAutonomousMode = () => {
+    if (autonomousGovernance && currentTaskPlan) {
+      autonomousGovernance.pauseExecution(currentTaskPlan.id);
+    }
+    setAutonomousMode(false);
+    setAutonomousStarsActive(false);
   };
 
   // Helper function to update chat history refresh trigger
@@ -2588,14 +2682,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'receipts', label: 'RECEIPTS' },
                     { key: 'memory', label: 'MEMORY' },
                     { key: 'sandbox', label: 'SANDBOX' },
-                    { key: 'live_agent', label: 'LIVE AGENT' },
+                    { key: 'live_agent', label: 'LIVE AGENT', badge: autonomousMode ? 1 : 0, isLiveAgent: true },
                     { key: 'governance', label: 'GOVERNANCE' },
                     { key: 'debug', label: 'DEBUG' }
                   ].map((tab) => (
                     <Badge
                       key={tab.key}
                       badgeContent={tab.badge || 0}
-                      color="error"
+                      color={tab.isLiveAgent && autonomousMode ? "success" : "error"}
                       invisible={!tab.badge || tab.badge === 0}
                       sx={{
                         '& .MuiBadge-badge': {
@@ -2608,18 +2702,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       <Button
                         size="small"
                         variant={rightPanelType === tab.key ? 'contained' : 'outlined'}
-                        onClick={() => setRightPanelType(tab.key as RightPanelType)}
+                        onClick={() => {
+                          if (tab.key === 'live_agent') {
+                            handleLiveAgentTabClick();
+                          } else {
+                            setRightPanelType(tab.key as RightPanelType);
+                          }
+                        }}
                         sx={{
                           fontSize: '0.7rem',
                           px: 1.5,
                           py: 0.5,
                           minWidth: 'auto',
                           borderColor: '#374151',
-                          color: rightPanelType === tab.key ? 'white' : '#94a3b8',
-                          bgcolor: rightPanelType === tab.key ? '#3b82f6' : 'transparent',
+                          color: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? 'white' : '#94a3b8',
+                          bgcolor: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? '#3b82f6' : 'transparent',
                           '&:hover': { 
                             borderColor: '#4b5563', 
-                            bgcolor: rightPanelType === tab.key ? '#2563eb' : '#374151' 
+                            bgcolor: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? '#2563eb' : '#374151' 
                           },
                         }}
                       >
@@ -4089,6 +4189,127 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           />
         )}
       </Box>
+
+      {/* Live Agent Panel - Slides out from right */}
+      <Slide direction="left" in={liveAgentPanelOpen} mountOnEnter unmountOnExit>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: { xs: '100%', md: '400px', lg: '450px' },
+            height: '100vh',
+            bgcolor: '#1e293b',
+            borderLeft: '1px solid #334155',
+            zIndex: 1300,
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.3)'
+          }}
+        >
+          {/* Live Agent Header */}
+          <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ 
+                  width: 12, 
+                  height: 12, 
+                  borderRadius: '50%', 
+                  bgcolor: autonomousMode ? '#10b981' : '#6b7280',
+                  animation: autonomousMode ? 'pulse 2s infinite' : 'none'
+                }} />
+                <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                  Live Agent Monitor
+                </Typography>
+              </Box>
+              <IconButton 
+                onClick={toggleLiveAgentPanel}
+                sx={{ color: '#64748b', '&:hover': { color: 'white' } }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
+              {autonomousMode ? 'Agent is working autonomously' : 'Agent is idle'}
+            </Typography>
+          </Box>
+
+          {/* Live Agent Content */}
+          <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+            {currentTaskPlan ? (
+              <Box>
+                <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                  Current Task: {currentTaskPlan.goal}
+                </Typography>
+                
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                    Progress
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100}
+                    sx={{ 
+                      bgcolor: '#334155',
+                      '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+                    Phases
+                  </Typography>
+                  {currentTaskPlan.phases.map((phase, index) => (
+                    <Box key={phase.id} sx={{ mb: 2, p: 2, bgcolor: '#0f172a', borderRadius: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <Box sx={{ 
+                          width: 8, 
+                          height: 8, 
+                          borderRadius: '50%', 
+                          bgcolor: phase.status === 'completed' ? '#10b981' : 
+                                   phase.status === 'in_progress' ? '#f59e0b' : '#6b7280'
+                        }} />
+                        <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                          {phase.title}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>
+                        {phase.description}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" sx={{ color: '#64748b', mb: 2 }}>
+                  No active autonomous tasks
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  Start an autonomous task to see live monitoring here
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* Live Agent Controls */}
+          {autonomousMode && currentTaskPlan && (
+            <Box sx={{ p: 3, borderTop: '1px solid #334155', flexShrink: 0 }}>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                onClick={stopAutonomousMode}
+                sx={{ mb: 1 }}
+              >
+                Stop Autonomous Mode
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Slide>
     </Box>
   );
 };
