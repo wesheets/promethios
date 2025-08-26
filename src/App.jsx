@@ -4,6 +4,7 @@ import './App.css';
 // Import flame assets
 import flameVideo from './assets/0801.mp4';
 import promethiosLogo from './assets/promethiosnoflame.png';
+import promethiosLogoLong from './assets/promethios-logo-long.png';
 
 // Import scorecard and node assets
 import centerScorecard from './assets/centerscorecard.png';
@@ -153,17 +154,16 @@ function App() {
         <>
           {/* Header */}
           <header className="header">
-            <div className="nav-container">
-              <div className="logo">
-                <span className="logo-icon">🔥</span>
-                <span className="logo-text">PROMETHIOS</span>
-              </div>
-              <nav className="nav-menu">
-                <a href="#features">Features</a>
-                <a href="#about">About</a>
-                <a href="#contact">Contact</a>
-                <button className="nav-cta">Get Started</button>
-              </nav>
+            <div className="logo">
+              <img src={promethiosLogoLong} alt="Promethios" className="logo-image" />
+            </div>
+            <nav className="nav-menu">
+              <a href="#features">Features</a>
+              <a href="#about">About</a>
+              <a href="#contact">Contact</a>
+            </nav>
+            <div className="header-buttons">
+              <button className="btn-secondary">Get Started</button>
             </div>
           </header>
 
