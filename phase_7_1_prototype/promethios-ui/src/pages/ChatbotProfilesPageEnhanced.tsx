@@ -2246,17 +2246,69 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
                 {/* Context Header */}
                 <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
                       {multiChatState.contexts.find(c => c.isActive)?.name || 'Chat'}
                       {currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      {multiChatState.activeContextId === 'ai_agent' 
-                        ? selectedChatbot?.identity?.name || 'Agent'
-                        : 'Team Member'
+                    
+                    {/* Multi-Agent Participants Display */}
+                    {(() => {
+                      const activeContext = multiChatState.contexts.find(c => c.isActive);
+                      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+                      
+                      if (multiChatState.activeContextId === 'ai_agent' && hasGuestAgents) {
+                        return (
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Participants:
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                              {/* Host Agent */}
+                              <Chip
+                                avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
+                                label={`${selectedChatbot?.identity?.name || 'Host Agent'} (Host)`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#3b82f6',
+                                  color: 'white',
+                                  '& .MuiChip-avatar': { color: 'white' }
+                                }}
+                              />
+                              
+                              {/* Guest Agents */}
+                              {activeContext.guestAgents.map((guest) => (
+                                <Chip
+                                  key={guest.agentId}
+                                  avatar={<Avatar src={guest.avatar} sx={{ width: 20, height: 20 }} />}
+                                  label={guest.name}
+                                  size="small"
+                                  onDelete={() => removeGuestAgent(guest.agentId)}
+                                  sx={{
+                                    bgcolor: '#10b981',
+                                    color: 'white',
+                                    '& .MuiChip-avatar': { color: 'white' },
+                                    '& .MuiChip-deleteIcon': { 
+                                      color: 'white',
+                                      '&:hover': { color: '#fecaca' }
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        );
+                      } else {
+                        return (
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            {multiChatState.activeContextId === 'ai_agent' 
+                              ? selectedChatbot?.identity?.name || 'Agent'
+                              : 'Team Member'
+                            }
+                          </Typography>
+                        );
                       }
-                    </Typography>
+                    })()}
                   </Box>
                   <Button
                     variant="outlined"
@@ -3095,7 +3147,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               {/* Panel Content */}
               <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {rightPanelType === 'team' && (
-                  <TeamPanel currentUserId={user?.uid} />
+                  <TeamPanel 
+                    currentUserId={user?.uid} 
+                    onAddGuestAgent={addGuestAgent}
+                  />
                 )}
                 
                 {rightPanelType === 'repo' && (
