@@ -241,7 +241,7 @@ export class TeamCollaborationIntegrationService {
         : [];
 
       // Load human chats
-      const humanChats = await this.chatService.getUserChats(userId);
+      const humanChats = await this.chatService.getUserConversations();
 
       // Load guest sessions
       const guestSessions = await this.guestService.getUserGuestSessions(userId);
