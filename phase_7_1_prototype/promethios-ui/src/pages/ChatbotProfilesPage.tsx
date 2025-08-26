@@ -179,7 +179,7 @@ const ChatbotProfilesPage: React.FC = () => {
 
   // Handle actions
   const handleTestChat = (chatbotId: string) => {
-    navigate(`/ui/chat/chatbots?agent=chatbot_${chatbotId}`);
+    navigate(`/ui/chat/chatbots?agent=${chatbotId}`);
   };
 
   const handleViewAnalytics = (chatbotId: string) => {
