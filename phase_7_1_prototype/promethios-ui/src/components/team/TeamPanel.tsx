@@ -75,21 +75,33 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initialize all services
-    humanChatService.initialize(currentUserId);
-    collaborationService.initialize(currentUserId);
-    orgService.initialize(currentUserId);
-    
-    // Load initial data
-    loadTeamData();
-    loadOrganizationData();
-    loadCollaborationState();
-    
-    // Set user as online
-    humanChatService.updateUserStatus('online');
+    const initializeTeamPanel = async () => {
+      try {
+        // Initialize all services
+        humanChatService.initialize(currentUserId);
+        
+        // Use the correct method for collaboration service
+        const userName = `User ${currentUserId}`; // You might want to get this from auth context
+        const state = await collaborationService.initializeUserCollaboration(currentUserId, userName);
+        setCollaborationState(state);
+        
+        // OrganizationManagementService doesn't need initialization
+        
+        // Load initial data
+        loadTeamData();
+        loadOrganizationData();
+        
+        // Set user as online
+        humanChatService.updateUserStatus('online');
 
-    // Set up real-time listeners
-    setupRealtimeListeners();
+        // Set up real-time listeners
+        setupRealtimeListeners();
+      } catch (error) {
+        console.error('❌ [Team] Failed to initialize team collaboration:', error);
+      }
+    };
+
+    initializeTeamPanel();
 
     // Cleanup on unmount
     return () => {
