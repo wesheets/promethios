@@ -5,6 +5,7 @@
  * for the right panel of the Agent Command Center.
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -50,6 +51,9 @@ interface TeamPanelProps {
 const TeamPanel: React.FC<TeamPanelProps> = ({ 
   onChatReference
 }) => {
+  // Navigation hook
+  const navigate = useNavigate();
+  
   // Get real user from auth context
   const { currentUser: user, loading: authLoading } = useAuth();
   const currentUserId = user?.uid || 'anonymous';
@@ -419,8 +423,14 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   };
 
   const handleAgentCommandCenter = (agentId: string) => {
-    // Navigate to agent's command center
-    window.open(`/chat/chatbots/agent-chatbot-${agentId}?panel=team`, '_blank');
+    // Navigate to agent's command center in same window (like chatbot scorecard page)
+    navigate(`/ui/chat/chatbots?agent=${agentId}&panel=chats`);
+  };
+
+  const handleAddAgentToChat = (agentId: string) => {
+    // TODO: Implement multi-agent chat functionality
+    console.log(`🤖 [Multi-Agent] Adding agent ${agentId} to current chat`);
+    // This will be implemented as part of the multi-agent collaboration system
   };
 
   const getAgentStatus = (agent: ChatbotProfile) => {
@@ -840,16 +850,34 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                 <Tooltip title={favoriteAgents.has(agent.id) ? 'Remove from favorites' : 'Add to favorites'}>
                   <IconButton
                     size="small"
-                    onClick={() => toggleFavoriteAgent(agent.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavoriteAgent(agent.id);
+                    }}
                     sx={{ color: favoriteAgents.has(agent.id) ? '#fbbf24' : '#6b7280' }}
                   >
                     {favoriteAgents.has(agent.id) ? <Star sx={{ fontSize: 16 }} /> : <StarBorder sx={{ fontSize: 16 }} />}
                   </IconButton>
                 </Tooltip>
+                <Tooltip title="Add to Current Chat">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddAgentToChat(agent.id);
+                    }}
+                    sx={{ color: '#10b981', '&:hover': { color: '#059669' } }}
+                  >
+                    <Add sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
                 <Tooltip title="Open Command Center">
                   <IconButton
                     size="small"
-                    onClick={() => handleAgentCommandCenter(agent.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAgentCommandCenter(agent.id);
+                    }}
                     sx={{ color: '#6b7280', '&:hover': { color: '#3b82f6' } }}
                   >
                     <Launch sx={{ fontSize: 16 }} />
