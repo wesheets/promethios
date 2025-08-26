@@ -14,10 +14,20 @@ body {
   background-attachment: fixed;
   color: #ffffff;
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
+html {
+  background-image: url('./assets/gradient-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
 .app {
   min-height: 100vh;
+  background: transparent;
   position: relative;
 }
 
@@ -481,197 +491,40 @@ body {
   --metric-color: #ef4444;
 }
 
-/* Push-Down Animation Effects */
-.push-down-effect {
-  position: absolute;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
+/* Scorecard Glow Effects */
+.scorecard.glow-trust {
+  box-shadow: 0 0 30px #6366f1;
 }
 
-.push-down-effect.active {
-  opacity: 1;
+.scorecard.glow-security {
+  box-shadow: 0 0 30px #f59e0b;
 }
 
-/* Trust Node Push-Down - Indigo */
-.push-down-effect:nth-child(1) {
-  top: 25%;
-  left: 0px;
-  width: 200px;
-  height: 300px;
+.scorecard.glow-monitoring {
+  box-shadow: 0 0 30px #3b82f6;
 }
 
-.push-down-effect:nth-child(1)::before {
-  content: '';
-  position: absolute;
-  background: linear-gradient(180deg, #6366f1, transparent);
-  box-shadow: 0 0 15px #6366f1;
-  width: 60px;
-  height: 200px;
-  top: 60px;
-  left: 30px;
-  animation: pushDownGlow 1.2s ease-out;
-  border-radius: 30px;
+.scorecard.glow-compliance {
+  box-shadow: 0 0 30px #10b981;
 }
 
-/* Security Node Push-Down - Amber */
-.push-down-effect:nth-child(2) {
-  top: 33%;
-  left: 0px;
-  width: 200px;
-  height: 300px;
+.scorecard.glow-memory {
+  box-shadow: 0 0 30px #ef4444;
 }
 
-.push-down-effect:nth-child(2)::before {
-  content: '';
-  position: absolute;
-  background: linear-gradient(180deg, #f59e0b, transparent);
-  box-shadow: 0 0 15px #f59e0b;
-  width: 60px;
-  height: 200px;
-  top: 60px;
-  left: 30px;
-  animation: pushDownGlow 1.2s ease-out 0.3s both;
-  border-radius: 30px;
+.scorecard.glow-rainbow {
+  box-shadow: 
+    0 0 20px #6366f1,
+    0 0 40px #f59e0b,
+    0 0 60px #3b82f6,
+    0 0 80px #10b981,
+    0 0 100px #ef4444;
+  animation: rainbowPulse 1s ease-in-out;
 }
 
-/* Monitoring Node Push-Down - Blue */
-.push-down-effect:nth-child(3) {
-  top: 41%;
-  left: 0px;
-  width: 200px;
-  height: 300px;
-}
-
-.push-down-effect:nth-child(3)::before {
-  content: '';
-  position: absolute;
-  background: linear-gradient(180deg, #3b82f6, transparent);
-  box-shadow: 0 0 15px #3b82f6;
-  width: 60px;
-  height: 200px;
-  top: 60px;
-  left: 30px;
-  animation: pushDownGlow 1.2s ease-out 0.6s both;
-  border-radius: 30px;
-}
-
-/* Compliance Node Push-Down - Green */
-.push-down-effect:nth-child(4) {
-  top: 49%;
-  left: 0px;
-  width: 200px;
-  height: 300px;
-}
-
-.push-down-effect:nth-child(4)::before {
-  content: '';
-  position: absolute;
-  background: linear-gradient(180deg, #10b981, transparent);
-  box-shadow: 0 0 15px #10b981;
-  width: 60px;
-  height: 200px;
-  top: 60px;
-  left: 30px;
-  animation: pushDownGlow 1.2s ease-out 0.9s both;
-  border-radius: 30px;
-}
-
-/* Memory Node Push-Down - Red */
-.push-down-effect:nth-child(5) {
-  top: 57%;
-  left: 0px;
-  width: 200px;
-  height: 300px;
-}
-
-.push-down-effect:nth-child(5)::before {
-  content: '';
-  position: absolute;
-  background: linear-gradient(180deg, #ef4444, transparent);
-  box-shadow: 0 0 15px #ef4444;
-  width: 60px;
-  height: 200px;
-  top: 60px;
-  left: 30px;
-  animation: pushDownGlow 1.2s ease-out 1.2s both;
-  border-radius: 30px;
-}
-
-/* Push-Down Animation Keyframes */
-@keyframes pushDownGlow {
-  0% { 
-    height: 0; 
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  30% { 
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% { 
-    height: 200px; 
-    opacity: 0.8;
-    transform: translateY(0);
-  }
-}
-
-@keyframes lineGrowVertical {
-  0% { height: 0; }
-  100% { height: 110px; }
-}
-
-@keyframes lineGrowVerticalUp {
-  0% { height: 0; transform: translateY(80px); }
-  100% { height: 80px; transform: translateY(0); }
-}
-
-/* Governance Nodes - Left Side Vertical Stack */
-.governance-node {
-  position: absolute;
-  width: 120px; /* 2x larger (was 80px) */
-  height: 120px; /* 2x larger (was 80px) */
-  animation: nodeAppear 0.8s ease-out both;
-  transition: all 0.3s ease;
-  /* Position is set via inline styles in JSX */
-}
-
-/* Animation delays for each node */
-.governance-node:nth-child(1) { animation-delay: 1.2s; }
-.governance-node:nth-child(2) { animation-delay: 1.4s; }
-.governance-node:nth-child(3) { animation-delay: 1.6s; }
-.governance-node:nth-child(4) { animation-delay: 1.8s; }
-.governance-node:nth-child(5) { animation-delay: 2.0s; }
-
-@keyframes nodeAppear {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.governance-node:hover {
-  /* Removed hover effects for cleaner appearance */
-}
-
-.governance-node.connected {
-  /* Removed connected animation effects */
-}
-
-/* Removed unused nodeActivate animation keyframes */
-
-.governance-node img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.node-label {
-  display: none; /* Hide labels as requested */
+@keyframes rainbowPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
 
 /* Responsive Design */

@@ -7,11 +7,6 @@ import promethiosLogo from './assets/promethiosnoflame.png';
 
 // Import scorecard and node assets
 import centerScorecard from './assets/centerscorecard.png';
-import trustNode from './assets/trustnode.png';
-import cryptographicLogs from './assets/cryptographiclogs.png';
-import realtimeMonitoring from './assets/realtimemonitoringnode.png';
-import complianceNode from './assets/compliancenode.png';
-import memoryNode from './assets/memorynode.png';
 
 // Import LLM logos
 import openaiLogo from './assets/e3d927054278d43b838afed1939de03b.png';
@@ -28,7 +23,6 @@ function App() {
   const [showFlame, setShowFlame] = useState(true);
   const [showContent, setShowContent] = useState(false);
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
-  const [activeConnections, setActiveConnections] = useState([]);
   const [metrics, setMetrics] = useState({
     trust: 0,
     security: 0,
@@ -36,9 +30,8 @@ function App() {
     compliance: 0,
     memory: 0
   });
-  const [scorecardGlow, setScorecardGlow] = useState('');
 
-  // Simple flame loader - runs once on mount
+  // Flame loader - runs once on mount
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowFlame(false);
@@ -58,57 +51,12 @@ function App() {
     { id: 'grok', name: 'Grok', image: grokLogo }
   ];
 
-  // Governance nodes data - Left side vertical stack
-  const governanceNodes = [
-    { 
-      id: 'trust', 
-      label: 'Trust Score', 
-      image: trustNode, 
-      color: '#6366f1', // indigo
-      position: { top: '25%', left: '120px' },
-      metric: 'trust'
-    },
-    { 
-      id: 'security', 
-      label: 'Security Audit Logs', 
-      image: cryptographicLogs, 
-      color: '#f59e0b', // amber
-      position: { top: '33%', left: '120px' },
-      metric: 'security'
-    },
-    { 
-      id: 'monitoring', 
-      label: 'Real-time Monitoring', 
-      image: realtimeMonitoring, 
-      color: '#3b82f6', // blue
-      position: { top: '41%', left: '120px' },
-      metric: 'monitoring'
-    },
-    { 
-      id: 'compliance', 
-      label: 'Compliance', 
-      image: complianceNode, 
-      color: '#10b981', // green
-      position: { top: '49%', left: '120px' },
-      metric: 'compliance'
-    },
-    { 
-      id: 'memory', 
-      label: 'Memory', 
-      image: memoryNode, 
-      color: '#ef4444', // red
-      position: { top: '57%', left: '120px' },
-      metric: 'memory'
-    }
-  ];
-
   // Animation sequence for each logo
   useEffect(() => {
     if (!showContent) return;
 
     const startSequence = () => {
-      // Reset state
-      setActiveConnections([]);
+      // Reset metrics to 0
       setMetrics({
         trust: 0,
         security: 0,
@@ -118,25 +66,24 @@ function App() {
       });
       setScorecardGlow('');
 
-      // Randomize node connection order for visual variety
-      const shuffledNodes = [...governanceNodes].sort(() => Math.random() - 0.5);
+      // Animate metrics one by one
+      const metricsOrder = ['trust', 'security', 'monitoring', 'compliance', 'memory'];
+      const colors = ['#6366f1', '#f59e0b', '#3b82f6', '#10b981', '#ef4444'];
       
-      // Connect nodes one by one
-      shuffledNodes.forEach((node, index) => {
+      metricsOrder.forEach((metric, index) => {
         setTimeout(() => {
-          setActiveConnections(prev => [...prev, node.id]);
-          setScorecardGlow(node.color);
+          setScorecardGlow(colors[index]);
           
           // Increase corresponding metric
           setMetrics(prev => ({
             ...prev,
-            [node.metric]: Math.floor(Math.random() * 30) + 70 // 70-99%
+            [metric]: Math.floor(Math.random() * 30) + 70 // 70-99%
           }));
 
           // Clear individual glow after a moment
           setTimeout(() => {
-            if (index === shuffledNodes.length - 1) {
-              // Final transformation when all nodes are connected
+            if (index === metricsOrder.length - 1) {
+              // Final transformation when all metrics are boosted
               setScorecardGlow('rainbow');
               
               // Boost all metrics to 95-99%
@@ -156,13 +103,13 @@ function App() {
               setScorecardGlow('');
             }
           }, 500);
-        }, (index + 1) * 1000); // 1 second between connections
+        }, (index + 1) * 1000); // 1 second between metrics
       });
 
-      // After all connections and final transformation, switch to next logo
+      // After all metrics and final transformation, switch to next logo
       setTimeout(() => {
         setCurrentLogoIndex(prev => (prev + 1) % llmLogos.length);
-      }, (shuffledNodes.length + 4) * 1000);
+      }, (metricsOrder.length + 4) * 1000);
     };
 
     // Start first sequence after content appears
@@ -346,20 +293,6 @@ function App() {
                   </div>
 
                 </div>
-
-                {/* Governance Nodes */}
-                {governanceNodes.map((node, index) => (
-                  <div
-                    key={node.id}
-                    className={`governance-node ${activeConnections.includes(node.id) ? 'connected' : ''}`}
-                    style={{
-                      ...node.position,
-                      animationDelay: `${index * 0.2}s`
-                    }}
-                  >
-                    <img src={node.image} alt={node.label} />
-                  </div>
-                ))}
               </section>
             </div>
           </main>
