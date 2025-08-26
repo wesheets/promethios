@@ -247,7 +247,11 @@ export class TeamCollaborationIntegrationService {
       const guestSessions = await this.guestService.getActiveSessions(userId);
 
       // Load shared repositories
+      console.log('🔍 [Team] Loading repositories...');
       const sharedRepositories = await this.repoManager.listRepositories(userId) || [];
+      console.log('🔍 [Team] Repositories result:', sharedRepositories);
+      console.log('🔍 [Team] Repositories type:', typeof sharedRepositories);
+      console.log('🔍 [Team] Is array:', Array.isArray(sharedRepositories));
 
       // Load pending approvals
       const pendingApprovals = await this.guestService.getPendingApprovals(userId);
@@ -958,9 +962,23 @@ export class TeamCollaborationIntegrationService {
    * Calculate active collaborations
    */
   private calculateActiveCollaborations(sessions: GuestSession[], repositories: WorkflowRepository[]): number {
-    const activeSessions = (sessions || []).filter(s => s.status === 'active').length;
-    const activeRepos = (repositories || []).filter(r => r.status === 'active').length;
-    return activeSessions + activeRepos;
+    console.log('🔍 [Team] calculateActiveCollaborations called');
+    console.log('🔍 [Team] sessions:', sessions, 'type:', typeof sessions, 'isArray:', Array.isArray(sessions));
+    console.log('🔍 [Team] repositories:', repositories, 'type:', typeof repositories, 'isArray:', Array.isArray(repositories));
+    
+    try {
+      const safeSessions = Array.isArray(sessions) ? sessions : [];
+      const safeRepositories = Array.isArray(repositories) ? repositories : [];
+      
+      const activeSessions = safeSessions.filter(s => s.status === 'active').length;
+      const activeRepos = safeRepositories.filter(r => r.status === 'active').length;
+      
+      console.log('🔍 [Team] activeSessions:', activeSessions, 'activeRepos:', activeRepos);
+      return activeSessions + activeRepos;
+    } catch (error) {
+      console.error('❌ [Team] Error in calculateActiveCollaborations:', error);
+      return 0;
+    }
   }
 
   /**
