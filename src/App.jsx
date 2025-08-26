@@ -23,6 +23,7 @@ function App() {
   const [showFlame, setShowFlame] = useState(true);
   const [showContent, setShowContent] = useState(false);
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
+  const [scorecardGlow, setScorecardGlow] = useState('');
   const [metrics, setMetrics] = useState({
     trust: 0,
     security: 0,
