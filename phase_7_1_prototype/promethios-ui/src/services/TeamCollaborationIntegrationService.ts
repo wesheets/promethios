@@ -244,7 +244,7 @@ export class TeamCollaborationIntegrationService {
       const humanChats = await this.chatService.getUserConversations();
 
       // Load guest sessions
-      const guestSessions = await this.guestService.getUserGuestSessions(userId);
+      const guestSessions = await this.guestService.getActiveSessions(userId);
 
       // Load shared repositories
       const sharedRepositories = await this.repoManager.getUserRepositories(userId);

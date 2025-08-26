@@ -153,8 +153,9 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
         try {
           console.log('🔍 [Team] Setting up real-time listeners...');
-          setupRealtimeListeners();
-          console.log('✅ [Team] Real-time listeners set up');
+          // TODO: Implement real-time listeners when methods are available
+          // setupRealtimeListeners();
+          console.log('✅ [Team] Real-time listeners setup skipped (not implemented yet)');
         } catch (error) {
           console.error('❌ [Team] Real-time listeners setup failed:', error);
         }
@@ -172,7 +173,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     return () => {
       try {
         humanChatService.updateUserStatus('offline');
-        cleanupListeners();
+        // TODO: Implement cleanup when real-time listeners are available
+        // cleanupListeners();
       } catch (error) {
         console.error('❌ [Team] Cleanup failed:', error);
       }
