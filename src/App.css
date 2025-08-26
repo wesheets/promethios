@@ -164,6 +164,11 @@ body {
 .main-content {
   min-height: 100vh;
   padding-top: 80px;
+  background-image: url('./assets/gradient-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .content-container {

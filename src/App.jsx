@@ -21,6 +21,9 @@ import cohereLogo from './assets/Cohere-Logo-500x281.png';
 import perplexityLogo from './assets/Perplexity-Logo.png';
 import grokLogo from './assets/groklogo.png';
 
+// Import background
+import gradientBackground from './assets/gradient-background.png';
+
 function App() {
   const [showFlame, setShowFlame] = useState(true);
   const [showContent, setShowContent] = useState(false);
