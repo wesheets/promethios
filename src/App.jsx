@@ -14,7 +14,7 @@ import anthropicLogo from './assets/cdnlogo.com_anthropic.png';
 import googleGeminiLogo from './assets/google-gemini-1024.png';
 import cohereLogo from './assets/Cohere-Logo-500x281.png';
 import perplexityLogo from './assets/Perplexity-Logo.png';
-import grokLogo from './assets/groklogo.png';
+import huggingfaceLogo from './assets/huggingface-logo.png';
 
 // Import background
 import gradientBackground from './assets/gradient-background.png';
@@ -42,14 +42,14 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // LLM logos data
-  const llmLogos = [
-    { id: 'openai', name: 'OpenAI', image: openaiLogo },
-    { id: 'anthropic', name: 'Anthropic', image: anthropicLogo },
-    { id: 'google', name: 'Google Gemini', image: googleGeminiLogo },
-    { id: 'cohere', name: 'Cohere', image: cohereLogo },
-    { id: 'perplexity', name: 'Perplexity', image: perplexityLogo },
-    { id: 'grok', name: 'Grok', image: grokLogo }
+  const aiCompanies = [
+    { name: 'OpenAI', logo: openaiLogo },
+    { name: 'Anthropic', logo: anthropicLogo },
+    { name: 'Google Gemini', logo: googleGeminiLogo },
+    { name: 'Cohere', logo: cohereLogo },
+    { name: 'Perplexity', logo: perplexityLogo },
+    { name: 'Grok', logo: grokLogo },
+    { name: 'Hugging Face', logo: huggingfaceLogo }
   ];
 
   // Animation sequence for each logo
