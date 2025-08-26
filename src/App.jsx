@@ -1,22 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-// Import cube images and flame assets
-import wireframeCube from './assets/wireframecube.png';
-import redCube from './assets/redcube.png';
-import greenCube from './assets/greencube.png';
-import orangeCube from './assets/orangecube.png';
-import yellowCube from './assets/yellowcube.png';
-import purpleCube from './assets/purplecube.png';
+// Import flame assets
 import flameVideo from './assets/0801.mp4';
 import promethiosLogo from './assets/promethiosnoflame.png';
+
+// Import scorecard and node assets
+import centerScorecard from './assets/centerscorecard.png';
+import trustNode from './assets/trustnode.png';
+import cryptographicLogs from './assets/cryptographiclogs.png';
+import realtimeMonitoring from './assets/realtimemonitoringnode.png';
+import complianceNode from './assets/compliancenode.png';
+import memoryNode from './assets/memorynode.png';
+
+// Import LLM logos
+import openaiLogo from './assets/e3d927054278d43b838afed1939de03b.png';
+import anthropicLogo from './assets/cdnlogo.com_anthropic.png';
+import googleGeminiLogo from './assets/google-gemini-1024.png';
+import cohereLogo from './assets/Cohere-Logo-500x281.png';
+import perplexityLogo from './assets/Perplexity-Logo.png';
+import grokLogo from './assets/groklogo.png';
 
 function App() {
   const [showFlame, setShowFlame] = useState(true);
   const [showContent, setShowContent] = useState(false);
-  const [draggedCube, setDraggedCube] = useState(null);
-  const [absorbedCubes, setAbsorbedCubes] = useState([]);
-  const [wireframePulse, setWireframePulse] = useState('');
+  const [currentLogoIndex, setCurrentLogoIndex] = useState(0);
+  const [activeConnections, setActiveConnections] = useState([]);
+  const [metrics, setMetrics] = useState({
+    trust: 0,
+    security: 0,
+    monitoring: 0,
+    compliance: 0,
+    memory: 0
+  });
+  const [scorecardGlow, setScorecardGlow] = useState('');
 
   // Simple flame loader - runs once on mount
   useEffect(() => {
@@ -28,43 +45,134 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Governance cubes data
-  const governanceCubes = [
-    { id: 'red', color: 'red', label: 'Trust Score', image: redCube },
-    { id: 'green', color: 'green', label: 'Audit Trail', image: greenCube },
-    { id: 'orange', color: 'orange', label: 'Policy Engine', image: orangeCube },
-    { id: 'yellow', color: 'yellow', label: 'Real-time Monitor', image: yellowCube },
-    { id: 'purple', color: 'purple', label: 'Compliance', image: purpleCube }
+  // LLM logos data
+  const llmLogos = [
+    { id: 'openai', name: 'OpenAI', image: openaiLogo },
+    { id: 'anthropic', name: 'Anthropic', image: anthropicLogo },
+    { id: 'google', name: 'Google Gemini', image: googleGeminiLogo },
+    { id: 'cohere', name: 'Cohere', image: cohereLogo },
+    { id: 'perplexity', name: 'Perplexity', image: perplexityLogo },
+    { id: 'grok', name: 'Grok', image: grokLogo }
   ];
 
-  // Drag and drop handlers
-  const handleDragStart = (e, cubeId) => {
-    setDraggedCube(cubeId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', cubeId);
-    
-    // Create transparent drag image
-    const dragImage = new Image();
-    dragImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
-    e.dataTransfer.setDragImage(dragImage, 0, 0);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (draggedCube && !absorbedCubes.includes(draggedCube)) {
-      setAbsorbedCubes(prev => [...prev, draggedCube]);
-      setWireframePulse(draggedCube);
-      
-      // Clear pulse after animation
-      setTimeout(() => setWireframePulse(''), 500);
+  // Governance nodes data
+  const governanceNodes = [
+    { 
+      id: 'trust', 
+      label: 'Trust Score', 
+      image: trustNode, 
+      color: '#6366f1', // indigo
+      position: { top: '20%', left: '20%' },
+      metric: 'trust'
+    },
+    { 
+      id: 'security', 
+      label: 'Security Audit Logs', 
+      image: cryptographicLogs, 
+      color: '#f59e0b', // amber
+      position: { top: '20%', right: '20%' },
+      metric: 'security'
+    },
+    { 
+      id: 'monitoring', 
+      label: 'Real-time Monitoring', 
+      image: realtimeMonitoring, 
+      color: '#3b82f6', // blue
+      position: { bottom: '30%', left: '15%' },
+      metric: 'monitoring'
+    },
+    { 
+      id: 'compliance', 
+      label: 'Compliance', 
+      image: complianceNode, 
+      color: '#10b981', // green
+      position: { bottom: '30%', right: '15%' },
+      metric: 'compliance'
+    },
+    { 
+      id: 'memory', 
+      label: 'Memory', 
+      image: memoryNode, 
+      color: '#ef4444', // red
+      position: { top: '50%', left: '10%' },
+      metric: 'memory'
     }
-    setDraggedCube(null);
-  };
+  ];
+
+  // Animation sequence for each logo
+  useEffect(() => {
+    if (!showContent) return;
+
+    const startSequence = () => {
+      // Reset state
+      setActiveConnections([]);
+      setMetrics({
+        trust: 0,
+        security: 0,
+        monitoring: 0,
+        compliance: 0,
+        memory: 0
+      });
+      setScorecardGlow('');
+
+      // Randomize node connection order for visual variety
+      const shuffledNodes = [...governanceNodes].sort(() => Math.random() - 0.5);
+      
+      // Connect nodes one by one
+      shuffledNodes.forEach((node, index) => {
+        setTimeout(() => {
+          setActiveConnections(prev => [...prev, node.id]);
+          setScorecardGlow(node.color);
+          
+          // Increase corresponding metric
+          setMetrics(prev => ({
+            ...prev,
+            [node.metric]: Math.floor(Math.random() * 30) + 70 // 70-99%
+          }));
+
+          // Clear individual glow after a moment
+          setTimeout(() => {
+            if (index === shuffledNodes.length - 1) {
+              // Final transformation when all nodes are connected
+              setScorecardGlow('rainbow');
+              
+              // Boost all metrics to 95-99%
+              setTimeout(() => {
+                setMetrics({
+                  trust: Math.floor(Math.random() * 5) + 95,
+                  security: Math.floor(Math.random() * 5) + 95,
+                  monitoring: Math.floor(Math.random() * 5) + 95,
+                  compliance: Math.floor(Math.random() * 5) + 95,
+                  memory: Math.floor(Math.random() * 5) + 95
+                });
+              }, 500);
+              
+              // Clear rainbow glow before logo switch
+              setTimeout(() => setScorecardGlow(''), 2000);
+            } else {
+              setScorecardGlow('');
+            }
+          }, 500);
+        }, (index + 1) * 1000); // 1 second between connections
+      });
+
+      // After all connections and final transformation, switch to next logo
+      setTimeout(() => {
+        setCurrentLogoIndex(prev => (prev + 1) % llmLogos.length);
+      }, (shuffledNodes.length + 4) * 1000);
+    };
+
+    // Start first sequence after content appears
+    const initialDelay = setTimeout(startSequence, 1000);
+    
+    // Set up recurring sequences
+    const interval = setInterval(startSequence, (governanceNodes.length + 6) * 1000);
+
+    return () => {
+      clearTimeout(initialDelay);
+      clearInterval(interval);
+    };
+  }, [showContent]);
 
   return (
     <div className="app">
@@ -130,39 +238,140 @@ function App() {
 
               {/* Animation Area */}
               <section className="animation-area">
-                {/* Wireframe Cube */}
-                <div 
-                  className={`wireframe-cube ${wireframePulse ? `pulse-${wireframePulse}` : ''}`}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  style={{
-                    left: '70%',
-                    top: '45%'
-                  }}
-                >
-                  <img src={wireframeCube} alt="AI Governance Core" />
-                </div>
-
-                {/* Governance Cubes */}
-                <div className="governance-cubes">
-                  {governanceCubes.map((cube, index) => (
-                    <div
-                      key={cube.id}
-                      className={`governance-cube ${draggedCube === cube.id ? 'dragging' : ''} ${absorbedCubes.includes(cube.id) ? 'absorbed' : ''}`}
-                      draggable={!absorbedCubes.includes(cube.id)}
-                      onDragStart={(e) => handleDragStart(e, cube.id)}
-                      style={{
-                        animationDelay: `${index * 0.2}s`
-                      }}
-                    >
-                      <img src={cube.image} alt={cube.label} />
-                      <div className="cube-label">{cube.label}</div>
-                      {!absorbedCubes.includes(cube.id) && (
-                        <div className="drag-hint">Drag to AI Box</div>
-                      )}
+                {/* Center Scorecard */}
+                <div className="center-scorecard-container">
+                  <div 
+                    className={`center-scorecard ${scorecardGlow ? 'glowing' : ''}`}
+                    style={{
+                      '--glow-color': scorecardGlow
+                    }}
+                  >
+                    <img src={centerScorecard} alt="AI Scorecard" className="scorecard-bg" />
+                    
+                    {/* LLM Logo Slider */}
+                    <div className="logo-slider">
+                      <img 
+                        src={llmLogos[currentLogoIndex].image} 
+                        alt={llmLogos[currentLogoIndex].name}
+                        className="current-logo"
+                        key={currentLogoIndex}
+                      />
                     </div>
+
+                    {/* Metrics Panel */}
+                    <div className="metrics-panel">
+                      <div 
+                        className={`metric ${activeConnections.includes('trust') ? 'active' : ''}`}
+                        data-metric="trust"
+                      >
+                        <div className="metric-header">
+                          <span className="metric-label">Trust</span>
+                          <span className="metric-value">{metrics.trust}%</span>
+                        </div>
+                        <div className="metric-progress">
+                          <div 
+                            className="metric-progress-bar"
+                            style={{ width: `${metrics.trust}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div 
+                        className={`metric ${activeConnections.includes('security') ? 'active' : ''}`}
+                        data-metric="security"
+                      >
+                        <div className="metric-header">
+                          <span className="metric-label">Security</span>
+                          <span className="metric-value">{metrics.security}%</span>
+                        </div>
+                        <div className="metric-progress">
+                          <div 
+                            className="metric-progress-bar"
+                            style={{ width: `${metrics.security}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div 
+                        className={`metric ${activeConnections.includes('monitoring') ? 'active' : ''}`}
+                        data-metric="monitoring"
+                      >
+                        <div className="metric-header">
+                          <span className="metric-label">Monitoring</span>
+                          <span className="metric-value">{metrics.monitoring}%</span>
+                        </div>
+                        <div className="metric-progress">
+                          <div 
+                            className="metric-progress-bar"
+                            style={{ width: `${metrics.monitoring}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div 
+                        className={`metric ${activeConnections.includes('compliance') ? 'active' : ''}`}
+                        data-metric="compliance"
+                      >
+                        <div className="metric-header">
+                          <span className="metric-label">Compliance</span>
+                          <span className="metric-value">{metrics.compliance}%</span>
+                        </div>
+                        <div className="metric-progress">
+                          <div 
+                            className="metric-progress-bar"
+                            style={{ width: `${metrics.compliance}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div 
+                        className={`metric ${activeConnections.includes('memory') ? 'active' : ''}`}
+                        data-metric="memory"
+                      >
+                        <div className="metric-header">
+                          <span className="metric-label">Memory</span>
+                          <span className="metric-value">{metrics.memory}%</span>
+                        </div>
+                        <div className="metric-progress">
+                          <div 
+                            className="metric-progress-bar"
+                            style={{ width: `${metrics.memory}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Connection Lines */}
+                  {governanceNodes.map(node => (
+                    <div
+                      key={node.id}
+                      className={`connection-line ${activeConnections.includes(node.id) ? 'active' : ''}`}
+                      style={{
+                        '--line-color': node.color,
+                        '--start-top': node.position.top || 'auto',
+                        '--start-bottom': node.position.bottom || 'auto',
+                        '--start-left': node.position.left || 'auto',
+                        '--start-right': node.position.right || 'auto'
+                      }}
+                    />
                   ))}
                 </div>
+
+                {/* Governance Nodes */}
+                {governanceNodes.map((node, index) => (
+                  <div
+                    key={node.id}
+                    className={`governance-node ${activeConnections.includes(node.id) ? 'connected' : ''}`}
+                    style={{
+                      ...node.position,
+                      animationDelay: `${index * 0.2}s`
+                    }}
+                  >
+                    <img src={node.image} alt={node.label} />
+                    <div className="node-label">{node.label}</div>
+                  </div>
+                ))}
               </section>
             </div>
           </main>
