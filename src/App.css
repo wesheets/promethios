@@ -191,17 +191,17 @@ body {
   justify-content: flex-start;
   align-items: flex-start;
   padding: 2rem;
-  max-width: 600px;
+  max-width: 750px;
   margin-left: auto;
-  margin-right: 2rem;
+  margin-right: 1rem;
   margin-top: 0;
   padding-top: 0;
 }
 
 .hero-title {
-  font-size: 5.5rem;
+  font-size: 6.5rem;
   font-weight: 800;
-  line-height: 1.0;
+  line-height: 0.95;
   margin-bottom: 1.5rem;
   color: white;
   letter-spacing: -0.02em;
