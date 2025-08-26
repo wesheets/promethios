@@ -116,7 +116,7 @@ function App() {
     const initialDelay = setTimeout(startSequence, 1000);
     
     // Set up recurring sequences
-    const interval = setInterval(startSequence, (governanceNodes.length + 6) * 1000);
+    const interval = setInterval(startSequence, 10000); // 10 seconds between cycles
 
     return () => {
       clearTimeout(initialDelay);
@@ -211,7 +211,7 @@ function App() {
                     {/* Metrics Panel Inside Scorecard */}
                     <div className="metrics-panel">
                       <div 
-                        className={`metric ${activeConnections.includes('trust') ? 'active' : ''}`}
+                        className="metric"
                         data-metric="trust"
                       >
                         <div className="metric-header">
@@ -227,7 +227,7 @@ function App() {
                       </div>
                       
                       <div 
-                        className={`metric ${activeConnections.includes('security') ? 'active' : ''}`}
+                        className="metric"
                         data-metric="security"
                       >
                         <div className="metric-header">
@@ -243,7 +243,7 @@ function App() {
                       </div>
                       
                       <div 
-                        className={`metric ${activeConnections.includes('monitoring') ? 'active' : ''}`}
+                        className="metric"
                         data-metric="monitoring"
                       >
                         <div className="metric-header">
@@ -259,7 +259,7 @@ function App() {
                       </div>
                       
                       <div 
-                        className={`metric ${activeConnections.includes('compliance') ? 'active' : ''}`}
+                        className="metric"
                         data-metric="compliance"
                       >
                         <div className="metric-header">
@@ -275,7 +275,7 @@ function App() {
                       </div>
                       
                       <div 
-                        className={`metric ${activeConnections.includes('memory') ? 'active' : ''}`}
+                        className="metric"
                         data-metric="memory"
                       >
                         <div className="metric-header">
