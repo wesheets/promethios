@@ -277,8 +277,8 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 400px;
-  height: 400px;
+  width: 500px;
+  height: 500px;
 }
 
 .center-scorecard {
@@ -398,29 +398,30 @@ body {
 /* Metrics Panel */
 .metrics-panel {
   position: absolute;
-  bottom: 15%;
+  top: 75%;
   left: 50%;
   transform: translateX(-50%);
-  width: 280px;
+  width: 500px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  font-size: 0.75rem;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  margin-top: 2rem;
 }
 
 .metric {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.8);
   border-radius: 0.5rem;
   backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
 }
 
 .metric.active {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.9);
   border-color: var(--metric-color);
   box-shadow: 0 0 15px var(--metric-color);
   animation: metricPulse 0.5s ease-out;
@@ -440,15 +441,15 @@ body {
 }
 
 .metric-label {
-  color: #a1a1aa;
+  color: #d1d5db;
   font-weight: 500;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .metric-value {
   color: #ffffff;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1rem;
   transition: all 0.3s ease;
 }
 
