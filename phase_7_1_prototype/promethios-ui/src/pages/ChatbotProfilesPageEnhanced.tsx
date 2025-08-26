@@ -6,6 +6,12 @@ import AttachmentRenderer from '../components/AttachmentRenderer';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
 import { OrganizationManagementService, Organization } from '../services/OrganizationManagementService';
 import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../services/HumanChatService';
+// Multi-agent collaboration imports
+import { MultiAgentRoutingService, AgentResponse } from '../services/MultiAgentRoutingService';
+import { MultiAgentAuditLogger } from '../services/MultiAgentAuditLogger';
+import { MessageParser, ParsedMessage } from '../utils/MessageParser';
+import MultiAgentMentionInput from '../components/MultiAgentMentionInput';
+import MultiAgentResponseIndicator from '../components/MultiAgentResponseIndicator';
 // Autonomous systems imports
 import { AutonomousGovernanceExtension, AutonomousTaskPlan, AutonomousPhase, AutonomousExecutionState } from '../services/AutonomousGovernanceExtension';
 import { AutonomousTaskPlanningEngine } from '../services/AutonomousTaskPlanningEngine';
@@ -311,6 +317,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
   const [orgService] = useState(() => OrganizationManagementService.getInstance());
   const [humanChatService] = useState(() => HumanChatService.getInstance());
+  
+  // Multi-agent collaboration services
+  const [multiAgentRoutingService] = useState(() => MultiAgentRoutingService.getInstance());
+  const [multiAgentAuditLogger] = useState(() => MultiAgentAuditLogger.getInstance());
+  const [messageParser] = useState(() => MessageParser.getInstance());
+  
+  // Multi-agent state
+  const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
+  const [multiAgentResponses, setMultiAgentResponses] = useState<AgentResponse[]>([]);
+  const [isProcessingMultiAgent, setIsProcessingMultiAgent] = useState(false);
+  const [targetAgents, setTargetAgents] = useState<string[]>([]);
+  const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
   
   // Repository and workflow services
   const [repositoryManager] = useState(() => new WorkflowRepositoryManager());
@@ -1629,7 +1647,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [autonomousStarsActive, projects.length, messageInput, autonomousMode, liveAgentPanelOpen, unreadTeamCount]);
 
-  // Chat functionality - Real Universal Governance Adapter Integration
+  // Enhanced multi-agent message handling
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeSession || chatLoading) return;
 
@@ -1637,185 +1655,318 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setChatLoading(true);
       setIsTyping(true);
       
-      // Prepare the final message content
-      let finalMessageContent = messageInput.trim();
+      // Check if we're in multi-agent mode
+      const activeContext = multiChatState.contexts.find(c => c.isActive);
+      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
       
-      // If there's an active chat reference, combine it with the user's message
-      if (activeChatReference) {
-        console.log('🔗 [ChatReference] Combining chat reference with user message');
-        console.log('🔗 [ChatReference] Reference ID:', activeChatReference.id);
-        console.log('🔗 [ChatReference] User message:', finalMessageContent);
-        
-        // Combine the chat reference ID with the user's instruction
-        finalMessageContent = `${activeChatReference.id} ${finalMessageContent}`;
-        
-        // Clear the active chat reference after using it
-        setActiveChatReference(null);
-        
-        console.log('🔗 [ChatReference] Final combined message:', finalMessageContent);
+      if (hasGuestAgents && selectedChatbot && user?.uid) {
+        console.log('🤖 [MultiAgent] Processing multi-agent message');
+        await handleMultiAgentMessage(messageInput.trim());
+        return;
       }
       
-      console.log(`📤 [ChatPanel] Sending message: "${finalMessageContent}"`);
+      // Original single-agent message handling
+      await handleSingleAgentMessage();
       
-      // Get fresh bot state to avoid stale closure issues
-      const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+    } catch (error) {
+      console.error('❌ [ChatPanel] Error sending message:', error);
+      setChatLoading(false);
+      setIsTyping(false);
+    }
+  };
+
+  // Multi-agent message handling
+  const handleMultiAgentMessage = async (message: string) => {
+    if (!selectedChatbot || !user?.uid) return;
+
+    try {
+      setIsProcessingMultiAgent(true);
+      setMultiAgentResponses([]);
+
+      // Get active context
+      const activeContext = multiChatState.contexts.find(c => c.isActive);
+      if (!activeContext || !activeContext.guestAgents) return;
+
+      // Create routing context
+      const routingContext = {
+        hostAgentId: activeContext.hostAgentId,
+        guestAgents: activeContext.guestAgents,
+        userId: user.uid,
+        conversationId: currentMultiAgentSession || `conv_${Date.now()}`
+      };
+
+      // Process message with multi-agent routing
+      const result = await multiAgentRoutingService.processUserMessage(message, routingContext);
       
-      // Auto-create ChatHistoryService session if none exists (proactive creation)
-      // Check both freshBotState and ChatHistoryService to ensure proper session management
-      const hasHistorySession = freshBotState?.currentChatSession;
+      console.log('🤖 [MultiAgent] Routing result:', result);
       
-      console.log('🔍 [AutoChat] Checking session state:');
-      console.log('🔍 [AutoChat] selectedChatbotId:', selectedChatbotId);
-      console.log('🔍 [AutoChat] freshBotState exists:', !!freshBotState);
-      console.log('🔍 [AutoChat] hasHistorySession:', !!hasHistorySession);
-      console.log('🔍 [AutoChat] hasHistorySession details:', hasHistorySession);
-      
-      if (!hasHistorySession && selectedChatbot && user?.uid) {
-        console.log('🆕 [AutoChat] No ChatHistoryService session, creating new chat session...');
-        console.log('🔍 [AutoChat] Fresh bot state:', freshBotState);
-        console.log('🔍 [AutoChat] Has history session:', hasHistorySession);
-        try {
-          // Generate a smart chat name based on the first message (use original messageInput, not combined)
-          const smartChatName = messageInput.trim().length > 50 
-            ? `${messageInput.trim().substring(0, 47)}...`
-            : messageInput.trim();
-          
-          const newSession = await chatHistoryService.createChatSession(
-            selectedChatbot.id,
-            selectedChatbot.name,
-            user.uid,
-            smartChatName || `Chat with ${selectedChatbot.name}`
-          );
-          
-          updateBotState(selectedChatbot.id, {
-            currentChatSession: newSession,
-            currentChatName: newSession.name
-          });
-          
-          // Trigger chat history panel refresh immediately
-          setChatHistoryRefreshTrigger(prev => prev + 1);
-          
-          console.log(`✅ [AutoChat] Created new ChatHistoryService session: ${newSession.name} (${newSession.id})`);
-        } catch (sessionError) {
-          console.error('❌ [AutoChat] Failed to create chat session:', sessionError);
-          // Continue with the message even if session creation fails
-        }
+      setTargetAgents(result.targetAgents);
+
+      // Add user message to chat
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        content: message,
+        sender: 'user',
+        timestamp: new Date(),
+        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+      };
+
+      // Update chat messages
+      if (selectedChatbot) {
+        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+        setBotStates(prev => {
+          const newStates = new Map(prev);
+          const currentState = newStates.get(botId) || initializeBotState(botId);
+          const updatedMessages = [...(currentState.chatMessages || []), userMessage];
+          newStates.set(botId, { ...currentState, chatMessages: updatedMessages });
+          return newStates;
+        });
       }
-      
-      // Check if this is a receipt search query
-      const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(finalMessageContent);
-      
-      // Check if this is a chat reference (for agent processing)
-      const chatSharingService = ChatSharingService.getInstance();
-      const chatReferenceId = chatSharingService.detectChatReference(finalMessageContent);
-      
-      // Check if this is a receipt reference (for agent processing)
-      const receiptSharingService = ReceiptSharingService.getInstance();
-      const receiptReferenceId = receiptSharingService.detectReceiptReference(finalMessageContent);
-      
-      if (isReceiptSearch && selectedChatbot && user?.uid) {
-        console.log('🔍 [ReceiptSearch] Detected receipt search query');
+
+      // Handle responses
+      if (result.responses && result.responses.length > 0) {
+        setMultiAgentResponses(result.responses);
         
-        // Process conversational receipt search
-        const searchResponse = await conversationalReceiptSearchService.processConversationalSearch(
-          messageInput.trim(),
-          selectedChatbot.id,
-          user.uid
-        );
-        
-        // Add user message
-        const userMessage: ChatMessage = {
-          id: `user_${Date.now()}`,
-          content: messageInput.trim(),
-          sender: 'user',
-          timestamp: new Date(),
-          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-        };
-        
-        // Create agent response with search results
-        const agentResponse: ChatMessage = {
-          id: `agent_${Date.now()}`,
-          content: searchResponse.agentResponse,
+        // Add agent responses to chat
+        const agentMessages: ChatMessage[] = result.responses.map(response => ({
+          id: `agent_${response.agentId}_${Date.now()}`,
+          content: response.response,
           sender: 'assistant',
-          timestamp: new Date(),
+          timestamp: response.timestamp,
           metadata: {
-            searchResults: searchResponse.results,
-            searchQuery: searchResponse.query,
-            searchTime: searchResponse.searchTime
+            agentId: response.agentId,
+            agentName: response.agentName,
+            processingTime: response.processingTime,
+            isMultiAgent: true
           }
-        };
-        
-        // Update chat messages in bot state using functional update to avoid stale closure
+        }));
+
+        // Update chat with agent responses
         if (selectedChatbot) {
           const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
-          console.log(`🔄 [ReceiptSearch] Updating chat messages for bot: ${botId}`);
-          
           setBotStates(prev => {
             const newStates = new Map(prev);
             const currentState = newStates.get(botId) || initializeBotState(botId);
-            
-            // Use the latest state from the Map, not the potentially stale closure variable
-            const latestMessages = currentState.chatMessages || [];
-            const updatedMessages = [...latestMessages, userMessage, agentResponse];
-            
-            console.log(`🔄 [ReceiptSearch] Latest messages length: ${latestMessages.length}`);
-            console.log(`🔄 [ReceiptSearch] Updated messages length: ${updatedMessages.length}`);
-            
-            const updatedState = { ...currentState, chatMessages: updatedMessages };
-            newStates.set(botId, updatedState);
-            
-            console.log(`✅ [ReceiptSearch] State updated successfully`);
+            const updatedMessages = [...(currentState.chatMessages || []), ...agentMessages];
+            newStates.set(botId, { ...currentState, chatMessages: updatedMessages });
             return newStates;
           });
         }
+
+        // Log the interaction
+        await multiAgentAuditLogger.logMultiAgentInteraction(
+          routingContext.conversationId,
+          user.uid,
+          message,
+          result.parsedMessage,
+          result.responses,
+          routingContext.guestAgents.map(g => ({
+            agentId: g.agentId,
+            agentName: g.name,
+            role: 'guest' as const,
+            addedAt: g.addedAt,
+            addedBy: user.uid,
+            responseCount: 1,
+            totalCost: 0
+          }))
+        );
+      }
+
+      // Clear input
+      setMessageInput('');
+      setAttachedFiles([]);
+      
+    } catch (error) {
+      console.error('❌ [MultiAgent] Error processing multi-agent message:', error);
+    } finally {
+      setIsProcessingMultiAgent(false);
+      setChatLoading(false);
+      setIsTyping(false);
+    }
+  };
+
+  // Original single-agent message handling
+  const handleSingleAgentMessage = async () => {
+    try {
+      // Prepare the final message content
+      let finalMessageContent = messageInput.trim();
+    
+    // If there's an active chat reference, combine it with the user's message
+    if (activeChatReference) {
+      console.log('🔗 [ChatReference] Combining chat reference with user message');
+      console.log('🔗 [ChatReference] Reference ID:', activeChatReference.id);
+      console.log('🔗 [ChatReference] User message:', finalMessageContent);
+      
+      // Combine the chat reference ID with the user's instruction
+      finalMessageContent = `${activeChatReference.id} ${finalMessageContent}`;
+      
+      // Clear the active chat reference after using it
+      setActiveChatReference(null);
+      
+      console.log('🔗 [ChatReference] Final combined message:', finalMessageContent);
+    }
+    
+    console.log(`📤 [ChatPanel] Sending message: "${finalMessageContent}"`);
+    
+    // Get fresh bot state to avoid stale closure issues
+    const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+    
+    // Auto-create ChatHistoryService session if none exists (proactive creation)
+    // Check both freshBotState and ChatHistoryService to ensure proper session management
+    const hasHistorySession = freshBotState?.currentChatSession;
+    
+    console.log('🔍 [AutoChat] Checking session state:');
+    console.log('🔍 [AutoChat] selectedChatbotId:', selectedChatbotId);
+    console.log('🔍 [AutoChat] freshBotState exists:', !!freshBotState);
+    console.log('🔍 [AutoChat] hasHistorySession:', !!hasHistorySession);
+    console.log('🔍 [AutoChat] hasHistorySession details:', hasHistorySession);
+    
+    if (!hasHistorySession && selectedChatbot && user?.uid) {
+      console.log('🆕 [AutoChat] No ChatHistoryService session, creating new chat session...');
+      console.log('🔍 [AutoChat] Fresh bot state:', freshBotState);
+      console.log('🔍 [AutoChat] Has history session:', hasHistorySession);
+      try {
+        // Generate a smart chat name based on the first message (use original messageInput, not combined)
+        const smartChatName = messageInput.trim().length > 50 
+          ? `${messageInput.trim().substring(0, 47)}...`
+          : messageInput.trim();
         
-        // Save to chat history
-        const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-        if (currentFreshBotState?.currentChatSession) {
-          try {
-            await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
-              id: userMessage.id,
-              content: userMessage.content,
-              sender: userMessage.sender,
-              timestamp: userMessage.timestamp,
-              agentId: selectedChatbot.id,
-              agentName: selectedChatbot.name,
-            });
-            
-            await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
-              id: agentResponse.id,
-              content: agentResponse.content,
-              sender: agentResponse.sender,
-              timestamp: agentResponse.timestamp,
-              agentId: selectedChatbot.id,
-              agentName: selectedChatbot.name,
-              metadata: agentResponse.metadata
-            });
-            
-            // Update bot state with new message count immediately
-            const updatedSession = await chatHistoryService.getChatSessionById(currentFreshBotState.currentChatSession.id);
-            if (updatedSession) {
-              updateBotState(selectedChatbot.id, {
-                currentChatSession: updatedSession,
-                currentChatName: updatedSession.name
-              });
-            }
-            
-            // Trigger chat history panel refresh after adding messages
-            setChatHistoryRefreshTrigger(prev => prev + 1);
-          } catch (historyError) {
-            console.warn('Failed to save receipt search to chat history:', historyError);
-          }
+        const newSession = await chatHistoryService.createChatSession(
+          selectedChatbot.id,
+          selectedChatbot.name,
+          user.uid,
+          smartChatName || `Chat with ${selectedChatbot.name}`
+        );
+        
+        updateBotState(selectedChatbot.id, {
+          currentChatSession: newSession,
+          currentChatName: newSession.name
+        });
+        
+        // Trigger chat history panel refresh immediately
+        setChatHistoryRefreshTrigger(prev => prev + 1);
+        
+        console.log(`✅ [AutoChat] Created new ChatHistoryService session: ${newSession.name} (${newSession.id})`);
+      } catch (sessionError) {
+        console.error('❌ [AutoChat] Failed to create chat session:', sessionError);
+        // Continue with the message even if session creation fails
+      }
+    }
+    
+    // Check if this is a receipt search query
+    const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(finalMessageContent);
+    
+    // Check if this is a chat reference (for agent processing)
+    const chatSharingService = ChatSharingService.getInstance();
+    const chatReferenceId = chatSharingService.detectChatReference(finalMessageContent);
+    
+    // Check if this is a receipt reference (for agent processing)
+    const receiptSharingService = ReceiptSharingService.getInstance();
+    const receiptReferenceId = receiptSharingService.detectReceiptReference(finalMessageContent);
+    
+    if (isReceiptSearch && selectedChatbot && user?.uid) {
+      console.log('🔍 [ReceiptSearch] Detected receipt search query');
+      
+      // Process conversational receipt search
+      const searchResponse = await conversationalReceiptSearchService.processConversationalSearch(
+        messageInput.trim(),
+        selectedChatbot.id,
+        user.uid
+      );
+      
+      // Add user message
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        content: messageInput.trim(),
+        sender: 'user',
+        timestamp: new Date(),
+        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+      };
+      
+      // Create agent response with search results
+      const agentResponse: ChatMessage = {
+        id: `agent_${Date.now()}`,
+        content: searchResponse.agentResponse,
+        sender: 'assistant',
+        timestamp: new Date(),
+        metadata: {
+          searchResults: searchResponse.results,
+          searchQuery: searchResponse.query,
+          searchTime: searchResponse.searchTime
         }
+      };
+      
+      // Update chat messages in bot state using functional update to avoid stale closure
+      if (selectedChatbot) {
+        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+        console.log(`🔄 [ReceiptSearch] Updating chat messages for bot: ${botId}`);
         
-        // Clear input and attachments
-        setMessageInput('');
-        setAttachedFiles([]);
-        setChatLoading(false);
-        setIsTyping(false);
-        
-        return;
-      } else if (chatReferenceId && selectedChatbot && user?.uid) {
+        setBotStates(prev => {
+          const newStates = new Map(prev);
+          const currentState = newStates.get(botId) || initializeBotState(botId);
+          
+          // Use the latest state from the Map, not the potentially stale closure variable
+          const latestMessages = currentState.chatMessages || [];
+          const updatedMessages = [...latestMessages, userMessage, agentResponse];
+          
+          console.log(`🔄 [ReceiptSearch] Latest messages length: ${latestMessages.length}`);
+          console.log(`🔄 [ReceiptSearch] Updated messages length: ${updatedMessages.length}`);
+          
+          const updatedState = { ...currentState, chatMessages: updatedMessages };
+          newStates.set(botId, updatedState);
+          
+          console.log(`✅ [ReceiptSearch] State updated successfully`);
+          return newStates;
+        });
+      }
+      
+      // Save to chat history
+      const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+      if (currentFreshBotState?.currentChatSession) {
+        try {
+          await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
+            id: userMessage.id,
+            content: userMessage.content,
+            sender: userMessage.sender,
+            timestamp: userMessage.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+          });
+          
+          await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
+            id: agentResponse.id,
+            content: agentResponse.content,
+            sender: agentResponse.sender,
+            timestamp: agentResponse.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+            metadata: agentResponse.metadata
+          });
+          
+          // Update bot state with new message count immediately
+          const updatedSession = await chatHistoryService.getChatSessionById(currentFreshBotState.currentChatSession.id);
+          if (updatedSession) {
+            updateBotState(selectedChatbot.id, {
+              currentChatSession: updatedSession,
+              currentChatName: updatedSession.name
+            });
+          }
+          
+          // Trigger chat history panel refresh after adding messages
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+        } catch (historyError) {
+          console.warn('Failed to save receipt search to chat history:', historyError);
+        }
+      }
+      
+      // Clear input and attachments
+      setMessageInput('');
+      setAttachedFiles([]);
+      setChatLoading(false);
+      setIsTyping(false);
+      
+      return;
+    } else if (chatReferenceId && selectedChatbot && user?.uid) {
         console.log('🗨️ [ChatReference] Detected chat reference:', chatReferenceId);
         
         // Process chat reference for agent context loading
@@ -2487,6 +2638,29 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   </Box>
                 ) : (
                   <Stack spacing={3}>
+                    {/* Multi-Agent Response Indicator */}
+                    {(() => {
+                      const activeContext = multiChatState.contexts.find(c => c.isActive);
+                      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+                      
+                      if (hasGuestAgents && (isProcessingMultiAgent || multiAgentResponses.length > 0)) {
+                        return (
+                          <MultiAgentResponseIndicator
+                            hostAgentId={activeContext.hostAgentId}
+                            guestAgents={activeContext.guestAgents}
+                            targetAgents={targetAgents}
+                            isProcessing={isProcessingMultiAgent}
+                            responses={multiAgentResponses}
+                            onResponseComplete={(responses) => {
+                              console.log('🤖 [MultiAgent] All responses complete:', responses);
+                              setIsProcessingMultiAgent(false);
+                            }}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
+                    
                     {chatMessages.map((message) => (
                       <Box
                         key={message.id}
@@ -2501,6 +2675,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             textAlign: message.sender === 'user' ? 'right' : 'left'
                           }}
                         >
+                          {/* Multi-Agent Message Header */}
+                          {message.metadata?.isMultiAgent && (
+                            <Box sx={{ mb: 1 }}>
+                              <Chip
+                                label={`${message.metadata.agentName} (${Math.floor(message.metadata.processingTime / 1000)}s)`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#10b981',
+                                  color: 'white',
+                                  fontSize: '0.7rem'
+                                }}
+                              />
+                            </Box>
+                          )}
+                          
                           {/* Message Content */}
                           <MarkdownRenderer 
                             content={message.content}
@@ -2718,115 +2907,148 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     <Add />
                   </IconButton>
                   
-                  {/* Enhanced Text Input with Amazon-Style Smart Suggestions */}
+                  {/* Enhanced Multi-Agent Text Input with @mention support */}
                   <Box sx={{ flex: 1, position: 'relative' }}>
-                    <TextField
-                      fullWidth
-                      placeholder="Type your message..."
-                      value={messageInput}
-                      onChange={(e) => handleInputChange(e.target.value)}
-                      onKeyDown={handleKeyNavigation}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          if (showSuggestions && selectedSuggestionIndex >= 0) {
-                            e.preventDefault();
-                            handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
-                          } else {
-                            handleSendMessage();
-                          }
-                        }
-                      }}
-                      onPaste={handlePaste}
-                      onFocus={() => {
-                        if (autonomousStarsActive && messageInput.trim()) {
-                          setShowSuggestions(true);
-                        }
-                      }}
-                      onBlur={() => {
-                        // Delay hiding suggestions to allow clicking
-                        setTimeout(() => setShowSuggestions(false), 200);
-                      }}
-                      variant="outlined"
-                      disabled={chatLoading}
-                      multiline
-                      maxRows={4}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          bgcolor: '#0f172a',
-                          color: 'white',
-                          '& fieldset': { 
-                            borderColor: autonomousStarsActive ? '#f59e0b' : '#334155',
-                            borderWidth: 1
-                          },
-                          '&:hover fieldset': { borderColor: '#3b82f6' },
-                          '&.Mui-focused fieldset': { 
-                            borderColor: autonomousStarsActive ? '#f59e0b' : '#3b82f6',
-                            borderWidth: 2
-                          },
-                          '& input::placeholder': {
-                            color: '#9ca3af',
-                            opacity: 1
-                          }
-                        }
-                      }}
-                    />
-                    
-                    {/* Amazon-Style Smart Suggestions Dropdown (Below Input) */}
-                    {showSuggestions && smartSuggestions.length > 0 && (
-                      <Paper
-                        sx={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: 0,
-                          right: 0,
-                          zIndex: 1000,
-                          bgcolor: 'white',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: 1,
-                          mt: 0.5,
-                          maxHeight: 200,
-                          overflow: 'auto',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                        }}
-                      >
-                        {smartSuggestions.map((suggestion, index) => (
-                          <Box
-                            key={index}
-                            onClick={() => handleSuggestionSelect(suggestion)}
-                            sx={{
-                              p: 1.5,
-                              cursor: 'pointer',
-                              bgcolor: selectedSuggestionIndex === index ? '#f3f4f6' : 'transparent',
-                              '&:hover': { bgcolor: '#f9fafb' },
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1.5,
-                              borderBottom: index < smartSuggestions.length - 1 ? '1px solid #f3f4f6' : 'none'
+                    {/* Check if we're in multi-agent mode */}
+                    {(() => {
+                      const activeContext = multiChatState.contexts.find(c => c.isActive);
+                      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+                      
+                      if (hasGuestAgents && selectedChatbot && user?.uid) {
+                        // Multi-agent mode with @mention support
+                        return (
+                          <MultiAgentMentionInput
+                            value={messageInput}
+                            onChange={setMessageInput}
+                            onSend={(message, mentions) => {
+                              console.log('🤖 [MultiAgent] Sending message with mentions:', message, mentions);
+                              handleSendMessage();
                             }}
-                          >
-                            <Box sx={{ color: '#6b7280', fontSize: '16px', minWidth: '20px' }}>
-                              {suggestion.includes('Create') ? '💡' : 
-                               suggestion.includes('team') ? '👥' : 
-                               suggestion.includes('project') ? '📁' : 
-                               suggestion.includes('task') ? '🚀' : 
-                               suggestion.includes('Continue') ? '▶️' : 
-                               suggestion.includes('Check') ? '📬' : '⭐'}
-                            </Box>
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                color: '#374151', 
-                                flex: 1,
-                                fontSize: '14px',
-                                fontWeight: selectedSuggestionIndex === index ? 500 : 400
+                            placeholder="Type your message... Use @agent-name to mention specific agents"
+                            disabled={chatLoading}
+                            multiline={true}
+                            maxRows={4}
+                            hostAgentId={activeContext.hostAgentId}
+                            guestAgents={activeContext.guestAgents}
+                            userId={user.uid}
+                            conversationId={currentMultiAgentSession || `conv_${Date.now()}`}
+                          />
+                        );
+                      } else {
+                        // Single-agent mode with smart suggestions
+                        return (
+                          <>
+                            <TextField
+                              fullWidth
+                              placeholder="Type your message..."
+                              value={messageInput}
+                              onChange={(e) => handleInputChange(e.target.value)}
+                              onKeyDown={handleKeyNavigation}
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  if (showSuggestions && selectedSuggestionIndex >= 0) {
+                                    e.preventDefault();
+                                    handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+                                  } else {
+                                    handleSendMessage();
+                                  }
+                                }
                               }}
-                            >
-                              {suggestion}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Paper>
-                    )}
+                              onPaste={handlePaste}
+                              onFocus={() => {
+                                if (autonomousStarsActive && messageInput.trim()) {
+                                  setShowSuggestions(true);
+                                }
+                              }}
+                              onBlur={() => {
+                                // Delay hiding suggestions to allow clicking
+                                setTimeout(() => setShowSuggestions(false), 200);
+                              }}
+                              variant="outlined"
+                              disabled={chatLoading}
+                              multiline
+                              maxRows={4}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  bgcolor: '#0f172a',
+                                  color: 'white',
+                                  '& fieldset': { 
+                                    borderColor: autonomousStarsActive ? '#f59e0b' : '#334155',
+                                    borderWidth: 1
+                                  },
+                                  '&:hover fieldset': { borderColor: '#3b82f6' },
+                                  '&.Mui-focused fieldset': { 
+                                    borderColor: autonomousStarsActive ? '#f59e0b' : '#3b82f6',
+                                    borderWidth: 2
+                                  },
+                                  '& input::placeholder': {
+                                    color: '#9ca3af',
+                                    opacity: 1
+                                  }
+                                }
+                              }}
+                            />
+                            
+                            {/* Amazon-Style Smart Suggestions Dropdown (Below Input) */}
+                            {showSuggestions && smartSuggestions.length > 0 && (
+                              <Paper
+                                sx={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  left: 0,
+                                  right: 0,
+                                  zIndex: 1000,
+                                  bgcolor: 'white',
+                                  border: '1px solid #e5e7eb',
+                                  borderRadius: 1,
+                                  mt: 0.5,
+                                  maxHeight: 200,
+                                  overflow: 'auto',
+                                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                                }}
+                              >
+                                {smartSuggestions.map((suggestion, index) => (
+                                  <Box
+                                    key={index}
+                                    onClick={() => handleSuggestionSelect(suggestion)}
+                                    sx={{
+                                      p: 1.5,
+                                      cursor: 'pointer',
+                                      bgcolor: selectedSuggestionIndex === index ? '#f3f4f6' : 'transparent',
+                                      '&:hover': { bgcolor: '#f9fafb' },
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1.5,
+                                      borderBottom: index < smartSuggestions.length - 1 ? '1px solid #f3f4f6' : 'none'
+                                    }}
+                                  >
+                                    <Box sx={{ color: '#6b7280', fontSize: '16px', minWidth: '20px' }}>
+                                      {suggestion.includes('Create') ? '💡' : 
+                                       suggestion.includes('team') ? '👥' : 
+                                       suggestion.includes('project') ? '📁' : 
+                                       suggestion.includes('task') ? '🚀' : 
+                                       suggestion.includes('Continue') ? '▶️' : 
+                                       suggestion.includes('Check') ? '📬' : '⭐'}
+                                    </Box>
+                                    <Typography 
+                                      variant="body2" 
+                                      sx={{ 
+                                        color: '#374151', 
+                                        flex: 1,
+                                        fontSize: '14px',
+                                        fontWeight: selectedSuggestionIndex === index ? 500 : 400
+                                      }}
+                                    >
+                                      {suggestion}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Paper>
+                            )}
+                          </>
+                        );
+                      }
+                    })()}
                   </Box>
                   
                   {/* Voice Recording Button */}
