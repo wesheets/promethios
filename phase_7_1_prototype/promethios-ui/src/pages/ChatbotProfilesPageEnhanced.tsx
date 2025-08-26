@@ -142,6 +142,14 @@ interface ChatContext {
   lastMessage?: string;
   lastMessageTime?: Date;
   canClose: boolean; // AI agent can't be closed, humans/channels can
+  // Multi-agent support
+  hostAgentId?: string; // The main agent (command center owner)
+  guestAgents?: Array<{
+    agentId: string;
+    name: string;
+    avatar?: string;
+    addedAt: Date;
+  }>;
 }
 
 interface MultiChatState {
@@ -443,7 +451,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       avatar: selectedChatbot?.identity?.avatar,
       isActive: true,
       unreadCount: 0,
-      canClose: false
+      canClose: false,
+      // Multi-agent support
+      hostAgentId: selectedChatbot?.identity?.id || selectedChatbot?.key || selectedChatbot?.id,
+      guestAgents: []
     };
 
     setMultiChatState(prev => ({
@@ -520,6 +531,75 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         isOpen: !prev.sidePanel.isOpen
       }
     }));
+  };
+
+  // Multi-agent management functions
+  const addGuestAgent = (agentId: string, agentName: string, agentAvatar?: string) => {
+    console.log(`🤖 [Multi-Agent] Adding guest agent: ${agentName} (${agentId})`);
+    
+    setMultiChatState(prev => {
+      const activeContext = prev.contexts.find(c => c.isActive);
+      if (!activeContext || activeContext.type !== 'ai_agent') {
+        console.warn('❌ [Multi-Agent] Can only add guest agents to AI agent contexts');
+        return prev;
+      }
+
+      // Check if agent is already a guest
+      const isAlreadyGuest = activeContext.guestAgents?.some(g => g.agentId === agentId);
+      if (isAlreadyGuest) {
+        console.warn('❌ [Multi-Agent] Agent is already a guest in this chat');
+        return prev;
+      }
+
+      const updatedContexts = prev.contexts.map(context => {
+        if (context.id === activeContext.id) {
+          return {
+            ...context,
+            guestAgents: [
+              ...(context.guestAgents || []),
+              {
+                agentId,
+                name: agentName,
+                avatar: agentAvatar,
+                addedAt: new Date()
+              }
+            ]
+          };
+        }
+        return context;
+      });
+
+      return {
+        ...prev,
+        contexts: updatedContexts
+      };
+    });
+  };
+
+  const removeGuestAgent = (agentId: string) => {
+    console.log(`🗑️ [Multi-Agent] Removing guest agent: ${agentId}`);
+    
+    setMultiChatState(prev => {
+      const activeContext = prev.contexts.find(c => c.isActive);
+      if (!activeContext || activeContext.type !== 'ai_agent') {
+        return prev;
+      }
+
+      const updatedContexts = prev.contexts.map(context => {
+        if (context.id === activeContext.id) {
+          return {
+            ...context,
+            guestAgents: context.guestAgents?.filter(g => g.agentId !== agentId) || []
+          };
+        }
+        return context;
+      });
+
+      return {
+        ...prev,
+        contexts: updatedContexts
+      };
+    });
   };
 
   // Live Agent panel control functions

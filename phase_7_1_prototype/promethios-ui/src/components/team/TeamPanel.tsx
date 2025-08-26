@@ -46,10 +46,12 @@ import { useAuth } from '../../context/AuthContext';
 interface TeamPanelProps {
   currentUserId?: string;
   onChatReference?: (reference: string) => void;
+  onAddGuestAgent?: (agentId: string, agentName: string, agentAvatar?: string) => void;
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({ 
-  onChatReference
+  onChatReference,
+  onAddGuestAgent
 }) => {
   // Navigation hook
   const navigate = useNavigate();
@@ -428,9 +430,15 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   };
 
   const handleAddAgentToChat = (agentId: string) => {
-    // TODO: Implement multi-agent chat functionality
-    console.log(`🤖 [Multi-Agent] Adding agent ${agentId} to current chat`);
-    // This will be implemented as part of the multi-agent collaboration system
+    const agent = aiTeammates.find(a => a.identity?.id === agentId || a.key === agentId || a.id === agentId);
+    if (agent && onAddGuestAgent) {
+      const agentName = agent.identity?.name || agent.name || 'AI Agent';
+      const agentAvatar = agent.identity?.avatar;
+      onAddGuestAgent(agentId, agentName, agentAvatar);
+      console.log(`🤖 [Multi-Agent] Added ${agentName} to current chat`);
+    } else {
+      console.log(`🤖 [Multi-Agent] Adding agent ${agentId} to current chat (callback not provided)`);
+    }
   };
 
   const getAgentStatus = (agent: ChatbotProfile) => {
