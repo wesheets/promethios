@@ -55,6 +55,7 @@ import {
   Psychology,
   Settings,
   Close as CloseIcon,
+  Close,
   Chat,
   Rocket,
   MoreVert,

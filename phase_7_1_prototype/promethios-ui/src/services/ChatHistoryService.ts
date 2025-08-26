@@ -54,6 +54,12 @@ class ChatHistoryService {
   async deleteSession(id: string): Promise<void> {
     this.sessions = this.sessions.filter(s => s.id !== id);
   }
+
+  // Add the missing method that the enhanced page expects
+  async getUserChatHistory(userId: string): Promise<ChatSession[]> {
+    // Return empty array for now - this would connect to real chat history in production
+    return [];
+  }
 }
 
 export default ChatHistoryService;
