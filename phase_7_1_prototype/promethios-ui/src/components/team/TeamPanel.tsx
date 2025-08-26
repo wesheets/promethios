@@ -40,6 +40,7 @@ import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '..
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../../services/TeamCollaborationIntegrationService';
 import { OrganizationManagementService } from '../../services/OrganizationManagementService';
 import { ChatbotStorageService, ChatbotProfile } from '../../services/ChatbotStorageService';
+import { useAuth } from '../../context/AuthContext';
 
 interface TeamPanelProps {
   currentUserId?: string;
@@ -47,9 +48,11 @@ interface TeamPanelProps {
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({ 
-  currentUserId = 'current_user',
-  onChatReference 
+  onChatReference
 }) => {
+  // Get real user from auth context
+  const { currentUser: user, loading: authLoading } = useAuth();
+  const currentUserId = user?.uid || 'anonymous';
   // Enhanced service instances
   const [humanChatService] = useState(() => HumanChatService.getInstance());
   const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
@@ -80,11 +83,19 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   useEffect(() => {
     const initializeTeamPanel = async () => {
       try {
+        // Wait for auth to finish loading
+        if (authLoading) {
+          console.log('🔍 [Team] Auth still loading, waiting...');
+          return;
+        }
+        
+        console.log('🔍 [Team] Initializing team panel for user:', user?.uid);
+        
         // Initialize all services
         humanChatService.initialize(currentUserId);
         
         // Use the correct method for collaboration service
-        const userName = `User ${currentUserId}`; // You might want to get this from auth context
+        const userName = user?.displayName || user?.email || `User ${currentUserId}`;
         const state = await collaborationService.initializeUserCollaboration(currentUserId, userName);
         setCollaborationState(state);
         
@@ -113,7 +124,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       humanChatService.updateUserStatus('offline');
       cleanupListeners();
     };
-  }, [currentUserId, humanChatService, collaborationService, orgService]);
+  }, [user?.uid, authLoading]); // Depend on user and authLoading like the working page
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -252,14 +263,68 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   // AI Teammates functions
   const loadAiTeammates = async () => {
+    console.log('🔍 [AI Teammates] loadAiTeammates called, currentUserId:', currentUserId);
+    console.log('🔍 [AI Teammates] authLoading:', authLoading);
+    
+    // Circuit breaker: prevent multiple simultaneous calls
+    if (agentsLoading) {
+      console.log('🔄 [AI Teammates] Already loading agents, skipping duplicate call');
+      return;
+    }
+    
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('🔍 [AI Teammates] Auth still loading, waiting...');
+      return;
+    }
+    
+    if (!user?.uid) {
+      console.log('🔍 [AI Teammates] No user UID after auth loaded, setting mock data');
+      // Set mock data for demo purposes
+      const mockAgents: ChatbotProfile[] = [
+        {
+          id: 'agent-001',
+          identity: {
+            id: 'agent-001',
+            name: 'Claude Assistant',
+            role: 'General Assistant',
+            description: 'Helpful AI assistant for various tasks',
+            avatar: '/avatars/claude.jpg',
+            personality: 'helpful',
+            expertise: ['General', 'Analysis', 'Writing']
+          },
+          configuration: {
+            selectedModel: 'claude-3-sonnet',
+            temperature: 0.7,
+            maxTokens: 4096,
+            systemPrompt: 'You are a helpful assistant...'
+          },
+          status: 'active',
+          createdAt: new Date('2024-01-15'),
+          lastActive: new Date(),
+          health: { overall: 95, trust: 92, performance: 98, governance: 94 }
+        }
+      ];
+      setAiTeammates(mockAgents);
+      return;
+    }
+
     try {
       setAgentsLoading(true);
+      console.log('🔍 [AI Teammates] Calling chatbotService.getChatbots with user:', user.uid);
+      
       const chatbotService = ChatbotStorageService.getInstance();
-      const agents = await chatbotService.getChatbots(currentUserId);
+      const agents = await chatbotService.getChatbots(user.uid);
+      
+      console.log('🔍 [AI Teammates] getChatbots returned:', agents.length, 'agents');
+      console.log('🔍 [AI Teammates] Agent data:', agents);
+      
       setAiTeammates(agents);
-      console.log('✅ [AI Teammates] Loaded', agents.length, 'AI teammates');
+      console.log('✅ [AI Teammates] Successfully loaded', agents.length, 'AI teammates');
     } catch (error) {
       console.error('❌ [AI Teammates] Failed to load:', error);
+      // Set empty array on error
+      setAiTeammates([]);
     } finally {
       setAgentsLoading(false);
     }
