@@ -170,20 +170,21 @@ function App() {
           {/* Main Content Area */}
           <main className="main-content">
             <div className="content-container">
-              {/* Left Side - Hero Text */}
+              {/* Left Side - Hero Content */}
               <section className="hero-section">
                 <h1 className="hero-title">
-                  Transform Any AI Into<br />
-                  <span className="hero-highlight">Governed Intelligence</span>
+                  Govern Any AI.<br />
+                  <span className="hero-title-accent">Measure What Matters.</span>
                 </h1>
                 <p className="hero-description">
-                  Promethios wraps any LLM in enterprise-grade governance,
-                  providing cryptographic verification, audit trails, and real-time
-                  compliance monitoring.
+                  Promethios transforms any large language model into governed intelligence—measuring trust, compliance, security, and performance in real time. Every interaction is cryptographically verified, logged, and accountable.
+                </p>
+                <p className="hero-supporting">
+                  <em>Because in enterprise AI, what you can't measure, you can't trust.</em>
                 </p>
                 <div className="hero-buttons">
-                  <button className="primary-button">Start Free Trial</button>
-                  <button className="secondary-button">View Documentation</button>
+                  <button className="btn-primary">Start Free Trial</button>
+                  <button className="btn-secondary">View Documentation</button>
                 </div>
               </section>
 
