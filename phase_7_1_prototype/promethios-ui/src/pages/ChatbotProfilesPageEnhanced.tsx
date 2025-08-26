@@ -343,6 +343,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [proactiveAssistance, setProactiveAssistance] = useState<string | null>(null);
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Add metrics caching to prevent repeated calculations
   const metricsCache = useRef<Map<string, { metrics: ChatbotMetrics; timestamp: number }>>(new Map());
@@ -1467,19 +1468,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const handleInputChange = useCallback((value: string) => {
     setMessageInput(value);
     
-    // Generate smart suggestions with debouncing
+    // Only generate suggestions when autonomous stars are active and user pauses typing
     if (autonomousStarsActive) {
-      const timeoutId = setTimeout(() => {
-        generateSmartSuggestions(value, {
-          selectedChatbot,
-          projects,
-          teamMembers,
-          autonomousMode,
-          currentTaskPlan
-        });
-      }, 300);
+      // Clear existing timeout
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
       
-      return () => clearTimeout(timeoutId);
+      // Hide suggestions while typing
+      setShowSuggestions(false);
+      
+      // Only show suggestions if input has meaningful content or specific triggers
+      const shouldShowSuggestions = value.trim().length > 2 || 
+        ['create', 'build', 'help', 'show', 'what'].some(trigger => 
+          value.toLowerCase().includes(trigger)
+        );
+      
+      if (shouldShowSuggestions) {
+        // Show suggestions after user stops typing (Amazon-style delay)
+        suggestionTimeoutRef.current = setTimeout(() => {
+          generateSmartSuggestions(value, {
+            selectedChatbot,
+            projects,
+            teamMembers,
+            autonomousMode,
+            currentTaskPlan
+          });
+        }, 800); // Longer delay to be less intrusive
+      }
     }
   }, [autonomousStarsActive, generateSmartSuggestions, selectedChatbot, projects, teamMembers, autonomousMode, currentTaskPlan]);
 
@@ -2568,11 +2584,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     <Add />
                   </IconButton>
                   
-                  {/* Enhanced Text Input with Smart Suggestions */}
+                  {/* Enhanced Text Input with Amazon-Style Smart Suggestions */}
                   <Box sx={{ flex: 1, position: 'relative' }}>
                     <TextField
                       fullWidth
-                      placeholder={autonomousStarsActive ? "Type your message... ⭐ Smart suggestions enabled" : "Type your message..."}
+                      placeholder="Type your message..."
                       value={messageInput}
                       onChange={(e) => handleInputChange(e.target.value)}
                       onKeyDown={handleKeyNavigation}
@@ -2606,7 +2622,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           color: 'white',
                           '& fieldset': { 
                             borderColor: autonomousStarsActive ? '#f59e0b' : '#334155',
-                            borderWidth: autonomousStarsActive ? 2 : 1
+                            borderWidth: 1
                           },
                           '&:hover fieldset': { borderColor: '#3b82f6' },
                           '&.Mui-focused fieldset': { 
@@ -2617,28 +2633,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       }}
                     />
                     
-                    {/* Smart Suggestions Dropdown */}
+                    {/* Amazon-Style Smart Suggestions Dropdown (Below Input) */}
                     {showSuggestions && smartSuggestions.length > 0 && (
                       <Paper
                         sx={{
                           position: 'absolute',
-                          top: -10,
+                          top: '100%',
                           left: 0,
                           right: 0,
                           zIndex: 1000,
                           bgcolor: '#1e293b',
                           border: '1px solid #334155',
                           borderRadius: 1,
-                          transform: 'translateY(-100%)',
-                          maxHeight: 200,
-                          overflow: 'auto'
+                          mt: 0.5,
+                          maxHeight: 240,
+                          overflow: 'auto',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
                         }}
                       >
-                        <Box sx={{ p: 1 }}>
-                          <Typography variant="caption" sx={{ color: '#64748b', px: 1 }}>
-                            ⭐ Smart Suggestions
-                          </Typography>
-                        </Box>
                         {smartSuggestions.map((suggestion, index) => (
                           <Box
                             key={index}
@@ -2647,42 +2659,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               p: 1.5,
                               cursor: 'pointer',
                               bgcolor: selectedSuggestionIndex === index ? '#334155' : 'transparent',
-                              borderLeft: selectedSuggestionIndex === index ? '3px solid #f59e0b' : '3px solid transparent',
-                              '&:hover': { bgcolor: '#334155' }
+                              borderLeft: selectedSuggestionIndex === index ? '3px solid #f59e0b' : 'none',
+                              '&:hover': { bgcolor: '#334155' },
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1
                             }}
                           >
-                            <Typography variant="body2" sx={{ color: 'white' }}>
+                            <Box sx={{ color: '#f59e0b', fontSize: '14px' }}>
+                              {suggestion.includes('Create') ? '💡' : 
+                               suggestion.includes('team') ? '👥' : 
+                               suggestion.includes('project') ? '📁' : 
+                               suggestion.includes('task') ? '🚀' : '⭐'}
+                            </Box>
+                            <Typography variant="body2" sx={{ color: 'white', flex: 1 }}>
                               {suggestion}
                             </Typography>
                           </Box>
                         ))}
                       </Paper>
-                    )}
-                    
-                    {/* Proactive Assistance Alert */}
-                    {proactiveAssistance && !messageInput.trim() && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: -50,
-                          left: 0,
-                          right: 0,
-                          zIndex: 999
-                        }}
-                      >
-                        <Alert 
-                          severity="info" 
-                          sx={{ 
-                            bgcolor: '#1e293b', 
-                            color: '#94a3b8',
-                            border: '1px solid #334155',
-                            '& .MuiAlert-icon': { color: '#f59e0b' }
-                          }}
-                          onClose={() => setProactiveAssistance(null)}
-                        >
-                          {proactiveAssistance}
-                        </Alert>
-                      </Box>
                     )}
                   </Box>
                   
