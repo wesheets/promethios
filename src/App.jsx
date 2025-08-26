@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Import flame assets
@@ -65,7 +65,7 @@ function App() {
       label: 'Trust Score', 
       image: trustNode, 
       color: '#6366f1', // indigo
-      position: { top: '15%', left: '-120px' },
+      position: { top: '25%', left: '-60px' },
       metric: 'trust'
     },
     { 
@@ -73,7 +73,7 @@ function App() {
       label: 'Security Audit Logs', 
       image: cryptographicLogs, 
       color: '#f59e0b', // amber
-      position: { top: '27%', left: '-120px' },
+      position: { top: '33%', left: '-60px' },
       metric: 'security'
     },
     { 
@@ -81,7 +81,7 @@ function App() {
       label: 'Real-time Monitoring', 
       image: realtimeMonitoring, 
       color: '#3b82f6', // blue
-      position: { top: '39%', left: '-120px' },
+      position: { top: '41%', left: '-60px' },
       metric: 'monitoring'
     },
     { 
@@ -89,7 +89,7 @@ function App() {
       label: 'Compliance', 
       image: complianceNode, 
       color: '#10b981', // green
-      position: { top: '51%', left: '-120px' },
+      position: { top: '49%', left: '-60px' },
       metric: 'compliance'
     },
     { 
@@ -97,7 +97,7 @@ function App() {
       label: 'Memory', 
       image: memoryNode, 
       color: '#ef4444', // red
-      position: { top: '63%', left: '-120px' },
+      position: { top: '57%', left: '-60px' },
       metric: 'memory'
     }
   ];

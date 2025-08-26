@@ -496,8 +496,8 @@ body {
 
 /* Trust Node Push-Down - Indigo */
 .push-down-effect:nth-child(1) {
-  top: 15%;
-  left: -60px;
+  top: 25%;
+  left: 0px;
   width: 200px;
   height: 300px;
 }
@@ -517,8 +517,8 @@ body {
 
 /* Security Node Push-Down - Amber */
 .push-down-effect:nth-child(2) {
-  top: 27%;
-  left: -60px;
+  top: 33%;
+  left: 0px;
   width: 200px;
   height: 300px;
 }
@@ -538,8 +538,8 @@ body {
 
 /* Monitoring Node Push-Down - Blue */
 .push-down-effect:nth-child(3) {
-  top: 39%;
-  left: -60px;
+  top: 41%;
+  left: 0px;
   width: 200px;
   height: 300px;
 }
@@ -559,8 +559,8 @@ body {
 
 /* Compliance Node Push-Down - Green */
 .push-down-effect:nth-child(4) {
-  top: 51%;
-  left: -60px;
+  top: 49%;
+  left: 0px;
   width: 200px;
   height: 300px;
 }
@@ -580,8 +580,8 @@ body {
 
 /* Memory Node Push-Down - Red */
 .push-down-effect:nth-child(5) {
-  top: 63%;
-  left: -60px;
+  top: 57%;
+  left: 0px;
   width: 200px;
   height: 300px;
 }
