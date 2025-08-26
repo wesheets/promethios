@@ -1,16 +1,11 @@
 /**
  * ChatbotTypes - Type definitions for chatbot-related interfaces
- * Re-exports from ChatbotStorageService for backward compatibility
  */
 
-export { 
-  ChatbotProfile,
-  DeploymentChannel,
-  AutomationRule,
-  ResponseTemplate 
-} from '../services/ChatbotStorageService';
+// Re-export only ChatbotProfile to avoid circular imports
+export type { ChatbotProfile } from '../services/ChatbotStorageService';
 
-// Additional chatbot-specific types can be added here
+// Additional chatbot-specific types
 export interface ChatMessage {
   id: string;
   content: string;
