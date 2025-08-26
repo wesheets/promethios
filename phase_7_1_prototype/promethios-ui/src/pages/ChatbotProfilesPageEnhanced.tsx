@@ -107,9 +107,10 @@ import { AgentToolProfile } from '../types/ToolTypes';
 import { conversationalReceiptSearchService } from '../services/ConversationalReceiptSearchService';
 import AgentManageModal from '../components/AgentManageModal';
 import DebugPanel from '../components/DebugPanel';
+import TeamPanel from '../components/team/TeamPanel';
 
 // Right panel types
-type RightPanelType = 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | null;
+type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | null;
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -2257,6 +2258,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 {/* Command Panel Tabs */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {[
+                    { key: 'team', label: 'TEAM' },
                     { key: 'chats', label: 'CHATS' },
                     { key: 'analytics', label: 'ANALYTICS' },
                     { key: 'customize', label: 'CUSTOMIZE' },
@@ -2301,6 +2303,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
               {/* Panel Content */}
               <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                {rightPanelType === 'team' && (
+                  <TeamPanel currentUserId={user?.uid} />
+                )}
+                
                 {rightPanelType === 'chats' && selectedChatbot && (
                   <ChatHistoryPanel
                     agentId={selectedChatbot.id}
