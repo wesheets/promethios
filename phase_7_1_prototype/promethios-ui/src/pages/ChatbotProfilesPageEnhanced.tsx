@@ -12,6 +12,11 @@ import { AutonomousTaskPlanningEngine } from '../services/AutonomousTaskPlanning
 import { AutonomousComplianceMonitor } from '../services/AutonomousComplianceMonitor';
 import { AutonomousRiskAssessment } from '../services/AutonomousRiskAssessment';
 import { AutonomousApprovalWorkflow } from '../services/AutonomousApprovalWorkflow';
+// Repository and workflow imports
+import { WorkflowRepositoryManager, WorkflowProject, ProjectTemplate } from '../services/WorkflowRepositoryManager';
+import { RepositoryVersionControl } from '../services/RepositoryVersionControl';
+import { RepositoryExtensionService } from '../services/RepositoryExtensionService';
+import RepositoryBrowser from '../components/workflow/RepositoryBrowser';
 import {
   Box,
   Container,
@@ -222,8 +227,28 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         console.error('❌ [Autonomous] Failed to initialize autonomous systems:', error);
       }
     };
+
+    // Initialize repository systems
+    const initializeRepositorySystems = async () => {
+      try {
+        console.log('📁 [Repository] Initializing repository systems...');
+        
+        // Load project templates
+        const templates = await repositoryManager.getProjectTemplates();
+        setProjectTemplates(templates);
+        
+        // Load user projects
+        const userProjects = await repositoryManager.getUserProjects(user?.uid || 'anonymous');
+        setProjects(userProjects);
+        
+        console.log('✅ [Repository] Repository systems initialized successfully');
+      } catch (error) {
+        console.error('❌ [Repository] Failed to initialize repository systems:', error);
+      }
+    };
     
     initializeAutonomousSystems();
+    initializeRepositorySystems();
     
     return () => {
       mountedRef.current = false;
@@ -276,6 +301,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
   const [orgService] = useState(() => OrganizationManagementService.getInstance());
   const [humanChatService] = useState(() => HumanChatService.getInstance());
+  
+  // Repository and workflow services
+  const [repositoryManager] = useState(() => new WorkflowRepositoryManager());
+  const [versionControl] = useState(() => new RepositoryVersionControl());
+  const [repositoryExtensions] = useState(() => new RepositoryExtensionService());
+  const [projects, setProjects] = useState<WorkflowProject[]>([]);
+  const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
   
   // Bot-specific state management
   const [botStates, setBotStates] = useState<Map<string, BotState>>(new Map());
@@ -2670,6 +2702,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   {[
                     { key: 'team', label: 'TEAM', badge: unreadTeamCount },
                     { key: 'chats', label: 'CHATS' },
+                    { key: 'repo', label: 'REPO', badge: projects.length },
                     { key: 'analytics', label: 'ANALYTICS' },
                     { key: 'customize', label: 'CUSTOMIZE' },
                     { key: 'personality', label: 'PERSONALITY' },
@@ -2734,6 +2767,54 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {rightPanelType === 'team' && (
                   <TeamPanel currentUserId={user?.uid} />
+                )}
+                
+                {rightPanelType === 'repo' && (
+                  <RepositoryBrowser
+                    projects={projects}
+                    templates={projectTemplates}
+                    onProjectCreate={async (template: ProjectTemplate, projectName: string) => {
+                      try {
+                        console.log('📁 [Repository] Creating project from template:', template.name);
+                        
+                        // Create new project
+                        const newProject = await repositoryManager.createProjectFromTemplate(
+                          template,
+                          projectName,
+                          user?.uid || 'anonymous'
+                        );
+                        
+                        // Update projects list
+                        setProjects(prev => [...prev, newProject]);
+                        
+                        // Start autonomous mode for project setup
+                        if (autonomousGovernance) {
+                          const taskPlan = await autonomousGovernance.createTaskPlan({
+                            goal: `Set up ${projectName} project using ${template.name} template`,
+                            context: {
+                              projectId: newProject.id,
+                              templateId: template.id,
+                              projectName,
+                              templateName: template.name
+                            }
+                          });
+                          
+                          console.log('🤖 [Autonomous] Starting project setup task:', taskPlan);
+                        }
+                        
+                        console.log('✅ [Repository] Project created successfully:', newProject);
+                      } catch (error) {
+                        console.error('❌ [Repository] Failed to create project:', error);
+                      }
+                    }}
+                    onProjectSelect={(project: WorkflowProject) => {
+                      console.log('📁 [Repository] Project selected:', project.name);
+                      // Could integrate with Live Agent to show project status
+                    }}
+                    repositoryManager={repositoryManager}
+                    versionControl={versionControl}
+                    currentUserId={user?.uid || 'anonymous'}
+                  />
                 )}
                 
                 {rightPanelType === 'chats' && selectedChatbot && (
