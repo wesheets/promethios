@@ -99,7 +99,7 @@ import {
   Insights as InsightsIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { ChatbotStorageService } from '../services/ChatbotStorageService';
+import ChatbotStorageService, { ChatbotProfile } from '../services/ChatbotStorageService';
 import { connectedAppsService, ConnectedApp } from '../services/ConnectedAppsService';
 import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
 import ChatHistoryPanel from '../components/chat/ChatHistoryPanel';
