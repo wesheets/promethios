@@ -417,7 +417,7 @@ body {
   bottom: 120px;
   left: 50%;
   transform: translateX(-50%);
-  width: 400px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
