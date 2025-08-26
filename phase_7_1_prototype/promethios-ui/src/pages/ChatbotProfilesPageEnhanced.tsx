@@ -1167,23 +1167,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Set restoration flag to prevent circular updates
     isRestoringFromURLRef.current = true;
     
-    // Batch all state updates together using a single setState call
-    setBotStates(prev => {
-      const newMap = new Map(prev);
-      const currentState = newMap.get(agentParam) || initializeBotState(agentParam);
-      const updatedState = {
-        ...currentState,
-        rightPanelType: (panelParam as RightPanelType) || currentState.rightPanelType,
-        isWorkspaceMode: true,
-        chatHistoryRefreshTrigger: currentState.chatHistoryRefreshTrigger + 1
-      };
-      newMap.set(agentParam, updatedState);
-      return newMap;
-    });
-    
-    // Set selected chatbot if needed
+    // Use handleChatbotSelect to properly initialize session
     if (!isAlreadySelected) {
-      setSelectedChatbot(chatbot);
+      console.log('🔄 [URL Restoration] Calling handleChatbotSelect for proper session initialization');
+      handleChatbotSelect(chatbot);
+    } else {
+      // Just update the panel if chatbot is already selected
+      setBotStates(prev => {
+        const newMap = new Map(prev);
+        const currentState = newMap.get(agentParam) || initializeBotState(agentParam);
+        const updatedState = {
+          ...currentState,
+          rightPanelType: (panelParam as RightPanelType) || currentState.rightPanelType,
+          isWorkspaceMode: true,
+          chatHistoryRefreshTrigger: currentState.chatHistoryRefreshTrigger + 1
+        };
+        newMap.set(agentParam, updatedState);
+        return newMap;
+      });
     }
     
     // Update last processed params
