@@ -2,10 +2,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import AttachmentRenderer from '../components/AttachmentRenderer';
-// Enhanced team collaboration imports
-import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
-import { OrganizationManagementService, Organization } from '../services/OrganizationManagementService';
-import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../services/HumanChatService';
 import {
   Box,
   Container,
@@ -116,30 +112,6 @@ import TeamPanel from '../components/team/TeamPanel';
 // Right panel types
 type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | null;
 
-// Multi-chat context types
-type ChatContextType = 'ai_agent' | 'human_chat' | 'team_channel';
-
-interface ChatContext {
-  id: string;
-  type: ChatContextType;
-  name: string;
-  avatar?: string;
-  isActive: boolean;
-  unreadCount: number;
-  lastMessage?: string;
-  lastMessageTime?: Date;
-  canClose: boolean; // AI agent can't be closed, humans/channels can
-}
-
-interface MultiChatState {
-  activeContextId: string;
-  contexts: ChatContext[];
-  sidePanel: {
-    isOpen: boolean;
-    selectedContactId?: string;
-  };
-}
-
 interface ChatbotMetrics {
   healthScore: number;
   trustScore: number;
@@ -230,29 +202,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   
   const chatbotService = ChatbotStorageService.getInstance();
   
-  // Enhanced team collaboration services
-  const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
-  const [orgService] = useState(() => OrganizationManagementService.getInstance());
-  const [humanChatService] = useState(() => HumanChatService.getInstance());
-  
   // Bot-specific state management
   const [botStates, setBotStates] = useState<Map<string, BotState>>(new Map());
-  
-  // Multi-chat state management
-  const [multiChatState, setMultiChatState] = useState<MultiChatState>({
-    activeContextId: 'ai_agent',
-    contexts: [],
-    sidePanel: {
-      isOpen: false
-    }
-  });
-  
-  // Enhanced team collaboration state
-  const [collaborationState, setCollaborationState] = useState<TeamCollaborationState | null>(null);
-  const [notifications, setNotifications] = useState<CollaborationNotification[]>([]);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [unreadTeamCount, setUnreadTeamCount] = useState(0);
   
   // Add metrics caching to prevent repeated calculations
   const metricsCache = useRef<Map<string, { metrics: ChatbotMetrics; timestamp: number }>>(new Map());
@@ -340,94 +291,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       newStates.set(botId, { ...currentState, ...updates });
       return newStates;
     });
-  };
-
-  // Multi-chat context management functions
-  const initializeMultiChatContexts = (selectedChatbot: ChatbotProfile | null) => {
-    const aiContext: ChatContext = {
-      id: 'ai_agent',
-      type: 'ai_agent',
-      name: selectedChatbot?.identity?.name || 'AI Agent',
-      avatar: selectedChatbot?.identity?.avatar,
-      isActive: true,
-      unreadCount: 0,
-      canClose: false
-    };
-
-    setMultiChatState(prev => ({
-      ...prev,
-      activeContextId: 'ai_agent',
-      contexts: [aiContext]
-    }));
-  };
-
-  const addChatContext = (context: Omit<ChatContext, 'isActive'>) => {
-    setMultiChatState(prev => {
-      const existingContext = prev.contexts.find(c => c.id === context.id);
-      if (existingContext) {
-        // Switch to existing context
-        return {
-          ...prev,
-          activeContextId: context.id,
-          contexts: prev.contexts.map(c => ({
-            ...c,
-            isActive: c.id === context.id
-          }))
-        };
-      }
-
-      // Add new context
-      const newContext: ChatContext = {
-        ...context,
-        isActive: true
-      };
-
-      return {
-        ...prev,
-        activeContextId: context.id,
-        contexts: prev.contexts.map(c => ({ ...c, isActive: false })).concat(newContext)
-      };
-    });
-  };
-
-  const removeChatContext = (contextId: string) => {
-    setMultiChatState(prev => {
-      const filteredContexts = prev.contexts.filter(c => c.id !== contextId);
-      const wasActive = prev.activeContextId === contextId;
-      
-      // If removing active context, switch to AI agent
-      const newActiveId = wasActive ? 'ai_agent' : prev.activeContextId;
-      
-      return {
-        ...prev,
-        activeContextId: newActiveId,
-        contexts: filteredContexts.map(c => ({
-          ...c,
-          isActive: c.id === newActiveId
-        }))
-      };
-    });
-  };
-
-  const switchChatContext = (contextId: string) => {
-    setMultiChatState(prev => ({
-      ...prev,
-      activeContextId: contextId,
-      contexts: prev.contexts.map(c => ({
-        ...c,
-        isActive: c.id === contextId
-      }))
-    }));
-  };
-
-  const toggleSidePanel = () => {
-    setMultiChatState(prev => ({
-      ...prev,
-      sidePanel: {
-        ...prev.sidePanel,
-        isOpen: !prev.sidePanel.isOpen
-      }
-    }));
   };
 
   // Helper function to update chat history refresh trigger
@@ -879,93 +742,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🔍 [DEBUG] - About to call loadChatbots...');
     loadChatbots();
     loadConnectedApps();
-    
-    // Initialize team collaboration services
-    if (user?.uid && !authLoading) {
-      initializeTeamCollaboration();
-    }
   }, [user?.uid, authLoading]); // Removed loadChatbots to prevent infinite loop
-
-  // Team collaboration initialization
-  const initializeTeamCollaboration = async () => {
-    try {
-      console.log('🤝 [Team] Initializing team collaboration services...');
-      
-      // Initialize all services
-      await collaborationService.initialize(user?.uid || '');
-      await orgService.initialize(user?.uid || '');
-      await humanChatService.initialize(user?.uid || '');
-      
-      // Load initial data
-      await loadTeamCollaborationData();
-      
-      // Set up real-time listeners
-      setupTeamCollaborationListeners();
-      
-      console.log('✅ [Team] Team collaboration services initialized');
-    } catch (error) {
-      console.error('❌ [Team] Failed to initialize team collaboration:', error);
-    }
-  };
-
-  const loadTeamCollaborationData = async () => {
-    try {
-      // Load collaboration state
-      const collabState = await collaborationService.getCollaborationState();
-      setCollaborationState(collabState);
-      setUnreadTeamCount(collabState.unreadMessages);
-      
-      // Load notifications
-      const notifs = await collaborationService.getNotifications();
-      setNotifications(notifs);
-      
-      // Load team members
-      const members = await humanChatService.getTeamMembers();
-      setTeamMembers(members);
-      
-      // Load organizations
-      const orgs = await orgService.getUserOrganizations(user?.uid || '');
-      setOrganizations(orgs);
-      
-      console.log('✅ [Team] Team collaboration data loaded');
-    } catch (error) {
-      console.error('❌ [Team] Failed to load team collaboration data:', error);
-    }
-  };
-
-  const setupTeamCollaborationListeners = () => {
-    // Listen for new notifications
-    collaborationService.onNotification((notification) => {
-      setNotifications(prev => [notification, ...prev]);
-      if (!notification.read) {
-        setUnreadTeamCount(prev => prev + 1);
-      }
-    });
-
-    // Listen for team updates
-    collaborationService.onTeamUpdate(() => {
-      loadTeamCollaborationData();
-    });
-
-    // Listen for new human messages
-    humanChatService.onMessage((message) => {
-      // Update unread count for human chats
-      setMultiChatState(prev => ({
-        ...prev,
-        contexts: prev.contexts.map(context => {
-          if (context.type === 'human_chat' && context.id === message.senderId) {
-            return {
-              ...context,
-              unreadCount: context.isActive ? 0 : context.unreadCount + 1,
-              lastMessage: message.content,
-              lastMessageTime: message.timestamp
-            };
-          }
-          return context;
-        })
-      }));
-    });
-  };
 
    // URL restoration effect - restore state from URL parameters
   const agentParam = useMemo(() => searchParams.get('agent'), [searchParams]);
@@ -1155,9 +932,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log(`🎯 [Command Center] Selecting chatbot: ${chatbot.identity.name} (ID: ${chatbotId})`);
     
     setSelectedChatbot(chatbot);
-    
-    // Initialize multi-chat contexts for this chatbot
-    initializeMultiChatContexts(chatbot);
     
     // Initialize bot state if it doesn't exist
     if (!botStates.has(chatbotId)) {
@@ -1813,118 +1587,28 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             <Box sx={{ display: 'flex', height: '100%' }}>
               {/* Left Side - Chat Interface */}
               <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}>
-                {/* Multi-Tab Chat Header */}
-              <Box sx={{ borderBottom: '1px solid #334155' }}>
-                {/* Tab Bar */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  px: 3, 
-                  py: 1,
-                  bgcolor: '#1e293b',
-                  overflowX: 'auto',
-                  '&::-webkit-scrollbar': { height: 4 },
-                  '&::-webkit-scrollbar-track': { bgcolor: '#334155' },
-                  '&::-webkit-scrollbar-thumb': { bgcolor: '#64748b', borderRadius: 2 }
-                }}>
-                  {multiChatState.contexts.map((context) => (
-                    <Box
-                      key={context.id}
-                      onClick={() => switchChatContext(context.id)}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        px: 2,
-                        py: 1,
-                        mr: 1,
-                        minWidth: 'fit-content',
-                        bgcolor: context.isActive ? '#3b82f6' : '#334155',
-                        color: context.isActive ? 'white' : '#94a3b8',
-                        borderRadius: 1,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          bgcolor: context.isActive ? '#2563eb' : '#475569'
-                        }
-                      }}
-                    >
-                      {context.avatar && (
-                        <Avatar 
-                          src={context.avatar} 
-                          sx={{ width: 20, height: 20, mr: 1 }}
-                        />
-                      )}
-                      <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
-                        {context.name}
-                      </Typography>
-                      {context.unreadCount > 0 && (
-                        <Badge 
-                          badgeContent={context.unreadCount} 
-                          color="error" 
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                      {context.canClose && (
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeChatContext(context.id);
-                          }}
-                          sx={{ 
-                            ml: 1, 
-                            p: 0.5, 
-                            color: 'inherit',
-                            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
-                          }}
-                        >
-                          <Close sx={{ fontSize: 14 }} />
-                        </IconButton>
-                      )}
-                    </Box>
-                  ))}
-                  
-                  {/* Add Contact Button */}
-                  <IconButton
-                    onClick={toggleSidePanel}
-                    sx={{
-                      ml: 1,
-                      color: '#64748b',
-                      bgcolor: multiChatState.sidePanel.isOpen ? '#3b82f6' : '#334155',
-                      '&:hover': { bgcolor: multiChatState.sidePanel.isOpen ? '#2563eb' : '#475569' }
-                    }}
-                  >
-                    <Group />
-                  </IconButton>
+                {/* Chat Header */}
+              <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                  <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                    Chat with Your Agent{currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                    {selectedChatbot?.identity?.name || 'Agent'}
+                  </Typography>
                 </Box>
-
-                {/* Context Header */}
-                <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                      {multiChatState.contexts.find(c => c.isActive)?.name || 'Chat'}
-                      {currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      {multiChatState.activeContextId === 'ai_agent' 
-                        ? selectedChatbot?.identity?.name || 'Agent'
-                        : 'Team Member'
-                      }
-                    </Typography>
-                  </Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => {
-                      if (selectedChatbotId) {
-                        updateBotState(selectedChatbotId, { isWorkspaceMode: false });
-                      }
-                    }}
-                    sx={{ color: '#64748b', borderColor: '#64748b' }}
-                  >
-                    ← Back to Agents
-                  </Button>
-                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    if (selectedChatbotId) {
+                      updateBotState(selectedChatbotId, { isWorkspaceMode: false });
+                    }
+                  }}
+                  sx={{ color: '#64748b', borderColor: '#64748b' }}
+                >
+                  ← Back to Agents
+                </Button>
               </Box>
 
               {/* Chat Messages Area */}
@@ -2574,7 +2258,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 {/* Command Panel Tabs */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {[
-                    { key: 'team', label: 'TEAM', badge: unreadTeamCount },
+                    { key: 'team', label: 'TEAM' },
                     { key: 'chats', label: 'CHATS' },
                     { key: 'analytics', label: 'ANALYTICS' },
                     { key: 'customize', label: 'CUSTOMIZE' },
@@ -2592,40 +2276,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'governance', label: 'GOVERNANCE' },
                     { key: 'debug', label: 'DEBUG' }
                   ].map((tab) => (
-                    <Badge
+                    <Button
                       key={tab.key}
-                      badgeContent={tab.badge || 0}
-                      color="error"
-                      invisible={!tab.badge || tab.badge === 0}
+                      size="small"
+                      variant={rightPanelType === tab.key ? 'contained' : 'outlined'}
+                      onClick={() => setRightPanelType(tab.key as RightPanelType)}
                       sx={{
-                        '& .MuiBadge-badge': {
-                          fontSize: '0.6rem',
-                          height: 16,
-                          minWidth: 16
-                        }
+                        fontSize: '0.7rem',
+                        px: 1.5,
+                        py: 0.5,
+                        minWidth: 'auto',
+                        borderColor: '#374151',
+                        color: rightPanelType === tab.key ? 'white' : '#94a3b8',
+                        bgcolor: rightPanelType === tab.key ? '#3b82f6' : 'transparent',
+                        '&:hover': { 
+                          borderColor: '#4b5563', 
+                          bgcolor: rightPanelType === tab.key ? '#2563eb' : '#374151' 
+                        },
                       }}
                     >
-                      <Button
-                        size="small"
-                        variant={rightPanelType === tab.key ? 'contained' : 'outlined'}
-                        onClick={() => setRightPanelType(tab.key as RightPanelType)}
-                        sx={{
-                          fontSize: '0.7rem',
-                          px: 1.5,
-                          py: 0.5,
-                          minWidth: 'auto',
-                          borderColor: '#374151',
-                          color: rightPanelType === tab.key ? 'white' : '#94a3b8',
-                          bgcolor: rightPanelType === tab.key ? '#3b82f6' : 'transparent',
-                          '&:hover': { 
-                            borderColor: '#4b5563', 
-                            bgcolor: rightPanelType === tab.key ? '#2563eb' : '#374151' 
-                          },
-                        }}
-                      >
-                        {tab.label}
-                      </Button>
-                    </Badge>
+                      {tab.label}
+                    </Button>
                   ))}
                 </Box>
               </Box>
@@ -3590,168 +3261,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
               </Box>
             </Box>
-            
-            {/* Sliding Contact Panel */}
-            <Slide direction="left" in={multiChatState.sidePanel.isOpen} mountOnEnter unmountOnExit>
-              <Box sx={{
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                width: 320,
-                height: '100vh',
-                bgcolor: '#0f172a',
-                borderLeft: '1px solid #334155',
-                zIndex: 1300,
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '-4px 0 20px rgba(0,0,0,0.3)'
-              }}>
-                {/* Contact Panel Header */}
-                <Box sx={{ 
-                  p: 3, 
-                  borderBottom: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                    Team Contacts
-                  </Typography>
-                  <IconButton
-                    onClick={toggleSidePanel}
-                    sx={{ color: '#64748b' }}
-                  >
-                    <Close />
-                  </IconButton>
-                </Box>
-
-                {/* Contact Search */}
-                <Box sx={{ p: 2 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Search team members..."
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Search sx={{ color: '#64748b', fontSize: 18 }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        bgcolor: '#1e293b',
-                        color: 'white',
-                        '& fieldset': { borderColor: '#334155' },
-                        '&:hover fieldset': { borderColor: '#3b82f6' },
-                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                      }
-                    }}
-                  />
-                </Box>
-
-                {/* Online Members */}
-                <Box sx={{ px: 2, pb: 1 }}>
-                  <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
-                    ONLINE NOW ({teamMembers.filter(m => m.isOnline).length})
-                  </Typography>
-                </Box>
-
-                {/* Contact List */}
-                <Box sx={{ flex: 1, overflow: 'auto' }}>
-                  {teamMembers.map((member) => (
-                    <Box
-                      key={member.id}
-                      onClick={() => {
-                        addChatContext({
-                          id: `human_${member.id}`,
-                          type: 'human_chat',
-                          name: member.name,
-                          avatar: member.avatar,
-                          unreadCount: 0,
-                          canClose: true
-                        });
-                        toggleSidePanel();
-                      }}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        p: 2,
-                        mx: 2,
-                        mb: 1,
-                        borderRadius: 1,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          bgcolor: '#1e293b'
-                        }
-                      }}
-                    >
-                      <Box sx={{ position: 'relative', mr: 2 }}>
-                        <Avatar 
-                          src={member.avatar} 
-                          sx={{ width: 36, height: 36 }}
-                        >
-                          {member.name.charAt(0)}
-                        </Avatar>
-                        {member.isOnline && (
-                          <Box sx={{
-                            position: 'absolute',
-                            bottom: 0,
-                            right: 0,
-                            width: 12,
-                            height: 12,
-                            bgcolor: '#10b981',
-                            borderRadius: '50%',
-                            border: '2px solid #0f172a'
-                          }} />
-                        )}
-                      </Box>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                          {member.name}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: '#64748b' }}>
-                          {member.role} • {member.isOnline ? 'Online' : 'Offline'}
-                        </Typography>
-                      </Box>
-                      {member.unreadCount > 0 && (
-                        <Badge 
-                          badgeContent={member.unreadCount} 
-                          color="error"
-                          sx={{
-                            '& .MuiBadge-badge': {
-                              fontSize: '0.6rem',
-                              height: 16,
-                              minWidth: 16
-                            }
-                          }}
-                        />
-                      )}
-                    </Box>
-                  ))}
-                </Box>
-
-                {/* Quick Actions */}
-                <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<Group />}
-                    sx={{
-                      borderColor: '#334155',
-                      color: '#94a3b8',
-                      '&:hover': {
-                        borderColor: '#3b82f6',
-                        bgcolor: '#1e293b'
-                      }
-                    }}
-                  >
-                    Create Team Channel
-                  </Button>
-                </Box>
-              </Box>
-            </Slide>
             </Box>
           </Box>
         ) : (

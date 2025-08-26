@@ -40,8 +40,6 @@ import {
   AttachFile
 } from '@mui/icons-material';
 import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../../services/HumanChatService';
-import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../../services/TeamCollaborationIntegrationService';
-import { OrganizationManagementService, Organization } from '../../services/OrganizationManagementService';
 
 interface TeamPanelProps {
   currentUserId?: string;
@@ -52,51 +50,30 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   currentUserId = 'current_user',
   onChatReference 
 }) => {
-  // Enhanced service instances
   const [humanChatService] = useState(() => HumanChatService.getInstance());
-  const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
-  const [orgService] = useState(() => OrganizationManagementService.getInstance());
-  
-  // Enhanced state management
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [conversations, setConversations] = useState<TeamConversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<TeamConversation | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  
-  // New enhanced state
-  const [collaborationState, setCollaborationState] = useState<TeamCollaborationState | null>(null);
-  const [notifications, setNotifications] = useState<CollaborationNotification[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [activeOrgId, setActiveOrgId] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
-  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Initialize all services
+    // Initialize the service
     humanChatService.initialize(currentUserId);
-    collaborationService.initialize(currentUserId);
-    orgService.initialize(currentUserId);
     
     // Load initial data
     loadTeamData();
-    loadOrganizationData();
-    loadCollaborationState();
     
     // Set user as online
     humanChatService.updateUserStatus('online');
 
-    // Set up real-time listeners
-    setupRealtimeListeners();
-
     // Cleanup on unmount
     return () => {
       humanChatService.updateUserStatus('offline');
-      cleanupListeners();
     };
-  }, [currentUserId, humanChatService, collaborationService, orgService]);
+  }, [currentUserId, humanChatService]);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -106,55 +83,6 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   const loadTeamData = () => {
     setTeamMembers(humanChatService.getTeamMembers());
     setConversations(humanChatService.getUserConversations());
-  };
-
-  // New enhanced data loading functions
-  const loadOrganizationData = async () => {
-    try {
-      const orgs = await orgService.getUserOrganizations(currentUserId);
-      setOrganizations(orgs);
-      
-      // Set active organization if user has one
-      if (orgs.length > 0 && !activeOrgId) {
-        setActiveOrgId(orgs[0].id);
-      }
-    } catch (error) {
-      console.error('Failed to load organization data:', error);
-    }
-  };
-
-  const loadCollaborationState = async () => {
-    try {
-      const state = await collaborationService.getCollaborationState();
-      setCollaborationState(state);
-      setUnreadCount(state.unreadMessages);
-      
-      // Load notifications
-      const notifs = await collaborationService.getNotifications();
-      setNotifications(notifs);
-    } catch (error) {
-      console.error('Failed to load collaboration state:', error);
-    }
-  };
-
-  const setupRealtimeListeners = () => {
-    // Listen for new messages
-    collaborationService.onNotification((notification) => {
-      setNotifications(prev => [notification, ...prev]);
-      if (!notification.read) {
-        setUnreadCount(prev => prev + 1);
-      }
-    });
-
-    // Listen for team updates
-    collaborationService.onTeamUpdate(() => {
-      loadTeamData();
-      loadOrganizationData();
-    });
-  };
-
-  const cleanupListeners = () => {
-    collaborationService.removeAllListeners();
   };
 
   const scrollToBottom = () => {
