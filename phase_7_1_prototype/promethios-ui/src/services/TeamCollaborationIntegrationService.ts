@@ -1051,7 +1051,7 @@ export class TeamCollaborationIntegrationService {
    */
   private async loadUserNotifications(userId: string): Promise<void> {
     try {
-      const notifications = await this.storageService.retrieve(`user_notifications/${userId}`) || [];
+      const notifications = await this.storageService.get<CollaborationNotification[]>('user_notifications', userId) || [];
       this.notifications.set(userId, notifications);
     } catch (error) {
       console.error('Error loading user notifications:', error);
