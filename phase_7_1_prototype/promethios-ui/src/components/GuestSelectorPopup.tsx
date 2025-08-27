@@ -49,10 +49,12 @@ interface TeamMember {
 interface GuestSelectorPopupProps {
   open: boolean;
   onClose: () => void;
-  onAddGuests: (selectedGuests: TeamMember[]) => void;
-  currentParticipants: string[]; // IDs of current conversation participants
+  onAddGuests: (guests: TeamMember[]) => void;
+  currentParticipants: string[];
   teamMembers: TeamMember[];
   aiAgents: TeamMember[];
+  // New prop to handle humans being added to conversations
+  onAddHumans?: (humans: TeamMember[]) => void;
 }
 
 const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
@@ -61,7 +63,8 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   onAddGuests,
   currentParticipants,
   teamMembers,
-  aiAgents
+  aiAgents,
+  onAddHumans
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<Set<string>>(new Set());
@@ -105,17 +108,19 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
     const allMembers = [...teamMembers, ...aiAgents];
     const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
     
-    // Separate AI agents from humans
-    const selectedAI = selectedMembers.filter(member => member.type === 'ai_agent');
+    // Separate humans and AI agents
     const selectedHumans = selectedMembers.filter(member => member.type === 'human');
+    const selectedAIAgents = selectedMembers.filter(member => member.type === 'ai_agent');
     
-    if (selectedAI.length > 0) {
-      // Show configuration popup for AI agents
-      setSelectedAIAgents(selectedAI);
+    if (selectedAIAgents.length > 0) {
+      // If AI agents are selected, show configuration popup
+      setSelectedAIAgents(selectedAIAgents);
       setShowConfigPopup(true);
-      // Don't close the main popup yet - wait for configuration
     } else {
       // Only humans selected, add them directly
+      if (selectedHumans.length > 0 && onAddHumans) {
+        onAddHumans(selectedHumans);
+      }
       onAddGuests(selectedMembers);
       onClose();
     }

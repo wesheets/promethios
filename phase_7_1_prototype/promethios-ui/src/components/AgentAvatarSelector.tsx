@@ -43,6 +43,10 @@ export interface AgentAvatarSelectorProps {
   teamMembers?: TeamMember[];
   aiAgents?: TeamMember[];
   onAddGuests?: (guests: TeamMember[]) => void;
+  // Human participants
+  humanParticipants?: TeamMember[];
+  selectedTarget?: string; // Current messaging target (human or agent ID)
+  onTargetChange?: (targetId: string) => void;
 }
 
 export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
@@ -53,10 +57,46 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   onAddAgent,
   teamMembers = [],
   aiAgents = [],
-  onAddGuests
+  onAddGuests,
+  humanParticipants = [],
+  selectedTarget,
+  onTargetChange
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const allAgents = [hostAgent, ...guestAgents];
+
+  // Handle target selection (for messaging)
+  const handleTargetClick = (targetId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    onTargetChange?.(targetId);
+  };
+
+  // Get human style based on selection state
+  const getHumanStyle = (human: TeamMember) => {
+    const isSelected = selectedTarget === human.id;
+    const statusColor = human.status === 'online' ? '#10b981' : 
+                       human.status === 'away' ? '#f59e0b' : '#6b7280';
+    
+    return {
+      width: 32,
+      height: 32,
+      bgcolor: isSelected ? '#3b82f6' : '#64748b',
+      color: 'white',
+      fontSize: '0.8rem',
+      fontWeight: 600,
+      border: isSelected ? '2px solid #3b82f6' : '2px solid transparent',
+      opacity: isSelected ? 1 : 0.7,
+      filter: isSelected ? 'none' : 'grayscale(50%)',
+      transition: 'all 0.2s ease',
+      cursor: 'pointer',
+      '&:hover': {
+        opacity: 1,
+        filter: 'none',
+        transform: 'scale(1.1)',
+        boxShadow: '0 0 8px #3b82f640'
+      }
+    };
+  };
 
   // Handle guest selector
   const handleAddGuestClick = () => {
@@ -154,6 +194,47 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       pr: 2,
       borderRight: '1px solid #334155'
     }}>
+      {/* Human Participant Avatars */}
+      {humanParticipants.map((human) => (
+        <Tooltip 
+          key={`human-${human.id}`}
+          title={
+            <Box>
+              <Box sx={{ fontWeight: 600 }}>{human.name}</Box>
+              <Box sx={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                {human.role || 'Team Member'}
+              </Box>
+              <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mt: 0.5 }}>
+                Status: {human.status} • Click to message
+              </Box>
+            </Box>
+          }
+          placement="top"
+        >
+          <Badge
+            badgeContent=""
+            variant="dot"
+            sx={{
+              '& .MuiBadge-badge': {
+                backgroundColor: human.status === 'online' ? '#10b981' : 
+                                human.status === 'away' ? '#f59e0b' : '#6b7280',
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                border: '1px solid white'
+              }
+            }}
+          >
+            <Avatar
+              onClick={(e) => handleTargetClick(human.id, e)}
+              sx={getHumanStyle(human)}
+            >
+              {human.avatar || human.name.charAt(0)}
+            </Avatar>
+          </Badge>
+        </Tooltip>
+      ))}
+
       {/* Agent Avatars */}
       {allAgents.map((agent) => (
         <Tooltip 
@@ -233,6 +314,23 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
           fontWeight: 500
         }}>
           {selectedAgents.length} selected
+        </Box>
+      )}
+
+      {/* Target Indicator */}
+      {selectedTarget && humanParticipants.find(h => h.id === selectedTarget) && (
+        <Box sx={{ 
+          ml: 1, 
+          px: 1, 
+          py: 0.25, 
+          bgcolor: '#10b98120', 
+          border: '1px solid #10b98140',
+          borderRadius: 1,
+          fontSize: '0.7rem',
+          color: '#10b981',
+          fontWeight: 500
+        }}>
+          → {humanParticipants.find(h => h.id === selectedTarget)?.name}
         </Box>
       )}
 
