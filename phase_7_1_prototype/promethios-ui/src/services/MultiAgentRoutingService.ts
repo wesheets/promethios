@@ -276,7 +276,7 @@ export class MultiAgentRoutingService {
 
     try {
       // Add host agent
-      const hostAgent = await this.chatbotService.getChatbotById(context.hostAgentId);
+      const hostAgent = await this.chatbotService.getChatbot(context.hostAgentId);
       if (hostAgent) {
         agents.push({
           id: hostAgent.identity?.id || hostAgent.key || hostAgent.id,
