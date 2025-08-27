@@ -112,6 +112,31 @@ export class MultiAgentAuditLogger {
 
   private constructor() {
     this.storageService = UnifiedStorageService.getInstance();
+    // Ensure storage service is ready before use
+    this.initializeStorage();
+  }
+
+  private async initializeStorage(): Promise<void> {
+    try {
+      // Wait for storage service to be ready
+      let retries = 0;
+      const maxRetries = 10;
+      
+      while (!this.storageService.isReady() && retries < maxRetries) {
+        console.log(`🔄 [MultiAgentAudit] Waiting for storage service... (${retries + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+      
+      if (!this.storageService.isReady()) {
+        console.error('❌ [MultiAgentAudit] Storage service failed to initialize after retries');
+        return;
+      }
+      
+      console.log('✅ [MultiAgentAudit] Storage service ready');
+    } catch (error) {
+      console.error('❌ [MultiAgentAudit] Error initializing storage:', error);
+    }
   }
 
   public static getInstance(): MultiAgentAuditLogger {
@@ -119,6 +144,16 @@ export class MultiAgentAuditLogger {
       MultiAgentAuditLogger.instance = new MultiAgentAuditLogger();
     }
     return MultiAgentAuditLogger.instance;
+  }
+
+  /**
+   * Ensure storage is ready before operations
+   */
+  private async ensureStorageReady(): Promise<void> {
+    if (!this.storageService.isReady()) {
+      console.log('⏳ [MultiAgentAudit] Storage not ready, waiting...');
+      await this.initializeStorage();
+    }
   }
 
   /**
@@ -130,6 +165,8 @@ export class MultiAgentAuditLogger {
     userId: string,
     guestAgents: Array<{agentId: string, name: string, addedBy: string}> = []
   ): Promise<MultiAgentSession> {
+    await this.ensureStorageReady();
+    
     const sessionId = `multi_session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const participantAgents: ParticipantAgent[] = [
@@ -166,10 +203,14 @@ export class MultiAgentAuditLogger {
       totalCost: 0
     };
 
-    await this.storageService.set('multi_agent_sessions', sessionId, session);
-    
-    console.log('📝 [MultiAgentAudit] Created session:', sessionId);
-    return session;
+    try {
+      await this.storageService.set('multi_agent_sessions', sessionId, session);
+      console.log('📝 [MultiAgentAudit] Created session:', sessionId);
+      return session;
+    } catch (error) {
+      console.error('❌ [MultiAgentAudit] Error creating session:', error);
+      throw error;
+    }
   }
 
   /**
@@ -183,6 +224,8 @@ export class MultiAgentAuditLogger {
     responses: AgentResponse[],
     participantAgents: ParticipantAgent[]
   ): Promise<MultiAgentInteraction> {
+    await this.ensureStorageReady();
+    
     const interactionId = `interaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const timestamp = new Date();
     
@@ -233,17 +276,22 @@ export class MultiAgentAuditLogger {
       }
     };
 
-    // Store the interaction
-    await this.storageService.set('multi_agent_interactions', interactionId, interaction);
+    try {
+      // Store the interaction
+      await this.storageService.set('multi_agent_interactions', interactionId, interaction);
 
-    // Update session statistics
-    await this.updateSessionStatistics(sessionId, totalCost, responseLog.length);
+      // Update session statistics
+      await this.updateSessionStatistics(sessionId, totalCost, responseLog.length);
 
-    // Generate receipts for each agent response
-    await this.generateReceipts(interaction);
+      // Generate receipts for each agent response
+      await this.generateReceipts(interaction);
 
-    console.log('📝 [MultiAgentAudit] Logged interaction:', interactionId);
-    return interaction;
+      console.log('📝 [MultiAgentAudit] Logged interaction:', interactionId);
+      return interaction;
+    } catch (error) {
+      console.error('❌ [MultiAgentAudit] Error logging interaction:', error);
+      throw error;
+    }
   }
 
   /**
