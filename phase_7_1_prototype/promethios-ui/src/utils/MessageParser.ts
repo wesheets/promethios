@@ -141,11 +141,25 @@ export class MessageParser {
    * Extract agent IDs that should receive the message
    */
   public getTargetAgentIds(parsedMessage: ParsedMessage, availableAgents: Array<{id: string, name: string}>): string[] {
+    console.log('🔍 [MessageParser] getTargetAgentIds called with:', {
+      shouldRouteToAllAgents: parsedMessage.shouldRouteToAllAgents,
+      mentions: parsedMessage.mentions,
+      availableAgents: availableAgents.map(a => ({ id: a.id, name: a.name }))
+    });
+
     if (parsedMessage.shouldRouteToAllAgents) {
-      return availableAgents.map(agent => agent.id);
+      const allAgentIds = availableAgents.map(agent => agent.id);
+      console.log('🔍 [MessageParser] Routing to all agents:', allAgentIds);
+      return allAgentIds;
     }
 
-    return parsedMessage.mentions.map(mention => mention.agentId);
+    const targetIds = parsedMessage.mentions.map(mention => {
+      console.log('🔍 [MessageParser] Processing mention:', mention);
+      return mention.agentId;
+    });
+    
+    console.log('🔍 [MessageParser] Final target IDs:', targetIds);
+    return targetIds;
   }
 
   /**

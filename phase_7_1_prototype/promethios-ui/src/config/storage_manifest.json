@@ -207,6 +207,28 @@
     "retention": "1h",
     "compliance": [],
     "description": "Temporary cache data for performance optimization"
+  },
+  "multi_agent_interactions": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": ["GDPR"],
+    "description": "Multi-agent interaction logs, collaboration history, and audit trails"
+  },
+  "user_notifications": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "batched",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "User notification history, alerts, and notification preferences"
   }
 }
 
