@@ -281,7 +281,10 @@ export class MultiAgentRoutingService {
     message: string,
     context: RoutingContext
   ): Promise<string> {
-    console.log('📡 [MultiAgentRouting] Calling real agent API:', agent.identity?.name);
+    const agentName = agent.identity?.name || agent.name || 'AI Agent';
+    const agentId = agent.identity?.id || agent.key || agent.id;
+    
+    console.log('📡 [MultiAgentRouting] Calling real agent API:', agentName, 'ID:', agentId);
 
     try {
       // Import the ChatPanelGovernanceService dynamically to avoid circular dependencies
@@ -292,30 +295,48 @@ export class MultiAgentRoutingService {
       const multiAgentContext = this.buildMultiAgentContext(context);
       const enhancedMessage = `${multiAgentContext}\n\nUser message: ${message}`;
 
+      console.log('🔧 [MultiAgentRouting] Enhanced message for agent:', enhancedMessage.substring(0, 200) + '...');
+
       // Create a temporary session for this agent if needed
-      const agentId = agent.identity?.id || agent.key || agent.id;
+      console.log('🔧 [MultiAgentRouting] Starting chat session for agent:', agentId);
       let session = await chatService.startChatSession(agent);
       
       if (!session) {
+        console.error('❌ [MultiAgentRouting] Failed to start session for agent:', agentId);
         throw new Error(`Failed to start chat session for agent: ${agentId}`);
       }
 
+      console.log('✅ [MultiAgentRouting] Session started:', session.sessionId);
+
       // Send message to the real agent
-      console.log('📡 [MultiAgentRouting] Sending message to agent:', agentId);
+      console.log('📡 [MultiAgentRouting] Sending message to agent:', agentId, 'session:', session.sessionId);
       const response = await chatService.sendMessage(session.sessionId, enhancedMessage);
       
-      if (!response || !response.content) {
+      console.log('📡 [MultiAgentRouting] Raw response from agent:', agentId, response);
+      
+      if (!response) {
+        console.error('❌ [MultiAgentRouting] No response object from agent:', agentId);
         throw new Error(`No response received from agent: ${agentId}`);
       }
+      
+      if (!response.content) {
+        console.error('❌ [MultiAgentRouting] No content in response from agent:', agentId, 'Response:', response);
+        throw new Error(`Empty response content from agent: ${agentId}`);
+      }
 
-      console.log('✅ [MultiAgentRouting] Got real response from agent:', agentId);
+      console.log('✅ [MultiAgentRouting] Got real response from agent:', agentId, 'Content length:', response.content.length);
       return response.content;
 
     } catch (error) {
-      console.error('❌ [MultiAgentRouting] Error calling agent API:', error);
+      console.error('❌ [MultiAgentRouting] Error calling agent API:', agentName, error);
+      console.error('❌ [MultiAgentRouting] Error details:', {
+        agentId,
+        agentName,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined
+      });
       
       // Fallback to a contextual error message
-      const agentName = agent.identity?.name || 'AI Agent';
       throw new Error(`${agentName} is currently unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
