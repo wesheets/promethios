@@ -8,6 +8,7 @@ import { OrganizationManagementService, Organization } from '../services/Organiz
 import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../services/HumanChatService';
 // Multi-agent collaboration imports
 import { MultiAgentRoutingService, AgentResponse } from '../services/MultiAgentRoutingService';
+import HumanParticipantService, { HumanParticipant } from '../services/HumanParticipantService';
 import { MultiAgentAuditLogger } from '../services/MultiAgentAuditLogger';
 import { MessageParser, ParsedMessage } from '../utils/MessageParser';
 import MultiAgentMentionInput from '../components/MultiAgentMentionInput';
@@ -65,6 +66,10 @@ import {
   TextField,
   InputAdornment,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Analytics,
@@ -86,6 +91,7 @@ import {
   AutoAwesome,
   AccountBalanceWallet as WalletIcon,
   Add,
+  PersonAdd,
   Edit,
   Send,
   Api,
@@ -343,6 +349,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [targetAgents, setTargetAgents] = useState<string[]>([]);
   const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]); // For avatar selector
+  
+  // Human participants state
+  const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const humanParticipantService = HumanParticipantService.getInstance();
   
   // Token economics state
   const [showTokenBudget, setShowTokenBudget] = useState(false);
@@ -1312,8 +1324,47 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       isRestoringFromURLRef.current = false;
       console.log('🔍 [DEBUG] - URL restoration completed');
     }, 100);
-    
-  }, [agentParam, panelParam, chatbotProfiles.length]); // Removed selectedChatbot?.identity?.id to prevent circular dependency
+     }, [agentParam, panelParam, chatbotProfiles]);
+
+  // Load human participants for the current conversation
+  useEffect(() => {
+    const loadHumanParticipants = async () => {
+      try {
+        if (selectedChatbot?.id) {
+          console.log('👥 [Human Participants] Loading participants for conversation:', selectedChatbot.id);
+          const participants = await humanParticipantService.getConversationParticipants(selectedChatbot.id);
+          setHumanParticipants(participants);
+          console.log('👥 [Human Participants] Loaded', participants.length, 'participants');
+        }
+      } catch (error) {
+        console.error('👥 [Human Participants] Error loading participants:', error);
+      }
+    };
+
+    loadHumanParticipants();
+  }, [selectedChatbot?.id]);
+
+  // Update human presence status periodically
+  useEffect(() => {
+    const updatePresence = async () => {
+      try {
+        const updatedParticipants = await Promise.all(
+          humanParticipants.map(async (participant) => {
+            const isOnline = await humanParticipantService.getUserPresence(participant.userId);
+            return { ...participant, isOnline };
+          })
+        );
+        setHumanParticipants(updatedParticipants);
+      } catch (error) {
+        console.error('👥 [Human Participants] Error updating presence:', error);
+      }
+    };
+
+    if (humanParticipants.length > 0) {
+      const interval = setInterval(updatePresence, 30000); // Update every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [humanParticipants.length]);
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
@@ -1719,6 +1770,46 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log('🖱️ [Hover-Triggered] Successfully triggered', behaviorType || 'generic', 'response from:', agentName);
     } catch (error) {
       console.error('🖱️ [Hover-Triggered] Error triggering response:', error);
+    }
+  };
+
+  // Handle hover-triggered AI responses to humans
+  const handleHoverTriggeredResponseToHuman = async (humanId: string, humanName: string, behaviorType: string) => {
+    console.log('🖱️ [AI-Human Interaction] Triggering AI response to human:', humanName, 'with behavior:', behaviorType);
+    
+    // Find the last message from the human or in the conversation
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    if (!lastMessage) {
+      console.warn('🖱️ [AI-Human Interaction] No messages found to respond to');
+      return;
+    }
+
+    // Create AI-to-human behavioral prompt templates
+    const aiToHumanPrompts = {
+      collaborate: `🤝 Please collaborate with ${humanName} on their recent contribution. Work together to build upon their ideas and develop a more comprehensive solution.`,
+      question: `❓ Please ask ${humanName} thoughtful, clarifying questions about their recent input. Help deepen the understanding by identifying areas that need more explanation.`,
+      devils_advocate: `😈 Please respectfully challenge ${humanName}'s recent statement. Play devil's advocate by questioning assumptions and presenting alternative viewpoints.`,
+      expert_analysis: `🎯 Please provide expert analysis of ${humanName}'s recent contribution. Evaluate their ideas with specialized knowledge and offer professional insights.`,
+      critical_review: `🔍 Please provide a constructive critical review of ${humanName}'s recent input. Identify strengths, potential improvements, and areas for development.`,
+      creative_ideas: `💡 Please brainstorm creative ideas with ${humanName} based on their recent contribution. Think outside the box and suggest innovative approaches.`,
+      analytical_response: `📊 Please provide analytical insights on ${humanName}'s recent input. Break down the key components and offer structured analysis.`
+    };
+
+    // Create the AI-to-human behavioral trigger message
+    const triggerMessage = aiToHumanPrompts[behaviorType as keyof typeof aiToHumanPrompts] || 
+      `Please respond to ${humanName}'s recent contribution in the conversation.`;
+    
+    try {
+      // Send the behavioral trigger message to the host agent (or selected AI agent)
+      const hostAgentId = selectedChatbot?.id;
+      if (hostAgentId) {
+        await handleSendMessage(triggerMessage, [hostAgentId]);
+        console.log('🖱️ [AI-Human Interaction] Successfully triggered', behaviorType, 'response to human:', humanName);
+      } else {
+        console.warn('🖱️ [AI-Human Interaction] No host agent available to respond to human');
+      }
+    } catch (error) {
+      console.error('🖱️ [AI-Human Interaction] Error triggering AI response to human:', error);
     }
   };
 
@@ -2951,6 +3042,201 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                   />
                                 </Tooltip>
                               ))}
+                              
+                              {/* Human Participants with Enhanced Behavioral Hover-Triggered Responses */}
+                              {humanParticipants.map((human) => (
+                                <Tooltip
+                                  key={human.userId}
+                                  title={
+                                    <Box sx={{ p: 1.5, minWidth: 200 }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1.5, textAlign: 'center' }}>
+                                        👤 {human.displayName}
+                                        {human.jobTitle && (
+                                          <Typography variant="caption" sx={{ display: 'block', color: '#94a3b8', mt: 0.5 }}>
+                                            {human.jobTitle}
+                                          </Typography>
+                                        )}
+                                      </Typography>
+                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'collaborate')}
+                                          sx={{
+                                            bgcolor: '#10b981',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#059669' }
+                                          }}
+                                        >
+                                          🤝 AI Collaborate with {human.displayName.split(' ')[0]}
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'question')}
+                                          sx={{
+                                            bgcolor: '#3b82f6',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#2563eb' }
+                                          }}
+                                        >
+                                          ❓ AI Question {human.displayName.split(' ')[0]}
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'devils_advocate')}
+                                          sx={{
+                                            bgcolor: '#ef4444',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#dc2626' }
+                                          }}
+                                        >
+                                          😈 AI Challenge {human.displayName.split(' ')[0]}
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'expert_analysis')}
+                                          sx={{
+                                            bgcolor: '#8b5cf6',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#7c3aed' }
+                                          }}
+                                        >
+                                          🎯 AI Analyze for {human.displayName.split(' ')[0]}
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'critical_review')}
+                                          sx={{
+                                            bgcolor: '#f97316',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#ea580c' }
+                                          }}
+                                        >
+                                          🔍 AI Review for {human.displayName.split(' ')[0]}
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'creative_ideas')}
+                                          sx={{
+                                            bgcolor: '#ec4899',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#db2777' }
+                                          }}
+                                        >
+                                          💡 AI Brainstorm with {human.displayName.split(' ')[0]}
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'analytical_response')}
+                                          sx={{
+                                            bgcolor: '#06b6d4',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#0891b2' }
+                                          }}
+                                        >
+                                          📊 AI Analyze with {human.displayName.split(' ')[0]}
+                                        </Button>
+                                      </Box>
+                                    </Box>
+                                  }
+                                  placement="top"
+                                  arrow
+                                >
+                                  <Chip
+                                    avatar={
+                                      <Box sx={{ position: 'relative' }}>
+                                        <Avatar
+                                          src={human.avatar}
+                                          sx={{ 
+                                            width: 24, 
+                                            height: 24,
+                                            bgcolor: '#3b82f6'
+                                          }}
+                                        >
+                                          {human.displayName.charAt(0)}
+                                        </Avatar>
+                                        {/* Online/Offline Status Indicator */}
+                                        <Box
+                                          sx={{
+                                            position: 'absolute',
+                                            bottom: -2,
+                                            right: -2,
+                                            width: 8,
+                                            height: 8,
+                                            borderRadius: '50%',
+                                            bgcolor: human.isOnline ? '#10b981' : '#6b7280',
+                                            border: '1px solid #1e293b'
+                                          }}
+                                        />
+                                      </Box>
+                                    }
+                                    label={
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Typography variant="caption" sx={{ fontSize: '11px', fontWeight: 500 }}>
+                                          {human.displayName}
+                                        </Typography>
+                                        {human.role && (
+                                          <Typography variant="caption" sx={{ fontSize: '9px', color: '#64748b' }}>
+                                            • {human.role}
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    }
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#1e293b',
+                                      color: '#e2e8f0',
+                                      border: '1px solid #334155',
+                                      '&:hover': { bgcolor: '#334155' }
+                                    }}
+                                  />
+                                </Tooltip>
+                              ))}
+                              
+                              {/* Add Human Participant Button */}
+                              <Tooltip title="Invite human to conversation" placement="top" arrow>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setShowInviteDialog(true)}
+                                  sx={{
+                                    bgcolor: '#1e293b',
+                                    color: '#64748b',
+                                    border: '1px solid #334155',
+                                    width: 32,
+                                    height: 32,
+                                    '&:hover': { bgcolor: '#334155', color: '#e2e8f0' }
+                                  }}
+                                >
+                                  <PersonAdd sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
                             </Box>
                           </Box>
                         );
@@ -5759,6 +6045,93 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         onClose={() => setShowTokenBudget(false)}
         sessionId={currentMultiAgentSession || (selectedChatbot ? `session_${selectedChatbot.identity?.id || selectedChatbot.id}_${Date.now()}` : undefined)}
       />
+
+      {/* Human Invitation Dialog */}
+      <Dialog
+        open={showInviteDialog}
+        onClose={() => setShowInviteDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e293b',
+            border: '1px solid #334155',
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: '#e2e8f0', borderBottom: '1px solid #334155' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonAdd sx={{ color: '#3b82f6' }} />
+            <Typography variant="h6">Invite Human to Conversation</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
+            Invite a human participant to join this AI conversation. They'll be able to interact with AI agents and receive behavioral responses.
+          </Typography>
+          
+          <TextField
+            fullWidth
+            label="Email Address"
+            variant="outlined"
+            placeholder="colleague@company.com"
+            sx={{
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#0f172a',
+                color: '#e2e8f0',
+                '& fieldset': { borderColor: '#334155' },
+                '&:hover fieldset': { borderColor: '#475569' },
+                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+              },
+              '& .MuiInputLabel-root': { color: '#94a3b8' }
+            }}
+          />
+          
+          <TextField
+            fullWidth
+            label="Personal Message (Optional)"
+            variant="outlined"
+            multiline
+            rows={3}
+            placeholder="Join me for an AI-powered collaboration session..."
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#0f172a',
+                color: '#e2e8f0',
+                '& fieldset': { borderColor: '#334155' },
+                '&:hover fieldset': { borderColor: '#475569' },
+                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+              },
+              '& .MuiInputLabel-root': { color: '#94a3b8' }
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid #334155' }}>
+          <Button
+            onClick={() => setShowInviteDialog(false)}
+            sx={{ color: '#94a3b8' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              // TODO: Implement invitation sending
+              console.log('👥 [Human Invitation] Sending invitation...');
+              setShowInviteDialog(false);
+            }}
+            sx={{
+              bgcolor: '#3b82f6',
+              color: 'white',
+              '&:hover': { bgcolor: '#2563eb' }
+            }}
+          >
+            Send Invitation
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
