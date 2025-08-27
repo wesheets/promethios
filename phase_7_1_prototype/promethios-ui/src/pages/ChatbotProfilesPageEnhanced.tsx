@@ -12,6 +12,9 @@ import { MultiAgentAuditLogger } from '../services/MultiAgentAuditLogger';
 import { MessageParser, ParsedMessage } from '../utils/MessageParser';
 import MultiAgentMentionInput from '../components/MultiAgentMentionInput';
 import AgentAvatarSelector from '../components/AgentAvatarSelector';
+import MASCollaborationPanel, { MASCollaborationSettings } from '../components/collaboration/MASCollaborationPanel';
+import SmartSuggestionService, { AgentSuggestion } from '../services/SmartSuggestionService';
+import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestionIndicator';
 // Removed MultiAgentResponseIndicator - intrusive orange popup
 // Token economics imports
 import { TokenEconomicsService } from '../services/TokenEconomicsService';
@@ -3556,6 +3559,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'chats', label: 'CHATS' },
                     { key: 'repo', label: 'REPO', badge: projects.length },
                     { key: 'analytics', label: 'ANALYTICS' },
+                    { key: 'mas_collaboration', label: 'MAS COLLABORATION', badge: 0 },
                     { key: 'token_economics', label: 'TOKEN ECONOMICS', badge: budgetWarning || budgetExceeded ? 1 : 0 },
                     { key: 'customize', label: 'CUSTOMIZE' },
                     { key: 'personality', label: 'PERSONALITY' },
@@ -3670,6 +3674,78 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     repositoryManager={repositoryManager}
                     versionControl={versionControl}
                     currentUserId={user?.uid || 'anonymous'}
+                  />
+                )}
+                
+                {rightPanelType === 'mas_collaboration' && (
+                  <MASCollaborationPanel
+                    settings={{
+                      chatFeatures: {
+                        conversationContextSharing: true,
+                        crossAgentReferences: true,
+                        realTimeCollaboration: true,
+                        visualAgentSelection: true,
+                        mentionSystemEnabled: true
+                      },
+                      autonomousBehaviors: {
+                        proactiveInterjection: false,
+                        smartSuggestions: true,
+                        contextualHandRaising: true,
+                        triggerBasedEngagement: true,
+                        collaborativeFiltering: true
+                      },
+                      temporaryRoles: {},
+                      tokenEconomics: {
+                        maxTokensPerAgent: 1000,
+                        suggestionThreshold: 70,
+                        monitoringBudget: 100,
+                        interjectionCost: 150,
+                        enableSmartBudgeting: true
+                      },
+                      triggerSettings: {
+                        keywordTriggers: ['question', 'problem', 'help', 'idea'],
+                        topicTriggers: ['technical', 'creative', 'analysis'],
+                        questionTriggers: true,
+                        disagreementTriggers: true,
+                        expertiseTriggers: true,
+                        sensitivityLevel: 5
+                      }
+                    }}
+                    onSettingsChange={(settings: MASCollaborationSettings) => {
+                      console.log('🎛️ [MAS] Settings updated:', settings);
+                      // TODO: Persist settings and apply to multi-agent system
+                    }}
+                    availableAgents={[
+                      ...(selectedChatbot ? [{
+                        id: selectedChatbot.id,
+                        name: selectedChatbot.identity?.name || 'Host Agent',
+                        avatar: selectedChatbot.identity?.avatar,
+                        expertise: selectedChatbot.expertise || []
+                      }] : []),
+                      ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).map(guest => ({
+                        id: guest.agentId,
+                        name: guest.name,
+                        avatar: guest.avatar,
+                        expertise: []
+                      }))
+                    ]}
+                    currentTokenUsage={{
+                      ...(selectedChatbot ? {
+                        [selectedChatbot.id]: {
+                          used: 450,
+                          budget: 1000,
+                          efficiency: 0.85
+                        }
+                      } : {}),
+                      ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).reduce((acc, guest) => ({
+                        ...acc,
+                        [guest.agentId]: {
+                          used: 320,
+                          budget: 1000,
+                          efficiency: 0.92
+                        }
+                      }), {})
+                    }}
                   />
                 )}
                 
