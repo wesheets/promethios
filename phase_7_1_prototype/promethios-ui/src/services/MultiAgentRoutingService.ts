@@ -55,6 +55,7 @@ export class MultiAgentRoutingService {
   private messageParser: MessageParser;
   private tokenService: TokenEconomicsService;
   private busyAgents = new Set<string>();
+  private responseQueue = new Map<string, Promise<AgentResponse>>();
 
   private constructor() {
     this.chatbotService = ChatbotStorageService.getInstance();

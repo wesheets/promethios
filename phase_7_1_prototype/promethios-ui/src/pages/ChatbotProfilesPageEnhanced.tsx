@@ -17,6 +17,7 @@ import { TokenEconomicsService } from '../services/TokenEconomicsService';
 import TokenBudgetWidget from '../components/TokenBudgetWidget';
 import AgentEngagementScorer from '../components/AgentEngagementScorer';
 import TokenEconomicsConfigPanel from '../components/TokenEconomicsConfigPanel';
+import TokenBudgetPopup from '../components/TokenBudgetPopup';
 // Autonomous systems imports
 import { AutonomousGovernanceExtension, AutonomousTaskPlan, AutonomousPhase, AutonomousExecutionState } from '../services/AutonomousGovernanceExtension';
 import { AutonomousTaskPlanningEngine } from '../services/AutonomousTaskPlanningEngine';
@@ -79,6 +80,7 @@ import {
   Description,
   CloudUpload,
   AutoAwesome,
+  AccountBalanceWallet as WalletIcon,
   Add,
   Edit,
   Send,
@@ -2848,18 +2850,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
                 {/* Token Economics Widgets */}
-                {showTokenBudget && selectedChatbot && user?.uid && (
-                  <Box sx={{ mb: 2 }}>
-                    <TokenBudgetWidget
-                      sessionId={currentMultiAgentSession || `session_${selectedChatbot.identity?.id || selectedChatbot.id}_${Date.now()}`}
-                      userId={user.uid}
-                      onBudgetExceeded={() => setBudgetExceeded(true)}
-                      onBudgetWarning={(percentage) => setBudgetWarning(percentage > 70)}
-                      compact={false}
-                    />
-                  </Box>
-                )}
-
                 {/* Multi-Agent Response Status */}
                 {isProcessingMultiAgent && targetAgents.length > 0 && (
                   <Box sx={{ mb: 2 }}>
@@ -2996,6 +2986,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       ) : (
                         <AutoAwesome />
                       )}
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* Token Budget Button */}
+                  <Tooltip title="Token Budget Tracker">
+                    <IconButton
+                      onClick={() => setShowTokenBudget(true)}
+                      sx={{ 
+                        color: '#10b981',
+                        mb: 0.5,
+                        '&:hover': { color: '#059669' }
+                      }}
+                    >
+                      <WalletIcon />
                     </IconButton>
                   </Tooltip>
 
@@ -5233,6 +5237,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           )}
         </Box>
       </Slide>
+
+      {/* Token Budget Popup */}
+      <TokenBudgetPopup
+        open={showTokenBudget}
+        onClose={() => setShowTokenBudget(false)}
+        sessionId={currentMultiAgentSession || (selectedChatbot ? `session_${selectedChatbot.identity?.id || selectedChatbot.id}_${Date.now()}` : undefined)}
+      />
     </Box>
   );
 };

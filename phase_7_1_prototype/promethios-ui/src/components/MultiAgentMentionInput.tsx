@@ -161,9 +161,13 @@ export const MultiAgentMentionInput: React.FC<MultiAgentMentionInputProps> = ({
 
     // Focus back to input
     setTimeout(() => {
-      inputRef.current?.focus();
-      const newCursorPosition = beforeMention.length + suggestion.suggestion.length + 1;
-      inputRef.current?.setSelectionRange(newCursorPosition, newCursorPosition);
+      if (inputRef.current && inputRef.current.focus) {
+        inputRef.current.focus();
+        const newCursorPosition = beforeMention.length + suggestion.suggestion.length + 1;
+        if (inputRef.current.setSelectionRange && typeof inputRef.current.setSelectionRange === 'function') {
+          inputRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+        }
+      }
     }, 0);
   }, [value, mentionStartIndex, currentMention, onChange, hideSuggestions]);
 
