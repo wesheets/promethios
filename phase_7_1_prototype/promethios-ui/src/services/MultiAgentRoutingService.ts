@@ -332,16 +332,38 @@ export class MultiAgentRoutingService {
 
       console.log('🔧 [MultiAgentRouting] Enhanced message for agent:', enhancedMessage.substring(0, 200) + '...');
 
-      // Create a temporary session for this agent if needed
-      console.log('🔧 [MultiAgentRouting] Starting chat session for agent:', agentId);
-      let session = await chatService.startChatSession(agent);
+      // CRITICAL FIX: Use existing session instead of creating new one
+      // This ensures we use the same working configuration as normal chat
+      console.log('🔧 [MultiAgentRouting] Looking for existing session for agent:', agentId);
       
-      if (!session) {
-        console.error('❌ [MultiAgentRouting] Failed to start session for agent:', agentId);
-        throw new Error(`Failed to start chat session for agent: ${agentId}`);
+      // Try to get existing session first
+      let session = null;
+      const activeSessions = (chatService as any).activeSessions;
+      
+      if (activeSessions) {
+        // Find existing session for this agent
+        for (const [sessionId, sessionData] of activeSessions.entries()) {
+          if (sessionData.agentId === agentId) {
+            session = sessionData;
+            console.log('✅ [MultiAgentRouting] Found existing session:', sessionId);
+            break;
+          }
+        }
       }
-
-      console.log('✅ [MultiAgentRouting] Session started:', session.sessionId);
+      
+      // Only create new session if no existing one found
+      if (!session) {
+        console.log('🔧 [MultiAgentRouting] No existing session found, creating new one for agent:', agentId);
+        session = await chatService.startChatSession(agent);
+        
+        if (!session) {
+          console.error('❌ [MultiAgentRouting] Failed to start session for agent:', agentId);
+          throw new Error(`Failed to start chat session for agent: ${agentId}`);
+        }
+        console.log('✅ [MultiAgentRouting] New session created:', session.sessionId);
+      } else {
+        console.log('✅ [MultiAgentRouting] Using existing session:', session.sessionId);
+      }
 
       // Send message to the real agent
       console.log('📡 [MultiAgentRouting] Sending message to agent:', agentId, 'session:', session.sessionId);
