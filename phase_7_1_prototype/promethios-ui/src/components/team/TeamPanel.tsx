@@ -42,6 +42,7 @@ import { TeamCollaborationIntegrationService, TeamCollaborationState, Collaborat
 import { OrganizationManagementService } from '../../services/OrganizationManagementService';
 import { ChatbotStorageService, ChatbotProfile } from '../../services/ChatbotStorageService';
 import { useAuth } from '../../context/AuthContext';
+import AgentConfigurationPopup from '../collaboration/AgentConfigurationPopup';
 
 interface TeamPanelProps {
   currentUserId?: string;
@@ -83,6 +84,14 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   const [aiTeammates, setAiTeammates] = useState<ChatbotProfile[]>([]);
   const [favoriteAgents, setFavoriteAgents] = useState<Set<string>>(new Set());
   const [agentsLoading, setAgentsLoading] = useState(false);
+  
+  // Agent Configuration Popup state
+  const [showConfigPopup, setShowConfigPopup] = useState(false);
+  const [selectedAgentsForConfig, setSelectedAgentsForConfig] = useState<Array<{
+    agentId: string;
+    name: string;
+    avatar?: string;
+  }>>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -431,23 +440,46 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
 
   const handleAddAgentToChat = (agentId: string) => {
     const agent = aiTeammates.find(a => a.identity?.id === agentId || a.key === agentId || a.id === agentId);
-    if (agent && onAddGuestAgent) {
+    if (agent) {
       const actualAgentId = agent.identity?.id || agent.key || agent.id;
       const agentName = agent.identity?.name || agent.name || 'AI Agent';
       const agentAvatar = agent.identity?.avatar;
       
-      console.log(`🤖 [Multi-Agent] Found agent:`, {
-        searchId: agentId,
-        actualId: actualAgentId,
-        name: agentName,
-        agent: agent
-      });
+      console.log(`🤖 [Multi-Agent] Preparing to configure agent: ${agentName} (${actualAgentId})`);
       
-      onAddGuestAgent(actualAgentId, agentName, agentAvatar);
-      console.log(`🤖 [Multi-Agent] Added ${agentName} (${actualAgentId}) to current chat`);
+      // Set up the agent for configuration
+      setSelectedAgentsForConfig([{
+        agentId: actualAgentId,
+        name: agentName,
+        avatar: agentAvatar
+      }]);
+      
+      // Show the configuration popup
+      setShowConfigPopup(true);
     } else {
-      console.log(`🤖 [Multi-Agent] Adding agent ${agentId} to current chat (callback not provided)`);
+      console.log(`🤖 [Multi-Agent] Agent ${agentId} not found for configuration`);
     }
+  };
+
+  const handleConfigureAgents = (configurations: Array<{
+    agentId: string;
+    careerRole: string;
+    behavior: string;
+  }>) => {
+    console.log('🎭 [Agent Config] Configuring agents from Team Panel:', configurations);
+    
+    // Add each configured agent to the chat
+    configurations.forEach(config => {
+      const agent = selectedAgentsForConfig.find(a => a.agentId === config.agentId);
+      if (agent && onAddGuestAgent) {
+        onAddGuestAgent(agent.agentId, agent.name, agent.avatar);
+        console.log(`🤖 [Multi-Agent] Added configured agent ${agent.name} with role: ${config.careerRole}, behavior: ${config.behavior}`);
+      }
+    });
+    
+    // Close the popup and clear selections
+    setShowConfigPopup(false);
+    setSelectedAgentsForConfig([]);
   };
 
   const getAgentStatus = (agent: ChatbotProfile) => {
@@ -906,6 +938,22 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         </List>
       </Box>
     </Box>
+
+    {/* Agent Configuration Popup */}
+    <AgentConfigurationPopup
+      open={showConfigPopup}
+      onClose={() => {
+        setShowConfigPopup(false);
+        setSelectedAgentsForConfig([]);
+      }}
+      selectedAgents={selectedAgentsForConfig.map(agent => ({
+        id: agent.agentId,
+        name: agent.name,
+        avatar: agent.avatar,
+        provider: 'unknown' // We'll need to determine this from the agent data
+      }))}
+      onConfigureAgents={handleConfigureAgents}
+    />
   );
 };
 

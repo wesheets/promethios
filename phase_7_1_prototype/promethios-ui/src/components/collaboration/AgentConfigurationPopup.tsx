@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -109,16 +109,23 @@ export const AgentConfigurationPopup: React.FC<AgentConfigurationPopupProps> = (
   selectedAgents,
   onConfigureAgents
 }) => {
-  const [configurations, setConfigurations] = useState<AgentConfig[]>(
-    selectedAgents.map(agent => ({
-      agentId: agent.id,
-      agentName: agent.name,
-      careerRole: '',
-      behavior: 'collaborative' // Default to collaborative
-    }))
-  );
+  const [configurations, setConfigurations] = useState<AgentConfig[]>([]);
+
+  // Initialize configurations when selectedAgents changes
+  useEffect(() => {
+    console.log('🎭 [AgentConfig] Initializing configurations for agents:', selectedAgents);
+    setConfigurations(
+      selectedAgents.map(agent => ({
+        agentId: agent.id,
+        agentName: agent.name,
+        careerRole: '',
+        behavior: 'collaborative' // Default to collaborative
+      }))
+    );
+  }, [selectedAgents]);
 
   const handleCareerRoleChange = (agentId: string, careerRole: string) => {
+    console.log('🎭 [AgentConfig] Career role changed:', agentId, careerRole);
     setConfigurations(prev => 
       prev.map(config => 
         config.agentId === agentId 
@@ -129,6 +136,7 @@ export const AgentConfigurationPopup: React.FC<AgentConfigurationPopupProps> = (
   };
 
   const handleBehaviorChange = (agentId: string, behavior: string) => {
+    console.log('🎭 [AgentConfig] Behavior changed:', agentId, behavior);
     setConfigurations(prev => 
       prev.map(config => 
         config.agentId === agentId 
@@ -139,8 +147,23 @@ export const AgentConfigurationPopup: React.FC<AgentConfigurationPopupProps> = (
   };
 
   const handleConfigureAgents = () => {
-    onConfigureAgents(configurations);
+    console.log('🎭 [AgentConfig] Configuring agents with:', configurations);
+    // Only include agents that have both career role and behavior selected
+    const validConfigurations = configurations.filter(config => 
+      config.careerRole && config.behavior
+    );
+    
+    if (validConfigurations.length === 0) {
+      console.warn('🎭 [AgentConfig] No valid configurations to submit');
+      return;
+    }
+    
+    onConfigureAgents(validConfigurations);
     onClose();
+  };
+
+  const isConfigurationValid = () => {
+    return configurations.every(config => config.careerRole && config.behavior);
   };
 
   const getAgentAvatar = (agent: any) => {
@@ -294,9 +317,11 @@ export const AgentConfigurationPopup: React.FC<AgentConfigurationPopupProps> = (
         <Button 
           onClick={handleConfigureAgents}
           variant="contained"
+          disabled={!isConfigurationValid()}
           sx={{ 
             backgroundColor: '#3b82f6',
             '&:hover': { backgroundColor: '#2563eb' },
+            '&:disabled': { backgroundColor: '#4a5568', color: '#a0aec0' },
             fontWeight: 600
           }}
         >

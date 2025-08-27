@@ -63,8 +63,8 @@ export interface MASCollaborationSettings {
   // Temporary Role Assignments
   temporaryRoles: {
     [agentId: string]: {
-      role: 'collaborative' | 'devils_advocate' | 'expert' | 'facilitator' | 'critic' | 'creative' | 'analyst';
-      personality: 'default' | 'enthusiastic' | 'skeptical' | 'methodical' | 'innovative' | 'diplomatic';
+      careerRole: 'legal' | 'hr' | 'customer_service' | 'cto' | 'cfo' | 'marketing' | 'sales' | 'product_manager' | 'engineer' | 'designer' | 'analyst' | 'consultant' | 'researcher' | 'writer' | 'educator' | 'none';
+      behavior: 'collaborative' | 'devils_advocate' | 'expert' | 'facilitator' | 'critic' | 'creative' | 'analyst';
       duration: number; // minutes
       assignedAt: Date;
     };
@@ -115,6 +115,12 @@ const MASCollaborationPanel: React.FC<MASCollaborationPanelProps> = ({
   currentTokenUsage
 }) => {
   const [expandedSections, setExpandedSections] = useState<string[]>(['chat-features']);
+  const [tempRoleSelections, setTempRoleSelections] = useState<{
+    [agentId: string]: {
+      careerRole?: string;
+      behavior?: string;
+    };
+  }>({});
 
   const handleSectionToggle = (section: string) => {
     setExpandedSections(prev => 
@@ -137,17 +143,37 @@ const MASCollaborationPanel: React.FC<MASCollaborationPanelProps> = ({
     onSettingsChange(newSettings);
   };
 
-  const assignTemporaryRole = (agentId: string, role: string, personality: string, duration: number) => {
+  const updateTempRoleSelection = (agentId: string, field: 'careerRole' | 'behavior', value: string) => {
+    setTempRoleSelections(prev => ({
+      ...prev,
+      [agentId]: {
+        ...prev[agentId],
+        [field]: value
+      }
+    }));
+  };
+
+  const assignTemporaryRole = (agentId: string) => {
+    const selection = tempRoleSelections[agentId];
+    if (!selection?.careerRole || !selection?.behavior) return;
+
     const newRoles = {
       ...settings.temporaryRoles,
       [agentId]: {
-        role: role as any,
-        personality: personality as any,
-        duration,
+        careerRole: selection.careerRole as any,
+        behavior: selection.behavior as any,
+        duration: 60, // Default 60 minutes
         assignedAt: new Date()
       }
     };
     updateSettings('temporaryRoles', newRoles);
+    
+    // Clear the temporary selection
+    setTempRoleSelections(prev => {
+      const newSelections = { ...prev };
+      delete newSelections[agentId];
+      return newSelections;
+    });
   };
 
   const removeTemporaryRole = (agentId: string) => {
@@ -304,12 +330,12 @@ const MASCollaborationPanel: React.FC<MASCollaborationPanelProps> = ({
                 {settings.temporaryRoles[agent.id] ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <Chip 
-                      label={settings.temporaryRoles[agent.id].role}
+                      label={`Career: ${settings.temporaryRoles[agent.id].careerRole.replace('_', ' ').toUpperCase()}`}
                       color="primary"
                       size="small"
                     />
                     <Chip 
-                      label={settings.temporaryRoles[agent.id].personality}
+                      label={`Behavior: ${settings.temporaryRoles[agent.id].behavior.replace('_', ' ')}`}
                       color="secondary"
                       size="small"
                     />
@@ -322,10 +348,37 @@ const MASCollaborationPanel: React.FC<MASCollaborationPanelProps> = ({
                     </Button>
                   </Box>
                 ) : (
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                    <FormControl size="small" sx={{ minWidth: 100 }}>
-                      <InputLabel>Role</InputLabel>
-                      <Select defaultValue="">
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                      <InputLabel>Career Role</InputLabel>
+                      <Select 
+                        value={tempRoleSelections[agent.id]?.careerRole || ''}
+                        onChange={(e) => updateTempRoleSelection(agent.id, 'careerRole', e.target.value)}
+                      >
+                        <MenuItem value="none">None</MenuItem>
+                        <MenuItem value="legal">Legal</MenuItem>
+                        <MenuItem value="hr">HR</MenuItem>
+                        <MenuItem value="customer_service">Customer Service</MenuItem>
+                        <MenuItem value="cto">CTO</MenuItem>
+                        <MenuItem value="cfo">CFO</MenuItem>
+                        <MenuItem value="marketing">Marketing</MenuItem>
+                        <MenuItem value="sales">Sales</MenuItem>
+                        <MenuItem value="product_manager">Product Manager</MenuItem>
+                        <MenuItem value="engineer">Engineer</MenuItem>
+                        <MenuItem value="designer">Designer</MenuItem>
+                        <MenuItem value="analyst">Analyst</MenuItem>
+                        <MenuItem value="consultant">Consultant</MenuItem>
+                        <MenuItem value="researcher">Researcher</MenuItem>
+                        <MenuItem value="writer">Writer</MenuItem>
+                        <MenuItem value="educator">Educator</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 120 }}>
+                      <InputLabel>Behavior</InputLabel>
+                      <Select 
+                        value={tempRoleSelections[agent.id]?.behavior || ''}
+                        onChange={(e) => updateTempRoleSelection(agent.id, 'behavior', e.target.value)}
+                      >
                         <MenuItem value="collaborative">Collaborative</MenuItem>
                         <MenuItem value="devils_advocate">Devil's Advocate</MenuItem>
                         <MenuItem value="expert">Expert</MenuItem>
@@ -335,7 +388,12 @@ const MASCollaborationPanel: React.FC<MASCollaborationPanelProps> = ({
                         <MenuItem value="analyst">Analyst</MenuItem>
                       </Select>
                     </FormControl>
-                    <Button size="small" variant="outlined">
+                    <Button 
+                      size="small" 
+                      variant="outlined"
+                      onClick={() => assignTemporaryRole(agent.id)}
+                      disabled={!tempRoleSelections[agent.id]?.careerRole || !tempRoleSelections[agent.id]?.behavior}
+                    >
                       Assign
                     </Button>
                   </Box>
