@@ -609,6 +609,24 @@ export class UniversalGovernanceAdapter {
           fullChatbotConfig: chatbot.chatbotConfig
         });
         
+        // 🚨 CRITICAL DEBUG: Show exact configuration for OpenAI Assistant
+        if (agentId === 'chatbot-1755098216083') {
+          console.log('🚨 [CRITICAL DEBUG] OpenAI Assistant Configuration:');
+          console.log('  - Agent ID:', agentId);
+          console.log('  - Provider:', chatbot.apiDetails?.provider);
+          console.log('  - Model:', chatbot.apiDetails?.selectedModel);
+          console.log('  - Full API Details:', JSON.stringify(chatbot.apiDetails, null, 2));
+          console.log('  - Expected: provider="openai", model="gpt-4"');
+          
+          // Check if this is the configuration issue
+          if (chatbot.apiDetails?.provider !== 'openai' || chatbot.apiDetails?.selectedModel === 'claude-3-opus') {
+            console.error('❌ [CRITICAL ERROR] OpenAI Assistant has wrong configuration!');
+            console.error('   Current provider:', chatbot.apiDetails?.provider);
+            console.error('   Current model:', chatbot.apiDetails?.selectedModel);
+            console.error('   Should be: provider="openai", model="gpt-4"');
+          }
+        }
+        
         // DEBUGGER: Let's see the exact chatbot data structure
         console.log('🚨 DEBUGGER: Full chatbot object:', chatbot);
         

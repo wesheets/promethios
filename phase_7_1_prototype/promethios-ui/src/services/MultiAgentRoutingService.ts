@@ -47,6 +47,13 @@ export interface RoutingContext {
   }>;
   userId: string;
   conversationId: string;
+  conversationHistory?: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    agentId?: string;
+    agentName?: string;
+    timestamp?: Date;
+  }>;
 }
 
 export class MultiAgentRoutingService {
@@ -259,12 +266,41 @@ export class MultiAgentRoutingService {
         provider: agent.provider
       });
 
-      console.log('🔍 [MultiAgentRouting] Step 4: About to call agent API...');
+      // 🔧 CRITICAL FIX: Build complete conversation history for multi-agent context
+      console.log('🔍 [MultiAgentRouting] Step 4: Building complete conversation history...');
       
-      // Call the actual agent API
-      const response = await this.callAgentAPI(agent, message, context);
+      let enhancedMessage = message;
+      
+      if (context.conversationHistory && context.conversationHistory.length > 0) {
+        console.log('📚 [MultiAgentRouting] Found conversation history with', context.conversationHistory.length, 'messages');
+        
+        // Build conversation context that includes all previous messages from all agents
+        const conversationContext = context.conversationHistory
+          .map(msg => {
+            if (msg.role === 'user') {
+              return `User: ${msg.content}`;
+            } else {
+              const agentName = msg.agentName || `Agent ${msg.agentId}`;
+              return `${agentName}: ${msg.content}`;
+            }
+          })
+          .join('\n\n');
+        
+        // Enhance the message with full conversation context
+        enhancedMessage = `Previous conversation:\n${conversationContext}\n\nCurrent message:\nUser: ${message}`;
+        
+        console.log('✅ [MultiAgentRouting] Enhanced message with conversation context. Total length:', enhancedMessage.length);
+        console.log('📝 [MultiAgentRouting] Conversation context preview:', conversationContext.substring(0, 200) + '...');
+      } else {
+        console.log('📝 [MultiAgentRouting] No conversation history available, using message as-is');
+      }
 
-      console.log('🔍 [MultiAgentRouting] Step 5: Got response from callAgentAPI, length:', response.length);
+      console.log('🔍 [MultiAgentRouting] Step 5: About to call agent API with enhanced context...');
+      
+      // Call the actual agent API with enhanced conversation context
+      const response = await this.callAgentAPI(agent, enhancedMessage, context);
+
+      console.log('🔍 [MultiAgentRouting] Step 6: Got response from callAgentAPI, length:', response.length);
 
       const processingTime = Date.now() - startTime;
 

@@ -1852,12 +1852,44 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const activeContext = multiChatState.contexts.find(c => c.isActive);
       if (!activeContext || !activeContext.guestAgents) return;
 
-      // Create routing context
+      // 🔧 CRITICAL FIX: Build conversation history for multi-agent context sharing
+      console.log('📚 [MultiAgent] Building conversation history for agent context sharing...');
+      
+      let conversationHistory: Array<{
+        role: 'user' | 'assistant';
+        content: string;
+        agentId?: string;
+        agentName?: string;
+        timestamp?: Date;
+      }> = [];
+
+      // Get current chat messages to build conversation history
+      if (selectedChatbot) {
+        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+        const currentBotState = botStates.get(botId);
+        
+        if (currentBotState?.chatMessages) {
+          conversationHistory = currentBotState.chatMessages.map(msg => ({
+            role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+            content: msg.content,
+            agentId: msg.metadata?.agentId,
+            agentName: msg.metadata?.agentName,
+            timestamp: msg.timestamp
+          }));
+          
+          console.log('📚 [MultiAgent] Built conversation history with', conversationHistory.length, 'messages');
+          console.log('📝 [MultiAgent] Recent messages preview:', 
+            conversationHistory.slice(-3).map(m => `${m.role}: ${m.content.substring(0, 50)}...`));
+        }
+      }
+
+      // Create routing context with conversation history
       const routingContext = {
         hostAgentId: activeContext.hostAgentId,
         guestAgents: activeContext.guestAgents,
         userId: user.uid,
-        conversationId: currentMultiAgentSession || `conv_${Date.now()}`
+        conversationId: currentMultiAgentSession || `conv_${Date.now()}`,
+        conversationHistory: conversationHistory // 🔧 CRITICAL: Include full conversation history
       };
 
       // Process message with multi-agent routing
