@@ -405,90 +405,33 @@ export class MultiAgentRoutingService {
 
       console.log('🔧 [MultiAgentRouting] Enhanced message for agent:', enhancedMessage.substring(0, 200) + '...');
 
-      // CRITICAL FIX: Ensure guest agents maintain their governance wrapper
-      // Instead of looking only in current chat service, check for ANY existing governed session
-      console.log('🔧 [MultiAgentRouting] Looking for existing governed session for agent:', agentId);
+      // 🔧 CRITICAL FIX: Ensure guest agents maintain their governance wrapper
+      // Always use the governance service to maintain consistent governance across all contexts
+      console.log('🔧 [MultiAgentRouting] Ensuring governance wrapper persistence for agent:', agentId);
       
-      // Try to get existing session first from current chat service
-      let session = null;
-      const activeSessions = (chatService as any).activeSessions;
+      // Use the conversation ID as session ID to maintain governance context
+      const sessionId = context.conversationId;
       
-      if (activeSessions) {
-        // Find existing session for this agent
-        for (const [sessionId, sessionData] of activeSessions.entries()) {
-          if (sessionData.agentId === agentId) {
-            session = sessionData;
-            console.log('✅ [MultiAgentRouting] Found existing session in current service:', sessionId);
-            break;
-          }
+      // CRITICAL: Always call through governance service to maintain wrapper persistence
+      // This ensures guest agents keep their governance wrapper from their original context
+      console.log('✅ [MultiAgentRouting] Calling through governance service with session:', sessionId);
+      
+      const response = await chatService.generateChatResponse(
+        sessionId,
+        enhancedMessage,
+        agentId,
+        {
+          conversationHistory: context.conversationHistory,
+          provider: agent.provider,
+          model: agent.model || agent.selectedModel,
+          userId: context.userId,
+          hostAgentId: context.hostAgentId,
+          guestAgents: context.guestAgents
         }
-      }
-      
-      // CRITICAL: If no session found in current service, check for global governed sessions
-      if (!session) {
-        console.log('🔍 [MultiAgentRouting] No session in current service, checking for global governed sessions...');
-        
-        // Try to find if this agent has an existing governed session anywhere
-        // This ensures guest agents don't lose their governance wrapper
-        try {
-          // Check if agent has existing governance context
-          const { UniversalGovernanceAdapter } = await import('./UniversalGovernanceAdapter');
-          const universalGovernance = UniversalGovernanceAdapter.getInstance();
-          
-          // Load the agent's existing governance configuration
-          const existingConfig = await universalGovernance.loadCompleteAgentConfiguration(agentId, 'multi-agent-routing');
-          
-          if (existingConfig) {
-            console.log('✅ [MultiAgentRouting] Found existing governance config for agent:', agentId);
-            console.log('🛡️ [MultiAgentRouting] Agent has governance wrapper - preserving it');
-            
-            // Create a new session that inherits the existing governance context
-            session = await chatService.startChatSession(agent);
-            
-            if (session) {
-              // Mark this session as inheriting governance from existing wrapper
-              session.inheritedGovernance = true;
-              session.originalGovernanceConfig = existingConfig;
-              console.log('✅ [MultiAgentRouting] Created new session with inherited governance:', session.sessionId);
-            }
-          }
-        } catch (error) {
-          console.warn('⚠️ [MultiAgentRouting] Failed to check for existing governance:', error);
-        }
-      }
-      
-      // Only create completely new session if no existing governance found
-      if (!session) {
-        console.log('🔧 [MultiAgentRouting] No existing governance found, creating new session for agent:', agentId);
-        session = await chatService.startChatSession(agent);
-        
-        if (!session) {
-          console.error('❌ [MultiAgentRouting] Failed to start session for agent:', agentId);
-          throw new Error(`Failed to start chat session for agent: ${agentId}`);
-        }
-        console.log('✅ [MultiAgentRouting] New session created:', session.sessionId);
-      } else {
-        console.log('✅ [MultiAgentRouting] Using existing governed session:', session.sessionId);
-      }
+      );
 
-      // Send message to the real agent
-      console.log('📡 [MultiAgentRouting] Sending message to agent:', agentId, 'session:', session.sessionId);
-      const response = await chatService.sendMessage(session.sessionId, enhancedMessage);
-      
-      console.log('📡 [MultiAgentRouting] Raw response from agent:', agentId, response);
-      
-      if (!response) {
-        console.error('❌ [MultiAgentRouting] No response object from agent:', agentId);
-        throw new Error(`No response received from agent: ${agentId}`);
-      }
-      
-      if (!response.content) {
-        console.error('❌ [MultiAgentRouting] No content in response from agent:', agentId, 'Response:', response);
-        throw new Error(`Empty response content from agent: ${agentId}`);
-      }
-
-      console.log('✅ [MultiAgentRouting] Got real response from agent:', agentId, 'Content length:', response.content.length);
-      return response.content;
+      console.log('✅ [MultiAgentRouting] Got governed response from agent:', agentName);
+      return response.response;
 
     } catch (error) {
       console.error('❌ [MultiAgentRouting] Error calling agent API:', agentName, error);
