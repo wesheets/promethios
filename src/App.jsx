@@ -159,7 +159,6 @@ function App() {
           <div className="header-content">
             <div className="header-left">
               <img src={promethiosLogo} alt="Promethios" className="header-logo" />
-              <span className="header-tagline">AI Governance Engine</span>
             </div>
             <nav className="header-nav">
               <div className="nav-item dropdown">
