@@ -11,7 +11,8 @@ import { MultiAgentRoutingService, AgentResponse } from '../services/MultiAgentR
 import { MultiAgentAuditLogger } from '../services/MultiAgentAuditLogger';
 import { MessageParser, ParsedMessage } from '../utils/MessageParser';
 import MultiAgentMentionInput from '../components/MultiAgentMentionInput';
-import MultiAgentResponseIndicator from '../components/MultiAgentResponseIndicator';
+import AgentAvatarSelector from '../components/AgentAvatarSelector';
+// Removed MultiAgentResponseIndicator - intrusive orange popup
 // Token economics imports
 import { TokenEconomicsService } from '../services/TokenEconomicsService';
 import TokenBudgetWidget from '../components/TokenBudgetWidget';
@@ -338,6 +339,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [isProcessingMultiAgent, setIsProcessingMultiAgent] = useState(false);
   const [targetAgents, setTargetAgents] = useState<string[]>([]);
   const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]); // For avatar selector
   
   // Token economics state
   const [showTokenBudget, setShowTokenBudget] = useState(false);
@@ -1539,6 +1541,53 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  // Helper functions for Agent Avatar Selector
+  const getAgentColor = (agentName: string) => {
+    if (agentName.toLowerCase().includes('claude')) return '#3b82f6';    // Blue
+    if (agentName.toLowerCase().includes('openai') || agentName.toLowerCase().includes('gpt')) return '#10b981';    // Green
+    if (agentName.toLowerCase().includes('gemini') || agentName.toLowerCase().includes('bard')) return '#8b5cf6';   // Purple
+    if (agentName.toLowerCase().includes('anthropic')) return '#06b6d4';  // Cyan
+    if (agentName.toLowerCase().includes('mistral')) return '#f59e0b';    // Orange
+    if (agentName.toLowerCase().includes('llama')) return '#ef4444';      // Red
+    return '#64748b'; // Default gray
+  };
+
+  const getHostAgent = () => {
+    if (!selectedChatbot) return null;
+    return {
+      id: selectedChatbot.identity?.id || selectedChatbot.id || '',
+      name: selectedChatbot.identity?.name || selectedChatbot.name || 'Host Agent',
+      color: getAgentColor(selectedChatbot.identity?.name || selectedChatbot.name || ''),
+      hotkey: 'C' // Claude hotkey
+    };
+  };
+
+  const getGuestAgents = () => {
+    const activeContext = multiChatState.contexts.find(c => c.isActive);
+    if (!activeContext?.guestAgents) return [];
+    
+    return activeContext.guestAgents.map((guest, index) => ({
+      id: guest.agentId,
+      name: guest.name,
+      color: getAgentColor(guest.name),
+      hotkey: guest.name.charAt(0).toUpperCase() // First letter as hotkey
+    }));
+  };
+
+  // Initialize selected agents with host agent
+  useEffect(() => {
+    const hostAgent = getHostAgent();
+    if (hostAgent && selectedAgents.length === 0) {
+      setSelectedAgents([hostAgent.id]);
+    }
+  }, [selectedChatbot]);
+
+  // Handle agent selection change
+  const handleAgentSelectionChange = (selectedAgentIds: string[]) => {
+    setSelectedAgents(selectedAgentIds);
+    setTargetAgents(selectedAgentIds); // Update target agents for routing
+  };
+
   // Autonomous Stars functionality
   const generateSmartSuggestions = useCallback(async (input: string, context: any) => {
     if (!autonomousStarsActive || !input.trim()) {
@@ -2666,27 +2715,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 ) : (
                   <Stack spacing={3}>
                     {/* Multi-Agent Response Indicator */}
-                    {(() => {
-                      const activeContext = multiChatState.contexts.find(c => c.isActive);
-                      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
-                      
-                      if (hasGuestAgents && (isProcessingMultiAgent || multiAgentResponses.length > 0)) {
-                        return (
-                          <MultiAgentResponseIndicator
-                            hostAgentId={activeContext.hostAgentId}
-                            guestAgents={activeContext.guestAgents}
-                            targetAgents={targetAgents}
-                            isProcessing={isProcessingMultiAgent}
-                            responses={multiAgentResponses}
-                            onResponseComplete={(responses) => {
-                              console.log('🤖 [MultiAgent] All responses complete:', responses);
-                              setIsProcessingMultiAgent(false);
-                            }}
-                          />
-                        );
-                      }
-                      return null;
-                    })()}
+                    {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
                     {chatMessages.map((message) => (
                       <Box
@@ -2847,30 +2876,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
                 {/* Token Economics Widgets */}
-                {/* Multi-Agent Response Status */}
-                {isProcessingMultiAgent && targetAgents.length > 0 && (
-                  <Box sx={{ mb: 2 }}>
-                    <MultiAgentResponseIndicator
-                      hostAgentId={selectedChatbot?.identity?.id || selectedChatbot?.id || ''}
-                      guestAgents={multiChatState.contexts.find(c => c.isActive)?.guestAgents || []}
-                      targetAgents={targetAgents}
-                      isProcessing={isProcessingMultiAgent}
-                      responses={multiAgentResponses}
-                      onResponseComplete={(responses) => {
-                        console.log('🤖 [MultiAgent] All responses complete:', responses);
-                        setIsProcessingMultiAgent(false);
-                        
-                        // Add agent engagement scorers for each response
-                        responses.forEach((response, index) => {
-                          if (!response.error) {
-                            // This would typically be rendered in the message area
-                            console.log('📊 [AgentScorer] Response ready for scoring:', response.agentName);
-                          }
-                        });
-                      }}
-                    />
-                  </Box>
-                )}
+                {/* Removed intrusive Multi-Agent Response Status - let conversation flow naturally */}
 
                 {/* Budget Alerts */}
                 {budgetExceeded && (
@@ -3039,29 +3045,43 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         // Single-agent mode with smart suggestions
                         return (
                           <>
-                            <TextField
-                              fullWidth
-                              placeholder="Type your message..."
-                              value={messageInput}
-                              onChange={(e) => handleInputChange(e.target.value)}
-                              onKeyDown={handleKeyNavigation}
-                              onKeyPress={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  if (showSuggestions && selectedSuggestionIndex >= 0) {
-                                    e.preventDefault();
-                                    handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
-                                  } else {
-                                    handleSendMessage();
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              {/* Agent Avatar Selector */}
+                              <AgentAvatarSelector
+                                hostAgent={getHostAgent()}
+                                guestAgents={getGuestAgents()}
+                                selectedAgents={selectedAgents}
+                                onSelectionChange={handleAgentSelectionChange}
+                                onAddAgent={() => {
+                                  // TODO: Implement add guest agent functionality
+                                  console.log('🤖 Add guest agent clicked');
+                                }}
+                              />
+                              
+                              {/* Text Input */}
+                              <TextField
+                                fullWidth
+                                placeholder="Type your message..."
+                                value={messageInput}
+                                onChange={(e) => handleInputChange(e.target.value)}
+                                onKeyDown={handleKeyNavigation}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    if (showSuggestions && selectedSuggestionIndex >= 0) {
+                                      e.preventDefault();
+                                      handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+                                    } else {
+                                      handleSendMessage();
+                                    }
                                   }
-                                }
-                              }}
-                              onPaste={handlePaste}
-                              onFocus={() => {
-                                if (autonomousStarsActive && messageInput.trim()) {
-                                  setShowSuggestions(true);
-                                }
-                              }}
-                              onBlur={() => {
+                                }}
+                                onPaste={handlePaste}
+                                onFocus={() => {
+                                  if (autonomousStarsActive && messageInput.trim()) {
+                                    setShowSuggestions(true);
+                                  }
+                                }}
+                                onBlur={() => {
                                 // Delay hiding suggestions to allow clicking
                                 setTimeout(() => setShowSuggestions(false), 200);
                               }}
@@ -3089,6 +3109,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 }
                               }}
                             />
+                            </Box>
                             
                             {/* Amazon-Style Smart Suggestions Dropdown (Below Input) */}
                             {showSuggestions && smartSuggestions.length > 0 && (
