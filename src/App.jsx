@@ -202,10 +202,10 @@ function App() {
             <div className="content-container">
               {/* Left Side - Hero Content */}
               <section className="hero-section">
-                <h1 className="hero-title">
-                  Govern Any AI.<br />
-                  <span className="hero-title-accent">Measure What Matters.</span>
-                </h1>
+                  <h1 className="hero-title">
+                    Govern Any AI.<br />
+                    <span className="hero-title-accent">Measure What Matters to You.</span>
+                  </h1>
                 <p className="hero-description">
                   Promethios transforms any large language model into governed intelligence—measuring trust, compliance, security, and performance in real time. Every interaction is cryptographically verified, logged, and accountable.
                 </p>
@@ -339,6 +339,66 @@ function App() {
               </section>
             </div>
           </main>
+
+          {/* Footer */}
+          <footer className="footer">
+            <div className="footer-content">
+              <div className="footer-section">
+                <div className="footer-brand">
+                  <img src={promethiosLogo} alt="Promethios" className="footer-logo" />
+                  <p className="footer-tagline">
+                    The observability and compliance layer for multi-agent AI systems. Improving AI through Governance.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="footer-section">
+                <h4 className="footer-title">🔥 Company</h4>
+                <ul className="footer-links">
+                  <li><a href="#about">About Us</a></li>
+                  <li><a href="#contact">Contact</a></li>
+                </ul>
+              </div>
+
+              <div className="footer-section">
+                <h4 className="footer-title">📋 Legal</h4>
+                <ul className="footer-links">
+                  <li><a href="#privacy">Privacy Policy</a></li>
+                  <li><a href="#terms">Terms of Use</a></li>
+                  <li><a href="#responsible-ai">Responsible AI</a></li>
+                  <li><a href="#governance">Governance License</a></li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="footer-bottom">
+              <div className="footer-compliance">
+                <span className="compliance-badge">✅ SOC2 Compliant</span>
+                <span className="compliance-badge">🔒 HIPAA Ready</span>
+                <span className="compliance-badge">⚙️ Built on Kubernetes</span>
+              </div>
+              
+              <div className="footer-copyright">
+                <p>© 2025 Promethios. All rights reserved.</p>
+                <p className="footer-version">v1.7.3 | Last updated August 2025</p>
+              </div>
+
+              <div className="footer-social">
+                <a href="#" className="social-link" aria-label="GitHub">
+                  <span>🐙</span>
+                </a>
+                <a href="#" className="social-link" aria-label="Discord">
+                  <span>💬</span>
+                </a>
+                <a href="#" className="social-link" aria-label="LinkedIn">
+                  <span>💼</span>
+                </a>
+                <a href="#" className="social-link" aria-label="Twitter">
+                  <span>🐦</span>
+                </a>
+              </div>
+            </div>
+          </footer>
         </>
       )}
     </div>
