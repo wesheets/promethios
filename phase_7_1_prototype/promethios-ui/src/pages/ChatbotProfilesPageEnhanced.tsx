@@ -15,7 +15,7 @@ import MultiAgentResponseIndicator from '../components/MultiAgentResponseIndicat
 // Token economics imports
 import { TokenEconomicsService } from '../services/TokenEconomicsService';
 import TokenBudgetWidget from '../components/TokenBudgetWidget';
-import AgentEngagementScorer from '../components/AgentEngagementScorer';
+import TokenResponseIcon from '../components/TokenResponseIcon';
 import TokenEconomicsConfigPanel from '../components/TokenEconomicsConfigPanel';
 import TokenBudgetPopup from '../components/TokenBudgetPopup';
 // Autonomous systems imports
@@ -340,7 +340,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
   
   // Token economics state
-  const [showTokenBudget, setShowTokenBudget] = useState(true);
+  const [showTokenBudget, setShowTokenBudget] = useState(false);
   const [budgetExceeded, setBudgetExceeded] = useState(false);
   const [budgetWarning, setBudgetWarning] = useState(false);
   
@@ -2740,21 +2740,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             {message.timestamp.toLocaleTimeString()}
                           </Typography>
 
-                          {/* Agent Engagement Scorer for multi-agent responses */}
+                          {/* Small token response icon for multi-agent responses */}
                           {message.metadata?.isMultiAgent && message.sender === 'assistant' && (
-                            <Box sx={{ mt: 1 }}>
-                              <AgentEngagementScorer
-                                agentId={message.metadata.agentId}
-                                agentName={message.metadata.agentName}
-                                agentResponse={message.content}
-                                estimatedCost={tokenEconomicsService.estimateMessageCost(message.content)}
-                                interactionId={message.id}
-                                onScoreSubmitted={(score, feedback) => {
-                                  console.log('📊 [AgentScorer] Score submitted:', message.metadata.agentName, score, feedback);
-                                  // This could trigger updates to agent metrics
-                                }}
-                              />
-                            </Box>
+                            <TokenResponseIcon
+                              agentId={message.metadata.agentId}
+                              cost={tokenEconomicsService.estimateMessageCost(message.content)}
+                              quality={8} // Default quality, could be dynamic
+                              value="high" // Could be calculated based on response
+                              onRate={(rating) => {
+                                console.log('📊 [TokenIcon] Rating submitted:', message.metadata.agentName, rating);
+                                // This could trigger updates to agent metrics
+                              }}
+                            />
                           )}
                         </Box>
                       </Box>
