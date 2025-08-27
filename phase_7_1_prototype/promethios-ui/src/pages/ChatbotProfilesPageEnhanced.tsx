@@ -1421,9 +1421,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     try {
       setChatLoading(true);
       console.log(`🚀 [Workspace] Initializing Command Center for ${chatbot.identity.name}`);
+      console.log(`🔍 [Debug] chatPanelGovernanceService:`, chatPanelGovernanceService);
+      console.log(`🔍 [Debug] chatbot object:`, chatbot);
       
       // Start new chat session with governance
       const session = await chatPanelGovernanceService.startChatSession(chatbot);
+      console.log(`🔍 [Debug] Session created:`, session);
+      
       updateBotState(chatbotId, { 
         activeSession: session,
         chatMessages: []
@@ -1433,6 +1437,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log(`✅ [Workspace] Command Center initialized:`, session.sessionId);
     } catch (error) {
       console.error(`❌ [Workspace] Failed to initialize Command Center:`, error);
+      console.error(`❌ [Workspace] Error details:`, error.message, error.stack);
+      
       // Create a fallback session for UI testing
       const fallbackSession: ChatSession = {
         sessionId: `fallback_${Date.now()}`,
@@ -1446,6 +1452,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           complianceScore: 1.0
         }
       };
+      console.log(`🔧 [Workspace] Using fallback session:`, fallbackSession);
       updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { activeSession: fallbackSession });
     } finally {
       setChatLoading(false);
@@ -2179,6 +2186,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       setCurrentAction(actionText);
       setActionStartTime(new Date());
+      
+      // Ensure we have an active session before sending message
+      if (!activeSession) {
+        console.error('❌ [ChatPanel] No active session found, cannot send message');
+        throw new Error('No active chat session. Please try refreshing the page.');
+      }
       
       const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
       
