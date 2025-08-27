@@ -206,6 +206,7 @@ export const RepositoryBrowser: React.FC<RepositoryBrowserProps> = ({
 
   // Dialog states
   const [newWorkflowDialog, setNewWorkflowDialog] = useState(false);
+  const [newToolDialog, setNewToolDialog] = useState(false);
   const [extensionDialog, setExtensionDialog] = useState(false);
   const [exportDialog, setExportDialog] = useState(false);
   const [shareDialog, setShareDialog] = useState(false);
@@ -320,6 +321,88 @@ export const RepositoryBrowser: React.FC<RepositoryBrowserProps> = ({
     } catch (err) {
       console.error('Failed to create workflow:', err);
       showNotification('Failed to create workflow repository.', 'error');
+    }
+  };
+
+  const createNewTool = async (description: string, toolType: string) => {
+    try {
+      // Create a tool repository template (not the complete tool)
+      // The agent will build the actual tool through chat interface
+      const toolRepoId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      const repository = {
+        id: toolRepoId,
+        name: `${toolType.replace('_', ' ')} Tool`,
+        description: description,
+        type: 'tool' as const,
+        status: 'active' as const,
+        progress: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId,
+        agentId,
+        sessionId,
+        // Start with basic template structure - agent will build the actual files
+        files: [
+          {
+            id: 'readme',
+            name: 'README.md',
+            path: '/README.md',
+            type: 'markdown' as const,
+            size: 200,
+            content: `# ${toolType.replace('_', ' ')} Tool\n\n${description}\n\n## Status\nReady for development - talk to your agent to build this tool!`,
+            status: 'completed' as const,
+            lastModified: new Date()
+          },
+          {
+            id: 'tool_spec',
+            name: 'tool_specification.md',
+            path: '/tool_specification.md',
+            type: 'markdown' as const,
+            size: 150,
+            content: `# Tool Specification\n\n**Type:** ${toolType}\n**Description:** ${description}\n\n## Next Steps\nTalk to your agent to start building this tool!`,
+            status: 'pending' as const,
+            lastModified: new Date()
+          }
+        ],
+        extensions: [],
+        collaborators: [{
+          userId,
+          userName: 'You',
+          role: 'owner' as const,
+          joinedAt: new Date()
+        }],
+        metrics: {
+          totalFiles: 2,
+          linesOfCode: 0,
+          commits: 1,
+          contributors: 1
+        },
+        tags: [toolType, 'tool', 'template'],
+        isPublic: false,
+        rating: 0,
+        templateId: undefined,
+        // Add tool-specific metadata for agent context
+        toolMetadata: {
+          toolType,
+          description,
+          status: 'template_created',
+          buildInstructions: `Build a ${toolType} tool: ${description}`
+        }
+      };
+
+      setRepositories(prev => [repository, ...prev]);
+      setSelectedRepository(repository);
+      setNewToolDialog(false);
+
+      // Start live sandbox to show the template
+      startLiveSandbox(repository);
+
+      showNotification(`Tool repository template created! Go to chat to tell your agent: "Build the ${toolType} tool we started"`, 'success');
+
+    } catch (err) {
+      console.error('Failed to create tool template:', err);
+      showNotification('Failed to create tool repository template.', 'error');
     }
   };
 
@@ -595,6 +678,14 @@ export const RepositoryBrowser: React.FC<RepositoryBrowserProps> = ({
           sx={{ whiteSpace: 'nowrap' }}
         >
           New Workflow
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<ExtensionIcon />}
+          onClick={() => setNewToolDialog(true)}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          New Tool
         </Button>
         <IconButton onClick={loadRepositories}>
           <RefreshIcon />
@@ -1198,6 +1289,41 @@ export const RepositoryBrowser: React.FC<RepositoryBrowserProps> = ({
           <Button onClick={() => setNewWorkflowDialog(false)}>Cancel</Button>
           <Button variant="contained" onClick={() => createNewWorkflow('Sample workflow goal', 'code_shell')}>
             Create Repository
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* New Tool Dialog */}
+      <Dialog open={newToolDialog} onClose={() => setNewToolDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Tool Repository</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Tool Description"
+            fullWidth
+            variant="outlined"
+            placeholder="e.g., Build a crypto portfolio tracker tool"
+            sx={{ mb: 2 }}
+          />
+          <FormControl fullWidth>
+            <InputLabel>Tool Type</InputLabel>
+            <Select defaultValue="data_analyzer">
+              <MenuItem value="data_analyzer">Data Analyzer</MenuItem>
+              <MenuItem value="tracker">Tracker/Monitor</MenuItem>
+              <MenuItem value="converter">Format Converter</MenuItem>
+              <MenuItem value="dashboard">Dashboard</MenuItem>
+              <MenuItem value="calculator">Calculator</MenuItem>
+              <MenuItem value="scraper">Web Scraper</MenuItem>
+              <MenuItem value="api_tool">API Integration</MenuItem>
+              <MenuItem value="automation">Automation Tool</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNewToolDialog(false)}>Cancel</Button>
+          <Button variant="contained" onClick={() => createNewTool('Sample tool description', 'data_analyzer')}>
+            Create Tool Repository
           </Button>
         </DialogActions>
       </Dialog>

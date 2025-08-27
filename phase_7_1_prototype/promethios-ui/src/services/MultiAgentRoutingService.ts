@@ -282,8 +282,20 @@ export class MultiAgentRoutingService {
         agentId,
         step: 'unknown',
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
+        chatbotServiceExists: !!this.chatbotService,
+        chatbotServiceType: typeof this.chatbotService,
+        getChatbotByIdExists: this.chatbotService && typeof this.chatbotService.getChatbotById === 'function'
       });
+      
+      // Try to get more details about the chatbot service
+      if (this.chatbotService) {
+        console.error('🔍 [MultiAgentRouting] ChatbotService debug:', {
+          hasGetChatbotById: typeof this.chatbotService.getChatbotById,
+          hasGetChatbot: typeof this.chatbotService.getChatbot,
+          serviceConstructor: this.chatbotService.constructor.name
+        });
+      }
       
       return {
         agentId,

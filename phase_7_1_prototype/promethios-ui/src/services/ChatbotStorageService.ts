@@ -428,6 +428,13 @@ export class ChatbotStorageService {
   }
 
   /**
+   * Get a specific chatbot by ID (alias for getChatbot)
+   */
+  public async getChatbotById(chatbotId: string): Promise<ChatbotProfile | null> {
+    return this.getChatbot(chatbotId);
+  }
+
+  /**
    * Update a chatbot
    */
   public async updateChatbot(chatbotId: string, updates: Partial<ChatbotProfile>): Promise<ChatbotProfile | null> {
