@@ -427,6 +427,35 @@ main {
   animation: logoSlideIn 0.8s ease-out;
 }
 
+/* Company-specific logo sizing */
+.logo-hugging-face {
+  width: 1000px !important; /* 5x larger */
+  height: 300px !important;
+}
+
+.logo-gemini {
+  width: 600px !important; /* 3x larger */
+  height: 180px !important;
+}
+
+.logo-cohere {
+  width: 400px !important; /* 2x larger */
+  height: 120px !important;
+}
+
+.logo-perplexity {
+  width: 400px !important; /* 2x larger */
+  height: 120px !important;
+}
+
+/* Keep default size for OpenAI, Anthropic, Grok */
+.logo-openai,
+.logo-anthropic,
+.logo-grok {
+  width: 200px !important;
+  height: 60px !important;
+}
+
 @keyframes logoSlideIn {
   0% {
     opacity: 0;

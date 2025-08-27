@@ -241,7 +241,7 @@ function App() {
                       <img 
                         src={aiCompanies[currentLogoIndex].logo} 
                         alt={aiCompanies[currentLogoIndex].name}
-                        className="current-logo"
+                        className={`current-logo logo-${aiCompanies[currentLogoIndex].name.toLowerCase().replace(/\s+/g, '-')}`}
                         key={currentLogoIndex}
                       />
                     </div>
