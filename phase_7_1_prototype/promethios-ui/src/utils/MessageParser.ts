@@ -39,7 +39,13 @@ export class MessageParser {
    */
   public parseMessage(message: string, availableAgents: Array<{id: string, name: string}>): ParsedMessage {
     console.log('🔍 [MessageParser] Parsing message for @mentions:', message);
-    console.log('🔍 [MessageParser] Available agents:', availableAgents.map(a => a.name));
+    console.log('🔍 [MessageParser] Available agents:', availableAgents);
+    console.log('🔍 [MessageParser] Available agents detailed:', availableAgents.map(agent => ({
+      id: agent.id,
+      name: agent.name,
+      idType: typeof agent.id,
+      nameType: typeof agent.name
+    })));
 
     const mentions: AgentMention[] = [];
     let cleanMessage = message;
