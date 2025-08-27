@@ -1574,6 +1574,101 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }));
   };
 
+  // Get team members for guest selector
+  const getTeamMembers = () => {
+    // Mock team data based on the Team Collaboration panel
+    return [
+      {
+        id: 'alice-johnson',
+        name: 'Alice Johnson',
+        type: 'human' as const,
+        role: 'Product Manager',
+        status: 'online' as const,
+        avatar: 'A'
+      },
+      {
+        id: 'bob-smith',
+        name: 'Bob Smith',
+        type: 'human' as const,
+        role: 'Developer',
+        status: 'away' as const,
+        avatar: 'B'
+      },
+      {
+        id: 'carol-davis',
+        name: 'Carol Davis',
+        type: 'human' as const,
+        role: 'Designer',
+        status: 'online' as const,
+        avatar: 'C'
+      }
+    ];
+  };
+
+  // Get AI agents for guest selector
+  const getAIAgents = () => {
+    // Get available chatbots excluding the current host
+    const hostId = selectedChatbot?.identity?.id || selectedChatbot?.id;
+    
+    return chatbotProfiles
+      .filter(bot => (bot.identity?.id || bot.id) !== hostId)
+      .map(bot => ({
+        id: bot.identity?.id || bot.id || '',
+        name: bot.identity?.name || bot.name || 'AI Agent',
+        type: 'ai_agent' as const,
+        role: 'AI Agent',
+        status: 'online' as const,
+        health: Math.floor(Math.random() * 100), // Mock health percentage
+        provider: bot.apiDetails?.provider || 'Unknown',
+        avatar: (bot.identity?.name || bot.name || 'A').charAt(0)
+      }));
+  };
+
+  // Handle adding guests from the selector popup
+  const handleAddGuests = (guests: any[]) => {
+    console.log('🤖 Adding guests to conversation:', guests);
+    
+    // Add AI agents to the conversation
+    const aiGuests = guests.filter(guest => guest.type === 'ai_agent');
+    const humanGuests = guests.filter(guest => guest.type === 'human');
+    
+    if (aiGuests.length > 0) {
+      // Add AI agents to multi-agent context
+      setMultiChatState(prev => {
+        const activeContext = prev.contexts.find(c => c.isActive);
+        if (!activeContext) return prev;
+        
+        const newGuestAgents = aiGuests.map(guest => ({
+          agentId: guest.id,
+          name: guest.name,
+          status: 'active' as const
+        }));
+        
+        return {
+          ...prev,
+          contexts: prev.contexts.map(context => 
+            context.isActive 
+              ? {
+                  ...context,
+                  guestAgents: [...(context.guestAgents || []), ...newGuestAgents]
+                }
+              : context
+          )
+        };
+      });
+      
+      // Update selected agents to include new AI guests
+      const newAgentIds = aiGuests.map(guest => guest.id);
+      setSelectedAgents(prev => [...prev, ...newAgentIds]);
+      setTargetAgents(prev => [...prev, ...newAgentIds]);
+    }
+    
+    if (humanGuests.length > 0) {
+      // TODO: Implement human guest invitation
+      console.log('👥 Human guests would be invited:', humanGuests);
+    }
+  };
+
   // Initialize selected agents with host agent
   useEffect(() => {
     const hostAgent = getHostAgent();
@@ -3052,10 +3147,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 guestAgents={getGuestAgents()}
                                 selectedAgents={selectedAgents}
                                 onSelectionChange={handleAgentSelectionChange}
-                                onAddAgent={() => {
-                                  // TODO: Implement add guest agent functionality
-                                  console.log('🤖 Add guest agent clicked');
-                                }}
+                                teamMembers={getTeamMembers()}
+                                aiAgents={getAIAgents()}
+                                onAddGuests={handleAddGuests}
                               />
                               
                               {/* Text Input */}

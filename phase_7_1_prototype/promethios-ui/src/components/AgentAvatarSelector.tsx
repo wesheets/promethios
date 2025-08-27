@@ -12,6 +12,7 @@ import {
   Badge
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import GuestSelectorPopup from './GuestSelectorPopup';
 
 export interface AgentInfo {
   id: string;
@@ -21,12 +22,27 @@ export interface AgentInfo {
   hotkey?: string;
 }
 
+export interface TeamMember {
+  id: string;
+  name: string;
+  type: 'human' | 'ai_agent';
+  role?: string;
+  status: 'online' | 'away' | 'offline';
+  avatar?: string;
+  health?: number; // For AI agents
+  provider?: string; // For AI agents
+}
+
 export interface AgentAvatarSelectorProps {
   hostAgent: AgentInfo;
   guestAgents: AgentInfo[];
   selectedAgents: string[];
   onSelectionChange: (selectedAgentIds: string[]) => void;
   onAddAgent?: () => void;
+  // New props for guest selector
+  teamMembers?: TeamMember[];
+  aiAgents?: TeamMember[];
+  onAddGuests?: (guests: TeamMember[]) => void;
 }
 
 export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
@@ -34,9 +50,31 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   guestAgents,
   selectedAgents,
   onSelectionChange,
-  onAddAgent
+  onAddAgent,
+  teamMembers = [],
+  aiAgents = [],
+  onAddGuests
 }) => {
+  const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const allAgents = [hostAgent, ...guestAgents];
+
+  // Handle guest selector
+  const handleAddGuestClick = () => {
+    if (teamMembers.length > 0 || aiAgents.length > 0) {
+      setGuestSelectorOpen(true);
+    } else {
+      // Fallback to original onAddAgent if no team data
+      onAddAgent?.();
+    }
+  };
+
+  const handleGuestsAdded = (guests: TeamMember[]) => {
+    onAddGuests?.(guests);
+    setGuestSelectorOpen(false);
+  };
+
+  // Get current participant IDs for guest selector
+  const currentParticipants = allAgents.map(agent => agent.id);
 
   // Handle agent selection toggle
   const handleAgentClick = (agentId: string, event: React.MouseEvent) => {
@@ -158,10 +196,10 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       ))}
 
       {/* Add Agent Button */}
-      {onAddAgent && (
+      {(onAddAgent || onAddGuests) && (
         <Tooltip title="Add guest agent to conversation">
           <IconButton
-            onClick={onAddAgent}
+            onClick={handleAddGuestClick}
             size="small"
             sx={{
               width: 32,
@@ -197,6 +235,16 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
           {selectedAgents.length} selected
         </Box>
       )}
+
+      {/* Guest Selector Popup */}
+      <GuestSelectorPopup
+        open={guestSelectorOpen}
+        onClose={() => setGuestSelectorOpen(false)}
+        onAddGuests={handleGuestsAdded}
+        currentParticipants={currentParticipants}
+        teamMembers={teamMembers}
+        aiAgents={aiAgents}
+      />
     </Box>
   );
 };
