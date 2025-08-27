@@ -566,22 +566,85 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                       </Box>
                     }
                     secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: '#64748b' }}>
-                          {session.messageCount} messages • {formatDate(session.lastUpdated)}
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <Box
-                            sx={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              bgcolor: getTrustScoreColor(session.governanceMetrics.overallTrustScore),
-                            }}
-                          />
-                          <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>
-                            {session.governanceMetrics.overallTrustScore.toFixed(0)}%
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+                        {/* Guest Participants Display */}
+                        {session.participants?.guests && session.participants.guests.length > 0 && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                            <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+                              with
+                            </Typography>
+                            {session.participants.guests.map((guest, index) => (
+                              <React.Fragment key={guest.id}>
+                                <Tooltip title={`${guest.name} (${guest.type === 'ai_agent' ? 'AI Agent' : 'Human'}) • ${guest.messageCount} messages`}>
+                                  <Box
+                                    component="span"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (guest.type === 'ai_agent') {
+                                        // Navigate to guest agent
+                                        window.location.href = `/ui/chat/chatbots?agent=${guest.id}`;
+                                      }
+                                    }}
+                                    sx={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 0.25,
+                                      cursor: guest.type === 'ai_agent' ? 'pointer' : 'default',
+                                      '&:hover': guest.type === 'ai_agent' ? {
+                                        color: '#3b82f6',
+                                      } : {},
+                                    }}
+                                  >
+                                    <Avatar
+                                      sx={{
+                                        width: 12,
+                                        height: 12,
+                                        fontSize: '0.5rem',
+                                        bgcolor: guest.type === 'ai_agent' ? '#10b981' : '#f59e0b',
+                                      }}
+                                    >
+                                      {guest.type === 'ai_agent' ? '🤖' : '👤'}
+                                    </Avatar>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        color: guest.type === 'ai_agent' ? '#10b981' : '#f59e0b',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      @{guest.name}
+                                    </Typography>
+                                  </Box>
+                                </Tooltip>
+                                {index < session.participants.guests.length - 1 && (
+                                  <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                                    ,
+                                  </Typography>
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </Box>
+                        )}
+                        
+                        {/* Message Count and Date */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Typography variant="caption" sx={{ color: '#64748b' }}>
+                            {session.messageCount} messages • {formatDate(session.lastUpdated)}
                           </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: '50%',
+                                bgcolor: getTrustScoreColor(session.governanceMetrics.overallTrustScore),
+                              }}
+                            />
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.65rem' }}>
+                              {session.governanceMetrics.overallTrustScore.toFixed(0)}%
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
                     }

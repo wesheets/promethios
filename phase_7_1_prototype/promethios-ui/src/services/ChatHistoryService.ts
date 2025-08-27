@@ -12,6 +12,16 @@ import { unifiedStorage } from './UnifiedStorageService';
 import { ComprehensiveToolReceiptExtension } from '../extensions/ComprehensiveToolReceiptExtension';
 import { firebaseDebugger } from '../utils/firebaseDebugger';
 
+export interface ChatParticipant {
+  id: string;
+  name: string;
+  type: 'ai_agent' | 'human';
+  joinedAt: Date;
+  messageCount: number;
+  lastActive: Date;
+  avatar?: string;
+}
+
 export interface ChatSession {
   id: string;
   name: string;
@@ -25,6 +35,11 @@ export interface ChatSession {
   isShared: boolean;
   shareableId?: string; // For sharing with agents
   cryptographicReceipt?: ChatReceipt;
+  // Multi-agent participant tracking
+  participants: {
+    host: ChatParticipant;
+    guests: ChatParticipant[];
+  };
   governanceMetrics: {
     overallTrustScore: number;
     totalViolations: number;
@@ -36,6 +51,7 @@ export interface ChatSession {
     summary?: string;
     keyTopics: string[];
     lastActivity: Date;
+    isMultiAgent: boolean; // Quick flag for multi-agent conversations
   };
 }
 
