@@ -3153,78 +3153,79 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   <Box sx={{ flex: 1, position: 'relative' }}>
                     {/* Always use AgentAvatarSelector for intuitive multi-agent interaction */}
                     {(() => {
-                      // Always use the new avatar-based system instead of @mention
+                      // Always use the new avatar-based system with integrated input design
                       return (
                           <>
-                            {/* Two-Layer Avatar System: Active Selection Layer */}
+                            {/* Integrated Input with Avatar Selection Inside */}
                             <Box sx={{ 
                               display: 'flex', 
                               alignItems: 'center', 
                               gap: 1,
-                              p: 1.5,
+                              p: 1,
                               bgcolor: '#1e293b',
                               borderRadius: 2,
                               border: '1px solid #334155',
                               mb: 1
                             }}>
-                              <Typography variant="caption" sx={{ 
-                                color: '#94a3b8', 
-                                fontSize: '11px', 
-                                fontWeight: 500,
-                                minWidth: 'fit-content'
-                              }}>
-                                🎯 Talking to:
-                              </Typography>
-                              
-                              {/* Agent Avatar Selector - Integrated */}
-                              <AgentAvatarSelector
-                                hostAgent={getHostAgent()}
-                                guestAgents={getGuestAgents()}
-                                selectedAgents={selectedAgents}
-                                onSelectionChange={handleAgentSelectionChange}
-                                teamMembers={getTeamMembers()}
-                                aiAgents={getAIAgents()}
-                                onAddGuests={handleAddGuests}
-                              />
-                              
-                              <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {/* Text Input */}
-                                <TextField
-                                  fullWidth
-                                  placeholder="Type your message..."
-                                  value={messageInput}
-                                  onChange={(e) => handleInputChange(e.target.value)}
-                                  onKeyDown={handleKeyNavigation}
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                      if (showSuggestions && selectedSuggestionIndex >= 0) {
-                                        e.preventDefault();
-                                        handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
-                                      } else {
-                                        handleSendMessage();
-                                      }
+                              {/* Text Input with Integrated Avatar Selector */}
+                              <TextField
+                                fullWidth
+                                placeholder="Type your message... (or use @agent-name)"
+                                value={messageInput}
+                                onChange={(e) => handleInputChange(e.target.value)}
+                                onKeyDown={handleKeyNavigation}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    if (showSuggestions && selectedSuggestionIndex >= 0) {
+                                      e.preventDefault();
+                                      handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+                                    } else {
+                                      handleSendMessage();
                                     }
-                                  }}
-                                  onPaste={handlePaste}
-                                  onFocus={() => {
-                                    if (autonomousStarsActive && messageInput.trim()) {
-                                      setShowSuggestions(true);
-                                    }
-                                  }}
-                                  onBlur={() => {
-                                  // Delay hiding suggestions to allow clicking
-                                  setTimeout(() => setShowSuggestions(false), 200);
+                                  }
                                 }}
-                                variant="outlined"
-                                disabled={chatLoading}
-                                multiline
-                                maxRows={4}
-                                sx={{
-                                  '& .MuiOutlinedInput-root': {
-                                    bgcolor: '#0f172a',
-                                    color: 'white',
-                                    '& fieldset': { 
-                                      borderColor: autonomousStarsActive ? '#f59e0b' : '#475569',
+                                onPaste={handlePaste}
+                                onFocus={() => {
+                                  if (autonomousStarsActive && messageInput.trim()) {
+                                    setShowSuggestions(true);
+                                  }
+                                }}
+                                onBlur={() => {
+                                // Delay hiding suggestions to allow clicking
+                                setTimeout(() => setShowSuggestions(false), 200);
+                              }}
+                              variant="outlined"
+                              disabled={chatLoading}
+                              multiline
+                              maxRows={4}
+                              InputProps={{
+                                startAdornment: (
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: 0.5, 
+                                    mr: 1,
+                                    flexShrink: 0
+                                  }}>
+                                    {/* Agent Avatar Selector - Inside Input */}
+                                    <AgentAvatarSelector
+                                      hostAgent={getHostAgent()}
+                                      guestAgents={getGuestAgents()}
+                                      selectedAgents={selectedAgents}
+                                      onSelectionChange={handleAgentSelectionChange}
+                                      teamMembers={getTeamMembers()}
+                                      aiAgents={getAIAgents()}
+                                      onAddGuests={handleAddGuests}
+                                    />
+                                  </Box>
+                                )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  bgcolor: '#0f172a',
+                                  color: 'white',
+                                  '& fieldset': { 
+                                    borderColor: autonomousStarsActive ? '#f59e0b' : '#475569',
                                     borderWidth: 1
                                   },
                                   '&:hover fieldset': { borderColor: '#3b82f6' },
@@ -3239,7 +3240,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 }
                               }}
                             />
-                              </Box>
                             </Box>
                             
                             {/* Amazon-Style Smart Suggestions Dropdown (Below Input) */}

@@ -156,13 +156,13 @@ const QuickStartSetup: React.FC = () => {
     // Google Models
     { 
       provider: 'Google', 
-      model: 'gemini-pro', 
-      name: 'Gemini Pro', 
-      description: 'Google\'s advanced multimodal model', 
-      price: '$0.02/message',
+      model: 'gemini-1.5-flash', 
+      name: 'Gemini 1.5 Flash', 
+      description: 'Google\'s fast and efficient multimodal model', 
+      price: '$0.01/message',
       costEffective: true,
-      pros: ['Multimodal capabilities', 'Good performance', 'Competitive pricing'],
-      cons: ['Newer model', 'Less proven track record'],
+      pros: ['Very fast', 'Multimodal capabilities', 'Cost effective'],
+      cons: ['Slightly less capable than Pro', 'Newer model'],
       category: 'Balanced'
     },
     { 

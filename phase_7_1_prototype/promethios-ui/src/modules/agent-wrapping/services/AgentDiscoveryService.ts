@@ -314,8 +314,8 @@ export class AgentDiscoveryServiceImpl implements AgentDiscoveryService {
 
       if (response.ok) {
         const data = await response.json();
-        // Use the first available model or default to gemini-pro
-        const model = data.models?.[0] || { name: 'models/gemini-pro' };
+        // Use the first available model or default to gemini-1.5-flash
+        const model = data.models?.[0] || { name: 'models/gemini-1.5-flash' };
         const modelName = model.name.replace('models/', '');
         
         return {
@@ -337,9 +337,9 @@ export class AgentDiscoveryServiceImpl implements AgentDiscoveryService {
       console.warn('Could not fetch Google model specs, using defaults');
     }
 
-    // Default specs for Gemini Pro
+    // Default specs for Gemini 1.5 Flash
     return {
-      modelName: 'gemini-pro',
+      modelName: 'gemini-1.5-flash',
       provider: 'google',
       maxContextLength: 32768,
       maxOutputTokens: 8192,
