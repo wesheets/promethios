@@ -2646,34 +2646,156 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       {currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
                     </Typography>
                     
-                    {/* Multi-Agent Participants Display */}
+                    {/* Multi-Agent Participants Display - Now includes single-agent behavioral interactions */}
                     {(() => {
                       const activeContext = multiChatState.contexts.find(c => c.isActive);
                       const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
                       
-                      if (multiChatState.activeContextId === 'ai_agent' && hasGuestAgents) {
+                      // Show conversation participants for both multi-agent AND single-agent conversations
+                      if (multiChatState.activeContextId === 'ai_agent') {
                         return (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
-                              💬 Conversation Participants:
+                              {hasGuestAgents ? '💬 Conversation Participants:' : '🎭 Behavioral Interactions:'}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                              {/* Host Agent */}
-                              <Chip
-                                avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
-                                label={`${selectedChatbot?.identity?.name || 'Host Agent'} (Host)`}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#3b82f6',
-                                  color: 'white',
-                                  '& .MuiChip-avatar': { color: 'white' },
-                                  opacity: 0.9,
-                                  fontSize: '11px'
-                                }}
-                              />
+                              {/* Host Agent with Enhanced Behavioral Hover-Triggered Responses */}
+                              <Tooltip
+                                title={
+                                  <Box sx={{ p: 1.5, minWidth: 200 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1.5, textAlign: 'center' }}>
+                                      👑 {selectedChatbot?.identity?.name || 'Host Agent'}
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'collaborate')}
+                                        sx={{
+                                          bgcolor: '#10b981',
+                                          color: 'white',
+                                          fontSize: '10px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#059669' }
+                                        }}
+                                      >
+                                        🤝 Collaborate
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'question')}
+                                        sx={{
+                                          bgcolor: '#3b82f6',
+                                          color: 'white',
+                                          fontSize: '10px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#2563eb' }
+                                        }}
+                                      >
+                                        ❓ Question
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'devils_advocate')}
+                                        sx={{
+                                          bgcolor: '#ef4444',
+                                          color: 'white',
+                                          fontSize: '10px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#dc2626' }
+                                        }}
+                                      >
+                                        😈 Devil's Advocate
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'expert')}
+                                        sx={{
+                                          bgcolor: '#8b5cf6',
+                                          color: 'white',
+                                          fontSize: '10px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#7c3aed' }
+                                        }}
+                                      >
+                                        🎯 Expert Analysis
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'critic')}
+                                        sx={{
+                                          bgcolor: '#f59e0b',
+                                          color: 'white',
+                                          fontSize: '10px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#d97706' }
+                                        }}
+                                      >
+                                        🔍 Critical Review
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'creative')}
+                                        sx={{
+                                          bgcolor: '#ec4899',
+                                          color: 'white',
+                                          fontSize: '10px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#db2777' }
+                                        }}
+                                      >
+                                        💡 Creative Ideas
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'analyst')}
+                                        sx={{
+                                          bgcolor: '#06b6d4',
+                                          color: 'white',
+                                          fontSize: '10px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#0891b2' }
+                                        }}
+                                      >
+                                        📊 Analytical Response
+                                      </Button>
+                                    </Box>
+                                  </Box>
+                                }
+                                placement="bottom"
+                                arrow
+                              >
+                                <Chip
+                                  avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
+                                  label={`${selectedChatbot?.identity?.name || 'Host Agent'} (Host)`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#3b82f6',
+                                    color: 'white',
+                                    '& .MuiChip-avatar': { color: 'white' },
+                                    opacity: 0.9,
+                                    fontSize: '11px',
+                                    cursor: 'pointer',
+                                    '&:hover': { bgcolor: '#2563eb' }
+                                  }}
+                                />
+                              </Tooltip>
                               
                               {/* Guest Agents with Enhanced Behavioral Hover-Triggered Responses */}
-                              {activeContext.guestAgents.map((guest) => (
+                              {hasGuestAgents && activeContext.guestAgents.map((guest) => (
                                 <Tooltip
                                   key={guest.agentId}
                                   title={
