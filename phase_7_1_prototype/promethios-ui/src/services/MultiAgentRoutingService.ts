@@ -224,33 +224,50 @@ export class MultiAgentRoutingService {
   }
 
   /**
-   * Call the actual agent API (placeholder for now)
+   * Call the actual agent API
    */
   private async callAgentAPI(
     agent: ChatbotProfile,
     message: string,
     context: RoutingContext
   ): Promise<string> {
-    console.log('📡 [MultiAgentRouting] Calling agent API:', agent.identity?.name);
+    console.log('📡 [MultiAgentRouting] Calling real agent API:', agent.identity?.name);
 
-    // Add multi-agent context to the message
-    const multiAgentContext = this.buildMultiAgentContext(context);
-    const enhancedMessage = `${multiAgentContext}\n\nUser message: ${message}`;
+    try {
+      // Import the ChatPanelGovernanceService dynamically to avoid circular dependencies
+      const { ChatPanelGovernanceService } = await import('./ChatPanelGovernanceService');
+      const chatService = ChatPanelGovernanceService.getInstance();
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+      // Add multi-agent context to the message
+      const multiAgentContext = this.buildMultiAgentContext(context);
+      const enhancedMessage = `${multiAgentContext}\n\nUser message: ${message}`;
 
-    // Generate contextual response based on agent type
-    const agentName = agent.identity?.name || 'AI Agent';
-    const responses = [
-      `Hi! I'm ${agentName}. Based on your message, here's my perspective: ${message}`,
-      `${agentName} here. I think we should consider: ${message}`,
-      `From ${agentName}'s viewpoint: ${message} - let me analyze this further.`,
-      `${agentName} responding: I have some thoughts on "${message}" that might be helpful.`,
-      `This is ${agentName}. Regarding "${message}", I'd like to add my perspective.`
-    ];
+      // Create a temporary session for this agent if needed
+      const agentId = agent.identity?.id || agent.key || agent.id;
+      let session = await chatService.startChatSession(agent);
+      
+      if (!session) {
+        throw new Error(`Failed to start chat session for agent: ${agentId}`);
+      }
 
-    return responses[Math.floor(Math.random() * responses.length)];
+      // Send message to the real agent
+      console.log('📡 [MultiAgentRouting] Sending message to agent:', agentId);
+      const response = await chatService.sendMessage(session.sessionId, enhancedMessage);
+      
+      if (!response || !response.content) {
+        throw new Error(`No response received from agent: ${agentId}`);
+      }
+
+      console.log('✅ [MultiAgentRouting] Got real response from agent:', agentId);
+      return response.content;
+
+    } catch (error) {
+      console.error('❌ [MultiAgentRouting] Error calling agent API:', error);
+      
+      // Fallback to a contextual error message
+      const agentName = agent.identity?.name || 'AI Agent';
+      throw new Error(`${agentName} is currently unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
