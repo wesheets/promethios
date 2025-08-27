@@ -103,13 +103,12 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
             description: 'Constitutional AI with strong reasoning and safety features',
             endpoint: 'https://api.anthropic.com/v1/messages',
             capabilities: ['chat', 'reasoning', 'analysis', 'constitutional_ai', 'document_analysis', 'creative_writing'],
-            models: ['claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
+            models: ['claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'],
             contextLength: 200000,
             supportsFunctions: false,
             pricing: {
               'claude-3-5-haiku-20241022': { input: 0.00025, output: 0.00125 },
-              'claude-3-5-sonnet-20241022': { input: 0.003, output: 0.015 },
-              'claude-3-opus-20240229': { input: 0.015, output: 0.075 }
+              'claude-3-5-sonnet-20241022': { input: 0.003, output: 0.015 }
             }
           };
           break;
@@ -119,7 +118,7 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
             description: 'Multimodal AI with text, image, and code capabilities',
             endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
             capabilities: ['chat', 'multimodal', 'code_generation', 'image_understanding', 'video_analysis'],
-            models: ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro', 'gemini-pro-vision'],
+            models: ['gemini-1.5-pro', 'gemini-1.5-flash'],
             contextLength: 1000000,
             supportsFunctions: true,
             pricing: {

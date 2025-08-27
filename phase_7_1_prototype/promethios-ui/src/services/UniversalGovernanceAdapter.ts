@@ -2360,9 +2360,8 @@ You operate with governance oversight that monitors your interactions for safety
   }
 
   /**
-   * 🔧 CRITICAL FIX: Override incorrect model configurations
-   * All agents in database are misconfigured with claude-3-opus
-   * This method detects agent type and forces correct provider/model
+   * 🔧 FLEXIBLE FIX: Only correct provider if obviously wrong, keep user's model choice
+   * This maintains agent discovery flexibility while fixing provider mismatches
    */
   private fixAgentModelConfiguration(chatbot: any, agentId: string): { provider: string; model: string } {
     const agentName = chatbot?.identity?.name?.toLowerCase() || '';
@@ -2376,48 +2375,53 @@ You operate with governance oversight that monitors your interactions for safety
       originalModel
     });
     
-    // Detect agent type and force correct configuration
-    let correctedProvider: string;
-    let correctedModel: string;
+    // Only fix provider if it's obviously wrong, keep the user's model choice
+    let correctedProvider = originalProvider;
+    let correctedModel = originalModel;
     
+    // Fix provider based on agent name, but keep their chosen model
     if (agentName.includes('openai') || agentName.includes('gpt') || agentId === 'chatbot-1755098216083') {
-      // OpenAI Assistant
-      correctedProvider = 'openai';
-      correctedModel = 'gpt-4';
-    } else if (agentName.includes('gemini') || agentName.includes('google')) {
-      // Gemini Assistant  
-      correctedProvider = 'google';
-      correctedModel = 'gemini-1.5-flash';
-    } else if (agentName.includes('claude') || agentName.includes('anthropic')) {
-      // Claude Assistant
-      correctedProvider = 'anthropic';
-      correctedModel = 'claude-3-5-sonnet-20241022';
-    } else {
-      // Unknown agent - try to detect from original config or default to OpenAI
-      if (originalModel?.includes('gemini')) {
-        correctedProvider = 'google';
-        correctedModel = 'gemini-1.5-flash';
-      } else if (originalModel?.includes('claude')) {
-        correctedProvider = 'anthropic';
-        correctedModel = 'claude-3-5-sonnet-20241022';
-      } else {
-        // Default to OpenAI
+      // OpenAI Assistant - fix provider but keep model
+      if (originalProvider !== 'openai') {
         correctedProvider = 'openai';
-        correctedModel = 'gpt-4';
+        console.log(`🔧 [ModelFix] Fixed provider for OpenAI agent: ${originalProvider} → openai`);
+      }
+    } else if (agentName.includes('gemini') || agentName.includes('google')) {
+      // Gemini Assistant - fix provider but keep model
+      if (originalProvider !== 'google') {
+        correctedProvider = 'google';
+        console.log(`🔧 [ModelFix] Fixed provider for Gemini agent: ${originalProvider} → google`);
+      }
+    } else if (agentName.includes('claude') || agentName.includes('anthropic')) {
+      // Claude Assistant - fix provider but keep model
+      if (originalProvider !== 'anthropic') {
+        correctedProvider = 'anthropic';
+        console.log(`🔧 [ModelFix] Fixed provider for Claude agent: ${originalProvider} → anthropic`);
       }
     }
     
-    // Log the correction
-    const wasFixed = originalProvider !== correctedProvider || originalModel !== correctedModel;
+    // Special case: If model is deprecated, suggest a replacement but don't force it
+    if (originalModel === 'claude-3-opus') {
+      console.warn(`⚠️ [ModelFix] Agent ${agentId} using deprecated model: ${originalModel}`);
+      console.warn(`   Consider updating to: claude-3-5-sonnet-20241022`);
+      // Don't force the change - let the backend handle deprecated model errors
+    } else if (originalModel === 'gemini-pro') {
+      console.warn(`⚠️ [ModelFix] Agent ${agentId} using deprecated model: ${originalModel}`);
+      console.warn(`   Consider updating to: gemini-1.5-flash`);
+      // Don't force the change - let the backend handle deprecated model errors
+    }
+    
+    // Log the result
+    const wasFixed = originalProvider !== correctedProvider;
     if (wasFixed) {
-      console.log(`🔧 [ModelFix] CORRECTED agent configuration:`, {
+      console.log(`🔧 [ModelFix] CORRECTED provider only:`, {
         agentId,
         agentName,
-        before: { provider: originalProvider, model: originalModel },
-        after: { provider: correctedProvider, model: correctedModel }
+        providerChange: `${originalProvider} → ${correctedProvider}`,
+        modelKept: correctedModel
       });
     } else {
-      console.log(`✅ [ModelFix] Agent configuration already correct:`, {
+      console.log(`✅ [ModelFix] Agent configuration looks correct:`, {
         agentId,
         provider: correctedProvider,
         model: correctedModel
