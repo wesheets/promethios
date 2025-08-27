@@ -303,7 +303,18 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({
   };
 
   const renderChannelCard = (channel: Channel, isPublic: boolean = false) => (
-    <Card key={channel.id} sx={{ cursor: 'pointer' }} onClick={() => onOpenChannel?.(channel.id)}>
+    <Card key={channel.id} sx={{ 
+      cursor: 'pointer',
+      backgroundColor: 'background.paper',
+      border: '1px solid',
+      borderColor: 'divider',
+      '&:hover': {
+        borderColor: 'primary.main',
+        boxShadow: (theme) => theme.palette.mode === 'dark' 
+          ? '0 4px 20px rgba(0,0,0,0.3)' 
+          : '0 4px 20px rgba(0,0,0,0.1)',
+      }
+    }} onClick={() => onOpenChannel?.(channel.id)}>
       <CardContent>
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
@@ -466,7 +477,7 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({
   const totalUnread = myChannels.reduce((sum, channel) => sum + channel.unreadCount, 0);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
@@ -485,7 +496,13 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({
       )}
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+      <Paper sx={{ 
+        p: 2, 
+        mb: 3,
+        backgroundColor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <Button
             variant={filter === 'all' ? 'contained' : 'outlined'}

@@ -220,7 +220,18 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
   };
 
   const renderOrganizationCard = (org: Organization, isMember: boolean = false) => (
-    <Card key={org.id} sx={{ height: '100%' }}>
+    <Card key={org.id} sx={{ 
+      height: '100%',
+      backgroundColor: 'background.paper',
+      border: '1px solid',
+      borderColor: 'divider',
+      '&:hover': {
+        borderColor: 'primary.main',
+        boxShadow: (theme) => theme.palette.mode === 'dark' 
+          ? '0 4px 20px rgba(0,0,0,0.3)' 
+          : '0 4px 20px rgba(0,0,0,0.1)',
+      }
+    }}>
       <CardContent>
         {/* Header */}
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
@@ -377,7 +388,7 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
   );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
@@ -417,7 +428,13 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
             ))}
           </Grid>
         ) : (
-          <Paper sx={{ p: 6, textAlign: 'center' }}>
+          <Paper sx={{ 
+            p: 6, 
+            textAlign: 'center',
+            backgroundColor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
             <Business sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" sx={{ mb: 1 }}>
               No Organizations Yet

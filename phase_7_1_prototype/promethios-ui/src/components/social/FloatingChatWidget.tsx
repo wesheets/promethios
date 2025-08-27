@@ -38,13 +38,13 @@ interface Contact {
 }
 
 interface FloatingChatWidgetProps {
-  position?: 'bottom-right' | 'bottom-left';
-  offset?: { bottom: number; right: number; left: number };
+  position?: 'top-right' | 'bottom-right' | 'bottom-left';
+  offset?: { top: number; bottom: number; right: number; left: number };
 }
 
 const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
-  position = 'bottom-right',
-  offset = { bottom: 24, right: 24, left: 24 },
+  position = 'top-right',
+  offset = { top: 24, bottom: 24, right: 24, left: 24 },
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,7 +126,9 @@ const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
   const positionStyles = {
     position: 'fixed' as const,
     zIndex: 1300,
-    ...(position === 'bottom-right' 
+    ...(position === 'top-right' 
+      ? { top: offset.top, right: offset.right }
+      : position === 'bottom-right' 
       ? { bottom: offset.bottom, right: offset.right }
       : { bottom: offset.bottom, left: offset.left }
     ),
@@ -228,7 +230,7 @@ const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   <ListItemAvatar>
                     <Badge
                       overlap="circular"
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
                       badgeContent={
                         contact.isOnline ? (
                           <OnlineIcon
