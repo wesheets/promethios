@@ -1558,7 +1558,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     });
 
     setParticipantData(participants);
-  }, [humanParticipants, selectedAgents, chatbots, behavioralSettings, user]);
+  }, [humanParticipants, selectedAgents, chatbotProfiles, behavioralSettings, user]);
 
   // Subscribe to AI observation changes for active shared conversation
   useEffect(() => {
