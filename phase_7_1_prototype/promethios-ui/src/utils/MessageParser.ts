@@ -69,6 +69,12 @@ export class MessageParser {
       const matchingAgent = this.findMatchingAgent(mentionText, availableAgents);
       
       if (matchingAgent) {
+        console.log('🔍 [MessageParser] matchingAgent object:', {
+          id: matchingAgent.id,
+          name: matchingAgent.name,
+          fullObject: matchingAgent
+        });
+        
         mentions.push({
           agentId: matchingAgent.id,
           agentName: matchingAgent.name,
@@ -78,6 +84,7 @@ export class MessageParser {
         });
 
         console.log('✅ [MessageParser] Matched agent:', matchingAgent.name, 'for mention:', fullMention);
+        console.log('🔍 [MessageParser] Created mention with agentId:', matchingAgent.id);
       } else {
         console.log('❌ [MessageParser] No matching agent found for mention:', fullMention);
       }
