@@ -405,11 +405,11 @@ export class MultiAgentRoutingService {
 
       console.log('🔧 [MultiAgentRouting] Enhanced message for agent:', enhancedMessage.substring(0, 200) + '...');
 
-      // CRITICAL FIX: Use existing session instead of creating new one
-      // This ensures we use the same working configuration as normal chat
-      console.log('🔧 [MultiAgentRouting] Looking for existing session for agent:', agentId);
+      // CRITICAL FIX: Ensure guest agents maintain their governance wrapper
+      // Instead of looking only in current chat service, check for ANY existing governed session
+      console.log('🔧 [MultiAgentRouting] Looking for existing governed session for agent:', agentId);
       
-      // Try to get existing session first
+      // Try to get existing session first from current chat service
       let session = null;
       const activeSessions = (chatService as any).activeSessions;
       
@@ -418,15 +418,48 @@ export class MultiAgentRoutingService {
         for (const [sessionId, sessionData] of activeSessions.entries()) {
           if (sessionData.agentId === agentId) {
             session = sessionData;
-            console.log('✅ [MultiAgentRouting] Found existing session:', sessionId);
+            console.log('✅ [MultiAgentRouting] Found existing session in current service:', sessionId);
             break;
           }
         }
       }
       
-      // Only create new session if no existing one found
+      // CRITICAL: If no session found in current service, check for global governed sessions
       if (!session) {
-        console.log('🔧 [MultiAgentRouting] No existing session found, creating new one for agent:', agentId);
+        console.log('🔍 [MultiAgentRouting] No session in current service, checking for global governed sessions...');
+        
+        // Try to find if this agent has an existing governed session anywhere
+        // This ensures guest agents don't lose their governance wrapper
+        try {
+          // Check if agent has existing governance context
+          const { UniversalGovernanceAdapter } = await import('./UniversalGovernanceAdapter');
+          const universalGovernance = UniversalGovernanceAdapter.getInstance();
+          
+          // Load the agent's existing governance configuration
+          const existingConfig = await universalGovernance.loadCompleteAgentConfiguration(agentId, 'multi-agent-routing');
+          
+          if (existingConfig) {
+            console.log('✅ [MultiAgentRouting] Found existing governance config for agent:', agentId);
+            console.log('🛡️ [MultiAgentRouting] Agent has governance wrapper - preserving it');
+            
+            // Create a new session that inherits the existing governance context
+            session = await chatService.startChatSession(agent);
+            
+            if (session) {
+              // Mark this session as inheriting governance from existing wrapper
+              session.inheritedGovernance = true;
+              session.originalGovernanceConfig = existingConfig;
+              console.log('✅ [MultiAgentRouting] Created new session with inherited governance:', session.sessionId);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ [MultiAgentRouting] Failed to check for existing governance:', error);
+        }
+      }
+      
+      // Only create completely new session if no existing governance found
+      if (!session) {
+        console.log('🔧 [MultiAgentRouting] No existing governance found, creating new session for agent:', agentId);
         session = await chatService.startChatSession(agent);
         
         if (!session) {
@@ -435,7 +468,7 @@ export class MultiAgentRoutingService {
         }
         console.log('✅ [MultiAgentRouting] New session created:', session.sessionId);
       } else {
-        console.log('✅ [MultiAgentRouting] Using existing session:', session.sessionId);
+        console.log('✅ [MultiAgentRouting] Using existing governed session:', session.sessionId);
       }
 
       // Send message to the real agent
