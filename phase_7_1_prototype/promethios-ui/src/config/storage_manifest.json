@@ -219,6 +219,17 @@
     "compliance": ["GDPR"],
     "description": "Multi-agent interaction logs, collaboration history, and audit trails"
   },
+  "multi_agent_sessions": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": ["GDPR"],
+    "description": "Multi-agent collaboration session statistics and metadata"
+  },
   "user_notifications": {
     "provider": "firebase",
     "fallback": "localStorage",
