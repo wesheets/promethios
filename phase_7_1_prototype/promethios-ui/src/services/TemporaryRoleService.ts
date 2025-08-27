@@ -278,6 +278,45 @@ class TemporaryRoleService {
       // Don't throw - allow frontend to continue working
     }
   }
+
+  /**
+   * Get enhanced system prompt for an agent based on their temporary role assignment
+   */
+  getEnhancedSystemPrompt(agentId: string, sessionId: string, basePrompt: string = ''): string {
+    console.log(`🎭 [TemporaryRole] Getting enhanced system prompt for agent: ${agentId} in session: ${sessionId}`);
+    
+    const sessionConfigs = this.sessionConfigs.get(sessionId);
+    if (!sessionConfigs) {
+      console.log(`🎭 [TemporaryRole] No session configs found for session: ${sessionId}`);
+      return basePrompt;
+    }
+
+    const agentConfig = sessionConfigs.get(agentId);
+    if (!agentConfig) {
+      console.log(`🎭 [TemporaryRole] No agent config found for agent: ${agentId}`);
+      return basePrompt;
+    }
+
+    // Build enhanced prompt with career role and behavior
+    const careerRolePrompt = agentConfig.careerRole 
+      ? `\n\n🎯 CAREER ROLE: You are acting as a ${agentConfig.careerRole.label} (${agentConfig.careerRole.icon}). ${agentConfig.careerRole.description || ''}`
+      : '';
+
+    const behaviorPrompt = agentConfig.behavior
+      ? `\n\n🎭 BEHAVIORAL DIRECTIVE: ${agentConfig.behavior.systemPrompt}`
+      : '';
+
+    const enhancedPrompt = `${basePrompt}${careerRolePrompt}${behaviorPrompt}
+
+🔄 TEMPORARY ROLE CONTEXT:
+- This role assignment is temporary for this conversation session
+- Maintain your core capabilities while embodying this role
+- Be authentic to both your AI nature and the assigned role
+- If the role conflicts with your capabilities, acknowledge the limitation gracefully`;
+
+    console.log(`🎭 [TemporaryRole] Enhanced system prompt created for ${agentId}`);
+    return enhancedPrompt;
+  }
 }
 
 // Export singleton instance

@@ -8,6 +8,7 @@ import { ChatbotStorageService } from './ChatbotStorageService';
 import { ChatbotProfile } from '../types/ChatbotProfile';
 import { TokenEconomicsService } from './TokenEconomicsService';
 import { temporaryRoleService } from './TemporaryRoleService';
+import { UniversalGovernanceAdapter } from './UniversalGovernanceAdapter';
 
 export interface AgentResponse {
   agentId: string;
@@ -63,6 +64,7 @@ export class MultiAgentRoutingService {
   private chatbotService: ChatbotStorageService;
   private messageParser: MessageParser;
   private tokenService: TokenEconomicsService;
+  private universalAdapter: UniversalGovernanceAdapter;
   private busyAgents = new Set<string>();
   private responseQueue = new Map<string, Promise<AgentResponse>>();
 
@@ -70,6 +72,7 @@ export class MultiAgentRoutingService {
     this.chatbotService = ChatbotStorageService.getInstance();
     this.messageParser = new MessageParser();
     this.tokenService = TokenEconomicsService.getInstance();
+    this.universalAdapter = UniversalGovernanceAdapter.getInstance();
   }
 
   public static getInstance(): MultiAgentRoutingService {
