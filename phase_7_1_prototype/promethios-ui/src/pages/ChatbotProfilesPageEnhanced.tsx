@@ -2738,7 +2738,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 label={`${message.metadata.agentName} (${Math.floor(message.metadata.processingTime / 1000)}s)`}
                                 size="small"
                                 sx={{
-                                  bgcolor: '#10b981',
+                                  bgcolor: getAgentColor(message.metadata.agentId, message.metadata.agentName),
                                   color: 'white',
                                   fontSize: '0.7rem'
                                 }}
