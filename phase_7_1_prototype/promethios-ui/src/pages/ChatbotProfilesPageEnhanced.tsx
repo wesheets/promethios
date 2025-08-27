@@ -12,6 +12,11 @@ import { MultiAgentAuditLogger } from '../services/MultiAgentAuditLogger';
 import { MessageParser, ParsedMessage } from '../utils/MessageParser';
 import MultiAgentMentionInput from '../components/MultiAgentMentionInput';
 import MultiAgentResponseIndicator from '../components/MultiAgentResponseIndicator';
+// Token economics imports
+import { TokenEconomicsService } from '../services/TokenEconomicsService';
+import TokenBudgetWidget from '../components/TokenBudgetWidget';
+import AgentEngagementScorer from '../components/AgentEngagementScorer';
+import TokenEconomicsConfigPanel from '../components/TokenEconomicsConfigPanel';
 // Autonomous systems imports
 import { AutonomousGovernanceExtension, AutonomousTaskPlan, AutonomousPhase, AutonomousExecutionState } from '../services/AutonomousGovernanceExtension';
 import { AutonomousTaskPlanningEngine } from '../services/AutonomousTaskPlanningEngine';
@@ -132,7 +137,7 @@ import DebugPanel from '../components/DebugPanel';
 import TeamPanel from '../components/team/TeamPanel';
 
 // Right panel types
-type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | null;
+type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | null;
 
 // Multi-chat context types
 type ChatContextType = 'ai_agent' | 'human_chat' | 'team_channel';
@@ -322,12 +327,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [multiAgentAuditLogger] = useState(() => MultiAgentAuditLogger.getInstance());
   const [messageParser] = useState(() => MessageParser.getInstance());
   
+  // Token economics service
+  const [tokenEconomicsService] = useState(() => TokenEconomicsService.getInstance());
+  
   // Multi-agent state
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
   const [multiAgentResponses, setMultiAgentResponses] = useState<AgentResponse[]>([]);
   const [isProcessingMultiAgent, setIsProcessingMultiAgent] = useState(false);
   const [targetAgents, setTargetAgents] = useState<string[]>([]);
   const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
+  
+  // Token economics state
+  const [showTokenBudget, setShowTokenBudget] = useState(true);
+  const [budgetExceeded, setBudgetExceeded] = useState(false);
+  const [budgetWarning, setBudgetWarning] = useState(false);
   
   // Repository and workflow services
   const [repositoryManager] = useState(() => new WorkflowRepositoryManager());
@@ -2724,6 +2737,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           }}>
                             {message.timestamp.toLocaleTimeString()}
                           </Typography>
+
+                          {/* Agent Engagement Scorer for multi-agent responses */}
+                          {message.metadata?.isMultiAgent && message.sender === 'assistant' && (
+                            <Box sx={{ mt: 1 }}>
+                              <AgentEngagementScorer
+                                agentId={message.metadata.agentId}
+                                agentName={message.metadata.agentName}
+                                agentResponse={message.content}
+                                estimatedCost={tokenEconomicsService.estimateMessageCost(message.content)}
+                                interactionId={message.id}
+                                onScoreSubmitted={(score, feedback) => {
+                                  console.log('📊 [AgentScorer] Score submitted:', message.metadata.agentName, score, feedback);
+                                  // This could trigger updates to agent metrics
+                                }}
+                              />
+                            </Box>
+                          )}
                         </Box>
                       </Box>
                     ))}
@@ -2817,6 +2847,64 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
+                {/* Token Economics Widgets */}
+                {showTokenBudget && selectedChatbot && user?.uid && (
+                  <Box sx={{ mb: 2 }}>
+                    <TokenBudgetWidget
+                      sessionId={currentMultiAgentSession || `session_${selectedChatbot.identity?.id || selectedChatbot.id}_${Date.now()}`}
+                      userId={user.uid}
+                      onBudgetExceeded={() => setBudgetExceeded(true)}
+                      onBudgetWarning={(percentage) => setBudgetWarning(percentage > 70)}
+                      compact={false}
+                    />
+                  </Box>
+                )}
+
+                {/* Multi-Agent Response Status */}
+                {isProcessingMultiAgent && targetAgents.length > 0 && (
+                  <Box sx={{ mb: 2 }}>
+                    <MultiAgentResponseIndicator
+                      hostAgentId={selectedChatbot?.identity?.id || selectedChatbot?.id || ''}
+                      guestAgents={multiChatState.contexts.find(c => c.isActive)?.guestAgents || []}
+                      targetAgents={targetAgents}
+                      isProcessing={isProcessingMultiAgent}
+                      responses={multiAgentResponses}
+                      onResponseComplete={(responses) => {
+                        console.log('🤖 [MultiAgent] All responses complete:', responses);
+                        setIsProcessingMultiAgent(false);
+                        
+                        // Add agent engagement scorers for each response
+                        responses.forEach((response, index) => {
+                          if (!response.error) {
+                            // This would typically be rendered in the message area
+                            console.log('📊 [AgentScorer] Response ready for scoring:', response.agentName);
+                          }
+                        });
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {/* Budget Alerts */}
+                {budgetExceeded && (
+                  <Alert 
+                    severity="error" 
+                    sx={{ mb: 2, bgcolor: '#ef444420', border: '1px solid #ef444440' }}
+                    onClose={() => setBudgetExceeded(false)}
+                  >
+                    Budget exceeded! Consider increasing your budget or ending the conversation.
+                  </Alert>
+                )}
+
+                {budgetWarning && !budgetExceeded && (
+                  <Alert 
+                    severity="warning" 
+                    sx={{ mb: 2, bgcolor: '#f59e0b20', border: '1px solid #f59e0b40' }}
+                    onClose={() => setBudgetWarning(false)}
+                  >
+                    Budget warning: You're approaching your spending limit.
+                  </Alert>
+                )}
                 {/* Connected Apps Preview */}
                 {selectedConnectedApps.length > 0 && (
                   <Box sx={{ mb: 2 }}>
@@ -3319,6 +3407,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'chats', label: 'CHATS' },
                     { key: 'repo', label: 'REPO', badge: projects.length },
                     { key: 'analytics', label: 'ANALYTICS' },
+                    { key: 'token_economics', label: 'TOKEN ECONOMICS', badge: budgetWarning || budgetExceeded ? 1 : 0 },
                     { key: 'customize', label: 'CUSTOMIZE' },
                     { key: 'personality', label: 'PERSONALITY' },
                     { key: 'knowledge', label: 'AI KNOWLEDGE' },
@@ -4502,6 +4591,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       </CardContent>
                     </Card>
                   </Box>
+                )}
+
+                {rightPanelType === 'token_economics' && user?.uid && (
+                  <Box>
+                    <TokenEconomicsConfigPanel
+                      sessionId={currentMultiAgentSession || `session_${selectedChatbot?.identity?.id || selectedChatbot?.id}_${Date.now()}`}
+                      userId={user.uid}
+                      onConfigChange={(config) => {
+                        console.log('💰 [TokenEconomics] Configuration updated:', config);
+                        // Update local state based on config changes
+                        setBudgetWarning(false);
+                        setBudgetExceeded(false);
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {rightPanelType === 'debug' && (
+                  <DebugPanel />
                 )}
               </Box>
             </Box>
