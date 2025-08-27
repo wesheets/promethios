@@ -1686,6 +1686,29 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     setTargetAgents(selectedAgentIds); // Update target agents for routing
   };
 
+  // 🚀 NEW: Handle hover-triggered agent responses
+  const handleHoverTriggeredResponse = async (agentId: string, agentName: string) => {
+    console.log('🖱️ [Hover-Triggered] Triggering response from agent:', agentName);
+    
+    // Find the last message in the conversation
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    if (!lastMessage) {
+      console.warn('🖱️ [Hover-Triggered] No messages found to respond to');
+      return;
+    }
+
+    // Create a hover-triggered message
+    const triggerMessage = `Please respond to the last message from ${lastMessage.sender === 'user' ? 'the user' : 'another agent'}.`;
+    
+    try {
+      // Send the trigger message to the specific agent
+      await handleSendMessage(triggerMessage, [agentId]);
+      console.log('🖱️ [Hover-Triggered] Successfully triggered response from:', agentName);
+    } catch (error) {
+      console.error('🖱️ [Hover-Triggered] Error triggering response:', error);
+    }
+  };
+
   // Autonomous Stars functionality
   const generateSmartSuggestions = useCallback(async (input: string, context: any) => {
     if (!autonomousStarsActive || !input.trim()) {
@@ -2636,26 +2659,70 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 }}
                               />
                               
-                              {/* Guest Agents */}
+                              {/* Guest Agents with Hover-Triggered Responses */}
                               {activeContext.guestAgents.map((guest) => (
-                                <Chip
+                                <Tooltip
                                   key={guest.agentId}
-                                  avatar={<Avatar src={guest.avatar} sx={{ width: 20, height: 20 }} />}
-                                  label={guest.name}
-                                  size="small"
-                                  onDelete={() => removeGuestAgent(guest.agentId)}
-                                  sx={{
-                                    bgcolor: '#10b981',
-                                    color: 'white',
-                                    '& .MuiChip-avatar': { color: 'white' },
-                                    '& .MuiChip-deleteIcon': { 
-                                      color: 'white',
-                                      '&:hover': { color: '#fecaca' }
+                                  title={
+                                    <Box sx={{ p: 1 }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                                        🤖 {guest.name}
+                                      </Typography>
+                                      <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name)}
+                                        sx={{
+                                          bgcolor: '#3b82f6',
+                                          color: 'white',
+                                          fontSize: '11px',
+                                          py: 0.5,
+                                          px: 1,
+                                          '&:hover': { bgcolor: '#2563eb' }
+                                        }}
+                                      >
+                                        💬 Respond to Last Message
+                                      </Button>
+                                    </Box>
+                                  }
+                                  arrow
+                                  placement="top"
+                                  componentsProps={{
+                                    tooltip: {
+                                      sx: {
+                                        bgcolor: '#1e293b',
+                                        border: '1px solid #334155',
+                                        '& .MuiTooltip-arrow': {
+                                          color: '#1e293b',
+                                        },
+                                      },
                                     },
-                                    opacity: 0.9,
-                                    fontSize: '11px'
                                   }}
-                                />
+                                >
+                                  <Chip
+                                    avatar={<Avatar src={guest.avatar} sx={{ width: 20, height: 20 }} />}
+                                    label={guest.name}
+                                    size="small"
+                                    onDelete={() => removeGuestAgent(guest.agentId)}
+                                    sx={{
+                                      bgcolor: '#10b981',
+                                      color: 'white',
+                                      '& .MuiChip-avatar': { color: 'white' },
+                                      '& .MuiChip-deleteIcon': { 
+                                        color: 'white',
+                                        '&:hover': { color: '#fecaca' }
+                                      },
+                                      opacity: 0.9,
+                                      fontSize: '11px',
+                                      cursor: 'pointer',
+                                      '&:hover': {
+                                        bgcolor: '#059669',
+                                        transform: 'scale(1.05)',
+                                        transition: 'all 0.2s ease'
+                                      }
+                                    }}
+                                  />
+                                </Tooltip>
                               ))}
                             </Box>
                           </Box>

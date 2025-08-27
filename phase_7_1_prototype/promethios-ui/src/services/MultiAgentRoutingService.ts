@@ -80,7 +80,7 @@ export class MultiAgentRoutingService {
   }
 
   /**
-   * Process a user message and route it to appropriate agents
+   * Process a user message and determine routing strategy
    */
   public async processUserMessage(
     message: string,
@@ -90,17 +90,45 @@ export class MultiAgentRoutingService {
     targetAgents: string[];
     shouldWaitForUserPrompt: boolean;
     responses?: AgentResponse[];
+    isAgentToAgentCommunication?: boolean;
+    sourceAgentId?: string;
+    targetAgentId?: string;
   }> {
     console.log('🎯 [MultiAgentRouting] Processing user message:', message);
     console.log('🎯 [MultiAgentRouting] Context:', context);
 
-    // Get all available agents (host + guests)
+    // Get available agents for this conversation
     const availableAgents = await this.getAvailableAgents(context);
-    console.log('🎯 [MultiAgentRouting] Available agents:', availableAgents.map(a => a.name));
+    console.log('🎯 [MultiAgentRouting] Available agents:', availableAgents.map(a => ({ id: a.id, name: a.name })));
 
     // Parse the message for @mentions
     const parsedMessage = this.messageParser.parseMessage(message, availableAgents);
     console.log('🎯 [MultiAgentRouting] Parsed message:', parsedMessage);
+
+    // 🚀 NEW: Detect agent-to-agent communication patterns
+    const agentToAgentPattern = this.detectAgentToAgentCommunication(message, availableAgents);
+    
+    if (agentToAgentPattern.isAgentToAgent) {
+      console.log('🤖➡️🤖 [Agent-to-Agent] Detected agent-to-agent communication:', agentToAgentPattern);
+      
+      // Route the message as if it came from the source agent to the target agent
+      const responses = await this.routeAgentToAgentMessage(
+        agentToAgentPattern.extractedMessage,
+        agentToAgentPattern.sourceAgentId!,
+        agentToAgentPattern.targetAgentId!,
+        context
+      );
+
+      return {
+        parsedMessage,
+        targetAgents: [agentToAgentPattern.targetAgentId!],
+        shouldWaitForUserPrompt: false,
+        responses,
+        isAgentToAgentCommunication: true,
+        sourceAgentId: agentToAgentPattern.sourceAgentId,
+        targetAgentId: agentToAgentPattern.targetAgentId
+      };
+    }
 
     // Determine target agents - prioritize explicit selection over @mentions
     let targetAgents: string[] = [];
@@ -147,7 +175,8 @@ export class MultiAgentRoutingService {
       parsedMessage,
       targetAgents,
       shouldWaitForUserPrompt,
-      responses
+      responses,
+      isAgentToAgentCommunication: false
     };
   }
 
@@ -525,4 +554,173 @@ export class MultiAgentRoutingService {
 }
 
 export default MultiAgentRoutingService;
+
+
+  /**
+   * 🚀 NEW: Detect agent-to-agent communication patterns
+   * Patterns like: "Claude, ask OpenAI about..." or "Tell Gemini to respond to Claude"
+   */
+  private detectAgentToAgentCommunication(
+    message: string, 
+    availableAgents: ChatbotProfile[]
+  ): {
+    isAgentToAgent: boolean;
+    sourceAgentId?: string;
+    targetAgentId?: string;
+    extractedMessage?: string;
+    communicationType?: 'ask' | 'tell' | 'respond_to';
+  } {
+    console.log('🤖➡️🤖 [Agent-to-Agent] Analyzing message for agent-to-agent patterns:', message);
+
+    // Create agent name mappings for flexible matching
+    const agentMap = new Map<string, string>();
+    availableAgents.forEach(agent => {
+      const name = agent.identity?.name || agent.name || '';
+      agentMap.set(name.toLowerCase(), agent.id);
+      
+      // Add common variations
+      if (name.toLowerCase().includes('claude')) {
+        agentMap.set('claude', agent.id);
+      }
+      if (name.toLowerCase().includes('openai') || name.toLowerCase().includes('gpt')) {
+        agentMap.set('openai', agent.id);
+        agentMap.set('gpt', agent.id);
+      }
+      if (name.toLowerCase().includes('gemini')) {
+        agentMap.set('gemini', agent.id);
+      }
+    });
+
+    // Pattern 1: "AgentA, ask AgentB about..."
+    const askPattern = /^(\w+),?\s+ask\s+(\w+)\s+(.+)/i;
+    const askMatch = message.match(askPattern);
+    if (askMatch) {
+      const sourceAgent = agentMap.get(askMatch[1].toLowerCase());
+      const targetAgent = agentMap.get(askMatch[2].toLowerCase());
+      
+      if (sourceAgent && targetAgent) {
+        console.log('🤖➡️🤖 [Agent-to-Agent] Detected ASK pattern:', { sourceAgent, targetAgent });
+        return {
+          isAgentToAgent: true,
+          sourceAgentId: sourceAgent,
+          targetAgentId: targetAgent,
+          extractedMessage: askMatch[3],
+          communicationType: 'ask'
+        };
+      }
+    }
+
+    // Pattern 2: "Tell AgentA to respond to AgentB"
+    const tellRespondPattern = /^tell\s+(\w+)\s+to\s+respond\s+to\s+(\w+)/i;
+    const tellRespondMatch = message.match(tellRespondPattern);
+    if (tellRespondMatch) {
+      const targetAgent = agentMap.get(tellRespondMatch[1].toLowerCase());
+      const sourceAgent = agentMap.get(tellRespondMatch[2].toLowerCase());
+      
+      if (sourceAgent && targetAgent) {
+        console.log('🤖➡️🤖 [Agent-to-Agent] Detected TELL-RESPOND pattern:', { sourceAgent, targetAgent });
+        return {
+          isAgentToAgent: true,
+          sourceAgentId: sourceAgent,
+          targetAgentId: targetAgent,
+          extractedMessage: "Please respond to the previous message",
+          communicationType: 'respond_to'
+        };
+      }
+    }
+
+    // Pattern 3: "AgentA, tell AgentB that..."
+    const tellPattern = /^(\w+),?\s+tell\s+(\w+)\s+(.+)/i;
+    const tellMatch = message.match(tellPattern);
+    if (tellMatch) {
+      const sourceAgent = agentMap.get(tellMatch[1].toLowerCase());
+      const targetAgent = agentMap.get(tellMatch[2].toLowerCase());
+      
+      if (sourceAgent && targetAgent) {
+        console.log('🤖➡️🤖 [Agent-to-Agent] Detected TELL pattern:', { sourceAgent, targetAgent });
+        return {
+          isAgentToAgent: true,
+          sourceAgentId: sourceAgent,
+          targetAgentId: targetAgent,
+          extractedMessage: tellMatch[3],
+          communicationType: 'tell'
+        };
+      }
+    }
+
+    console.log('🤖➡️🤖 [Agent-to-Agent] No agent-to-agent patterns detected');
+    return { isAgentToAgent: false };
+  }
+
+  /**
+   * 🚀 NEW: Route agent-to-agent messages with proper context
+   */
+  private async routeAgentToAgentMessage(
+    message: string,
+    sourceAgentId: string,
+    targetAgentId: string,
+    context: RoutingContext
+  ): Promise<AgentResponse[]> {
+    console.log('🤖➡️🤖 [Agent-to-Agent] Routing message from', sourceAgentId, 'to', targetAgentId);
+
+    // Get agent details
+    const sourceAgent = await this.getAgentById(sourceAgentId);
+    const targetAgent = await this.getAgentById(targetAgentId);
+
+    if (!sourceAgent || !targetAgent) {
+      console.error('🤖➡️🤖 [Agent-to-Agent] Could not find source or target agent');
+      return [];
+    }
+
+    // Create enhanced context for agent-to-agent communication
+    const agentToAgentContext = `
+🤖➡️🤖 AGENT-TO-AGENT COMMUNICATION:
+- Source Agent: ${sourceAgent.identity?.name || sourceAgent.name}
+- Target Agent: ${targetAgent.identity?.name || targetAgent.name}
+- Communication Type: Direct agent-to-agent message
+- Context: Multi-agent collaboration session
+
+The following message is being relayed from ${sourceAgent.identity?.name || sourceAgent.name}:
+
+${message}
+
+Please respond as if ${sourceAgent.identity?.name || sourceAgent.name} is directly communicating with you. Acknowledge the source agent and provide a thoughtful response.`;
+
+    // Route to the target agent with enhanced context
+    const response = await this.callAgentAPI(
+      agentToAgentContext,
+      targetAgentId,
+      targetAgent,
+      context
+    );
+
+    const agentResponse: AgentResponse = {
+      agentId: targetAgentId,
+      agentName: targetAgent.identity?.name || targetAgent.name || 'Unknown Agent',
+      response: response,
+      timestamp: new Date(),
+      processingTime: 0 // We'll measure this properly later
+    };
+
+    console.log('🤖➡️🤖 [Agent-to-Agent] Successfully routed message and got response');
+    return [agentResponse];
+  }
+
+  /**
+   * Helper method to get agent by ID
+   */
+  private async getAgentById(agentId: string): Promise<ChatbotProfile | null> {
+    try {
+      const chatbotService = ChatbotStorageService.getInstance();
+      const agents = await chatbotService.getChatbots();
+      return agents.find(agent => 
+        agent.id === agentId || 
+        agent.key === agentId || 
+        agent.identity?.id === agentId
+      ) || null;
+    } catch (error) {
+      console.error('Error getting agent by ID:', error);
+      return null;
+    }
+  }
 

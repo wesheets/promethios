@@ -51,6 +51,17 @@ export interface MASCollaborationSettings {
     mentionSystemEnabled: boolean;
   };
   
+  // 🚀 NEW: Agent-to-Agent Communication Controls
+  agentToAgentCommunication: {
+    enabled: boolean;
+    allowDirectTagging: boolean;
+    hoverTriggeredResponses: boolean;
+    autoResponseToMentions: boolean;
+    crossAgentConversations: boolean;
+    responseDelay: number; // seconds
+    maxChainLength: number; // max consecutive agent responses
+  };
+  
   // Autonomous Behaviors
   autonomousBehaviors: {
     proactiveInterjection: boolean;
@@ -247,6 +258,106 @@ const MASCollaborationPanel: React.FC<MASCollaborationPanelProps> = ({
               }
               label="@Mention System"
             />
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* 🚀 NEW: Agent-to-Agent Communication */}
+      <Accordion 
+        expanded={expandedSections.includes('agent-to-agent')}
+        onChange={() => handleSectionToggle('agent-to-agent')}
+      >
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <QuestionAnswerIcon fontSize="small" />
+            🤖➡️🤖 Agent-to-Agent Communication
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.agentToAgentCommunication.enabled}
+                  onChange={(e) => updateSettings('agentToAgentCommunication', 'enabled', e.target.checked)}
+                />
+              }
+              label="Enable Agent-to-Agent Communication"
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.agentToAgentCommunication.allowDirectTagging}
+                  onChange={(e) => updateSettings('agentToAgentCommunication', 'allowDirectTagging', e.target.checked)}
+                  disabled={!settings.agentToAgentCommunication.enabled}
+                />
+              }
+              label="Allow Direct Agent Tagging (e.g., 'Claude, ask OpenAI...')"
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.agentToAgentCommunication.hoverTriggeredResponses}
+                  onChange={(e) => updateSettings('agentToAgentCommunication', 'hoverTriggeredResponses', e.target.checked)}
+                  disabled={!settings.agentToAgentCommunication.enabled}
+                />
+              }
+              label="Hover-Triggered Agent Responses"
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.agentToAgentCommunication.autoResponseToMentions}
+                  onChange={(e) => updateSettings('agentToAgentCommunication', 'autoResponseToMentions', e.target.checked)}
+                  disabled={!settings.agentToAgentCommunication.enabled}
+                />
+              }
+              label="Auto-Response to Agent Mentions"
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.agentToAgentCommunication.crossAgentConversations}
+                  onChange={(e) => updateSettings('agentToAgentCommunication', 'crossAgentConversations', e.target.checked)}
+                  disabled={!settings.agentToAgentCommunication.enabled}
+                />
+              }
+              label="Allow Cross-Agent Conversations"
+            />
+            
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Response Delay: {settings.agentToAgentCommunication.responseDelay}s
+              </Typography>
+              <Slider
+                value={settings.agentToAgentCommunication.responseDelay}
+                onChange={(_, value) => updateSettings('agentToAgentCommunication', 'responseDelay', value as number)}
+                min={0}
+                max={10}
+                step={1}
+                disabled={!settings.agentToAgentCommunication.enabled}
+                sx={{ width: '100%' }}
+              />
+            </Box>
+            
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Max Chain Length: {settings.agentToAgentCommunication.maxChainLength} responses
+              </Typography>
+              <Slider
+                value={settings.agentToAgentCommunication.maxChainLength}
+                onChange={(_, value) => updateSettings('agentToAgentCommunication', 'maxChainLength', value as number)}
+                min={1}
+                max={10}
+                step={1}
+                disabled={!settings.agentToAgentCommunication.enabled}
+                sx={{ width: '100%' }}
+              />
+            </Box>
           </Box>
         </AccordionDetails>
       </Accordion>
