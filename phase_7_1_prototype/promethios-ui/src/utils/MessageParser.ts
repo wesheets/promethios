@@ -154,7 +154,15 @@ export class MessageParser {
     }
 
     const targetIds = parsedMessage.mentions.map(mention => {
-      console.log('🔍 [MessageParser] Processing mention:', mention);
+      console.log('🔍 [MessageParser] Processing mention:', {
+        agentId: mention.agentId,
+        agentName: mention.agentName,
+        fullMention: mention.fullMention,
+        startIndex: mention.startIndex,
+        endIndex: mention.endIndex
+      });
+      console.log('🔍 [MessageParser] mention.agentId type:', typeof mention.agentId);
+      console.log('🔍 [MessageParser] mention.agentId value:', mention.agentId);
       return mention.agentId;
     });
     
