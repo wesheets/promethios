@@ -954,6 +954,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
       }))}
       onConfigureAgents={handleConfigureAgents}
     />
+    </Box>
   );
 };
 
