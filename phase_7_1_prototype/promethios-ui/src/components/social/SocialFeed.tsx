@@ -283,9 +283,8 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
       {/* Header */}
       <Paper sx={{ 
         mb: 3,
-        backgroundColor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider'
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
         <Box sx={{ px: 3, pt: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -430,9 +429,8 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
           <Paper sx={{ 
             p: 6, 
             textAlign: 'center',
-            backgroundColor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider'
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             <AutoAwesome sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" sx={{ mb: 1 }}>

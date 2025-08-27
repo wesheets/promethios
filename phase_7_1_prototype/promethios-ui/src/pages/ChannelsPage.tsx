@@ -305,11 +305,11 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({
   const renderChannelCard = (channel: Channel, isPublic: boolean = false) => (
     <Card key={channel.id} sx={{ 
       cursor: 'pointer',
-      backgroundColor: 'background.paper',
-      border: '1px solid',
-      borderColor: 'divider',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
       '&:hover': {
-        borderColor: 'primary.main',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        border: '1px solid rgba(49, 130, 206, 0.3)',
         boxShadow: (theme) => theme.palette.mode === 'dark' 
           ? '0 4px 20px rgba(0,0,0,0.3)' 
           : '0 4px 20px rgba(0,0,0,0.1)',
@@ -499,9 +499,8 @@ const ChannelsPage: React.FC<ChannelsPageProps> = ({
       <Paper sx={{ 
         p: 2, 
         mb: 3,
-        backgroundColor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider'
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <Button

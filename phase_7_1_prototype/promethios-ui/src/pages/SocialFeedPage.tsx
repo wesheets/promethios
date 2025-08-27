@@ -234,9 +234,8 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider'
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <Badge badgeContent={activeUsers.length} color="success">
@@ -299,9 +298,8 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider'
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -320,10 +318,11 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
               {featuredServers.map((server) => (
                 <Card key={server.id} variant="outlined" sx={{ 
                   cursor: 'pointer',
-                  backgroundColor: 'background.paper',
-                  borderColor: 'divider',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
                   '&:hover': {
-                    borderColor: 'primary.main',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(49, 130, 206, 0.3)',
                   }
                 }}>
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
@@ -391,9 +390,8 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider'
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Browse by Category
@@ -421,7 +419,11 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           </Paper>
 
           {/* Trending Topics */}
-          <Paper sx={{ p: 3 }}>
+          <Paper sx={{ 
+            p: 3,
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <TrendingUp />
               Trending in AI

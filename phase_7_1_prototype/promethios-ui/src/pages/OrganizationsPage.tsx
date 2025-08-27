@@ -222,11 +222,11 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
   const renderOrganizationCard = (org: Organization, isMember: boolean = false) => (
     <Card key={org.id} sx={{ 
       height: '100%',
-      backgroundColor: 'background.paper',
-      border: '1px solid',
-      borderColor: 'divider',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
       '&:hover': {
-        borderColor: 'primary.main',
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        border: '1px solid rgba(49, 130, 206, 0.3)',
         boxShadow: (theme) => theme.palette.mode === 'dark' 
           ? '0 4px 20px rgba(0,0,0,0.3)' 
           : '0 4px 20px rgba(0,0,0,0.1)',
@@ -431,9 +431,8 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
           <Paper sx={{ 
             p: 6, 
             textAlign: 'center',
-            backgroundColor: 'background.paper',
-            border: '1px solid',
-            borderColor: 'divider'
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             <Business sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" sx={{ mb: 1 }}>

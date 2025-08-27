@@ -196,9 +196,8 @@ const UserSearchEngine: React.FC<UserSearchEngineProps> = ({
     <Paper sx={{ 
       p: 3, 
       mb: 3,
-      backgroundColor: 'background.paper',
-      border: '1px solid',
-      borderColor: 'divider'
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      border: '1px solid rgba(255, 255, 255, 0.1)'
     }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -224,9 +224,11 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
       <Card sx={{ 
         mb: 2, 
         position: 'relative',
-        backgroundColor: 'background.paper',
-        border: '1px solid',
-        borderColor: 'divider'
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        '&:hover': {
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        }
       }}>
         {post.isTrending && (
           <Box
@@ -420,8 +422,8 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
               {post.attachments.map((attachment, index) => (
                 <Card key={index} variant="outlined" sx={{ 
                   mb: 1,
-                  backgroundColor: 'background.paper',
-                  borderColor: 'divider'
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
                 }}>
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
