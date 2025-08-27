@@ -5,7 +5,7 @@ import './App.css';
 import flameVideo from './assets/0801.mp4';
 import promethiosFlameLogoLogo from './assets/promethiosnoflame.png';
 import promethiosLogo from './assets/promethios-logo-long.png';
-import promethiosChatLogo from './assets/promethios-chat-logo.png';
+import promethiosSparkLogo from './assets/sparklogo.png';
 
 // Import scorecard and node assets
 import centerScorecard from './assets/centerscorecard.png';
@@ -183,7 +183,7 @@ function App() {
                 <div className="dropdown-content">
                   <div className="dropdown-section">
                     <h4>AI Products</h4>
-                    <a href="#chat">Promethios Chat</a>
+                    <a href="https://spark.promethios.ai" target="_blank" rel="noopener noreferrer">Promethios Spark</a>
                     <a href="#orchestrator">Orchestrator</a>
                     <a href="#sandbox">Sandbox</a>
                   </div>
@@ -194,7 +194,9 @@ function App() {
               </div>
             </nav>
             <div className="header-cta">
-              <button className="cta-button">Try Promethios Chat</button>
+              <a href="https://spark.promethios.ai" target="_blank" rel="noopener noreferrer">
+                <button className="cta-button">Try Promethios Spark</button>
+              </a>
             </div>
           </div>
         </header>
@@ -216,10 +218,12 @@ function App() {
                 {/* Flagship Product Section - Left Aligned */}
                 <div className="flagship-section-inline">
                   <h3>Experience Governed AI in Action</h3>
-                  <p>Try Promethios Chat, our flagship product that demonstrates the power of governed multi-agent systems.</p>
+                  <p>Try Promethios Spark, our flagship product that demonstrates the power of governed multi-agent systems.</p>
                   <div className="flagship-cta-inline">
-                    <img src={promethiosChatLogo} alt="Promethios Chat" className="chat-logo-inline" />
-                    <button className="flagship-button-inline">Launch Promethios Chat →</button>
+                    <img src={promethiosSparkLogo} alt="Promethios Spark" className="chat-logo-inline" />
+                    <a href="https://spark.promethios.ai" target="_blank" rel="noopener noreferrer">
+                      <button className="flagship-button-inline">Launch Promethios Spark →</button>
+                    </a>
                   </div>
                 </div>
               </section>
