@@ -275,22 +275,33 @@ export class MultiAgentRoutingService {
     const agents: Array<{id: string, name: string}> = [];
 
     try {
+      console.log('🔍 [MultiAgentRouting] Getting available agents for context:', context);
+      
       // Add host agent
       const hostAgent = await this.chatbotService.getChatbot(context.hostAgentId);
+      console.log('🔍 [MultiAgentRouting] Host agent:', hostAgent);
+      
       if (hostAgent) {
-        agents.push({
+        const hostAgentData = {
           id: hostAgent.identity?.id || hostAgent.key || hostAgent.id,
           name: hostAgent.identity?.name || hostAgent.name || 'Host Agent'
-        });
+        };
+        console.log('🔍 [MultiAgentRouting] Adding host agent:', hostAgentData);
+        agents.push(hostAgentData);
       }
 
       // Add guest agents
+      console.log('🔍 [MultiAgentRouting] Guest agents in context:', context.guestAgents);
       for (const guest of context.guestAgents) {
-        agents.push({
+        const guestAgentData = {
           id: guest.agentId,
           name: guest.name
-        });
+        };
+        console.log('🔍 [MultiAgentRouting] Adding guest agent:', guestAgentData);
+        agents.push(guestAgentData);
       }
+      
+      console.log('🔍 [MultiAgentRouting] Final available agents:', agents);
     } catch (error) {
       console.error('❌ [MultiAgentRouting] Error getting available agents:', error);
     }
