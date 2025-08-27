@@ -1532,7 +1532,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     // Add AI agents from selected agents
     selectedAgents.forEach(agentId => {
-      const agent = chatbots.find(bot => bot.id === agentId);
+      const agent = chatbotProfiles.find(bot => bot.id === agentId);
       if (agent) {
         participants.push({
           id: agent.id,
