@@ -432,10 +432,19 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   const handleAddAgentToChat = (agentId: string) => {
     const agent = aiTeammates.find(a => a.identity?.id === agentId || a.key === agentId || a.id === agentId);
     if (agent && onAddGuestAgent) {
+      const actualAgentId = agent.identity?.id || agent.key || agent.id;
       const agentName = agent.identity?.name || agent.name || 'AI Agent';
       const agentAvatar = agent.identity?.avatar;
-      onAddGuestAgent(agentId, agentName, agentAvatar);
-      console.log(`🤖 [Multi-Agent] Added ${agentName} to current chat`);
+      
+      console.log(`🤖 [Multi-Agent] Found agent:`, {
+        searchId: agentId,
+        actualId: actualAgentId,
+        name: agentName,
+        agent: agent
+      });
+      
+      onAddGuestAgent(actualAgentId, agentName, agentAvatar);
+      console.log(`🤖 [Multi-Agent] Added ${agentName} (${actualAgentId}) to current chat`);
     } else {
       console.log(`🤖 [Multi-Agent] Adding agent ${agentId} to current chat (callback not provided)`);
     }
