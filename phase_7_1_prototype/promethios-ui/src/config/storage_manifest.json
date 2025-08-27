@@ -240,6 +240,17 @@
     "retention": "30d",
     "compliance": [],
     "description": "User notification history, alerts, and notification preferences"
+  },
+  "session_receipts": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 220752000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7y",
+    "compliance": ["GDPR", "SOX"],
+    "description": "Cryptographic receipts for multi-agent interactions and billing records"
   }
 }
 
