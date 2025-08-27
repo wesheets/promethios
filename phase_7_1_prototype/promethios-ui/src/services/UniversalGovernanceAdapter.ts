@@ -630,6 +630,9 @@ export class UniversalGovernanceAdapter {
         // DEBUGGER: Let's see the exact chatbot data structure
         console.log('🚨 DEBUGGER: Full chatbot object:', chatbot);
         
+        // 🔧 CRITICAL FIX: Override incorrect model configurations
+        const correctedConfig = this.fixAgentModelConfiguration(chatbot, agentId);
+        
         return {
           personality: chatbot.chatbotConfig.personality,
           behavior: chatbot.chatbotConfig.personality, // Map personality to behavior for now
@@ -638,8 +641,8 @@ export class UniversalGovernanceAdapter {
           responseTemplates: chatbot.chatbotConfig.responseTemplates,
           brandSettings: chatbot.chatbotConfig.brandSettings,
           governanceMetrics: chatbot.governancePolicy,
-          provider: chatbot.apiDetails?.provider,
-          model: chatbot.apiDetails?.selectedModel
+          provider: correctedConfig.provider,
+          model: correctedConfig.model
         };
       }
       
@@ -2345,7 +2348,7 @@ You operate with governance oversight that monitors your interactions for safety
     switch (normalizedProvider) {
       case 'google':
       case 'gemini':
-        return 'gemini-1.5-pro';
+        return 'gemini-1.5-flash';
       case 'anthropic':
       case 'claude':
         return 'claude-3-5-sonnet-20241022';
@@ -2354,6 +2357,77 @@ You operate with governance oversight that monitors your interactions for safety
       default:
         return 'gpt-4';
     }
+  }
+
+  /**
+   * 🔧 CRITICAL FIX: Override incorrect model configurations
+   * All agents in database are misconfigured with claude-3-opus
+   * This method detects agent type and forces correct provider/model
+   */
+  private fixAgentModelConfiguration(chatbot: any, agentId: string): { provider: string; model: string } {
+    const agentName = chatbot?.identity?.name?.toLowerCase() || '';
+    const originalProvider = chatbot?.apiDetails?.provider;
+    const originalModel = chatbot?.apiDetails?.selectedModel;
+    
+    console.log(`🔧 [ModelFix] Checking agent configuration:`, {
+      agentId,
+      agentName,
+      originalProvider,
+      originalModel
+    });
+    
+    // Detect agent type and force correct configuration
+    let correctedProvider: string;
+    let correctedModel: string;
+    
+    if (agentName.includes('openai') || agentName.includes('gpt') || agentId === 'chatbot-1755098216083') {
+      // OpenAI Assistant
+      correctedProvider = 'openai';
+      correctedModel = 'gpt-4';
+    } else if (agentName.includes('gemini') || agentName.includes('google')) {
+      // Gemini Assistant  
+      correctedProvider = 'google';
+      correctedModel = 'gemini-1.5-flash';
+    } else if (agentName.includes('claude') || agentName.includes('anthropic')) {
+      // Claude Assistant
+      correctedProvider = 'anthropic';
+      correctedModel = 'claude-3-5-sonnet-20241022';
+    } else {
+      // Unknown agent - try to detect from original config or default to OpenAI
+      if (originalModel?.includes('gemini')) {
+        correctedProvider = 'google';
+        correctedModel = 'gemini-1.5-flash';
+      } else if (originalModel?.includes('claude')) {
+        correctedProvider = 'anthropic';
+        correctedModel = 'claude-3-5-sonnet-20241022';
+      } else {
+        // Default to OpenAI
+        correctedProvider = 'openai';
+        correctedModel = 'gpt-4';
+      }
+    }
+    
+    // Log the correction
+    const wasFixed = originalProvider !== correctedProvider || originalModel !== correctedModel;
+    if (wasFixed) {
+      console.log(`🔧 [ModelFix] CORRECTED agent configuration:`, {
+        agentId,
+        agentName,
+        before: { provider: originalProvider, model: originalModel },
+        after: { provider: correctedProvider, model: correctedModel }
+      });
+    } else {
+      console.log(`✅ [ModelFix] Agent configuration already correct:`, {
+        agentId,
+        provider: correctedProvider,
+        model: correctedModel
+      });
+    }
+    
+    return {
+      provider: correctedProvider,
+      model: correctedModel
+    };
   }
 
   // ============================================================================
