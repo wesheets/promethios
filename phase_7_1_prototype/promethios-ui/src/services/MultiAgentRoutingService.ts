@@ -7,6 +7,7 @@ import { MessageParser, ParsedMessage } from '../utils/MessageParser';
 import { ChatbotStorageService } from './ChatbotStorageService';
 import { ChatbotProfile } from '../types/ChatbotProfile';
 import { TokenEconomicsService } from './TokenEconomicsService';
+import { temporaryRoleService } from './TemporaryRoleService';
 
 export interface AgentResponse {
   agentId: string;
@@ -306,6 +307,29 @@ export class MultiAgentRoutingService {
         console.log('📝 [MultiAgentRouting] Conversation context preview:', conversationContext.substring(0, 200) + '...');
       } else {
         console.log('📝 [MultiAgentRouting] No conversation history available, using message as-is');
+      }
+
+      // 🎭 ROLE ENHANCEMENT: Add temporary role context if assigned
+      console.log('🔍 [MultiAgentRouting] Step 4.5: Checking for temporary role assignments...');
+      
+      try {
+        const sessionId = context.conversationId; // Use conversation ID as session ID
+        const enhancedPrompt = await temporaryRoleService.getEnhancedSystemPrompt(agentId, sessionId);
+        
+        if (enhancedPrompt) {
+          console.log('🎭 [MultiAgentRouting] Found temporary role assignment for agent:', agentId);
+          console.log('📝 [MultiAgentRouting] Role context preview:', enhancedPrompt.substring(0, 200) + '...');
+          
+          // Prepend role context to the enhanced message
+          enhancedMessage = `${enhancedPrompt}\n\n${enhancedMessage}`;
+          
+          console.log('✅ [MultiAgentRouting] Enhanced message with role context. Total length:', enhancedMessage.length);
+        } else {
+          console.log('📝 [MultiAgentRouting] No temporary role assignment found for agent:', agentId);
+        }
+      } catch (error) {
+        console.warn('⚠️ [MultiAgentRouting] Failed to get role enhancement:', error);
+        // Continue without role enhancement
       }
 
       console.log('🔍 [MultiAgentRouting] Step 5: About to call agent API with enhanced context...');
