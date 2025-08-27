@@ -4,6 +4,7 @@
  */
 
 import { UnifiedStorageService } from './UnifiedStorageService';
+import { ModelPricingService } from './ModelPricingService';
 
 export interface TokenUsage {
   input: number;
@@ -80,22 +81,13 @@ export interface EngagementDecision {
 export class TokenEconomicsService {
   private static instance: TokenEconomicsService;
   private storageService: UnifiedStorageService;
+  private modelPricingService: ModelPricingService;
   private activeBudgets = new Map<string, SessionBudget>();
   private agentMetrics = new Map<string, AgentEngagementMetrics>();
-  
-  // Token pricing (per 1K tokens) - should be configurable
-  private readonly TOKEN_PRICING = {
-    'gpt-4': { input: 0.03, output: 0.06 },
-    'gpt-3.5-turbo': { input: 0.001, output: 0.002 },
-    'claude-3-opus': { input: 0.015, output: 0.075 },
-    'claude-3-sonnet': { input: 0.003, output: 0.015 },
-    'claude-3-haiku': { input: 0.00025, output: 0.00125 },
-    'gemini-pro': { input: 0.001, output: 0.002 },
-    'default': { input: 0.001, output: 0.002 }
-  };
 
   private constructor() {
     this.storageService = UnifiedStorageService.getInstance();
+    this.modelPricingService = ModelPricingService.getInstance();
     this.initializeService();
   }
 
@@ -160,32 +152,19 @@ export class TokenEconomicsService {
   }
 
   /**
-   * Calculate cost for token usage
+   * Calculate cost for token usage using ModelPricingService
    */
   public calculateCost(tokens: TokenUsage, model: string): number {
-    const pricing = this.TOKEN_PRICING[model] || this.TOKEN_PRICING.default;
-    
-    const inputCost = (tokens.input / 1000) * pricing.input;
-    const outputCost = (tokens.output / 1000) * pricing.output;
-    
-    return inputCost + outputCost;
+    const costEstimate = this.modelPricingService.calculateCost(model, tokens.input, tokens.output);
+    return costEstimate.totalCost;
   }
 
   /**
-   * Estimate cost for a message
+   * Estimate cost for a message using ModelPricingService
    */
   public estimateMessageCost(message: string, model: string = 'gpt-3.5-turbo'): number {
-    // Rough estimation: 4 characters ≈ 1 token
-    const inputTokens = Math.ceil(message.length / 4);
-    const estimatedOutputTokens = Math.min(inputTokens * 2, 500); // Estimate response length
-    
-    const tokens: TokenUsage = {
-      input: inputTokens,
-      output: estimatedOutputTokens,
-      total: inputTokens + estimatedOutputTokens
-    };
-
-    return this.calculateCost(tokens, model);
+    const costEstimate = this.modelPricingService.estimateMessageCost(model, message);
+    return costEstimate.totalCost;
   }
 
   /**
