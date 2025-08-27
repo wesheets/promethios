@@ -506,10 +506,15 @@ export class AIToAIAwarenessService {
   }
 
   private detectModelType(agentId: string): AIModelType {
-    // Simple detection based on agent ID patterns
-    if (agentId.includes('gpt')) return 'gpt-4';
-    if (agentId.includes('claude')) return 'claude-3-opus';
-    if (agentId.includes('gemini')) return 'gemini-pro';
+    // TODO: Get actual model from agent configuration instead of hardcoding
+    // This should query the agent's actual configured model, not assume based on ID
+    console.warn(`⚠️ [AIToAIAwareness] detectModelType using fallback for agent: ${agentId}`);
+    console.warn(`   This should be replaced with actual agent configuration lookup`);
+    
+    // Fallback detection - should be replaced with actual config lookup
+    if (agentId.includes('gpt') || agentId.includes('openai')) return 'gpt-4';
+    if (agentId.includes('claude') || agentId.includes('anthropic')) return 'claude-3-5-sonnet-20241022';
+    if (agentId.includes('gemini') || agentId.includes('google')) return 'gemini-1.5-flash';
     return 'custom-model';
   }
 

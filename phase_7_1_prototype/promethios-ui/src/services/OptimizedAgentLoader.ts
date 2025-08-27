@@ -335,7 +335,7 @@ class OptimizedAgentLoaderService {
         endpoint: '',
         key: 'deployed-agent-key',
         provider: 'openai',
-        selectedModel: 'gpt-4'
+        selectedModel: null // Should be configured during deployment
       }
     };
   }

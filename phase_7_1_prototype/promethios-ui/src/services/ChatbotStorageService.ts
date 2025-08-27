@@ -252,7 +252,7 @@ export class ChatbotStorageService {
         endpoint: 'https://api.openai.com/v1',
         key: '',
         provider: 'OpenAI',
-        selectedModel: 'gpt-4',
+        selectedModel: null, // No hardcoded model - should be set during agent creation
       },
       
       // Chatbot-specific configuration

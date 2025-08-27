@@ -343,7 +343,7 @@ export class UserAgentStorageService {
                   endpoint: agentData.apiEndpoint || agentData.endpoint || 'https://api.openai.com/v1/chat/completions',
                   key: cleanApiKey,
                   provider: agentData.provider || 'OpenAI',
-                  selectedModel: agentData.selectedModel || agentData.model || 'gpt-4',
+                  selectedModel: agentData.selectedModel || agentData.model || null, // No hardcoded fallback
                   selectedCapabilities: agentData.capabilities || agentData.selectedCapabilities || [],
                   selectedContextLength: agentData.contextLength || agentData.selectedContextLength || 4096,
                   discoveredInfo: agentData.discoveredInfo || null,
