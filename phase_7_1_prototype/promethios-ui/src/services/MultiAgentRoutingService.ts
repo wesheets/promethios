@@ -551,10 +551,6 @@ export class MultiAgentRoutingService {
     const availableAgents = await this.getAvailableAgents(context);
     return this.messageParser.generateMentionSuggestions(partialMention, availableAgents);
   }
-}
-
-export default MultiAgentRoutingService;
-
 
   /**
    * 🚀 NEW: Detect agent-to-agent communication patterns
@@ -723,4 +719,7 @@ Please respond as if ${sourceAgent.identity?.name || sourceAgent.name} is direct
       return null;
     }
   }
+}
+
+export default MultiAgentRoutingService;
 
