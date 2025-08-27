@@ -405,32 +405,19 @@ export class MultiAgentRoutingService {
 
       console.log('🔧 [MultiAgentRouting] Enhanced message for agent:', enhancedMessage.substring(0, 200) + '...');
 
-      // 🔧 CRITICAL FIX: Ensure guest agents maintain their governance wrapper
-      // Always use the governance service to maintain consistent governance across all contexts
-      console.log('🔧 [MultiAgentRouting] Ensuring governance wrapper persistence for agent:', agentId);
-      
-      // Use the conversation ID as session ID to maintain governance context
-      const sessionId = context.conversationId;
-      
-      // CRITICAL: Always call through governance service to maintain wrapper persistence
-      // This ensures guest agents keep their governance wrapper from their original context
-      console.log('✅ [MultiAgentRouting] Calling through governance service with session:', sessionId);
-      
-      const response = await chatService.generateChatResponse(
-        sessionId,
+      // Call the agent's API directly
+      const response = await this.universalAdapter.sendMessage(
         enhancedMessage,
         agentId,
         {
           conversationHistory: context.conversationHistory,
           provider: agent.provider,
           model: agent.model || agent.selectedModel,
-          userId: context.userId,
-          hostAgentId: context.hostAgentId,
-          guestAgents: context.guestAgents
+          userId: context.userId
         }
       );
 
-      console.log('✅ [MultiAgentRouting] Got governed response from agent:', agentName);
+      console.log('✅ [MultiAgentRouting] Got response from agent:', agentName);
       return response.response;
 
     } catch (error) {
