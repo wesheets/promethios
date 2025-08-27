@@ -937,23 +937,22 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
           ))}
         </List>
       </Box>
-    </Box>
 
-    {/* Agent Configuration Popup */}
-    <AgentConfigurationPopup
-      open={showConfigPopup}
-      onClose={() => {
-        setShowConfigPopup(false);
-        setSelectedAgentsForConfig([]);
-      }}
-      selectedAgents={selectedAgentsForConfig.map(agent => ({
-        id: agent.agentId,
-        name: agent.name,
-        avatar: agent.avatar,
-        provider: 'unknown' // We'll need to determine this from the agent data
-      }))}
-      onConfigureAgents={handleConfigureAgents}
-    />
+      {/* Agent Configuration Popup */}
+      <AgentConfigurationPopup
+        open={showConfigPopup}
+        onClose={() => {
+          setShowConfigPopup(false);
+          setSelectedAgentsForConfig([]);
+        }}
+        selectedAgents={selectedAgentsForConfig.map(agent => ({
+          id: agent.agentId,
+          name: agent.name,
+          avatar: agent.avatar,
+          provider: 'unknown' // We'll need to determine this from the agent data
+        }))}
+        onConfigureAgents={handleConfigureAgents}
+      />
     </Box>
   );
 };
