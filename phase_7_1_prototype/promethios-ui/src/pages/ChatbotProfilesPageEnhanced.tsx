@@ -1889,7 +1889,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         guestAgents: activeContext.guestAgents,
         userId: user.uid,
         conversationId: currentMultiAgentSession || `conv_${Date.now()}`,
-        conversationHistory: conversationHistory // 🔧 CRITICAL: Include full conversation history
+        conversationHistory: conversationHistory, // 🔧 CRITICAL: Include full conversation history
+        selectedAgents: selectedAgents // 🔧 CRITICAL: Include avatar-selected agents
       };
 
       // Process message with multi-agent routing

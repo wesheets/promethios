@@ -54,6 +54,7 @@ export interface RoutingContext {
     agentName?: string;
     timestamp?: Date;
   }>;
+  selectedAgents?: string[]; // Explicitly selected agents via avatar selector
 }
 
 export class MultiAgentRoutingService {
@@ -100,33 +101,45 @@ export class MultiAgentRoutingService {
     const parsedMessage = this.messageParser.parseMessage(message, availableAgents);
     console.log('🎯 [MultiAgentRouting] Parsed message:', parsedMessage);
 
-    // Determine target agents
-    const targetAgents = this.messageParser.getTargetAgentIds(parsedMessage, availableAgents);
-    console.log('🎯 [MultiAgentRouting] Target agents:', targetAgents);
+    // Determine target agents - prioritize explicit selection over @mentions
+    let targetAgents: string[] = [];
+    
+    if (parsedMessage.hasAgentMentions) {
+      // Use @mention parsing if explicit mentions are found
+      targetAgents = this.messageParser.getTargetAgentIds(parsedMessage, availableAgents);
+      console.log('🎯 [MultiAgentRouting] Using @mention targets:', targetAgents);
+    } else if (context.selectedAgents && context.selectedAgents.length > 0) {
+      // Use explicitly selected agents from avatar selector
+      targetAgents = context.selectedAgents;
+      console.log('🎯 [MultiAgentRouting] Using avatar-selected targets:', targetAgents);
+    } else {
+      // Default to host agent only
+      targetAgents = [context.hostAgentId];
+      console.log('🎯 [MultiAgentRouting] Defaulting to host agent:', targetAgents);
+    }
+
+    console.log('🎯 [MultiAgentRouting] Final target agents:', targetAgents);
 
     // Check if we should wait for user prompt or respond immediately
-    const shouldWaitForUserPrompt = !parsedMessage.hasAgentMentions;
+    const shouldWaitForUserPrompt = !parsedMessage.hasAgentMentions && (!context.selectedAgents || context.selectedAgents.length === 0);
 
     let responses: AgentResponse[] | undefined;
 
-    if (parsedMessage.hasAgentMentions && targetAgents.length > 0) {
-      console.log('🎯 [MultiAgentRouting] Routing to mentioned agents:', targetAgents);
+    if (targetAgents.length > 0) {
+      if (parsedMessage.hasAgentMentions) {
+        console.log('🎯 [MultiAgentRouting] Routing to @mentioned agents:', targetAgents);
+      } else {
+        console.log('🎯 [MultiAgentRouting] Routing to avatar-selected agents:', targetAgents);
+      }
       
-      // Route to mentioned agents immediately
+      // Route to target agents immediately
       responses = await this.routeToAgents(
         parsedMessage.cleanMessage || parsedMessage.originalMessage,
         targetAgents,
         context
       );
-    } else if (!parsedMessage.hasAgentMentions) {
-      console.log('🎯 [MultiAgentRouting] No @mentions found - only host agent will respond');
-      
-      // Only route to host agent when no mentions
-      responses = await this.routeToAgents(
-        message,
-        [context.hostAgentId],
-        context
-      );
+    } else {
+      console.log('🎯 [MultiAgentRouting] No target agents - waiting for user prompt');
     }
 
     return {
