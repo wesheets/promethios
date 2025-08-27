@@ -131,13 +131,47 @@ export const MultiAgentResponseIndicator: React.FC<MultiAgentResponseIndicatorPr
     return () => clearInterval(interval);
   }, []);
 
-  // Get status color
+  // Get agent-specific color (unique per agent)
+  const getAgentColor = (agentId: string, agentName: string) => {
+    // Predefined colors for known agents
+    if (agentName.toLowerCase().includes('claude')) return '#3b82f6';    // Blue
+    if (agentName.toLowerCase().includes('openai') || agentName.toLowerCase().includes('gpt')) return '#10b981';    // Green
+    if (agentName.toLowerCase().includes('gemini') || agentName.toLowerCase().includes('bard')) return '#8b5cf6';   // Purple
+    if (agentName.toLowerCase().includes('anthropic')) return '#06b6d4';  // Cyan
+    if (agentName.toLowerCase().includes('mistral')) return '#f59e0b';    // Orange
+    if (agentName.toLowerCase().includes('llama')) return '#ef4444';      // Red
+    
+    // Hash-based color for unknown agents
+    let hash = 0;
+    for (let i = 0; i < agentId.length; i++) {
+      hash = agentId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    
+    const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#84cc16', '#f97316'];
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  // Get status color (for status indicators only)
   const getStatusColor = (status: AgentStatus['status']) => {
     switch (status) {
       case 'processing': return '#f59e0b';
       case 'completed': return '#10b981';
       case 'error': return '#ef4444';
       default: return '#64748b';
+    }
+  };
+
+  // Get status overlay (combines agent color with status)
+  const getStatusOverlay = (agentId: string, agentName: string, status: AgentStatus['status']) => {
+    const agentColor = getAgentColor(agentId, agentName);
+    
+    // For completed status, use agent color; for others, use status color
+    if (status === 'completed') {
+      return agentColor;
+    } else if (status === 'idle') {
+      return agentColor + '80'; // 50% opacity for idle
+    } else {
+      return getStatusColor(status);
     }
   };
 
@@ -259,7 +293,7 @@ export const MultiAgentResponseIndicator: React.FC<MultiAgentResponseIndicatorPr
                   sx={{
                     width: 32,
                     height: 32,
-                    bgcolor: getStatusColor(agentStatus.status),
+                    bgcolor: getStatusOverlay(agentStatus.agentId, agentStatus.agentName, agentStatus.status),
                     fontSize: '0.8rem'
                   }}
                 >
@@ -268,7 +302,13 @@ export const MultiAgentResponseIndicator: React.FC<MultiAgentResponseIndicatorPr
 
                 {/* Agent Info */}
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: getAgentColor(agentStatus.agentId, agentStatus.agentName), 
+                      fontWeight: 500 
+                    }}
+                  >
                     {agentStatus.agentName}
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#94a3b8' }}>
