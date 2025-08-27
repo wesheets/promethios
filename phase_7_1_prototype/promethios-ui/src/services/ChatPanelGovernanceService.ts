@@ -60,6 +60,8 @@ interface GovernanceMetrics {
 }
 
 export class ChatPanelGovernanceService {
+  private static instance: ChatPanelGovernanceService;
+  
   private universalGovernance: UniversalGovernanceAdapter;
   private agentConfigService: AgentConfigurationService;
   private chatStorageService: ChatStorageService;
@@ -111,6 +113,14 @@ export class ChatPanelGovernanceService {
     this.enterprisePolicyOrchestrator = EnterprisePolicyOrchestrator.getInstance();
     
     console.log('✅ [ChatPanel] All extensions, role context services, tool integration, and enhanced governance initialized successfully');
+  }
+
+  // Singleton pattern
+  public static getInstance(): ChatPanelGovernanceService {
+    if (!ChatPanelGovernanceService.instance) {
+      ChatPanelGovernanceService.instance = new ChatPanelGovernanceService();
+    }
+    return ChatPanelGovernanceService.instance;
   }
 
   // ============================================================================
