@@ -318,7 +318,14 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
             
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {featuredServers.map((server) => (
-                <Card key={server.id} variant="outlined" sx={{ cursor: 'pointer' }}>
+                <Card key={server.id} variant="outlined" sx={{ 
+                  cursor: 'pointer',
+                  backgroundColor: 'background.paper',
+                  borderColor: 'divider',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                  }
+                }}>
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
                       <Box
@@ -326,7 +333,7 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
                           width: 48,
                           height: 48,
                           borderRadius: 2,
-                          backgroundColor: '#f0f0f0',
+                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#f0f0f0',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',

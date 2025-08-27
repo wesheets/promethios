@@ -221,7 +221,13 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
 
   return (
     <>
-      <Card sx={{ mb: 2, position: 'relative' }}>
+      <Card sx={{ 
+        mb: 2, 
+        position: 'relative',
+        backgroundColor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}>
         {post.isTrending && (
           <Box
             sx={{
@@ -368,7 +374,14 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
           
           {/* Collaboration Details */}
           {(post.collaborationDuration || post.collaborationParticipants) && (
-            <Box sx={{ mb: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+            <Box sx={{ 
+              mb: 2, 
+              p: 2, 
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#f5f5f5', 
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Collaboration Details:
               </Typography>
@@ -405,7 +418,11 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
           {post.attachments && post.attachments.length > 0 && (
             <Box sx={{ mb: 2 }}>
               {post.attachments.map((attachment, index) => (
-                <Card key={index} variant="outlined" sx={{ mb: 1 }}>
+                <Card key={index} variant="outlined" sx={{ 
+                  mb: 1,
+                  backgroundColor: 'background.paper',
+                  borderColor: 'divider'
+                }}>
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                       {attachment.thumbnail ? (
@@ -420,7 +437,7 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
                             width: 60,
                             height: 60,
                             borderRadius: 1,
-                            backgroundColor: '#f0f0f0',
+                            backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#f0f0f0',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

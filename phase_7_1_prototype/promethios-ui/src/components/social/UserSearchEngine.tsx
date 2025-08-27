@@ -193,7 +193,13 @@ const UserSearchEngine: React.FC<UserSearchEngineProps> = ({
   ];
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
+    <Paper sx={{ 
+      p: 3, 
+      mb: 3,
+      backgroundColor: 'background.paper',
+      border: '1px solid',
+      borderColor: 'divider'
+    }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Search color="primary" />

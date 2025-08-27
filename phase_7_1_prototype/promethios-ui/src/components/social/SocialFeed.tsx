@@ -281,7 +281,12 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   return (
     <Box>
       {/* Header */}
-      <Paper sx={{ mb: 3 }}>
+      <Paper sx={{ 
+        mb: 3,
+        backgroundColor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider'
+      }}>
         <Box sx={{ px: 3, pt: 2 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
@@ -422,7 +427,13 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
         
         {/* Empty state */}
         {!loading && posts.length === 0 && (
-          <Paper sx={{ p: 6, textAlign: 'center' }}>
+          <Paper sx={{ 
+            p: 6, 
+            textAlign: 'center',
+            backgroundColor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
             <AutoAwesome sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" sx={{ mb: 1 }}>
               No posts yet
