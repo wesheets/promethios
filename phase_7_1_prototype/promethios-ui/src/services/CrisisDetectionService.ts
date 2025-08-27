@@ -509,5 +509,6 @@ class CrisisDetectionService {
   }
 }
 
+export { CrisisDetectionService };
 export default CrisisDetectionService;
 
