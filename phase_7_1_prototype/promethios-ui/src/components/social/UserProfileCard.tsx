@@ -107,6 +107,11 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Early return if profile is null/undefined
+  if (!profile) {
+    return null;
+  }
+
   const getAIAgentColor = (type: string) => {
     switch (type) {
       case 'Claude': return '#FF6B35';
@@ -157,7 +162,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
                     width: 12,
                     height: 12,
                     borderRadius: '50%',
-                    backgroundColor: profile.isOnline ? '#4CAF50' : '#FFA726',
+                    backgroundColor: profile?.isOnline ? '#4CAF50' : '#FFA726',
                     border: '2px solid white',
                   }}
                 />
@@ -220,7 +225,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
                     width: 16,
                     height: 16,
                     borderRadius: '50%',
-                    backgroundColor: profile.isOnline ? '#4CAF50' : '#FFA726',
+                    backgroundColor: profile?.isOnline ? '#4CAF50' : '#FFA726',
                     border: '2px solid white',
                   }}
                 />
@@ -353,7 +358,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
                   width: 20,
                   height: 20,
                   borderRadius: '50%',
-                  backgroundColor: profile.isOnline ? '#4CAF50' : '#FFA726',
+                  backgroundColor: profile?.isOnline ? '#4CAF50' : '#FFA726',
                   border: '3px solid white',
                 }}
               />
