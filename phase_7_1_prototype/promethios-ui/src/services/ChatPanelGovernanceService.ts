@@ -303,20 +303,21 @@ export class ChatPanelGovernanceService {
         tools: toolSchemas.length > 0 ? toolSchemas : undefined
       });
       
+      // Ensure we have a real response - no fallbacks allowed
+      if (!enhancedResponse.response || enhancedResponse.response.trim() === '') {
+        throw new Error('Backend returned empty response - no fallback allowed');
+      }
+
       return {
-        response: enhancedResponse.response || this.generateFallbackResponse(message),
+        response: enhancedResponse.response,
         trustScore: enhancedResponse.trustScore || 0.75,
         governanceStatus: enhancedResponse.governanceMetrics?.blocked ? 'blocked' : 'approved',
         metadata: enhancedResponse.governanceContext || { source: 'universal_governance' }
       };
     } catch (error) {
-      console.warn(`⚠️ [ChatPanel] Failed to generate chat response, using fallback:`, error);
-      return {
-        response: this.generateFallbackResponse(message),
-        trustScore: 0.75,
-        governanceStatus: 'approved',
-        metadata: { fallback: true }
-      };
+      console.error(`❌ [ChatPanel] Failed to generate chat response - NO FALLBACK:`, error);
+      // NO FALLBACK - throw the error to surface the real issue
+      throw new Error(`Real AI response failed: ${error.message}`);
     }
   }
 

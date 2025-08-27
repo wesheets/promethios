@@ -401,53 +401,85 @@ export class UniversalGovernanceAdapter {
   }
 
   private async callBackendAPI(endpoint: string, data: any, userId?: string): Promise<any> {
-    try {
-      const url = `${BACKEND_API_BASE}${endpoint}`;
-      console.log(`🌐 [Universal] Calling backend API: ${url}`);
-      console.log(`📤 [Universal] Request data:`, {
-        agent_id: data.agent_id,
-        message: data.message?.substring(0, 100) + '...',
-        provider: data.provider,
-        model: data.model,
-        governance_enabled: data.governance_enabled,
-        session_id: data.session_id,
-        userId: userId || 'anonymous-user' // CRITICAL FIX: Use anonymous-user instead of universal-governance-adapter
-      });
-      console.log(`📤 [Universal] Full request body:`, JSON.stringify(data, null, 2));
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': userId || 'anonymous-user',
-        },
-        body: JSON.stringify(data),
-      });
-
-      console.log(`📥 [Universal] Response status: ${response.status} ${response.statusText}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ [Universal] Backend API error:`, {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const url = `${BACKEND_API_BASE}${endpoint}`;
+        console.log(`🌐 [Universal] Calling backend API (attempt ${attempt + 1}/${maxRetries + 1}): ${url}`);
+        console.log(`📤 [Universal] Request data:`, {
+          agent_id: data.agent_id,
+          message: data.message?.substring(0, 100) + '...',
+          provider: data.provider,
+          model: data.model,
+          governance_enabled: data.governance_enabled,
+          session_id: data.session_id,
+          userId: userId || 'anonymous-user'
         });
-        throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+        
+        if (attempt > 0) {
+          console.log(`🔄 [Universal] Retry attempt ${attempt} after backend overload`);
+        }
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': userId || 'anonymous-user',
+          },
+          body: JSON.stringify(data),
+        });
+
+        console.log(`📥 [Universal] Response status: ${response.status} ${response.statusText}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`❌ [Universal] Backend API error (attempt ${attempt + 1}):`, {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          
+          // Check if this is an overloaded error that we should retry
+          const isOverloadedError = errorText.includes('overloaded_error') || 
+                                   errorText.includes('Overloaded') ||
+                                   response.status === 529 ||
+                                   response.status === 503;
+          
+          if (isOverloadedError && attempt < maxRetries) {
+            const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+            console.log(`⏳ [Universal] Backend overloaded, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue; // Retry the request
+          }
+          
+          throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log(`✅ [Universal] Backend API success (attempt ${attempt + 1}):`, {
+          session_id: result.session_id,
+          response_length: result.response?.length,
+          governance_enabled: result.governance_enabled,
+          trust_score: result.governance_metrics?.trust_score
+        });
+
+        return result;
+        
+      } catch (error) {
+        console.error(`❌ [Universal] Backend API call failed (attempt ${attempt + 1}):`, error);
+        
+        // If this is the last attempt, throw the error
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // For network errors or other issues, also retry with backoff
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`⏳ [Universal] Network error, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-
-      const result = await response.json();
-      console.log(`✅ [Universal] Backend API success:`, {
-        session_id: result.session_id,
-        response_length: result.response?.length,
-        governance_enabled: result.governance_enabled,
-        trust_score: result.governance_metrics?.trust_score
-      });
-
-      return result;
-    } catch (error) {
-      console.error('❌ [Universal] Backend API call failed:', error);
-      throw error;
     }
   }
 
