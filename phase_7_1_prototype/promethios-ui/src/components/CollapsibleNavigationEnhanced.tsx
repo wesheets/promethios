@@ -377,42 +377,42 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
     //     },
     //   ],
     // },
-    {
-      id: 'agents',
-      label: 'Agents',
-      icon: <AgentsIcon />,
-      children: [
-        { id: 'my-agents', label: 'My Agents', icon: <ProfileIcon />, path: '/ui/agents/profiles' },
-        { id: 'agent-wrapping', label: 'Agent Wrapping', icon: <WrapIcon />, path: '/ui/agents/wrapping' },
-        { id: 'multi-agent-wrapping', label: 'Multi-Agent Wrapping', icon: <MultiAgentIcon />, path: '/ui/agents/multi-wrapping' },
-        { id: 'agent-lifecycle', label: 'Agent Lifecycle', icon: <TimelineIcon />, path: '/ui/agents/lifecycle' },
-        { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/modern-chat' },
-        { id: 'deploy', label: 'Deploy', icon: <DeployIcon />, path: '/ui/agents/deploy' },
-      ],
-    },
-    {
-      id: 'governance',
-      label: 'Governance',
-      icon: <GovernanceIcon />,
-      children: [
-        { id: 'gov-dashboard', label: 'Governance Dashboard', icon: <OverviewIcon />, path: '/ui/governance/dashboard' },
-        { id: 'policies', label: 'Policies', icon: <PoliciesIcon />, path: '/ui/governance/policies' },
-        { id: 'violations', label: 'Violations', icon: <ViolationsIcon />, path: '/ui/governance/violations' },
-        { id: 'audit-reports', label: 'Audit Reports', icon: <AuditIcon />, path: '/ui/governance/audit-reports' },
-        { id: 'knowledge-management', label: 'Knowledge Management', icon: <KnowledgeIcon />, path: '/ui/governance/knowledge', isNew: true },
-        { id: 'training-management', label: 'Training & Fine-tuning', icon: <FineTuningIcon />, path: '/ui/governance/training', isNew: true },
-      ],
-    },
-    {
-      id: 'trust-metrics',
-      label: 'Trust Metrics',
-      icon: <TrustIcon />,
-      children: [
-        { id: 'trust-overview', label: 'Trust Overview', icon: <OverviewIcon />, path: '/ui/trust/overview' },
-        { id: 'trust-scoring', label: 'Trust Scoring', icon: <Assessment />, path: '/ui/trust/scoring' },
-        { id: 'trust-history', label: 'Trust History', icon: <Timeline />, path: '/ui/trust/history' },
-      ],
-    },
+    // {
+    //   id: 'agents',
+    //   label: 'Agents',
+    //   icon: <AgentsIcon />,
+    //   children: [
+    //     { id: 'my-agents', label: 'My Agents', icon: <ProfileIcon />, path: '/ui/agents/profiles' },
+    //     { id: 'agent-wrapping', label: 'Agent Wrapping', icon: <WrapIcon />, path: '/ui/agents/wrapping' },
+    //     { id: 'multi-agent-wrapping', label: 'Multi-Agent Wrapping', icon: <MultiAgentIcon />, path: '/ui/agents/multi-wrapping' },
+    //     { id: 'agent-lifecycle', label: 'Agent Lifecycle', icon: <TimelineIcon />, path: '/ui/agents/lifecycle' },
+    //     { id: 'chat', label: 'Chat', icon: <ChatIcon />, path: '/ui/modern-chat' },
+    //     { id: 'deploy', label: 'Deploy', icon: <DeployIcon />, path: '/ui/agents/deploy' },
+    //   ],
+    // },
+    // {
+    //   id: 'governance',
+    //   label: 'Governance',
+    //   icon: <GovernanceIcon />,
+    //   children: [
+    //     { id: 'gov-dashboard', label: 'Governance Dashboard', icon: <OverviewIcon />, path: '/ui/governance/dashboard' },
+    //     { id: 'policies', label: 'Policies', icon: <PoliciesIcon />, path: '/ui/governance/policies' },
+    //     { id: 'violations', label: 'Violations', icon: <ViolationsIcon />, path: '/ui/governance/violations' },
+    //     { id: 'audit-reports', label: 'Audit Reports', icon: <AuditIcon />, path: '/ui/governance/audit-reports' },
+    //     { id: 'knowledge-management', label: 'Knowledge Management', icon: <KnowledgeIcon />, path: '/ui/governance/knowledge', isNew: true },
+    //     { id: 'training-management', label: 'Training & Fine-tuning', icon: <FineTuningIcon />, path: '/ui/governance/training', isNew: true },
+    //   ],
+    // },
+    // {
+    //   id: 'trust-metrics',
+    //   label: 'Trust Metrics',
+    //   icon: <TrustIcon />,
+    //   children: [
+    //     { id: 'trust-overview', label: 'Trust Overview', icon: <OverviewIcon />, path: '/ui/trust/overview' },
+    //     { id: 'trust-scoring', label: 'Trust Scoring', icon: <Assessment />, path: '/ui/trust/scoring' },
+    //     { id: 'trust-history', label: 'Trust History', icon: <Timeline />, path: '/ui/trust/history' },
+    //   ],
+    // },
   ];
 
   // Add admin section if user is admin

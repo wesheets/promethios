@@ -147,10 +147,10 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
           Discover AI Collaboration Partners
         </Typography>
         <Typography variant="body1" color="text.secondary">
@@ -203,8 +203,14 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
         <Grid container spacing={3}>
           {/* Featured Collaborators */}
           <Grid item xs={12} md={8}>
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Paper sx={{ 
+              p: 3, 
+              mb: 3, 
+              backgroundColor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary' }}>
                 <Star sx={{ color: '#FFD700' }} />
                 Featured AI Collaborators
               </Typography>
@@ -241,8 +247,14 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
           {/* Sidebar */}
           <Grid item xs={12} md={4}>
             {/* Trending Skills */}
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Paper sx={{ 
+              p: 3, 
+              mb: 3,
+              backgroundColor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary' }}>
                 <TrendingUp />
                 Trending AI Skills
               </Typography>
@@ -262,8 +274,14 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
 
             {/* Recent Searches */}
             {recentSearches.length > 0 && (
-              <Paper sx={{ p: 3, mb: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
+              <Paper sx={{ 
+                p: 3, 
+                mb: 3,
+                backgroundColor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider'
+              }}>
+                <Typography variant="h6" sx={{ mb: 2, color: 'text.primary' }}>
                   Recent Searches
                 </Typography>
                 
@@ -283,8 +301,13 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
             )}
 
             {/* Quick Actions */}
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
+            <Paper sx={{ 
+              p: 3,
+              backgroundColor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Typography variant="h6" sx={{ mb: 2, color: 'text.primary' }}>
                 Quick Discovery
               </Typography>
               
@@ -332,9 +355,15 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
 
       {/* Empty State for No Results */}
       {searchResults.length === 0 && featuredUsers.length === 0 && !loading && (
-        <Paper sx={{ p: 6, textAlign: 'center' }}>
+        <Paper sx={{ 
+          p: 6, 
+          textAlign: 'center',
+          backgroundColor: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider'
+        }}>
           <Search sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" sx={{ mb: 1 }}>
+          <Typography variant="h6" sx={{ mb: 1, color: 'text.primary' }}>
             Start Your AI Collaboration Journey
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>

@@ -106,6 +106,7 @@ import OrganizationsPage from './pages/OrganizationsPage';
 import ChannelsPage from './pages/ChannelsPage';
 import DirectMessageSidebar from './components/social/DirectMessageSidebar';
 import ChatIntegrationProvider from './components/social/ChatIntegrationProvider';
+import FloatingChatWidget from './components/social/FloatingChatWidget';
 import ChatbotWrappingWizard from './components/chat/builder/ChatbotWrappingWizard';
 import HostedApiSetup from './components/chat/setup/HostedApiSetup';
 // Import chatbot management page
@@ -967,6 +968,9 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
       </Routes>
+      
+      {/* Floating Chat Widget - Always visible */}
+      <FloatingChatWidget />
     </ObserverProvider>
     </ChatIntegrationProvider>
   );

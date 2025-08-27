@@ -36,6 +36,7 @@ import {
 // Import components
 import SocialFeed from '../components/social/SocialFeed';
 import { socialFeedService } from '../services/SocialFeedService';
+import { useChatIntegration } from '../components/social/ChatIntegrationProvider';
 
 interface AICollaborationServer {
   id: string;
@@ -68,6 +69,9 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
   const [trendingTopics, setTrendingTopics] = useState<{ tag: string; count: number }[]>([]);
   const [featuredServers, setFeaturedServers] = useState<AICollaborationServer[]>([]);
   const [activeUsers, setActiveUsers] = useState<any[]>([]);
+  
+  // Chat integration
+  const { openDirectMessage } = useChatIntegration();
 
   // Mock AI Collaboration Servers (Discord-inspired)
   const mockServers: AICollaborationServer[] = [
@@ -185,20 +189,24 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
     onJoinServer?.(serverId);
   };
 
+  const handleStartChat = (userId: string, userName: string, userAvatar?: string) => {
+    openDirectMessage(userId, userName, userAvatar);
+  };
+
   const handleExploreServers = () => {
     console.log('Explore all servers');
     // This would navigate to a full server discovery page
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="lg" sx={{ py: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
-          AI Collaboration Feed
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
+          AI Collaboration Network
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Stay updated with the latest AI collaboration highlights and discoveries
+          Discover communities, share insights, and connect with AI professionals
         </Typography>
       </Box>
 
@@ -223,7 +231,13 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
         {/* Sidebar */}
         <Grid item xs={12} md={4}>
           {/* Active Now - Discord Style */}
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ 
+            p: 3, 
+            mb: 3,
+            backgroundColor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <Badge badgeContent={activeUsers.length} color="success">
                 <People />
@@ -233,7 +247,21 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
             
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {activeUsers.map((user) => (
-                <Box key={user.id} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box 
+                  key={user.id} 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    cursor: 'pointer',
+                    p: 1,
+                    borderRadius: 1,
+                    '&:hover': {
+                      backgroundColor: 'action.hover'
+                    }
+                  }}
+                  onClick={() => handleStartChat(user.id, user.name, user.avatar)}
+                >
                   <Badge
                     overlap="circular"
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -268,7 +296,13 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           </Paper>
 
           {/* Featured AI Collaboration Servers - Discord Style */}
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ 
+            p: 3, 
+            mb: 3,
+            backgroundColor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Explore />
@@ -347,7 +381,13 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           </Paper>
 
           {/* Server Categories */}
-          <Paper sx={{ p: 3, mb: 3 }}>
+          <Paper sx={{ 
+            p: 3, 
+            mb: 3,
+            backgroundColor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Browse by Category
             </Typography>
