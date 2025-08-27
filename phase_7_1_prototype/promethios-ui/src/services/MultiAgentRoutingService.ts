@@ -241,14 +241,30 @@ export class MultiAgentRoutingService {
     console.log('🤖 [MultiAgentRouting] Getting response from agent:', agentId);
 
     try {
+      console.log('🔍 [MultiAgentRouting] Step 1: Looking up agent profile for:', agentId);
+      
       // Get agent profile
       const agent = await this.chatbotService.getChatbotById(agentId);
+      console.log('🔍 [MultiAgentRouting] Step 2: Agent lookup result:', agent ? 'FOUND' : 'NOT FOUND');
+      
       if (!agent) {
+        console.error('❌ [MultiAgentRouting] Agent not found:', agentId);
         throw new Error(`Agent not found: ${agentId}`);
       }
 
-      // Simulate agent response (replace with actual agent API call)
+      console.log('🔍 [MultiAgentRouting] Step 3: Agent details:', {
+        id: agent.identity?.id || agent.key || agent.id,
+        name: agent.identity?.name || agent.name,
+        type: agent.type,
+        provider: agent.provider
+      });
+
+      console.log('🔍 [MultiAgentRouting] Step 4: About to call agent API...');
+      
+      // Call the actual agent API
       const response = await this.callAgentAPI(agent, message, context);
+
+      console.log('🔍 [MultiAgentRouting] Step 5: Got response from callAgentAPI, length:', response.length);
 
       const processingTime = Date.now() - startTime;
 
@@ -261,6 +277,13 @@ export class MultiAgentRoutingService {
       };
     } catch (error) {
       const processingTime = Date.now() - startTime;
+      
+      console.error('❌ [MultiAgentRouting] Error in getAgentResponse:', {
+        agentId,
+        step: 'unknown',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       return {
         agentId,
