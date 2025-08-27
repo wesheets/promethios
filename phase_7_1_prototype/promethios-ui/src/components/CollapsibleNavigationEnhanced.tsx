@@ -48,8 +48,15 @@ import {
   Psychology as VeritasIcon,
   Shield as BoundariesIcon,
   Verified as AttestationsIcon,
-  FlashOn,
+  // Social Collaboration Icons
+  Search as DiscoveryIcon,
   Person as ProfileIcon,
+  Feed as SocialFeedIcon,
+  Business as OrganizationsIcon,
+  Tag as ChannelsIcon,
+  Message as MessageIcon,
+  People as NetworkIcon,
+  FlashOn,
   Person as PersonIcon,
   Logout as LogoutIcon,
   Tune as PreferencesIcon,
@@ -166,12 +173,13 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   const collapsed = preferences.navigationCollapsed;
 
   const navigationItems: NavigationItem[] = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <DashboardIcon />,
-      path: '/ui/dashboard',
-    },
+    // Hidden for social AI platform focus
+    // {
+    //   id: 'dashboard',
+    //   label: 'Dashboard',
+    //   icon: <DashboardIcon />,
+    //   path: '/ui/dashboard',
+    // },
     {
       id: 'promethios-chat',
       label: 'Promethios Chat',
@@ -264,70 +272,111 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         },
       ],
     },
+    // Social AI Collaboration Platform
     {
-      id: 'multi-agent-systems',
-      label: 'Multi-Agent Systems',
-      icon: <ThinkTankIcon />,
+      id: 'social-collaboration',
+      label: 'AI Network',
+      icon: <NetworkIcon />,
       isNew: true,
       children: [
         { 
-          id: 'think-tank', 
-          label: 'Think Tank Platform', 
-          icon: <ThinkTankIcon />, 
-          path: '/ui/mas/think-tank',
+          id: 'discovery', 
+          label: 'Discovery', 
+          icon: <DiscoveryIcon />, 
+          path: '/ui/social/discovery',
           isNew: true
         },
         { 
-          id: 'process-builder', 
-          label: 'Process Builder', 
-          icon: <WorkflowIcon />, 
-          path: '/ui/mas/process-builder',
-          isNew: true
+          id: 'profiles', 
+          label: 'Profiles', 
+          icon: <ProfileIcon />, 
+          path: '/ui/social/profiles' 
         },
         { 
-          id: 'conversation-history', 
-          label: 'Conversation History', 
-          icon: <ConversationHistoryIcon />, 
-          path: '/ui/mas/conversations' 
+          id: 'social-feed', 
+          label: 'Social Feed', 
+          icon: <SocialFeedIcon />, 
+          path: '/ui/social/feed' 
         },
         { 
-          id: 'workflow-templates', 
-          label: 'Workflow Templates', 
-          icon: <TemplateIcon />, 
-          path: '/ui/mas/templates' 
+          id: 'organizations', 
+          label: 'Organizations', 
+          icon: <OrganizationsIcon />, 
+          path: '/ui/social/organizations' 
         },
         { 
-          id: 'mas-analytics', 
-          label: 'MAS Analytics', 
-          icon: <AnalyticsIcon />, 
-          path: '/ui/mas/analytics' 
-        },
-        { 
-          id: 'orchestrator-library', 
-          label: 'Orchestrator Library', 
-          icon: <OrchestratorIcon />, 
-          path: '/ui/mas/orchestrators' 
-        },
-        { 
-          id: 'collaboration-insights', 
-          label: 'Collaboration Insights', 
-          icon: <InsightsIcon />, 
-          path: '/ui/mas/insights' 
-        },
-        { 
-          id: 'boundaries', 
-          label: 'Agent Boundaries', 
-          icon: <BoundariesIcon />, 
-          path: '/ui/trust/boundaries' 
-        },
-        { 
-          id: 'attestations', 
-          label: 'Agent Attestations', 
-          icon: <AttestationsIcon />, 
-          path: '/ui/trust/attestations' 
+          id: 'channels', 
+          label: 'Channels', 
+          icon: <ChannelsIcon />, 
+          path: '/ui/social/channels' 
         },
       ],
     },
+    // Hidden for social AI platform focus - Multi-Agent Systems section
+    // {
+    //   id: 'multi-agent-systems',
+    //   label: 'Multi-Agent Systems',
+    //   icon: <ThinkTankIcon />,
+    //   isNew: true,
+    //   children: [
+    //     { 
+    //       id: 'think-tank', 
+    //       label: 'Think Tank Platform', 
+    //       icon: <ThinkTankIcon />, 
+    //       path: '/ui/mas/think-tank',
+    //       isNew: true
+    //     },
+    //     { 
+    //       id: 'process-builder', 
+    //       label: 'Process Builder', 
+    //       icon: <WorkflowIcon />, 
+    //       path: '/ui/mas/process-builder',
+    //       isNew: true
+    //     },
+    //     { 
+    //       id: 'conversation-history', 
+    //       label: 'Conversation History', 
+    //       icon: <ConversationHistoryIcon />, 
+    //       path: '/ui/mas/conversations' 
+    //     },
+    //     { 
+    //       id: 'workflow-templates', 
+    //       label: 'Workflow Templates', 
+    //       icon: <TemplateIcon />, 
+    //       path: '/ui/mas/templates' 
+    //     },
+    //     { 
+    //       id: 'mas-analytics', 
+    //       label: 'MAS Analytics', 
+    //       icon: <AnalyticsIcon />, 
+    //       path: '/ui/mas/analytics' 
+    //     },
+    //     { 
+    //       id: 'orchestrator-library', 
+    //       label: 'Orchestrator Library', 
+    //       icon: <OrchestratorIcon />, 
+    //       path: '/ui/mas/orchestrators' 
+    //     },
+    //     { 
+    //       id: 'collaboration-insights', 
+    //       label: 'Collaboration Insights', 
+    //       icon: <InsightsIcon />, 
+    //       path: '/ui/mas/insights' 
+    //     },
+    //     { 
+    //       id: 'boundaries', 
+    //       label: 'Agent Boundaries', 
+    //       icon: <BoundariesIcon />, 
+    //       path: '/ui/trust/boundaries' 
+    //     },
+    //     { 
+    //       id: 'attestations', 
+    //       label: 'Agent Attestations', 
+    //       icon: <AttestationsIcon />, 
+    //       path: '/ui/trust/attestations' 
+    //     },
+    //   ],
+    // },
     {
       id: 'agents',
       label: 'Agents',

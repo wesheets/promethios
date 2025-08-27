@@ -109,8 +109,8 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         </Box>
       </Box>
       
-      {/* Super Enhanced Observer Button - Floating on all pages */}
-      <SuperEnhancedObserverButton
+      {/* Hidden for social AI platform focus - Super Enhanced Observer Button */}
+      {/* <SuperEnhancedObserverButton
         currentContext={location.pathname.replace('/ui/', '')}
         dashboardData={{
           trustScore: '85',
@@ -123,7 +123,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           transparency: '79%'
         }}
         hasNotifications={true}
-      />
+      /> */}
       
       {/* No Footer for logged-in users to prevent chat input positioning issues */}
     </Box>

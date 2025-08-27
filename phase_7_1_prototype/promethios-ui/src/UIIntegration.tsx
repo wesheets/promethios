@@ -98,6 +98,14 @@ import AutomationManagement from './components/chat/automation/AutomationManagem
 import HumanHandoffManagement from './components/chat/handoff/HumanHandoffManagement';
 // Import new setup components
 import QuickStartSetup from './components/chat/setup/QuickStartSetup';
+
+// Social AI Collaboration Platform Pages
+import DiscoveryPage from './pages/DiscoveryPage';
+import SocialFeedPage from './pages/SocialFeedPage';
+import OrganizationsPage from './pages/OrganizationsPage';
+import ChannelsPage from './pages/ChannelsPage';
+import DirectMessageSidebar from './components/social/DirectMessageSidebar';
+import ChatIntegrationProvider from './components/social/ChatIntegrationProvider';
 import ChatbotWrappingWizard from './components/chat/builder/ChatbotWrappingWizard';
 import HostedApiSetup from './components/chat/setup/HostedApiSetup';
 // Import chatbot management page
@@ -155,8 +163,9 @@ const UIIntegration: React.FC = () => {
   
   // Using proxy components to connect to the actual UI components
   return (
-    <ObserverProvider>
-      <Routes>
+    <ChatIntegrationProvider>
+      <ObserverProvider>
+        <Routes>
         {/* Onboarding flow routes */}
         <Route path="onboarding">
           <Route path="demo" element={<OnboardingDemo />} />
@@ -729,6 +738,56 @@ const UIIntegration: React.FC = () => {
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
+        
+        {/* Social AI Collaboration Platform Routes */}
+        <Route path="social/discovery" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <DiscoveryPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="social/profiles" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <UserProfilePage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="social/feed" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <SocialFeedPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="social/organizations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <OrganizationsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="social/channels" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ChannelsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="social/messages" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <DirectMessageSidebar isOpen={true} onClose={() => {}} />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
                 {/* Clean Profile Route - New Implementation */}
         <Route path="profile" element={
           <ProtectedRoute requireOnboarding={false}>
@@ -909,6 +968,7 @@ const UIIntegration: React.FC = () => {
         } />
       </Routes>
     </ObserverProvider>
+    </ChatIntegrationProvider>
   );
 };
 
