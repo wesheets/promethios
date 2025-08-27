@@ -251,6 +251,39 @@
     "retention": "7y",
     "compliance": ["GDPR", "SOX"],
     "description": "Cryptographic receipts for multi-agent interactions and billing records"
+  },
+  "session_budgets": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": ["GDPR"],
+    "description": "Token budget tracking and cost management for multi-agent sessions"
+  },
+  "agent_metrics": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 31536000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "1y",
+    "compliance": [],
+    "description": "Agent engagement metrics, performance tracking, and cost-benefit analysis"
+  },
+  "budget_alerts": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": [],
+    "description": "Budget alerts, warnings, and cost notifications for token management"
   }
 }
 

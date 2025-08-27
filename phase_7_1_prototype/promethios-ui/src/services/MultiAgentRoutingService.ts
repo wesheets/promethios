@@ -6,6 +6,7 @@
 import { MessageParser, ParsedMessage } from '../utils/MessageParser';
 import { ChatbotStorageService } from './ChatbotStorageService';
 import { ChatbotProfile } from '../types/ChatbotProfile';
+import { TokenEconomicsService } from './TokenEconomicsService';
 
 export interface AgentResponse {
   agentId: string;
@@ -50,13 +51,15 @@ export interface RoutingContext {
 
 export class MultiAgentRoutingService {
   private static instance: MultiAgentRoutingService;
-  private messageParser: MessageParser;
   private chatbotService: ChatbotStorageService;
-  private responseQueue: Map<string, Promise<AgentResponse>> = new Map();
+  private messageParser: MessageParser;
+  private tokenService: TokenEconomicsService;
+  private busyAgents = new Set<string>();
 
   private constructor() {
-    this.messageParser = MessageParser.getInstance();
     this.chatbotService = ChatbotStorageService.getInstance();
+    this.messageParser = new MessageParser();
+    this.tokenService = TokenEconomicsService.getInstance();
   }
 
   public static getInstance(): MultiAgentRoutingService {
@@ -136,11 +139,42 @@ export class MultiAgentRoutingService {
   ): Promise<AgentResponse[]> {
     console.log('🚀 [MultiAgentRouting] Routing message to agents:', agentIds);
 
+    // Create session budget if needed
+    let sessionBudget = this.tokenService.getSessionBudget(context.conversationId);
+    if (!sessionBudget) {
+      await this.tokenService.createSessionBudget(context.conversationId, context.userId);
+    }
+
     // Prevent simultaneous responses by queuing
     const responses: AgentResponse[] = [];
     
     for (const agentId of agentIds) {
       try {
+        // Check if agent should engage based on token economics
+        const engagementDecision = await this.tokenService.shouldAgentEngage(
+          context.conversationId,
+          agentId,
+          message,
+          'user_mention' // engagement reason
+        );
+
+        if (!engagementDecision.shouldEngage) {
+          console.log('💰 [MultiAgentRouting] Agent engagement blocked:', agentId, engagementDecision.reasoning);
+          
+          // Create a response explaining why the agent didn't engage
+          responses.push({
+            agentId,
+            agentName: agentId,
+            response: `I'm being economically responsible and not engaging because: ${engagementDecision.tokenJustification}`,
+            timestamp: new Date(),
+            processingTime: 0,
+            error: `Budget constraint: ${engagementDecision.reasoning}`
+          });
+          continue;
+        }
+
+        console.log('💰 [MultiAgentRouting] Agent approved for engagement:', agentId, `$${engagementDecision.estimatedCost.toFixed(4)}`);
+
         // Check if agent is already processing a message
         const existingPromise = this.responseQueue.get(agentId);
         if (existingPromise) {
@@ -154,6 +188,21 @@ export class MultiAgentRoutingService {
 
         const response = await responsePromise;
         responses.push(response);
+
+        // Record the actual cost (this would be updated with real token usage)
+        if (!response.error) {
+          await this.tokenService.recordAgentCost(
+            context.conversationId,
+            agentId,
+            response.agentName,
+            'gpt-3.5-turbo', // This should be determined from the agent profile
+            {
+              input: Math.ceil(message.length / 4), // Rough estimation
+              output: Math.ceil(response.response.length / 4),
+              total: Math.ceil((message.length + response.response.length) / 4)
+            }
+          );
+        }
 
         // Clear from queue
         this.responseQueue.delete(agentId);
