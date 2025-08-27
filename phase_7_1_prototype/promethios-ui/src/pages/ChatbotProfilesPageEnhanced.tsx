@@ -3270,6 +3270,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               </Paper>
                             )}
                           </>
+                      );
+                    })()}
                   </Box>
                   
                   {/* Voice Recording Button */}
