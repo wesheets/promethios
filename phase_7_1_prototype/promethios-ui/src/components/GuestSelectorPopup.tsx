@@ -32,6 +32,8 @@ import {
   Add as AddIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
+import AgentConfigurationPopup from './collaboration/AgentConfigurationPopup';
+import { temporaryRoleService, TemporaryRoleAssignment } from '../services/TemporaryRoleService';
 
 interface TeamMember {
   id: string;
@@ -63,12 +65,16 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<Set<string>>(new Set());
+  const [showConfigPopup, setShowConfigPopup] = useState(false);
+  const [selectedAIAgents, setSelectedAIAgents] = useState<TeamMember[]>([]);
 
   // Reset selection when popup opens
   useEffect(() => {
     if (open) {
       setSelectedGuests(new Set());
       setSearchQuery('');
+      setShowConfigPopup(false);
+      setSelectedAIAgents([]);
     }
   }, [open]);
 
@@ -98,8 +104,58 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   const handleAddSelected = () => {
     const allMembers = [...teamMembers, ...aiAgents];
     const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
-    onAddGuests(selectedMembers);
-    onClose();
+    
+    // Separate AI agents from humans
+    const selectedAI = selectedMembers.filter(member => member.type === 'ai_agent');
+    const selectedHumans = selectedMembers.filter(member => member.type === 'human');
+    
+    if (selectedAI.length > 0) {
+      // Show configuration popup for AI agents
+      setSelectedAIAgents(selectedAI);
+      setShowConfigPopup(true);
+      // Don't close the main popup yet - wait for configuration
+    } else {
+      // Only humans selected, add them directly
+      onAddGuests(selectedMembers);
+      onClose();
+    }
+  };
+
+  const handleConfigureAgents = async (configurations: any[]) => {
+    try {
+      // Generate session ID (in real implementation, this would come from the chat session)
+      const sessionId = `session_${Date.now()}`;
+      
+      // Convert configurations to temporary role assignments
+      const assignments: TemporaryRoleAssignment[] = configurations.map(config => ({
+        agentId: config.agentId,
+        agentName: config.agentName,
+        careerRole: config.careerRole,
+        behavior: config.behavior,
+        sessionId
+      }));
+      
+      // Assign temporary roles
+      await temporaryRoleService.assignTemporaryRoles(sessionId, assignments);
+      
+      // Add all selected members (humans + configured AI agents)
+      const allMembers = [...teamMembers, ...aiAgents];
+      const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
+      onAddGuests(selectedMembers);
+      
+      // Close both popups
+      setShowConfigPopup(false);
+      onClose();
+      
+    } catch (error) {
+      console.error('Failed to configure agents:', error);
+      // Still add the agents even if configuration fails
+      const allMembers = [...teamMembers, ...aiAgents];
+      const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
+      onAddGuests(selectedMembers);
+      setShowConfigPopup(false);
+      onClose();
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -331,6 +387,19 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
         </Button>
       </DialogActions>
     </Dialog>
+
+    {/* Secondary Agent Configuration Popup */}
+    <AgentConfigurationPopup
+      open={showConfigPopup}
+      onClose={() => setShowConfigPopup(false)}
+      selectedAgents={selectedAIAgents.map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        avatar: agent.avatar,
+        provider: agent.provider
+      }))}
+      onConfigureAgents={handleConfigureAgents}
+    />
   );
 };
 
