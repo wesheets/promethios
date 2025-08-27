@@ -429,12 +429,12 @@ main {
 
 /* Company-specific logo sizing */
 .logo-hugging-face {
-  width: 1000px !important; /* 5x larger */
-  height: 300px !important;
+  width: 500px !important; /* Reduced from 1000px (2.5x instead of 5x) */
+  height: 150px !important; /* Reduced from 300px */
 }
 
-.logo-gemini {
-  width: 600px !important; /* 3x larger */
+.logo-google-gemini {
+  width: 600px !important; /* Keep 3x larger */
   height: 180px !important;
 }
 
