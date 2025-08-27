@@ -19,6 +19,7 @@ import { AgentRoleService, AgentRole } from './AgentRoleService';
 import { auth } from '../firebase/config';
 import { ToolIntegrationService, ToolCall, ToolResult } from './ToolIntegrationService';
 import EnhancedGovernanceIntegration from './EnhancedGovernanceIntegration';
+import EnterprisePolicyOrchestrator from './EnterprisePolicyOrchestrator';
 
 // Chat Panel Response Types
 interface ChatMessage {
@@ -76,6 +77,9 @@ export class ChatPanelGovernanceService {
   // Enhanced Governance with Crisis Detection
   private enhancedGovernance: EnhancedGovernanceIntegration;
   
+  // Enterprise Policy Orchestration
+  private enterprisePolicyOrchestrator: EnterprisePolicyOrchestrator;
+  
   private currentSession: ChatSession | null = null;
   private conversationHistory: ChatMessage[] = [];
   private activeSessions: Map<string, ChatSession> = new Map();
@@ -102,6 +106,9 @@ export class ChatPanelGovernanceService {
     
     // Initialize enhanced governance with crisis detection
     this.enhancedGovernance = EnhancedGovernanceIntegration.getInstance();
+    
+    // Initialize enterprise policy orchestration
+    this.enterprisePolicyOrchestrator = EnterprisePolicyOrchestrator.getInstance();
     
     console.log('✅ [ChatPanel] All extensions, role context services, tool integration, and enhanced governance initialized successfully');
   }
