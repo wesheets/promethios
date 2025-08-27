@@ -49,6 +49,14 @@ class ChatSharingService {
     this.sharedChats = this.sharedChats.filter(s => s.id !== id);
   }
 
+  detectChatReference(message: string): string | null {
+    // Simple pattern matching for chat references
+    // Look for patterns like "chat:abc123" or "ref:chat_123"
+    const chatRefPattern = /(?:chat:|ref:chat_)([a-zA-Z0-9_-]+)/i;
+    const match = message.match(chatRefPattern);
+    return match ? match[1] : null;
+  }
+
   async getAllSharedChats(): Promise<SharedChat[]> {
     return this.sharedChats;
   }
