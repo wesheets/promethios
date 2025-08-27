@@ -3109,36 +3109,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     <Add />
                   </IconButton>
                   
-                  {/* Enhanced Multi-Agent Text Input with @mention support */}
+                  {/* Enhanced Multi-Agent Text Input with Avatar Selector */}
                   <Box sx={{ flex: 1, position: 'relative' }}>
-                    {/* Check if we're in multi-agent mode */}
+                    {/* Always use AgentAvatarSelector for intuitive multi-agent interaction */}
                     {(() => {
-                      const activeContext = multiChatState.contexts.find(c => c.isActive);
-                      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
-                      
-                      if (hasGuestAgents && selectedChatbot && user?.uid) {
-                        // Multi-agent mode with @mention support
-                        return (
-                          <MultiAgentMentionInput
-                            value={messageInput}
-                            onChange={setMessageInput}
-                            onSend={(message, mentions) => {
-                              console.log('🤖 [MultiAgent] Sending message with mentions:', message, mentions);
-                              handleSendMessage();
-                            }}
-                            placeholder="Type your message... Use @agent-name to mention specific agents"
-                            disabled={chatLoading}
-                            multiline={true}
-                            maxRows={4}
-                            hostAgentId={activeContext.hostAgentId}
-                            guestAgents={activeContext.guestAgents}
-                            userId={user.uid}
-                            conversationId={currentMultiAgentSession || `conv_${Date.now()}`}
-                          />
-                        );
-                      } else {
-                        // Single-agent mode with smart suggestions
-                        return (
+                      // Always use the new avatar-based system instead of @mention
+                      return (
                           <>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               {/* Agent Avatar Selector */}
@@ -3262,9 +3238,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               </Paper>
                             )}
                           </>
-                        );
-                      }
-                    })()}
                   </Box>
                   
                   {/* Voice Recording Button */}
