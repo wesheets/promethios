@@ -2615,8 +2615,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       if (multiChatState.activeContextId === 'ai_agent' && hasGuestAgents) {
                         return (
                           <Box sx={{ mt: 1 }}>
-                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
-                              Participants:
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
+                              💬 Conversation Participants:
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                               {/* Host Agent */}
@@ -2627,7 +2627,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 sx={{
                                   bgcolor: '#3b82f6',
                                   color: 'white',
-                                  '& .MuiChip-avatar': { color: 'white' }
+                                  '& .MuiChip-avatar': { color: 'white' },
+                                  opacity: 0.9,
+                                  fontSize: '11px'
                                 }}
                               />
                               
@@ -2646,7 +2648,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                     '& .MuiChip-deleteIcon': { 
                                       color: 'white',
                                       '&:hover': { color: '#fecaca' }
-                                    }
+                                    },
+                                    opacity: 0.9,
+                                    fontSize: '11px'
                                   }}
                                 />
                               ))}
@@ -3149,8 +3153,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       // Always use the new avatar-based system instead of @mention
                       return (
                           <>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              {/* Agent Avatar Selector */}
+                            {/* Two-Layer Avatar System: Active Selection Layer */}
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1,
+                              p: 1.5,
+                              bgcolor: '#1e293b',
+                              borderRadius: 2,
+                              border: '1px solid #334155',
+                              mb: 1
+                            }}>
+                              <Typography variant="caption" sx={{ 
+                                color: '#94a3b8', 
+                                fontSize: '11px', 
+                                fontWeight: 500,
+                                minWidth: 'fit-content'
+                              }}>
+                                🎯 Talking to:
+                              </Typography>
+                              
+                              {/* Agent Avatar Selector - Integrated */}
                               <AgentAvatarSelector
                                 hostAgent={getHostAgent()}
                                 guestAgents={getGuestAgents()}
@@ -3161,43 +3184,44 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 onAddGuests={handleAddGuests}
                               />
                               
-                              {/* Text Input */}
-                              <TextField
-                                fullWidth
-                                placeholder="Type your message..."
-                                value={messageInput}
-                                onChange={(e) => handleInputChange(e.target.value)}
-                                onKeyDown={handleKeyNavigation}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey) {
-                                    if (showSuggestions && selectedSuggestionIndex >= 0) {
-                                      e.preventDefault();
-                                      handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
-                                    } else {
-                                      handleSendMessage();
+                              <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {/* Text Input */}
+                                <TextField
+                                  fullWidth
+                                  placeholder="Type your message..."
+                                  value={messageInput}
+                                  onChange={(e) => handleInputChange(e.target.value)}
+                                  onKeyDown={handleKeyNavigation}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                      if (showSuggestions && selectedSuggestionIndex >= 0) {
+                                        e.preventDefault();
+                                        handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+                                      } else {
+                                        handleSendMessage();
+                                      }
                                     }
-                                  }
+                                  }}
+                                  onPaste={handlePaste}
+                                  onFocus={() => {
+                                    if (autonomousStarsActive && messageInput.trim()) {
+                                      setShowSuggestions(true);
+                                    }
+                                  }}
+                                  onBlur={() => {
+                                  // Delay hiding suggestions to allow clicking
+                                  setTimeout(() => setShowSuggestions(false), 200);
                                 }}
-                                onPaste={handlePaste}
-                                onFocus={() => {
-                                  if (autonomousStarsActive && messageInput.trim()) {
-                                    setShowSuggestions(true);
-                                  }
-                                }}
-                                onBlur={() => {
-                                // Delay hiding suggestions to allow clicking
-                                setTimeout(() => setShowSuggestions(false), 200);
-                              }}
-                              variant="outlined"
-                              disabled={chatLoading}
-                              multiline
-                              maxRows={4}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  bgcolor: '#0f172a',
-                                  color: 'white',
-                                  '& fieldset': { 
-                                    borderColor: autonomousStarsActive ? '#f59e0b' : '#334155',
+                                variant="outlined"
+                                disabled={chatLoading}
+                                multiline
+                                maxRows={4}
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    bgcolor: '#0f172a',
+                                    color: 'white',
+                                    '& fieldset': { 
+                                      borderColor: autonomousStarsActive ? '#f59e0b' : '#475569',
                                     borderWidth: 1
                                   },
                                   '&:hover fieldset': { borderColor: '#3b82f6' },
@@ -3212,6 +3236,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 }
                               }}
                             />
+                              </Box>
                             </Box>
                             
                             {/* Amazon-Style Smart Suggestions Dropdown (Below Input) */}
