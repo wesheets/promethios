@@ -277,6 +277,7 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   };
 
   return (
+    <>
     <Dialog
       open={open}
       onClose={onClose}
@@ -400,6 +401,7 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       }))}
       onConfigureAgents={handleConfigureAgents}
     />
+    </>
   );
 };
 
