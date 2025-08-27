@@ -18,6 +18,7 @@ import { ReceiptRoleContextService, RoleReceiptContext } from './ReceiptRoleCont
 import { AgentRoleService, AgentRole } from './AgentRoleService';
 import { auth } from '../firebase/config';
 import { ToolIntegrationService, ToolCall, ToolResult } from './ToolIntegrationService';
+import EnhancedGovernanceIntegration from './EnhancedGovernanceIntegration';
 
 // Chat Panel Response Types
 interface ChatMessage {
@@ -72,6 +73,9 @@ export class ChatPanelGovernanceService {
   // Tool Integration
   private toolIntegrationService: ToolIntegrationService;
   
+  // Enhanced Governance with Crisis Detection
+  private enhancedGovernance: EnhancedGovernanceIntegration;
+  
   private currentSession: ChatSession | null = null;
   private conversationHistory: ChatMessage[] = [];
   private activeSessions: Map<string, ChatSession> = new Map();
@@ -96,7 +100,10 @@ export class ChatPanelGovernanceService {
     // Initialize tool integration service
     this.toolIntegrationService = new ToolIntegrationService();
     
-    console.log('✅ [ChatPanel] All extensions, role context services, and tool integration initialized successfully');
+    // Initialize enhanced governance with crisis detection
+    this.enhancedGovernance = EnhancedGovernanceIntegration.getInstance();
+    
+    console.log('✅ [ChatPanel] All extensions, role context services, tool integration, and enhanced governance initialized successfully');
   }
 
   // ============================================================================
@@ -554,7 +561,91 @@ export class ChatPanelGovernanceService {
         console.warn(`⚠️ [ChatPanel] Predictive governance failed, continuing:`, error);
       }
 
-      // 2. Policy Enforcement
+      // 2. Enhanced Governance with Crisis Detection
+      console.log(`🛡️ [ChatPanel] Running enhanced governance with crisis detection`);
+      
+      const enhancedGovernanceResult = await this.enhancedGovernance.evaluateMessage(
+        message,
+        auth.currentUser?.uid || 'anonymous',
+        session.agentId,
+        sessionId
+      );
+      
+      console.log(`🛡️ [ChatPanel] Enhanced governance result:`, {
+        approved: enhancedGovernanceResult.approved,
+        crisisDetected: enhancedGovernanceResult.crisisDetected,
+        requiresEscalation: enhancedGovernanceResult.requiresEscalation
+      });
+      
+      // Handle crisis detection
+      if (enhancedGovernanceResult.crisisDetected && enhancedGovernanceResult.crisisResponse) {
+        console.warn(`🚨 [ChatPanel] Crisis detected, providing intervention response`);
+        
+        // Update metrics for crisis intervention
+        metrics.violations += 1;
+        session.governanceMetrics.violations += 1;
+        
+        // Create audit entry for crisis intervention
+        await this.createAuditEntry({
+          interaction_id: `crisis_${Date.now()}`,
+          agent_id: session.agentId,
+          session_id: sessionId,
+          interaction_type: 'crisis_intervention',
+          user_message: message,
+          agent_response: enhancedGovernanceResult.modifiedResponse || '',
+          trust_score: session.trustScore,
+          governance_status: 'crisis_intervention',
+          timestamp: new Date().toISOString(),
+          metadata: {
+            crisisType: enhancedGovernanceResult.escalationType,
+            userRiskLevel: enhancedGovernanceResult.userRiskProfile?.riskLevel,
+            escalationRequired: enhancedGovernanceResult.requiresEscalation
+          }
+        });
+
+        return {
+          id: `crisis_${Date.now()}`,
+          content: enhancedGovernanceResult.modifiedResponse || 'I\'m concerned about your wellbeing. Please reach out to appropriate support services.',
+          sender: 'agent',
+          timestamp: new Date(),
+          trustScore: session.trustScore,
+          governanceStatus: 'crisis_intervention',
+          isError: false
+        };
+      }
+      
+      // Handle other governance blocks
+      if (!enhancedGovernanceResult.approved && enhancedGovernanceResult.shouldModifyResponse) {
+        console.warn(`🚫 [ChatPanel] Message blocked by enhanced governance`);
+        
+        // Update metrics
+        metrics.violations += 1;
+        session.governanceMetrics.violations += 1;
+        
+        // Create audit entry for blocked message
+        await this.createAuditEntry({
+          interaction_id: `blocked_enhanced_${Date.now()}`,
+          agent_id: session.agentId,
+          session_id: sessionId,
+          interaction_type: 'message_blocked_enhanced',
+          user_message: message,
+          agent_response: enhancedGovernanceResult.modifiedResponse || '',
+          trust_score: session.trustScore,
+          governance_status: 'blocked',
+          timestamp: new Date().toISOString()
+        });
+
+        return {
+          id: `msg_${Date.now()}`,
+          content: enhancedGovernanceResult.modifiedResponse || 'I cannot process that message due to safety policies. Please rephrase your request.',
+          sender: 'agent',
+          timestamp: new Date(),
+          trustScore: session.trustScore,
+          governanceStatus: 'blocked'
+        };
+      }
+
+      // 3. Policy Enforcement (Legacy)
       const policyResult = await this.enforcePolicy(session.agentId, message, { sessionId });
       
       if (!policyResult.allowed) {
