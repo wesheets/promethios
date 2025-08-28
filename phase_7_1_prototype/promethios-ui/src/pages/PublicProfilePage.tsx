@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userProfileService, UserProfile } from '../services/userProfileService';
-import { unifiedStorageService } from '../services/unifiedStorageService';
 import {
   Box,
   Card,
@@ -195,18 +194,13 @@ const PublicProfilePage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Load profile from unified storage
-        const profileKey = `user_profiles.${userId}`;
-        const profileData = await unifiedStorageService.get(profileKey);
+        // Load profile from userProfileService
+        const userProfile = await userProfileService.getPublicProfile(userId);
         
-        if (profileData) {
+        if (userProfile) {
           // Filter data based on privacy settings for public view
-          const publicProfile = filterPublicProfileData(profileData);
+          const publicProfile = filterPublicProfileData(userProfile);
           setProfile(publicProfile);
-        } else {
-          // Fallback to userProfileService if not in unified storage
-          const userProfile = await userProfileService.getPublicProfile(userId);
-          setProfile(userProfile);
         }
         
         setLoading(false);

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userProfileService, UserProfile } from '../services/userProfileService';
-import { unifiedStorageService } from '../services/unifiedStorageService';
 import {
   Box,
   Card,
@@ -179,23 +178,13 @@ const LinkedInStyleProfilePage: React.FC = () => {
     try {
       setSaving(true);
       
-      // Save to unified storage
-      const profileKey = `user_profiles.${currentUser.uid}`;
-      const profileData = {
-        ...profile,
-        updatedAt: new Date().toISOString(),
-        lastModified: Date.now()
-      };
-      
-      await unifiedStorageService.set(profileKey, profileData);
-      
-      // Also save to userProfileService for backward compatibility
+      // Save to userProfileService
       await userProfileService.updateProfile(currentUser.uid, profile);
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
       
-      console.log('✅ Profile saved to unified storage and user service');
+      console.log('✅ Profile saved successfully');
     } catch (error) {
       console.error('❌ Failed to save profile:', error);
       // Show error to user

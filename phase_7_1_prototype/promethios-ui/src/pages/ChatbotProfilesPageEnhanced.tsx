@@ -2679,7 +2679,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const mentionQuery = mentionMatch[1].toLowerCase();
       
       // Get available agents
-      const availableAgents = guestAgents.map(agent => ({
+      const availableAgents = getGuestAgents().map(agent => ({
         type: 'agent' as const,
         id: agent.id,
         name: agent.name,
@@ -3092,8 +3092,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Original single-agent message handling
   const handleSingleAgentMessage = async (message?: string) => {
     try {
-      // Prepare the final message content
-      let finalMessageContent = message || messageInput.trim();
+      // Prepare the final message content - ensure it's always a string
+      let finalMessageContent = typeof message === 'string' ? message : (message ? String(message) : messageInput.trim());
     
     // If there's an active chat reference, combine it with the user's message
     if (activeChatReference) {
@@ -3140,7 +3140,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           selectedChatbot.name,
           user.uid,
           smartChatName || `Chat with ${selectedChatbot.name}`,
-          guestAgents.length > 0 // Mark as multi-agent if there are guest agents
+          getGuestAgents().length > 0 // Mark as multi-agent if there are guest agents
         );
         
         updateBotState(selectedChatbot.id, {
