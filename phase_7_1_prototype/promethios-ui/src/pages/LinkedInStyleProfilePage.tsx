@@ -206,6 +206,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
       maxWidth: 1200, 
       mx: 'auto', 
       p: 3,
+      pt: 5, // Extra top padding to prevent content hiding under header
       backgroundColor: '#f8f9fa',
       minHeight: '100vh'
     }}>
@@ -297,23 +298,28 @@ const LinkedInStyleProfilePage: React.FC = () => {
                   </Typography>
 
                   <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                    <Button 
-                      variant="contained" 
-                      startIcon={<Message />}
-                      sx={{ borderRadius: 20 }}
-                    >
-                      Message
-                    </Button>
-                    <Button 
-                      variant="outlined" 
-                      sx={{ 
-                        borderRadius: 20,
-                        borderColor: 'rgba(255, 255, 255, 0.3)',
-                        '&:hover': { borderColor: 'primary.main' }
-                      }}
-                    >
-                      Connect
-                    </Button>
+                    {/* Only show MESSAGE and CONNECT buttons if viewing someone else's profile */}
+                    {currentUser?.uid !== profile.userId && (
+                      <>
+                        <Button 
+                          variant="contained" 
+                          startIcon={<Message />}
+                          sx={{ borderRadius: 20 }}
+                        >
+                          Message
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          sx={{ 
+                            borderRadius: 20,
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            '&:hover': { borderColor: 'primary.main' }
+                          }}
+                        >
+                          Connect
+                        </Button>
+                      </>
+                    )}
                     <IconButton 
                       sx={{ 
                         border: '1px solid rgba(255, 255, 255, 0.3)',
