@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -119,7 +119,7 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
     }
   };
 
-  const handleSearch = async (query: string, filters?: DiscoveryFilters) => {
+  const handleSearch = useCallback(async (query: string, filters?: DiscoveryFilters) => {
     setLoading(true);
     setError(null);
     setSearchQuery(query);
@@ -140,7 +140,7 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [recentSearches]);
 
   const handleClearSearch = () => {
     setSearchResults([]);

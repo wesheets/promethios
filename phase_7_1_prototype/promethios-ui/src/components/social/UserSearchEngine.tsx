@@ -126,7 +126,10 @@ const UserSearchEngine: React.FC<UserSearchEngineProps> = ({
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      onSearch(filters.query, filters);
+      // Only search if there's a non-empty query
+      if (filters.query.trim()) {
+        onSearch(filters.query, filters);
+      }
     }, 300);
 
     return () => clearTimeout(timer);
