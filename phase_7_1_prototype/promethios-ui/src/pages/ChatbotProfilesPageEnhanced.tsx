@@ -2300,7 +2300,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🎭 [Behavior Prompt] Triggered:', behavior, 'for agent:', agentName);
     
     // Check if we're in single-agent or multi-agent mode
-    const isSingleAgentMode = guestAgents.length === 0;
+    const activeContext = multiChatState.contexts.find(c => c.isActive);
+    const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+    const isSingleAgentMode = !hasGuestAgents;
     
     // Get the last message to check who responded last
     const lastMessage = chatMessages[chatMessages.length - 1];
@@ -2332,7 +2334,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             return `@${hostAgent.name}`;
           }
           
-          const guestAgent = guestAgents.find(agent => agent.id === lastResponderAgentId);
+          const guestAgent = getGuestAgents().find(agent => agent.id === lastResponderAgentId);
           if (guestAgent) {
             return `@${guestAgent.name}`;
           }
@@ -2389,7 +2391,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             if (hostAgent && hostAgent.name === mentionedAgentName) {
               mentionedAgentId = hostAgent.id;
             } else {
-              const guestAgent = guestAgents.find(agent => agent.name === mentionedAgentName);
+              const guestAgent = getGuestAgents().find(agent => agent.name === mentionedAgentName);
               if (guestAgent) {
                 mentionedAgentId = guestAgent.id;
               }
@@ -2651,18 +2653,46 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Smart thinking indicator helper functions
   const getRespondingAgent = () => {
-    // In multi-agent mode, determine which guest agent is responding
+    // In multi-agent mode, determine which agent is actually responding
     const activeContext = multiChatState.contexts.find(c => c.isActive);
     const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
     
-    if (hasGuestAgents && isProcessingMultiAgent) {
-      // If we have guest agents and are processing multi-agent, show the first guest agent
-      const firstGuest = activeContext.guestAgents[0];
-      return {
-        id: firstGuest.agentId,
-        name: firstGuest.name,
-        avatar: firstGuest.avatar
-      };
+    if (hasGuestAgents) {
+      // Check if we have selected specific agents for this message
+      if (selectedAgents && selectedAgents.length > 0) {
+        // Find the first selected agent that's not the host
+        const selectedGuestId = selectedAgents.find(id => id !== selectedChatbot?.id);
+        if (selectedGuestId) {
+          const selectedGuest = activeContext.guestAgents.find(g => g.agentId === selectedGuestId);
+          if (selectedGuest) {
+            return {
+              id: selectedGuest.agentId,
+              name: selectedGuest.name,
+              avatar: selectedGuest.avatar
+            };
+          }
+        }
+        
+        // If the selected agent is the host, return host info
+        if (selectedAgents.includes(selectedChatbot?.id || '')) {
+          return {
+            id: selectedChatbot?.id || 'host',
+            name: selectedChatbot?.identity?.name || selectedChatbot?.name || 'Agent',
+            avatar: selectedChatbot?.identity?.avatar
+          };
+        }
+      }
+      
+      // If no specific selection, check which agent should respond based on context
+      // For now, default to the first guest agent if we're in multi-agent processing
+      if (isProcessingMultiAgent) {
+        const firstGuest = activeContext.guestAgents[0];
+        return {
+          id: firstGuest.agentId,
+          name: firstGuest.name,
+          avatar: firstGuest.avatar
+        };
+      }
     }
     
     // Default to the selected chatbot (host agent)
@@ -3855,8 +3885,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     spacing={3}
                     sx={{
                       display: 'flex',
-                      flexDirection: 'column-reverse', // Reverse direction so newest messages appear at bottom
-                      justifyContent: 'flex-start',
+                      flexDirection: 'column-reverse', // Reverse direction for bottom-up flow
+                      justifyContent: 'flex-start', // Start from bottom
                       minHeight: '100%',
                       paddingBottom: 2
                     }}
@@ -3864,7 +3894,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Multi-Agent Response Indicator */}
                     {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
-                    {chatMessages.map((message) => (
+                    {[...chatMessages].reverse().map((message) => (
                       <Box
                         key={message.id}
                         sx={{

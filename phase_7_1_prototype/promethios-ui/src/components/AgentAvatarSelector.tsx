@@ -256,112 +256,46 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
                 {agent.hotkey && ` • Press ${agent.hotkey.toUpperCase()}`}
               </Box>
               
-              {/* Behavior Prompts Section */}
+              {/* Enhanced Behavior Prompts with Participant Selection */}
               <Box sx={{ borderTop: '1px solid #374151', pt: 1 }}>
                 <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1, textAlign: 'center' }}>
                   Quick Behavior Prompts:
                 </Box>
                 
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Box
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onBehaviorPrompt?.(agent.id, agent.name, 'collaborate');
-                    }}
-                    sx={{
-                      bgcolor: '#10b981',
-                      color: 'white',
-                      fontSize: '10px',
-                      py: 0.5,
-                      px: 1,
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      '&:hover': { bgcolor: '#059669' }
-                    }}
-                  >
-                    🤝 Collaborate
-                  </Box>
-                  
-                  <Box
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onBehaviorPrompt?.(agent.id, agent.name, 'question');
-                    }}
-                    sx={{
-                      bgcolor: '#3b82f6',
-                      color: 'white',
-                      fontSize: '10px',
-                      py: 0.5,
-                      px: 1,
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      '&:hover': { bgcolor: '#2563eb' }
-                    }}
-                  >
-                    ❓ Question
-                  </Box>
-                  
-                  <Box
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onBehaviorPrompt?.(agent.id, agent.name, 'devils_advocate');
-                    }}
-                    sx={{
-                      bgcolor: '#ef4444',
-                      color: 'white',
-                      fontSize: '10px',
-                      py: 0.5,
-                      px: 1,
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      '&:hover': { bgcolor: '#dc2626' }
-                    }}
-                  >
-                    😈 Devil's Advocate
-                  </Box>
-                  
-                  <Box
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onBehaviorPrompt?.(agent.id, agent.name, 'expert');
-                    }}
-                    sx={{
-                      bgcolor: '#8b5cf6',
-                      color: 'white',
-                      fontSize: '10px',
-                      py: 0.5,
-                      px: 1,
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      '&:hover': { bgcolor: '#7c3aed' }
-                    }}
-                  >
-                    🎯 Expert Analysis
-                  </Box>
-                  
-                  <Box
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onBehaviorPrompt?.(agent.id, agent.name, 'creative');
-                    }}
-                    sx={{
-                      bgcolor: '#ec4899',
-                      color: 'white',
-                      fontSize: '10px',
-                      py: 0.5,
-                      px: 1,
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      '&:hover': { bgcolor: '#db2777' }
-                    }}
-                  >
-                    💡 Creative Ideas
-                  </Box>
+                  {/* Simple Behavior Prompts */}
+                  {[
+                    { behavior: 'collaborate', label: '🤝 Collaborate', color: '#10b981' },
+                    { behavior: 'question', label: '❓ Question', color: '#3b82f6' },
+                    { behavior: 'devils_advocate', label: '😈 Devil\'s Advocate', color: '#ef4444' },
+                    { behavior: 'expert', label: '🧠 Expert Analysis', color: '#8b5cf6' },
+                    { behavior: 'creative', label: '💡 Creative Ideas', color: '#ec4899' }
+                  ].map((prompt) => (
+                    <Box
+                      key={prompt.behavior}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBehaviorPrompt?.(agent.id, agent.name, prompt.behavior);
+                      }}
+                      sx={{
+                        px: 1,
+                        py: 0.5,
+                        bgcolor: 'rgba(55, 65, 81, 0.8)',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        fontSize: '0.7rem',
+                        color: prompt.color,
+                        border: `1px solid ${prompt.color}40`,
+                        textAlign: 'center',
+                        '&:hover': {
+                          bgcolor: `${prompt.color}20`,
+                          borderColor: `${prompt.color}60`
+                        }
+                      }}
+                    >
+                      {prompt.label}
+                    </Box>
+                  ))}
                 </Box>
               </Box>
             </Box>
