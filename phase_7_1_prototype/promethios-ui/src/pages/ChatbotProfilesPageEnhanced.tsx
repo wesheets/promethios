@@ -367,6 +367,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]); // For avatar selector
   
+  // Smart thinking indicator state
+  const [currentRespondingAgent, setCurrentRespondingAgent] = useState<{
+    id: string;
+    name: string;
+    avatar?: string;
+  } | null>(null);
+  const [currentActivity, setCurrentActivity] = useState<string>('');
+  
   // Human participants state
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
@@ -2503,6 +2511,60 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [autonomousStarsActive, projects.length, messageInput, autonomousMode, liveAgentPanelOpen, unreadTeamCount]);
 
+  // Smart thinking indicator helper functions
+  const getRespondingAgent = () => {
+    // In multi-agent mode, determine which guest agent is responding
+    const activeContext = multiChatState.contexts.find(c => c.isActive);
+    const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+    
+    if (hasGuestAgents && isProcessingMultiAgent) {
+      // If we have guest agents and are processing multi-agent, show the first guest agent
+      const firstGuest = activeContext.guestAgents[0];
+      return {
+        id: firstGuest.agentId,
+        name: firstGuest.name,
+        avatar: firstGuest.avatar
+      };
+    }
+    
+    // Default to the selected chatbot (host agent)
+    return {
+      id: selectedChatbot?.id || 'host',
+      name: selectedChatbot?.identity?.name || selectedChatbot?.name || 'Agent',
+      avatar: selectedChatbot?.identity?.avatar
+    };
+  };
+
+  const getActivityStatus = (messageContent: string = '') => {
+    const content = messageContent.toLowerCase();
+    
+    // Determine activity based on message content and context
+    if (content.includes('search') || content.includes('find') || content.includes('lookup')) {
+      return 'researching...';
+    } else if (content.includes('analyze') || content.includes('review') || content.includes('examine')) {
+      return 'analyzing...';
+    } else if (content.includes('create') || content.includes('generate') || content.includes('build')) {
+      return 'creating...';
+    } else if (content.includes('calculate') || content.includes('compute') || content.includes('math')) {
+      return 'calculating...';
+    } else if (content.includes('image') || content.includes('picture') || content.includes('photo')) {
+      return 'generating image...';
+    } else if (content.includes('code') || content.includes('program') || content.includes('script')) {
+      return 'coding...';
+    } else if (content.includes('write') || content.includes('draft') || content.includes('compose')) {
+      return 'writing...';
+    } else if (isProcessingMultiAgent) {
+      return 'coordinating response...';
+    } else {
+      return 'thinking...';
+    }
+  };
+
+  const clearSmartThinkingIndicator = () => {
+    setCurrentRespondingAgent(null);
+    setCurrentActivity('');
+  };
+
   // Enhanced multi-agent message handling
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeSession || chatLoading) return;
@@ -2539,6 +2601,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setChatLoading(true);
       setIsTyping(true);
       
+      // Set smart thinking indicator
+      const respondingAgent = getRespondingAgent();
+      const activityStatus = getActivityStatus(currentMessageInput);
+      setCurrentRespondingAgent(respondingAgent);
+      setCurrentActivity(activityStatus);
+      
       // Check if we're in multi-agent mode
       const activeContext = multiChatState.contexts.find(c => c.isActive);
       const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
@@ -2556,6 +2624,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.error('❌ [ChatPanel] Error sending message:', error);
       setChatLoading(false);
       setIsTyping(false);
+      clearSmartThinkingIndicator();
     }
   };
 
@@ -2707,6 +2776,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setIsProcessingMultiAgent(false);
       setChatLoading(false);
       setIsTyping(false);
+      clearSmartThinkingIndicator();
     }
   };
 
@@ -2881,6 +2951,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setAttachedFiles([]);
       setChatLoading(false);
       setIsTyping(false);
+      clearSmartThinkingIndicator();
       
       return;
     } else if (chatReferenceId && selectedChatbot && user?.uid) {
@@ -2961,6 +3032,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         setAttachedFiles([]);
         setChatLoading(false);
         setIsTyping(false);
+        clearSmartThinkingIndicator();
         
         return;
       } else if (receiptReferenceId && selectedChatbot && user?.uid) {
@@ -3051,6 +3123,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         setAttachedFiles([]);
         setChatLoading(false);
         setIsTyping(false);
+        clearSmartThinkingIndicator();
         
         return;
       }
@@ -3170,6 +3243,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setIsTyping(false);
       setCurrentAction(null);
       setActionStartTime(null);
+      clearSmartThinkingIndicator();
     }
   };
 
@@ -4152,90 +4226,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         </Box>
                       </Box>
                     ))}
-                    {(isTyping || currentAction) && (
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        <Paper 
-                          sx={{ 
-                            p: 3, 
-                            bgcolor: '#374151', 
-                            color: 'white', 
-                            borderRadius: 2,
-                            position: 'relative',
-                            overflow: 'hidden',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              bgcolor: '#4b5563',
-                              transform: 'translateY(-1px)',
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-                            }
-                          }}
-                          onClick={() => {
-                            if (actionStartTime) {
-                              const elapsed = Math.floor((new Date().getTime() - actionStartTime.getTime()) / 1000);
-                              console.log(`⏱️ Action "${currentAction}" has been running for ${elapsed} seconds`);
-                            }
-                          }}
-                        >
-                          {/* Animated background gradient */}
-                          <Box
-                            sx={{
-                              position: 'absolute',
-                              top: 0,
-                              left: '-100%',
-                              width: '100%',
-                              height: '100%',
-                              background: 'linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent)',
-                              animation: 'shimmer 2s infinite',
-                              '@keyframes shimmer': {
-                                '0%': { left: '-100%' },
-                                '100%': { left: '100%' }
-                              }
-                            }}
-                          />
-                          
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative', zIndex: 1 }}>
-                            {/* Animated dots */}
-                            <Box sx={{ display: 'flex', gap: 0.5 }}>
-                              {[0, 1, 2].map((i) => (
-                                <Box
-                                  key={i}
-                                  sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    bgcolor: '#3b82f6',
-                                    animation: 'pulse 1.5s infinite',
-                                    animationDelay: `${i * 0.2}s`,
-                                    '@keyframes pulse': {
-                                      '0%, 80%, 100%': { opacity: 0.3, transform: 'scale(0.8)' },
-                                      '40%': { opacity: 1, transform: 'scale(1.2)' }
-                                    }
-                                  }}
-                                />
-                              ))}
-                            </Box>
-                            
-                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                              {currentAction || `${selectedChatbot?.identity?.name || 'Agent'} is typing...`}
-                            </Typography>
-                            
-                            {actionStartTime && (
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  color: '#9ca3af',
-                                  fontSize: '0.75rem',
-                                  opacity: 0.8
-                                }}
-                              >
-                                {Math.floor((new Date().getTime() - actionStartTime.getTime()) / 1000)}s
-                              </Typography>
-                            )}
-                          </Box>
-                        </Paper>
-                      </Box>
-                    )}
                   </Stack>
                 )}
               </Box>
@@ -4388,6 +4378,57 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       // Always use the new avatar-based system with integrated input design
                       return (
                           <>
+                            {/* Smart Thinking Indicator - Right Above Input */}
+                            {(isTyping || currentAction || currentActivity) && (
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1, px: 1 }}>
+                                <Box 
+                                  sx={{ 
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    px: 2, 
+                                    py: 0.5,
+                                    bgcolor: 'rgba(55, 65, 81, 0.9)', 
+                                    color: '#d1d5db', 
+                                    borderRadius: '16px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 500,
+                                    backdropFilter: 'blur(8px)',
+                                    border: '1px solid rgba(75, 85, 99, 0.4)',
+                                    maxWidth: 'fit-content',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                                  }}
+                                >
+                                  {/* Compact animated dots */}
+                                  <Box sx={{ display: 'flex', gap: 0.3, alignItems: 'center' }}>
+                                    {[0, 1, 2].map((i) => (
+                                      <Box
+                                        key={i}
+                                        sx={{
+                                          width: 4,
+                                          height: 4,
+                                          borderRadius: '50%',
+                                          bgcolor: '#3b82f6',
+                                          animation: 'pulse 1.5s infinite',
+                                          animationDelay: `${i * 0.2}s`,
+                                          '@keyframes pulse': {
+                                            '0%, 80%, 100%': { opacity: 0.3, transform: 'scale(0.8)' },
+                                            '40%': { opacity: 1, transform: 'scale(1.2)' }
+                                          }
+                                        }}
+                                      />
+                                    ))}
+                                  </Box>
+                                  
+                                  <Typography variant="body2" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                                    {currentActivity || 
+                                     (currentRespondingAgent ? `${currentRespondingAgent.name} is ${currentActivity || 'thinking...'}` : 
+                                      `${selectedChatbot?.identity?.name || 'Agent'} is thinking...`)}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            )}
+
                             {/* Integrated Input with Avatar Selection Inside */}
                             <Box sx={{ 
                               display: 'flex', 
