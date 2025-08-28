@@ -61,6 +61,7 @@ import {
   Button,
   Chip,
   Avatar,
+  AvatarGroup,
   IconButton,
   Paper,
   Slide,
@@ -367,13 +368,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]); // For avatar selector
   
-  // Smart thinking indicator state
+  // Enhanced smart thinking indicator state
   const [currentRespondingAgent, setCurrentRespondingAgent] = useState<{
     id: string;
     name: string;
     avatar?: string;
   } | null>(null);
   const [currentActivity, setCurrentActivity] = useState('');
+  const [thinkingAgents, setThinkingAgents] = useState<Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    activity: string;
+    startTime: number;
+  }>>([]);
   const [behaviorPromptActive, setBehaviorPromptActive] = useState<{
     agentId: string;
     behavior: string;
@@ -2826,14 +2834,66 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const clearSmartThinkingIndicator = () => {
     setCurrentRespondingAgent(null);
     setCurrentActivity('');
+    setThinkingAgents([]);
   };
 
   const setSmartThinkingIndicator = (agentId: string, agentName: string, activity?: string) => {
+    const agentAvatar = getAgentAvatar(agentId, agentName);
+    
     setCurrentRespondingAgent({
       id: agentId,
-      name: agentName
+      name: agentName,
+      avatar: agentAvatar
     });
     setCurrentActivity(activity || 'thinking...');
+    
+    // Add to thinking agents array for multi-agent visualization
+    setThinkingAgents(prev => {
+      const filtered = prev.filter(agent => agent.id !== agentId);
+      return [...filtered, {
+        id: agentId,
+        name: agentName,
+        avatar: agentAvatar,
+        activity: activity || 'thinking...',
+        startTime: Date.now()
+      }];
+    });
+  };
+
+  const removeThinkingAgent = (agentId: string) => {
+    setThinkingAgents(prev => prev.filter(agent => agent.id !== agentId));
+    if (currentRespondingAgent?.id === agentId) {
+      setCurrentRespondingAgent(null);
+      setCurrentActivity('');
+    }
+  };
+
+  // Helper function to get agent avatar
+  const getAgentAvatar = (agentId: string, agentName: string): string => {
+    // Try to find avatar from chatbots
+    const chatbot = chatbots.find(bot => bot.id === agentId || bot.identity?.name === agentName);
+    if (chatbot?.identity?.avatar) return chatbot.identity.avatar;
+    
+    // Try to find from guest agents
+    const guestAgent = getGuestAgents().find(agent => agent.id === agentId || agent.name === agentName);
+    if (guestAgent?.avatar) return guestAgent.avatar;
+    
+    // Default avatar based on agent name
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(agentName)}&background=3b82f6&color=fff&size=32`;
+  };
+
+  // Helper function to get activity-based styling
+  const getActivityStyle = (activity: string) => {
+    if (activity.includes('analyzing') || activity.includes('analysis')) {
+      return { bgcolor: '#f59e0b', animation: 'slow-pulse 2s infinite' };
+    }
+    if (activity.includes('searching') || activity.includes('research')) {
+      return { bgcolor: '#10b981', animation: 'search-pulse 1.8s infinite' };
+    }
+    if (activity.includes('deep') || activity.includes('complex')) {
+      return { bgcolor: '#8b5cf6', animation: 'deep-pulse 2.5s infinite' };
+    }
+    return { bgcolor: '#3b82f6', animation: 'pulse 1.5s infinite' };
   };
 
   // Enhanced multi-agent message handling
@@ -4354,9 +4414,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                   sx={{ 
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 1,
+                                    gap: 1.5,
                                     px: 2, 
-                                    py: 0.5,
+                                    py: 0.75,
                                     bgcolor: 'rgba(55, 65, 81, 0.9)', 
                                     color: '#d1d5db', 
                                     borderRadius: '16px',
@@ -4365,10 +4425,76 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                     backdropFilter: 'blur(8px)',
                                     border: '1px solid rgba(75, 85, 99, 0.4)',
                                     maxWidth: 'fit-content',
-                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                    position: 'relative',
+                                    overflow: 'hidden'
                                   }}
                                 >
-                                  {/* Compact animated dots */}
+                                  {/* Progress indicator for thinking duration */}
+                                  <LinearProgress 
+                                    variant="indeterminate" 
+                                    sx={{ 
+                                      position: 'absolute',
+                                      bottom: 0,
+                                      left: 0,
+                                      right: 0,
+                                      height: 2,
+                                      bgcolor: 'transparent',
+                                      '& .MuiLinearProgress-bar': { 
+                                        bgcolor: currentActivity.includes('analyzing') ? '#f59e0b' : 
+                                                currentActivity.includes('searching') ? '#10b981' : '#3b82f6',
+                                        opacity: 0.6
+                                      }
+                                    }} 
+                                  />
+
+                                  {/* Multi-agent avatars or single agent avatar */}
+                                  {thinkingAgents.length > 1 ? (
+                                    <AvatarGroup 
+                                      max={3} 
+                                      sx={{ 
+                                        '& .MuiAvatar-root': { 
+                                          width: 20, 
+                                          height: 20,
+                                          border: '2px solid #3b82f6',
+                                          animation: 'pulse-border 2s infinite',
+                                          '@keyframes pulse-border': {
+                                            '0%, 100%': { borderColor: '#3b82f6', transform: 'scale(1)' },
+                                            '50%': { borderColor: '#60a5fa', transform: 'scale(1.05)' }
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      {thinkingAgents.map(agent => (
+                                        <Avatar 
+                                          key={agent.id} 
+                                          src={agent.avatar}
+                                          sx={{ fontSize: '0.75rem' }}
+                                        >
+                                          {agent.name.charAt(0)}
+                                        </Avatar>
+                                      ))}
+                                    </AvatarGroup>
+                                  ) : currentRespondingAgent?.avatar && (
+                                    <Avatar 
+                                      src={currentRespondingAgent.avatar} 
+                                      sx={{ 
+                                        width: 20, 
+                                        height: 20,
+                                        border: '2px solid #3b82f6',
+                                        animation: 'pulse-border 2s infinite',
+                                        fontSize: '0.75rem',
+                                        '@keyframes pulse-border': {
+                                          '0%, 100%': { borderColor: '#3b82f6', transform: 'scale(1)' },
+                                          '50%': { borderColor: '#60a5fa', transform: 'scale(1.05)' }
+                                        }
+                                      }}
+                                    >
+                                      {currentRespondingAgent.name.charAt(0)}
+                                    </Avatar>
+                                  )}
+
+                                  {/* Enhanced animated dots with activity-based colors */}
                                   <Box sx={{ display: 'flex', gap: 0.3, alignItems: 'center' }}>
                                     {[0, 1, 2].map((i) => (
                                       <Box
@@ -4377,12 +4503,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           width: 4,
                                           height: 4,
                                           borderRadius: '50%',
-                                          bgcolor: '#3b82f6',
-                                          animation: 'pulse 1.5s infinite',
+                                          ...getActivityStyle(currentActivity),
                                           animationDelay: `${i * 0.2}s`,
                                           '@keyframes pulse': {
                                             '0%, 80%, 100%': { opacity: 0.3, transform: 'scale(0.8)' },
                                             '40%': { opacity: 1, transform: 'scale(1.2)' }
+                                          },
+                                          '@keyframes slow-pulse': {
+                                            '0%, 80%, 100%': { opacity: 0.2, transform: 'scale(0.7)' },
+                                            '40%': { opacity: 1, transform: 'scale(1.3)' }
+                                          },
+                                          '@keyframes search-pulse': {
+                                            '0%, 100%': { opacity: 0.4, transform: 'scale(0.9)' },
+                                            '50%': { opacity: 1, transform: 'scale(1.1)' }
+                                          },
+                                          '@keyframes deep-pulse': {
+                                            '0%, 90%, 100%': { opacity: 0.2, transform: 'scale(0.6)' },
+                                            '45%': { opacity: 1, transform: 'scale(1.4)' }
                                           }
                                         }}
                                       />
@@ -4390,9 +4527,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                   </Box>
                                   
                                   <Typography variant="body2" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                                    {currentRespondingAgent 
-                                      ? `${currentRespondingAgent.name} is ${currentActivity || 'thinking...'}` 
-                                      : `${selectedChatbot?.identity?.name || 'Agent'} is ${currentActivity || 'thinking...'}`}
+                                    {thinkingAgents.length > 1 
+                                      ? `${thinkingAgents.length} agents are collaborating...`
+                                      : currentRespondingAgent 
+                                        ? `${currentRespondingAgent.name} is ${currentActivity || 'thinking...'}` 
+                                        : `${selectedChatbot?.identity?.name || 'Agent'} is ${currentActivity || 'thinking...'}`}
                                   </Typography>
                                 </Box>
                               </Box>
