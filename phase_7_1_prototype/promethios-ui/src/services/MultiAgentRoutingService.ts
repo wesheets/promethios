@@ -437,17 +437,15 @@ export class MultiAgentRoutingService {
 
       console.log('🔧 [MultiAgentRouting] Enhanced message for agent:', enhancedMessage.substring(0, 200) + '...');
 
-      // Call the agent's API directly
-      const response = await this.universalAdapter.sendMessage(
-        enhancedMessage,
-        agentId,
-        {
-          conversationHistory: context.conversationHistory,
-          provider: agent.provider,
-          model: agent.model || agent.selectedModel,
-          userId: context.userId
-        }
-      );
+      // Call the agent's API directly with correct parameter structure
+      const response = await this.universalAdapter.sendMessage({
+        agentId: agentId,
+        message: enhancedMessage,
+        conversationHistory: context.conversationHistory,
+        provider: agent.provider,
+        model: agent.model || agent.selectedModel,
+        userId: context.userId // 🔧 CRITICAL FIX: Pass userId in correct structure
+      });
 
       console.log('✅ [MultiAgentRouting] Got response from agent:', agentName);
       return response.response;

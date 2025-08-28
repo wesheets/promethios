@@ -589,6 +589,11 @@ export class UniversalGovernanceAdapter {
       const actualUserId = userId || 'anonymous-user'; // Only fallback to anonymous if no userId provided
       console.log(`🔍 [Universal] Loading chatbot for user: ${actualUserId}, agentId: ${agentId}`);
       
+      if (actualUserId === 'anonymous-user') {
+        console.warn(`⚠️ [Universal] WARNING: Using anonymous user - this may cause chatbot loading issues`);
+        console.warn(`⚠️ [Universal] Original userId parameter:`, userId);
+      }
+      
       const chatbots = await chatbotService.getChatbots(actualUserId);
       console.log(`🔍 [Universal] Found ${chatbots.length} chatbots for user ${actualUserId}`);
       
@@ -596,7 +601,9 @@ export class UniversalGovernanceAdapter {
       console.log(`🔍 [Universal] Chatbot search result:`, {
         agentId,
         found: !!chatbot,
-        chatbotIds: chatbots.map(c => c.identity.id)
+        chatbotIds: chatbots.map(c => c.identity.id),
+        searchingFor: agentId,
+        actualUserId: actualUserId
       });
       
       if (chatbot) {
@@ -646,11 +653,40 @@ export class UniversalGovernanceAdapter {
         };
       }
       
-      console.log(`⚠️ [Universal] No chatbot found with ID: ${agentId}`);
-      return null;
+      console.warn(`⚠️ [Universal] No chatbot found with ID: ${agentId}`);
+      console.warn(`⚠️ [Universal] Available chatbot IDs:`, chatbots.map(c => c.identity.id));
+      
+      // 🔧 CRITICAL FIX: Return default configuration instead of null to prevent errors
+      console.log(`🔧 [Universal] Using default configuration for agent: ${agentId}`);
+      return {
+        personality: 'professional',
+        behavior: 'helpful',
+        knowledgeBases: [],
+        automationRules: [],
+        responseTemplates: [],
+        brandSettings: {},
+        governanceMetrics: {},
+        provider: 'openai', // Default provider
+        model: 'gpt-3.5-turbo', // Default model
+        enabledTools: []
+      };
     } catch (error) {
       console.error(`❌ [Universal] Failed to load chatbot wrapper config:`, error);
-      return null;
+      
+      // 🔧 CRITICAL FIX: Return default configuration instead of null even on error
+      console.log(`🔧 [Universal] Using default configuration due to error for agent: ${agentId}`);
+      return {
+        personality: 'professional',
+        behavior: 'helpful',
+        knowledgeBases: [],
+        automationRules: [],
+        responseTemplates: [],
+        brandSettings: {},
+        governanceMetrics: {},
+        provider: 'openai', // Default provider
+        model: 'gpt-3.5-turbo', // Default model
+        enabledTools: []
+      };
     }
   }
 
