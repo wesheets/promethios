@@ -2235,7 +2235,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       brainstorm: "Please generate creative ideas and suggestions for the current topic.",
       critique: "Please provide constructive criticism and areas for improvement.",
       summarize: "Please summarize the key points of this conversation so far.",
-      question: "Please ask probing questions to deepen the discussion."
+      question: "Please ask probing questions to deepen the discussion.",
+      pessimist: "Please provide a pessimistic perspective on the current discussion. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns and worst-case scenarios."
     };
 
     const prompt = behavioralPrompts[trigger as keyof typeof behavioralPrompts] || 
@@ -2278,7 +2279,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       expert: `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
       critic: `🔍 Please provide a critical review of the previous response. Evaluate the strengths and weaknesses, identify gaps, and suggest improvements while maintaining a constructive tone.`,
       creative: `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`,
-      analyst: `📊 Please provide an analytical response to the previous message. Break down the key components, analyze the logic, data, or reasoning presented, and provide structured insights.`
+      analyst: `📊 Please provide an analytical response to the previous message. Break down the key components, analyze the logic, data, or reasoning presented, and provide structured insights.`,
+      pessimist: `🌧️ Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account.`
     };
 
     // Create the behavioral trigger message
@@ -2361,7 +2363,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         : `🎯 ${mentionTarget} Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
       creative: isSingleAgentMode
         ? `💡 Please add creative ideas and innovative perspectives to your own previous response. Think outside the box and suggest novel approaches or creative extensions.`
-        : `💡 ${mentionTarget} Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`
+        : `💡 ${mentionTarget} Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`,
+      pessimist: isSingleAgentMode
+        ? `🌧️ Please provide a pessimistic perspective on your own previous response. Identify potential risks, downsides, and what could realistically go wrong with your own suggestions. Focus on practical concerns and worst-case scenarios.`
+        : `🌧️ ${mentionTarget} Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account.`
     };
 
     // Create the behavioral trigger message

@@ -269,7 +269,8 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
                     { behavior: 'question', label: '❓ Question', color: '#3b82f6' },
                     { behavior: 'devils_advocate', label: '😈 Devil\'s Advocate', color: '#ef4444' },
                     { behavior: 'expert', label: '🧠 Expert Analysis', color: '#8b5cf6' },
-                    { behavior: 'creative', label: '💡 Creative Ideas', color: '#ec4899' }
+                    { behavior: 'creative', label: '💡 Creative Ideas', color: '#ec4899' },
+                    { behavior: 'pessimist', label: '🌧️ Pessimist', color: '#f59e0b' }
                   ].map((prompt) => (
                     <Box
                       key={prompt.behavior}
