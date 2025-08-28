@@ -53,7 +53,7 @@ interface SearchFilters {
 }
 
 interface UserSearchEngineProps {
-  onSearch: (filters: SearchFilters) => void;
+  onSearch: (query: string, filters?: SearchFilters) => void;
   onClearFilters: () => void;
   isLoading?: boolean;
   resultCount?: number;
@@ -126,7 +126,7 @@ const UserSearchEngine: React.FC<UserSearchEngineProps> = ({
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      onSearch(filters);
+      onSearch(filters.query, filters);
     }, 300);
 
     return () => clearTimeout(timer);
