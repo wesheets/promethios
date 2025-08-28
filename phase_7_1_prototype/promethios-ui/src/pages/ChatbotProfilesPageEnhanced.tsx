@@ -2319,30 +2319,54 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       return;
     }
 
-    // Create behavioral prompt templates
+    // Get the name of who should be mentioned (who made the last message)
+    const getMentionTarget = () => {
+      if (lastMessage.sender === 'user') {
+        return '@user'; // Mention the user
+      } else {
+        // Find the agent who made the last message
+        const lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+        if (lastResponderAgentId) {
+          const hostAgent = getHostAgent();
+          if (hostAgent && lastResponderAgentId === hostAgent.id) {
+            return `@${hostAgent.name}`;
+          }
+          
+          const guestAgent = guestAgents.find(agent => agent.id === lastResponderAgentId);
+          if (guestAgent) {
+            return `@${guestAgent.name}`;
+          }
+        }
+        return '@previous-agent'; // Fallback
+      }
+    };
+
+    const mentionTarget = getMentionTarget();
+
+    // Create behavioral prompt templates with @mentions for multi-agent mode
     const behaviorPrompts = {
       collaborate: isSingleAgentMode 
         ? `🤝 Please collaborate further on your previous response. Build upon your own ideas and develop them more comprehensively.`
-        : `🤝 Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective.`,
+        : `🤝 ${mentionTarget} Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective.`,
       question: isSingleAgentMode
         ? `❓ Please question and critically examine your own previous response. What assumptions did you make? What could be challenged or explored further?`
-        : `❓ Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration.`,
+        : `❓ ${mentionTarget} Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration.`,
       devils_advocate: isSingleAgentMode
         ? `😈 Please play devil's advocate to your own previous response. Challenge your own assumptions, point out potential weaknesses, and present alternative viewpoints.`
-        : `😈 Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments.`,
+        : `😈 ${mentionTarget} Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments.`,
       expert: isSingleAgentMode
         ? `🎯 Please provide an expert analysis of your own previous response. Evaluate its accuracy, completeness, and implications from a specialist perspective.`
-        : `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
+        : `🎯 ${mentionTarget} Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
       creative: isSingleAgentMode
         ? `💡 Please add creative ideas and innovative perspectives to your own previous response. Think outside the box and suggest novel approaches or creative extensions.`
-        : `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`
+        : `💡 ${mentionTarget} Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`
     };
 
     // Create the behavioral trigger message
     const triggerMessage = behaviorPrompts[behavior as keyof typeof behaviorPrompts] || 
       (isSingleAgentMode 
         ? `Please reflect on and respond to your previous message with a ${behavior} approach.`
-        : `Please respond to the last message with a ${behavior} approach.`);
+        : `${mentionTarget} Please respond to the last message with a ${behavior} approach.`);
     
     try {
       // Set smart thinking indicator
@@ -2350,7 +2374,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       // Send the behavioral trigger message to the specific agent
       await handleSendMessage(triggerMessage, [agentId]);
-      console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName);
+      console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'mentioning:', mentionTarget);
     } catch (error) {
       console.error('🎭 [Behavior Prompt] Error triggering response:', error);
       clearSmartThinkingIndicator();
