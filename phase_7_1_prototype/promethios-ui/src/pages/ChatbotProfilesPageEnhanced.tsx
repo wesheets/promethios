@@ -2295,6 +2295,83 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  // Handle behavior prompt clicks from agent avatars
+  const handleBehaviorPrompt = async (agentId: string, agentName: string, behavior: string) => {
+    console.log('🎭 [Behavior Prompt] Triggered:', behavior, 'for agent:', agentName);
+    
+    // Check if we're in single-agent or multi-agent mode
+    const isSingleAgentMode = guestAgents.length === 0;
+    
+    // Get the last message to check who responded last
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    
+    // In multi-agent mode, don't allow behavior prompts if this agent was the last responder
+    if (!isSingleAgentMode && lastMessage) {
+      const lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+      if (lastResponderAgentId === agentId) {
+        console.log('🎭 [Behavior Prompt] Skipping - agent was last responder in multi-agent mode');
+        return;
+      }
+    }
+    
+    if (!lastMessage) {
+      console.warn('🎭 [Behavior Prompt] No messages found to respond to');
+      return;
+    }
+
+    // Create behavioral prompt templates
+    const behaviorPrompts = {
+      collaborate: isSingleAgentMode 
+        ? `🤝 Please collaborate further on your previous response. Build upon your own ideas and develop them more comprehensively.`
+        : `🤝 Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective.`,
+      question: isSingleAgentMode
+        ? `❓ Please question and critically examine your own previous response. What assumptions did you make? What could be challenged or explored further?`
+        : `❓ Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration.`,
+      devils_advocate: isSingleAgentMode
+        ? `😈 Please play devil's advocate to your own previous response. Challenge your own assumptions, point out potential weaknesses, and present alternative viewpoints.`
+        : `😈 Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments.`,
+      expert: isSingleAgentMode
+        ? `🎯 Please provide an expert analysis of your own previous response. Evaluate its accuracy, completeness, and implications from a specialist perspective.`
+        : `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
+      creative: isSingleAgentMode
+        ? `💡 Please add creative ideas and innovative perspectives to your own previous response. Think outside the box and suggest novel approaches or creative extensions.`
+        : `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`
+    };
+
+    // Create the behavioral trigger message
+    const triggerMessage = behaviorPrompts[behavior as keyof typeof behaviorPrompts] || 
+      (isSingleAgentMode 
+        ? `Please reflect on and respond to your previous message with a ${behavior} approach.`
+        : `Please respond to the last message with a ${behavior} approach.`);
+    
+    try {
+      // Set smart thinking indicator
+      setSmartThinkingIndicator(agentId, agentName, behavior);
+      
+      // Send the behavioral trigger message to the specific agent
+      await handleSendMessage(triggerMessage, [agentId]);
+      console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName);
+    } catch (error) {
+      console.error('🎭 [Behavior Prompt] Error triggering response:', error);
+      clearSmartThinkingIndicator();
+    }
+  };
+
+  // Helper function to get agent ID from message
+  const getAgentIdFromMessage = (message: any): string | null => {
+    // Check if message has agent information
+    if (message.agentId) return message.agentId;
+    if (message.sender && message.sender !== 'user') {
+      // Try to match sender name to agent
+      const hostAgent = getHostAgent();
+      if (hostAgent && message.sender.includes(hostAgent.name)) return hostAgent.id;
+      
+      const guestAgent = guestAgents.find(agent => message.sender.includes(agent.name));
+      if (guestAgent) return guestAgent.id;
+    }
+    return null;
+  };
+
   // Handle hover-triggered AI responses to humans
   const handleHoverTriggeredResponseToHuman = async (humanId: string, humanName: string, behaviorType: string) => {
     console.log('🖱️ [AI-Human Interaction] Triggering AI response to human:', humanName, 'with behavior:', behaviorType);
@@ -2563,6 +2640,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const clearSmartThinkingIndicator = () => {
     setCurrentRespondingAgent(null);
     setCurrentActivity('');
+  };
+
+  const setSmartThinkingIndicator = (agentId: string, agentName: string, activity?: string) => {
+    setCurrentRespondingAgent({
+      id: agentId,
+      name: agentName
+    });
+    setCurrentActivity(activity || 'thinking...');
   };
 
   // Enhanced multi-agent message handling
@@ -3408,515 +3493,93 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       {currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
                     </Typography>
                     
-                    {/* Multi-Agent Participants Display - Now includes single-agent behavioral interactions */}
+                    {/* Simple Participants Display */}
                     {(() => {
                       const activeContext = multiChatState.contexts.find(c => c.isActive);
                       const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
                       
-                      // Show conversation participants for both multi-agent AND single-agent conversations
                       if (multiChatState.activeContextId === 'ai_agent') {
                         return (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
-                              {hasGuestAgents ? '💬 Conversation Participants:' : '🎭 Behavioral Interactions:'}
+                              💬 Conversation Participants:
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                              {/* Host Agent with Enhanced Behavioral Hover-Triggered Responses */}
-                              <Tooltip
-                                title={
-                                  <Box sx={{ p: 1.5, minWidth: 200 }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1.5, textAlign: 'center' }}>
-                                      👑 {selectedChatbot?.identity?.name || 'Host Agent'}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                      <Tooltip title="Agent will work cooperatively, build on ideas, and seek consensus" placement="left">
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'collaborate')}
-                                          sx={{
-                                            bgcolor: '#10b981',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#059669' }
-                                          }}
-                                        >
-                                          🤝 Collaborate
-                                        </Button>
-                                      </Tooltip>
-                                      <Tooltip title="Agent will ask clarifying questions and seek deeper understanding" placement="left">
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'question')}
-                                          sx={{
-                                            bgcolor: '#3b82f6',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#2563eb' }
-                                          }}
-                                        >
-                                          ❓ Question
-                                        </Button>
-                                      </Tooltip>
-                                      <Tooltip title="Agent will challenge ideas, ask tough questions, and identify potential problems" placement="left">
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'devils_advocate')}
-                                          sx={{
-                                            bgcolor: '#ef4444',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#dc2626' }
-                                          }}
-                                        >
-                                          😈 Devil's Advocate
-                                        </Button>
-                                      </Tooltip>
-                                      <Tooltip title="Agent will provide deep domain knowledge and authoritative insights" placement="left">
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'expert')}
-                                          sx={{
-                                            bgcolor: '#8b5cf6',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#7c3aed' }
-                                          }}
-                                        >
-                                          🎯 Expert Analysis
-                                        </Button>
-                                      </Tooltip>
-                                      <Tooltip title="Agent will provide constructive criticism and identify areas for improvement" placement="left">
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'critic')}
-                                          sx={{
-                                            bgcolor: '#f59e0b',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#d97706' }
-                                          }}
-                                        >
-                                          🔍 Critical Review
-                                        </Button>
-                                      </Tooltip>
-                                      <Tooltip title="Agent will generate innovative ideas and creative solutions" placement="left">
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'creative')}
-                                          sx={{
-                                            bgcolor: '#ec4899',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#db2777' }
-                                          }}
-                                        >
-                                          💡 Creative Ideas
-                                        </Button>
-                                      </Tooltip>
-                                      <Tooltip title="Agent will provide data-driven analysis and structured insights" placement="left">
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'analyst')}
-                                          sx={{
-                                            bgcolor: '#06b6d4',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#0891b2' }
-                                          }}
-                                        >
-                                          📊 Analytical Response
-                                        </Button>
-                                      </Tooltip>
-                                    </Box>
-                                  </Box>
-                                }
-                                placement="bottom"
-                                arrow
-                              >
+                              {/* Host Agent */}
+                              <Chip
+                                avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
+                                label={`${selectedChatbot?.identity?.name || 'Host Agent'} (Host)`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#3b82f6',
+                                  color: 'white',
+                                  '& .MuiChip-avatar': { color: 'white' },
+                                  opacity: 0.9,
+                                  fontSize: '11px'
+                                }}
+                              />
+                              
+                              {/* Guest Agents */}
+                              {hasGuestAgents && activeContext.guestAgents.map((guest) => (
                                 <Chip
-                                  avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
-                                  label={`${selectedChatbot?.identity?.name || 'Host Agent'} (Host)`}
+                                  key={guest.agentId}
+                                  avatar={<Avatar src={guest.avatar} sx={{ width: 20, height: 20 }} />}
+                                  label={guest.name}
                                   size="small"
+                                  onDelete={() => removeGuestAgent(guest.agentId)}
                                   sx={{
-                                    bgcolor: '#3b82f6',
+                                    bgcolor: '#10b981',
                                     color: 'white',
                                     '& .MuiChip-avatar': { color: 'white' },
+                                    '& .MuiChip-deleteIcon': { 
+                                      color: 'white',
+                                      '&:hover': { color: '#fecaca' }
+                                    },
                                     opacity: 0.9,
-                                    fontSize: '11px',
-                                    cursor: 'pointer',
-                                    '&:hover': { bgcolor: '#2563eb' }
+                                    fontSize: '11px'
                                   }}
                                 />
-                              </Tooltip>
-                              
-                              {/* Guest Agents with Enhanced Behavioral Hover-Triggered Responses */}
-                              {hasGuestAgents && activeContext.guestAgents.map((guest) => (
-                                <Tooltip
-                                  key={guest.agentId}
-                                  title={
-                                    <Box sx={{ p: 1.5, minWidth: 200 }}>
-                                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1.5, textAlign: 'center' }}>
-                                        🤖 {guest.name}
-                                      </Typography>
-                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        <Tooltip title="Agent will work cooperatively, build on ideas, and seek consensus" placement="left">
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'collaborate')}
-                                            sx={{
-                                              bgcolor: '#10b981',
-                                              color: 'white',
-                                              fontSize: '10px',
-                                              py: 0.5,
-                                              px: 1,
-                                              '&:hover': { bgcolor: '#059669' }
-                                            }}
-                                          >
-                                            🤝 Collaborate
-                                          </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Agent will ask clarifying questions and seek deeper understanding" placement="left">
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'question')}
-                                            sx={{
-                                              bgcolor: '#3b82f6',
-                                              color: 'white',
-                                              fontSize: '10px',
-                                              py: 0.5,
-                                              px: 1,
-                                              '&:hover': { bgcolor: '#2563eb' }
-                                            }}
-                                          >
-                                            ❓ Question
-                                          </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Agent will challenge ideas, ask tough questions, and identify potential problems" placement="left">
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'devils_advocate')}
-                                            sx={{
-                                              bgcolor: '#ef4444',
-                                              color: 'white',
-                                              fontSize: '10px',
-                                              py: 0.5,
-                                              px: 1,
-                                              '&:hover': { bgcolor: '#dc2626' }
-                                            }}
-                                          >
-                                            😈 Devil's Advocate
-                                          </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Agent will provide deep domain knowledge and authoritative insights" placement="left">
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'expert')}
-                                            sx={{
-                                              bgcolor: '#8b5cf6',
-                                              color: 'white',
-                                              fontSize: '10px',
-                                              py: 0.5,
-                                              px: 1,
-                                              '&:hover': { bgcolor: '#7c3aed' }
-                                            }}
-                                          >
-                                            🎯 Expert Analysis
-                                          </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Agent will provide constructive criticism and identify areas for improvement" placement="left">
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'critic')}
-                                            sx={{
-                                              bgcolor: '#f59e0b',
-                                              color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#d97706' }
-                                          }}
-                                        >
-                                          🔍 Critical Review
-                                        </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Agent will generate innovative ideas and creative solutions" placement="left">
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'creative')}
-                                            sx={{
-                                              bgcolor: '#ec4899',
-                                              color: 'white',
-                                              fontSize: '10px',
-                                              py: 0.5,
-                                              px: 1,
-                                              '&:hover': { bgcolor: '#db2777' }
-                                            }}
-                                          >
-                                            💡 Creative Ideas
-                                          </Button>
-                                        </Tooltip>
-                                        <Tooltip title="Agent will provide data-driven analysis and structured insights" placement="left">
-                                          <Button
-                                            size="small"
-                                            variant="contained"
-                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'analyst')}
-                                            sx={{
-                                              bgcolor: '#06b6d4',
-                                              color: 'white',
-                                              fontSize: '10px',
-                                              py: 0.5,
-                                              px: 1,
-                                              '&:hover': { bgcolor: '#0891b2' }
-                                            }}
-                                          >
-                                            📊 Analytical Response
-                                          </Button>
-                                        </Tooltip>
-                                      </Box>
-                                    </Box>
-                                  }
-                                  arrow
-                                  placement="top"
-                                  componentsProps={{
-                                    tooltip: {
-                                      sx: {
-                                        bgcolor: '#1e293b',
-                                        border: '1px solid #334155',
-                                        '& .MuiTooltip-arrow': {
-                                          color: '#1e293b',
-                                        },
-                                      },
-                                    },
-                                  }}
-                                >
-                                  <Chip
-                                    avatar={<Avatar src={guest.avatar} sx={{ width: 20, height: 20 }} />}
-                                    label={guest.name}
-                                    size="small"
-                                    onDelete={() => removeGuestAgent(guest.agentId)}
-                                    sx={{
-                                      bgcolor: '#10b981',
-                                      color: 'white',
-                                      '& .MuiChip-avatar': { color: 'white' },
-                                      '& .MuiChip-deleteIcon': { 
-                                        color: 'white',
-                                        '&:hover': { color: '#fecaca' }
-                                      },
-                                      opacity: 0.9,
-                                      fontSize: '11px',
-                                      cursor: 'pointer',
-                                      '&:hover': {
-                                        bgcolor: '#059669',
-                                        transform: 'scale(1.05)',
-                                        transition: 'all 0.2s ease'
-                                      }
-                                    }}
-                                  />
-                                </Tooltip>
                               ))}
                               
-                              {/* Human Participants with Enhanced Behavioral Hover-Triggered Responses */}
+                              {/* Human Participants */}
                               {humanParticipants.map((human) => (
-                                <Tooltip
+                                <Chip
                                   key={human.userId}
-                                  title={
-                                    <Box sx={{ p: 1.5, minWidth: 200 }}>
-                                      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1.5, textAlign: 'center' }}>
-                                        👤 {human.displayName}
-                                        {human.jobTitle && (
-                                          <Typography variant="caption" sx={{ display: 'block', color: '#94a3b8', mt: 0.5 }}>
-                                            {human.jobTitle}
-                                          </Typography>
-                                        )}
-                                      </Typography>
-                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'collaborate')}
-                                          sx={{
-                                            bgcolor: '#10b981',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#059669' }
-                                          }}
-                                        >
-                                          🤝 AI Collaborate with {human.displayName.split(' ')[0]}
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'question')}
-                                          sx={{
-                                            bgcolor: '#3b82f6',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#2563eb' }
-                                          }}
-                                        >
-                                          ❓ AI Question {human.displayName.split(' ')[0]}
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'devils_advocate')}
-                                          sx={{
-                                            bgcolor: '#ef4444',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#dc2626' }
-                                          }}
-                                        >
-                                          😈 AI Challenge {human.displayName.split(' ')[0]}
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'expert_analysis')}
-                                          sx={{
-                                            bgcolor: '#8b5cf6',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#7c3aed' }
-                                          }}
-                                        >
-                                          🎯 AI Analyze for {human.displayName.split(' ')[0]}
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'critical_review')}
-                                          sx={{
-                                            bgcolor: '#f97316',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#ea580c' }
-                                          }}
-                                        >
-                                          🔍 AI Review for {human.displayName.split(' ')[0]}
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'creative_ideas')}
-                                          sx={{
-                                            bgcolor: '#ec4899',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#db2777' }
-                                          }}
-                                        >
-                                          💡 AI Brainstorm with {human.displayName.split(' ')[0]}
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponseToHuman(human.userId, human.displayName, 'analytical_response')}
-                                          sx={{
-                                            bgcolor: '#06b6d4',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#0891b2' }
-                                          }}
-                                        >
-                                          📊 AI Analyze with {human.displayName.split(' ')[0]}
-                                        </Button>
-                                      </Box>
+                                  avatar={
+                                    <Box sx={{ position: 'relative' }}>
+                                      <Avatar
+                                        src={human.avatar}
+                                        sx={{ 
+                                          width: 20, 
+                                          height: 20,
+                                          bgcolor: '#3b82f6'
+                                        }}
+                                      >
+                                        {human.displayName.charAt(0)}
+                                      </Avatar>
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          bottom: -2,
+                                          right: -2,
+                                          width: 6,
+                                          height: 6,
+                                          borderRadius: '50%',
+                                          bgcolor: human.isOnline ? '#10b981' : '#6b7280',
+                                          border: '1px solid #1e293b'
+                                        }}
+                                      />
                                     </Box>
                                   }
-                                  placement="top"
-                                  arrow
-                                >
-                                  <Chip
-                                    avatar={
-                                      <Box sx={{ position: 'relative' }}>
-                                        <Avatar
-                                          src={human.avatar}
-                                          sx={{ 
-                                            width: 24, 
-                                            height: 24,
-                                            bgcolor: '#3b82f6'
-                                          }}
-                                        >
-                                          {human.displayName.charAt(0)}
-                                        </Avatar>
-                                        {/* Online/Offline Status Indicator */}
-                                        <Box
-                                          sx={{
-                                            position: 'absolute',
-                                            bottom: -2,
-                                            right: -2,
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: '50%',
-                                            bgcolor: human.isOnline ? '#10b981' : '#6b7280',
-                                            border: '1px solid #1e293b'
-                                          }}
-                                        />
-                                      </Box>
-                                    }
-                                    label={
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <Typography variant="caption" sx={{ fontSize: '11px', fontWeight: 500 }}>
-                                          {human.displayName}
-                                        </Typography>
-                                        {human.role && (
-                                          <Typography variant="caption" sx={{ fontSize: '9px', color: '#64748b' }}>
-                                            • {human.role}
-                                          </Typography>
-                                        )}
-                                      </Box>
-                                    }
-                                    size="small"
-                                    sx={{
-                                      bgcolor: '#1e293b',
-                                      color: '#e2e8f0',
-                                      border: '1px solid #334155',
-                                      '&:hover': { bgcolor: '#334155' }
-                                    }}
-                                  />
-                                </Tooltip>
+                                  label={human.displayName}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#1e293b',
+                                    color: '#e2e8f0',
+                                    border: '1px solid #334155',
+                                    fontSize: '11px'
+                                  }}
+                                />
                               ))}
                               
                               {/* Add Human Participant Button */}
@@ -3928,12 +3591,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                     bgcolor: '#1e293b',
                                     color: '#64748b',
                                     border: '1px solid #334155',
-                                    width: 32,
-                                    height: 32,
+                                    width: 28,
+                                    height: 28,
                                     '&:hover': { bgcolor: '#334155', color: '#e2e8f0' }
                                   }}
                                 >
-                                  <PersonAdd sx={{ fontSize: 16 }} />
+                                  <PersonAdd sx={{ fontSize: 14 }} />
                                 </IconButton>
                               </Tooltip>
                             </Box>
@@ -4131,8 +3794,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     spacing={3}
                     sx={{
                       display: 'flex',
-                      flexDirection: 'column-reverse', // Reverse the order to show newest at bottom
-                      justifyContent: 'flex-end',
+                      flexDirection: 'column', // Normal order since we'll reverse the array
+                      justifyContent: 'flex-start',
                       minHeight: '100%',
                       paddingBottom: 2
                     }}
@@ -4140,7 +3803,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Multi-Agent Response Indicator */}
                     {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
-                    {chatMessages.map((message) => (
+                    {[...chatMessages].reverse().map((message) => (
                       <Box
                         key={message.id}
                         sx={{
@@ -4481,6 +4144,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       }))}
                                       selectedTarget={selectedTarget}
                                       onTargetChange={handleTargetChange}
+                                      onBehaviorPrompt={handleBehaviorPrompt}
                                     />
                                     
                                     {/* Behavioral Orchestration Hover Triggers */}

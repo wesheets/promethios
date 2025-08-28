@@ -47,6 +47,8 @@ export interface AgentAvatarSelectorProps {
   humanParticipants?: TeamMember[];
   selectedTarget?: string; // Current messaging target (human or agent ID)
   onTargetChange?: (targetId: string) => void;
+  // Behavior prompts callback
+  onBehaviorPrompt?: (agentId: string, agentName: string, behavior: string) => void;
 }
 
 export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
@@ -60,7 +62,8 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   onAddGuests,
   humanParticipants = [],
   selectedTarget,
-  onTargetChange
+  onTargetChange,
+  onBehaviorPrompt
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const allAgents = [hostAgent, ...guestAgents];
@@ -235,23 +238,147 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         </Tooltip>
       ))}
 
-      {/* Agent Avatars */}
+      {/* Agent Avatars with Behavior Prompts */}
       {allAgents.map((agent) => (
         <Tooltip 
           key={agent.id}
           title={
-            <Box>
-              <Box sx={{ fontWeight: 600 }}>{agent.name}</Box>
-              <Box sx={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                {selectedAgents.includes(agent.id) ? 'Selected' : 'Click to select'}
+            <Box sx={{ p: 1.5, minWidth: 200 }}>
+              {/* Agent Info Header */}
+              <Box sx={{ fontWeight: 600, mb: 0.5, textAlign: 'center' }}>
+                {agent.name}
+              </Box>
+              <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
+                {agent.id === hostAgent.id ? '👑 Host Agent' : '🤖 Guest Agent'}
+              </Box>
+              <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1.5, textAlign: 'center' }}>
+                {selectedAgents.includes(agent.id) ? 'Selected for messaging' : 'Click to select for messaging'}
                 {agent.hotkey && ` • Press ${agent.hotkey.toUpperCase()}`}
               </Box>
-              <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mt: 0.5 }}>
-                {agent.id === hostAgent.id ? 'Host Agent' : 'Guest Agent'}
+              
+              {/* Behavior Prompts Section */}
+              <Box sx={{ borderTop: '1px solid #374151', pt: 1 }}>
+                <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1, textAlign: 'center' }}>
+                  Quick Behavior Prompts:
+                </Box>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBehaviorPrompt?.(agent.id, agent.name, 'collaborate');
+                    }}
+                    sx={{
+                      bgcolor: '#10b981',
+                      color: 'white',
+                      fontSize: '10px',
+                      py: 0.5,
+                      px: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      '&:hover': { bgcolor: '#059669' }
+                    }}
+                  >
+                    🤝 Collaborate
+                  </Box>
+                  
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBehaviorPrompt?.(agent.id, agent.name, 'question');
+                    }}
+                    sx={{
+                      bgcolor: '#3b82f6',
+                      color: 'white',
+                      fontSize: '10px',
+                      py: 0.5,
+                      px: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      '&:hover': { bgcolor: '#2563eb' }
+                    }}
+                  >
+                    ❓ Question
+                  </Box>
+                  
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBehaviorPrompt?.(agent.id, agent.name, 'devils_advocate');
+                    }}
+                    sx={{
+                      bgcolor: '#ef4444',
+                      color: 'white',
+                      fontSize: '10px',
+                      py: 0.5,
+                      px: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      '&:hover': { bgcolor: '#dc2626' }
+                    }}
+                  >
+                    😈 Devil's Advocate
+                  </Box>
+                  
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBehaviorPrompt?.(agent.id, agent.name, 'expert');
+                    }}
+                    sx={{
+                      bgcolor: '#8b5cf6',
+                      color: 'white',
+                      fontSize: '10px',
+                      py: 0.5,
+                      px: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      '&:hover': { bgcolor: '#7c3aed' }
+                    }}
+                  >
+                    🎯 Expert Analysis
+                  </Box>
+                  
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBehaviorPrompt?.(agent.id, agent.name, 'creative');
+                    }}
+                    sx={{
+                      bgcolor: '#ec4899',
+                      color: 'white',
+                      fontSize: '10px',
+                      py: 0.5,
+                      px: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      '&:hover': { bgcolor: '#db2777' }
+                    }}
+                  >
+                    💡 Creative Ideas
+                  </Box>
+                </Box>
               </Box>
             </Box>
           }
           placement="top"
+          arrow
+          componentsProps={{
+            tooltip: {
+              sx: {
+                bgcolor: '#1e293b',
+                border: '1px solid #334155',
+                '& .MuiTooltip-arrow': {
+                  color: '#1e293b',
+                },
+              },
+            },
+          }}
         >
           <Badge
             badgeContent={agent.hotkey?.toUpperCase()}
