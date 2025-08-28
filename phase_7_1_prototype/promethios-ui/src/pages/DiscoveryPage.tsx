@@ -331,7 +331,11 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Response
-                </Typog            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
               {(() => {
                 const buttonState = getConnectionButtonState(user.uid);
                 return (
@@ -372,7 +376,9 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
               >
                 Collaborate
               </Button>
-            </Box></Card>
+            </Box>
+          </CardContent>
+        </Card>
   );
 
   return (
