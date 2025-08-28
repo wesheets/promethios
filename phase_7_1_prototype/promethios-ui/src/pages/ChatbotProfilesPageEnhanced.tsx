@@ -1271,9 +1271,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const getMessageIndentation = (messageType) => {
     switch (messageType) {
       case 'behavior-response':
-        return 24; // Indent behavior responses
+        return 48; // Increased indent for behavior responses (was 24px)
       case 'behavior-followup':
-        return 0; // Back to normal alignment
+        return 48; // Keep follow-ups indented too for conversation thread
       default:
         return 0; // Regular messages
     }
@@ -4006,50 +4006,75 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             transition: 'margin-left 0.2s ease'
                           }}
                         >
-                          {/* Connecting Line for Behavior Responses */}
-                          {showConnectingLine && messageType === 'behavior-response' && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                left: -12,
-                                top: '50%',
-                                width: 8,
-                                height: 2,
-                                bgcolor: '#64748b',
-                                borderRadius: 1,
-                                transform: 'translateY(-50%)',
-                                opacity: 0.6
-                              }}
-                            />
-                          )}
-                          
-                          {/* Connecting Line for Follow-up Responses */}
-                          {showConnectingLine && messageType === 'behavior-followup' && (
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                left: 12,
-                                top: '50%',
-                                width: 8,
-                                height: 2,
-                                bgcolor: '#10b981',
-                                borderRadius: 1,
-                                transform: 'translateY(-50%)',
-                                opacity: 0.6
-                              }}
-                            />
+                          {/* Enhanced Connecting Lines for Behavior Prompt Conversations */}
+                          {showConnectingLine && (
+                            <>
+                              {/* Vertical connecting line */}
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  left: -24,
+                                  top: messageType === 'behavior-response' ? '50%' : 0,
+                                  width: 2,
+                                  height: messageType === 'behavior-response' ? '50%' : '100%',
+                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                  opacity: 0.4,
+                                  zIndex: 1
+                                }}
+                              />
+                              
+                              {/* Horizontal connecting line */}
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  left: -24,
+                                  top: '50%',
+                                  width: 20,
+                                  height: 2,
+                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                  borderRadius: 1,
+                                  transform: 'translateY(-50%)',
+                                  opacity: 0.6,
+                                  zIndex: 2
+                                }}
+                              />
+                              
+                              {/* Connection dot */}
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  left: -28,
+                                  top: '50%',
+                                  width: 6,
+                                  height: 6,
+                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                  borderRadius: '50%',
+                                  transform: 'translateY(-50%)',
+                                  opacity: 0.8,
+                                  zIndex: 3
+                                }}
+                              />
+                            </>
                           )}
                           
                           <Box
                             sx={{
                               maxWidth: '75%',
                               textAlign: message.sender === 'user' ? 'right' : 'left',
-                              // Subtle background tint for behavior responses
+                              // Enhanced styling for behavior prompt conversations
                               ...(messageType === 'behavior-response' && {
-                                bgcolor: 'rgba(100, 116, 139, 0.05)',
+                                bgcolor: 'rgba(100, 116, 139, 0.08)',
                                 borderRadius: 2,
                                 p: 1.5,
-                                border: '1px solid rgba(100, 116, 139, 0.1)'
+                                border: '1px solid rgba(100, 116, 139, 0.15)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                              }),
+                              ...(messageType === 'behavior-followup' && {
+                                bgcolor: 'rgba(16, 185, 129, 0.08)',
+                                borderRadius: 2,
+                                p: 1.5,
+                                border: '1px solid rgba(16, 185, 129, 0.15)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                               })
                             }}
                           >
