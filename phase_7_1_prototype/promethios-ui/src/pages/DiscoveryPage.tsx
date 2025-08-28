@@ -35,8 +35,8 @@ import { firebaseUserDiscoveryService, FirebaseUser, DiscoveryFilters } from '..
 import { useConnections } from '../hooks/useConnections';
 
 // Import components
-import { UserSearchEngine } from '../components/social/UserSearchEngine';
-import { UserProfileCard } from '../components/social/UserProfileCard';
+import UserSearchEngine from '../components/social/UserSearchEngine';
+import UserProfileCard from '../components/social/UserProfileCard';
 
 interface DiscoveryPageProps {
   onViewProfile?: (userId: string) => void;
