@@ -4146,6 +4146,49 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               </Box>
                             )}
                             
+                            {/* Recipient Indicator for User Messages in Multi-Agent Mode */}
+                            {message.sender === 'user' && (selectedAgents.length > 1 || humanParticipants.length > 0) && (
+                              <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    color: '#64748b',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5
+                                  }}
+                                >
+                                  {user?.displayName || user?.email || 'You'}
+                                  <Box component="span" sx={{ color: '#94a3b8', mx: 0.5 }}>→</Box>
+                                  {(() => {
+                                    const recipients = [];
+                                    
+                                    // Add selected AI agents
+                                    selectedAgents.forEach(agentId => {
+                                      const agent = chatbotProfiles.find(p => p.id === agentId || p.key === agentId);
+                                      if (agent) {
+                                        recipients.push(agent.name || agent.identity?.name || 'AI Agent');
+                                      }
+                                    });
+                                    
+                                    // Add human participants
+                                    humanParticipants.forEach(participant => {
+                                      recipients.push(participant.name || participant.email || 'Human');
+                                    });
+                                    
+                                    // If no specific recipients, show current agent
+                                    if (recipients.length === 0 && selectedChatbot) {
+                                      recipients.push(selectedChatbot.name || selectedChatbot.identity?.name || 'AI Agent');
+                                    }
+                                    
+                                    return recipients.length > 0 ? recipients.join(', ') : 'All Participants';
+                                  })()}
+                                </Typography>
+                              </Box>
+                            )}
+                            
                             {/* Message Content */}
                             <MarkdownRenderer 
                               content={message.content}
