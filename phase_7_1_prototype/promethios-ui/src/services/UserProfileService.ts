@@ -675,6 +675,115 @@ class UserProfileService {
   }
 
   /**
+   * Get public profile for a specific user
+   */
+  async getPublicProfile(userId: string): Promise<UserProfile> {
+    try {
+      // In production, this would fetch from Firebase
+      await this.delay(500);
+      
+      // For now, return mock data based on userId
+      return {
+        id: userId,
+        name: `User ${userId.slice(0, 8)}`,
+        title: 'AI Collaboration Specialist',
+        company: 'Promethios',
+        location: 'San Francisco, CA',
+        industry: 'Technology',
+        avatar: `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000000000)}?w=150`,
+        bio: 'Passionate about AI collaboration and human-machine partnerships.',
+        skills: ['AI Collaboration', 'Machine Learning', 'Project Management'],
+        experience: [
+          {
+            title: 'AI Collaboration Specialist',
+            company: 'Promethios',
+            startDate: '2023-01-01',
+            current: true,
+            description: 'Leading AI collaboration initiatives and partnerships.'
+          }
+        ],
+        education: [
+          {
+            school: 'Stanford University',
+            degree: 'MS',
+            field: 'Computer Science',
+            startDate: '2020-09-01',
+            endDate: '2022-06-01'
+          }
+        ],
+        connections: Math.floor(Math.random() * 500) + 100,
+        isOnline: Math.random() > 0.5,
+        lastSeen: new Date(Date.now() - Math.random() * 86400000), // Random time in last 24h
+        joinedDate: new Date('2023-01-01'),
+        profileViews: Math.floor(Math.random() * 1000) + 50,
+        isPublic: true,
+        preferences: {
+          showEmail: false,
+          showPhone: false,
+          showOnlineStatus: true
+        }
+      };
+    } catch (error) {
+      console.error('Failed to get public profile:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Save user profile to Firebase
+   */
+  async saveProfile(profile: UserProfile): Promise<void> {
+    try {
+      // In production, this would save to Firebase
+      await this.delay(1000);
+      
+      console.log('Profile saved successfully:', profile.id);
+      // TODO: Implement Firebase save operation
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update specific profile fields
+   */
+  async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      // In production, this would update Firebase document
+      await this.delay(500);
+      
+      const currentProfile = await this.getCurrentUserProfile();
+      const updatedProfile = { ...currentProfile, ...updates };
+      
+      await this.saveProfile(updatedProfile);
+      return updatedProfile;
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user profile by ID (for authenticated access)
+   */
+  async getUserProfile(userId: string): Promise<UserProfile> {
+    try {
+      // In production, this would check permissions and fetch from Firebase
+      await this.delay(500);
+      
+      if (userId === 'current-user') {
+        return this.getCurrentUserProfile();
+      }
+      
+      return this.getPublicProfile(userId);
+    } catch (error) {
+      console.error('Failed to get user profile:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Utility delay function for simulating API calls
    */
   private delay(ms: number): Promise<void> {
