@@ -2508,6 +2508,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (!messageInput.trim() || !activeSession || chatLoading) return;
 
     try {
+      // Immediately add user message to chat before processing
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        content: messageInput.trim(),
+        sender: 'user',
+        timestamp: new Date(),
+        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+      };
+
+      // Add user message immediately to provide instant feedback
+      if (selectedChatbot) {
+        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+        setBotStates(prev => {
+          const newStates = new Map(prev);
+          const currentState = newStates.get(botId) || initializeBotState(botId);
+          const updatedMessages = [...(currentState.chatMessages || []), userMessage];
+          const updatedState = { ...currentState, chatMessages: updatedMessages };
+          newStates.set(botId, updatedState);
+          return newStates;
+        });
+      }
+
+      // Clear input and attachments immediately
+      const currentMessageInput = messageInput.trim();
+      const currentAttachedFiles = [...attachedFiles];
+      setMessageInput('');
+      setAttachedFiles([]);
+
       setChatLoading(true);
       setIsTyping(true);
       
@@ -2517,7 +2545,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       if (hasGuestAgents && selectedChatbot && user?.uid) {
         console.log('🤖 [MultiAgent] Processing multi-agent message');
-        await handleMultiAgentMessage(messageInput.trim());
+        await handleMultiAgentMessage(currentMessageInput);
         return;
       }
       
@@ -2772,16 +2800,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         user.uid
       );
       
-      // Add user message
-      const userMessage: ChatMessage = {
-        id: `user_${Date.now()}`,
-        content: messageInput.trim(),
-        sender: 'user',
-        timestamp: new Date(),
-        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-      };
-      
-      // Create agent response with search results
+      // Create agent response with search results (user message already added immediately)
       const agentResponse: ChatMessage = {
         id: `agent_${Date.now()}`,
         content: searchResponse.agentResponse,
@@ -2805,7 +2824,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           
           // Use the latest state from the Map, not the potentially stale closure variable
           const latestMessages = currentState.chatMessages || [];
-          const updatedMessages = [...latestMessages, userMessage, agentResponse];
+          const updatedMessages = [...latestMessages, agentResponse]; // Only add agent response
           
           console.log(`🔄 [ReceiptSearch] Latest messages length: ${latestMessages.length}`);
           console.log(`🔄 [ReceiptSearch] Updated messages length: ${updatedMessages.length}`);
@@ -2875,16 +2894,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           messageInput.trim()
         );
         
-        // Add user message
-        const userMessage: ChatMessage = {
-          id: `user_${Date.now()}`,
-          content: messageInput.trim(),
-          sender: 'user',
-          timestamp: new Date(),
-          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-        };
-        
-        // Create agent response with chat context
+        // Create agent response with chat context (user message already added immediately)
         const agentResponse: ChatMessage = {
           id: `agent_${Date.now()}`,
           content: chatReferenceResult.agentResponse,
@@ -2908,7 +2918,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             
             // Use the latest state from the Map, not the potentially stale closure variable
             const latestMessages = currentState.chatMessages || [];
-            const updatedMessages = [...latestMessages, userMessage, agentResponse];
+            const updatedMessages = [...latestMessages, agentResponse]; // Only add agent response
             
             console.log(`🔄 [ChatReference] Latest messages length: ${latestMessages.length}`);
             console.log(`🔄 [ChatReference] Updated messages length: ${updatedMessages.length}`);
@@ -2964,16 +2974,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           messageInput.trim()
         );
         
-        // Add user message
-        const userMessage: ChatMessage = {
-          id: `user_${Date.now()}`,
-          content: messageInput.trim(),
-          sender: 'user',
-          timestamp: new Date(),
-          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-        };
-        
-        // Create agent response with receipt analysis
+        // Create agent response with receipt analysis (user message already added immediately)
         const agentResponse: ChatMessage = {
           id: `agent_${Date.now()}`,
           content: receiptReferenceResult.agentResponse,
@@ -2996,7 +2997,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             const currentState = newStates.get(botId) || initializeBotState(botId);
             
             const latestMessages = currentState.chatMessages || [];
-            const updatedMessages = [...latestMessages, userMessage, agentResponse];
+            const updatedMessages = [...latestMessages, agentResponse]; // Only add agent response
             
             const updatedState = { ...currentState, chatMessages: updatedMessages };
             newStates.set(botId, updatedState);
@@ -3087,16 +3088,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
       
-      // Add user message first
-      const userMessage: ChatMessage = {
-        id: `user_${Date.now()}`,
-        content: messageInput.trim(),
-        sender: 'user',
-        timestamp: new Date(),
-        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-      };
-      
-      // Update messages with user message and bot response in bot state
+      // Update messages with bot response only (user message already added immediately)
       // Fix stale closure issue by using functional update to get latest state
       if (selectedChatbot) {
         const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
@@ -3109,7 +3101,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           
           // Use the latest state from the Map, not the potentially stale closure variable
           const latestMessages = currentState.chatMessages || [];
-          const updatedMessages = [...latestMessages, userMessage, response];
+          const updatedMessages = [...latestMessages, response]; // Only add agent response
           
           console.log(`🔄 [ChatState] Latest messages length: ${latestMessages.length}`);
           console.log(`🔄 [ChatState] Updated messages length: ${updatedMessages.length}`);
@@ -4079,11 +4071,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     </Box>
                   </Box>
                 ) : (
-                  <Stack spacing={3}>
+                  <Stack 
+                    spacing={3}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column-reverse', // Reverse the order to show newest at bottom
+                      justifyContent: 'flex-end',
+                      minHeight: '100%',
+                      paddingBottom: 2
+                    }}
+                  >
                     {/* Multi-Agent Response Indicator */}
                     {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
-                    {chatMessages.map((message) => (
+                    {[...chatMessages].reverse().map((message) => (
                       <Box
                         key={message.id}
                         sx={{
