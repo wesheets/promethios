@@ -60,23 +60,14 @@ class FirebaseUserDiscoveryService {
     try {
       console.log('🔍 [Discovery] Fetching users from Firestore...');
       
-      let usersQuery = query(
+      // Use a simple query without complex filters to avoid index requirements
+      const usersQuery = query(
         collection(db, this.COLLECTION_NAME),
-        orderBy('createdAt', 'desc'),
         limit(50) // Limit to prevent performance issues
       );
 
-      // Apply filters if provided
-      if (filters?.isOnline !== undefined) {
-        usersQuery = query(usersQuery, where('isOnline', '==', filters.isOnline));
-      }
-
-      if (filters?.minRating) {
-        usersQuery = query(usersQuery, where('stats.rating', '>=', filters.minRating));
-      }
-
       const querySnapshot = await getDocs(usersQuery);
-      const users: FirebaseUser[] = [];
+      let users: FirebaseUser[] = [];
 
       querySnapshot.forEach((doc) => {
         const userData = doc.data();
@@ -84,61 +75,52 @@ class FirebaseUserDiscoveryService {
         // Only include users with public profiles
         if (userData.preferences?.isPublic !== false) {
           const user: FirebaseUser = {
-            id: doc.id,
+            uid: doc.id,
             email: userData.email || '',
             displayName: userData.displayName || userData.profile?.firstName + ' ' + userData.profile?.lastName || 'Anonymous User',
             photoURL: userData.photoURL || userData.profile?.photoURL,
             createdAt: userData.createdAt,
-            lastSignIn: userData.lastSignIn,
+            lastLoginAt: userData.lastSignIn,
             isOnline: userData.isOnline || false,
             profile: {
-              firstName: userData.profile?.firstName || '',
-              lastName: userData.profile?.lastName || '',
-              title: userData.profile?.title || 'AI Collaboration Professional',
-              company: userData.profile?.company || '',
-              location: userData.profile?.location || '',
               bio: userData.profile?.bio || 'Exploring AI collaboration opportunities',
+              location: userData.profile?.location || '',
+              company: userData.profile?.company || '',
+              industry: userData.profile?.industry || 'Technology',
               skills: userData.profile?.skills || ['AI Collaboration', 'Strategic Thinking'],
               aiAgents: userData.profile?.aiAgents || ['Claude', 'ChatGPT'],
+              aiSkills: userData.profile?.aiSkills || ['Content Strategy', 'Data Analysis'],
               collaborationStyle: userData.profile?.collaborationStyle || ['Creative', 'Analytical'],
               experienceLevel: userData.profile?.experienceLevel || 'Intermediate',
-              industry: userData.profile?.industry || 'Technology',
-              website: userData.profile?.website || '',
-              linkedin: userData.profile?.linkedin || '',
-              twitter: userData.profile?.twitter || ''
-            },
-            preferences: {
-              isPublic: userData.preferences?.isPublic !== false,
-              allowMessages: userData.preferences?.allowMessages !== false,
-              allowConnections: userData.preferences?.allowConnections !== false,
-              showOnlineStatus: userData.preferences?.showOnlineStatus !== false
+              hasPublicProfile: userData.preferences?.isPublic !== false,
             },
             stats: {
-              connections: userData.stats?.connections || 0,
+              rating: userData.stats?.rating || 4.5,
               collaborations: userData.stats?.collaborations || 0,
-              rating: userData.stats?.rating || 4.0 + Math.random(), // Mock rating for now
-              responseTime: userData.stats?.responseTime || Math.floor(Math.random() * 60) + 5 // Mock response time
-            }
+              connections: userData.stats?.connections || 0,
+            },
           };
-
-          // Apply client-side filters
-          if (this.matchesFilters(user, filters)) {
-            users.push(user);
-          }
+          users.push(user);
         }
       });
+
+      // Apply filters in memory to avoid Firestore index requirements
+      if (filters?.isOnline !== undefined) {
+        users = users.filter(user => user.isOnline === filters.isOnline);
+      }
+
+      if (filters?.minRating) {
+        users = users.filter(user => user.stats.rating >= filters.minRating!);
+      }
 
       console.log(`🔍 [Discovery] Found ${users.length} users matching criteria`);
       return users;
 
     } catch (error) {
       console.error('🔍 [Discovery] Error fetching users:', error);
-      
-      // Return mock users if Firebase fails
-      return this.getMockUsers();
+      throw error;
     }
   }
-
   /**
    * Get a specific user by ID
    */
