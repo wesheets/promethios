@@ -1200,6 +1200,78 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  // Visual Threading System for Behavior Prompt Responses
+  const getMessageType = (message, index, messages) => {
+    // Check if this message is a behavior prompt response
+    if (isBehaviorPromptResponse(message, messages, index)) {
+      return 'behavior-response';
+    }
+    // Check if this is responding to a behavior response
+    if (isFollowUpToBehaviorResponse(message, messages, index)) {
+      return 'behavior-followup';
+    }
+    return 'regular';
+  };
+
+  const isBehaviorPromptResponse = (message, messages, index) => {
+    if (message.sender === 'user' || index === 0) return false;
+    
+    // Look at the previous message to see if it might have triggered a behavior prompt
+    const previousMessage = messages[index - 1];
+    if (!previousMessage) return false;
+    
+    // Check if the message content suggests it's responding to a behavior prompt
+    const behaviorIndicators = [
+      'Please ask thoughtful, clarifying questions',
+      'Please collaborate with',
+      'Please play devil\'s advocate',
+      'Please provide an expert analysis',
+      'Please add creative ideas',
+      'Please provide a pessimistic perspective',
+      '❓', '🤝', '😈', '🎯', '💡', '🌧️'
+    ];
+    
+    // Check if this message appears to be responding to a behavior prompt
+    const isResponseToBehavior = behaviorIndicators.some(indicator => 
+      message.content.toLowerCase().includes(indicator.toLowerCase()) ||
+      (previousMessage.metadata?.behaviorPrompt && 
+       Math.abs(message.timestamp.getTime() - previousMessage.timestamp.getTime()) < 10000) // Within 10 seconds
+    );
+    
+    return isResponseToBehavior;
+  };
+
+  const isFollowUpToBehaviorResponse = (message, messages, index) => {
+    if (message.sender === 'user' || index < 2) return false;
+    
+    // Look back to see if there was a behavior response that this might be following up on
+    for (let i = index - 1; i >= Math.max(0, index - 3); i--) {
+      const prevMessage = messages[i];
+      if (isBehaviorPromptResponse(prevMessage, messages, i)) {
+        // Check if this message is responding to that behavior response
+        const timeDiff = message.timestamp.getTime() - prevMessage.timestamp.getTime();
+        return timeDiff < 30000 && message.sender !== prevMessage.sender; // Within 30 seconds and different sender
+      }
+    }
+    
+    return false;
+  };
+
+  const getMessageIndentation = (messageType) => {
+    switch (messageType) {
+      case 'behavior-response':
+        return 24; // Indent behavior responses
+      case 'behavior-followup':
+        return 0; // Back to normal alignment
+      default:
+        return 0; // Regular messages
+    }
+  };
+
+  const shouldShowConnectingLine = (messageType) => {
+    return messageType === 'behavior-response' || messageType === 'behavior-followup';
+  };
+
   // Load chatbots on component mount and when user changes
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[loadChatbots] triggered - RENDER #${renderCountRef.current}`);
@@ -3971,74 +4043,143 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Multi-Agent Response Indicator */}
                     {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
-                    {[...chatMessages].reverse().map((message) => (
-                      <Box
-                        key={message.id}
-                        sx={{
-                          display: 'flex',
-                          justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start'
-                        }}
-                      >
+                    {[...chatMessages].reverse().map((message, index) => {
+                      const messageType = getMessageType(message, index, [...chatMessages].reverse());
+                      const indentation = getMessageIndentation(messageType);
+                      const showConnectingLine = shouldShowConnectingLine(messageType);
+                      
+                      return (
                         <Box
+                          key={message.id}
                           sx={{
-                            maxWidth: '75%',
-                            textAlign: message.sender === 'user' ? 'right' : 'left'
+                            display: 'flex',
+                            justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                            position: 'relative',
+                            marginLeft: `${indentation}px`,
+                            transition: 'margin-left 0.2s ease'
                           }}
                         >
-                          {/* Multi-Agent Message Header */}
-                          {message.metadata?.isMultiAgent && (
-                            <Box sx={{ mb: 1 }}>
-                              <Chip
-                                label={`${message.metadata.agentName} (${Math.floor(message.metadata.processingTime / 1000)}s)`}
-                                size="small"
-                                sx={{
-                                  bgcolor: getAgentColor(message.metadata.agentId, message.metadata.agentName),
-                                  color: 'white',
-                                  fontSize: '0.7rem'
-                                }}
-                              />
-                            </Box>
-                          )}
-                          
-                          {/* Message Content */}
-                          <MarkdownRenderer 
-                            content={message.content}
-                            sx={{ 
-                              fontSize: '0.9rem',
-                              mb: 0.5
-                            }}
-                          />
-                          
-                          {/* Attachments Display */}
-                          <AttachmentRenderer 
-                            attachments={message.attachments || []}
-                            sx={{ mt: 1 }}
-                          />
-                          
-                          {/* Timestamp */}
-                          <Typography variant="caption" sx={{ 
-                            color: '#94a3b8', 
-                            fontSize: '0.75rem'
-                          }}>
-                            {message.timestamp.toLocaleTimeString()}
-                          </Typography>
-
-                          {/* Small token response icon for multi-agent responses */}
-                          {message.metadata?.isMultiAgent && message.sender === 'assistant' && (
-                            <TokenResponseIcon
-                              agentId={message.metadata.agentId}
-                              cost={tokenEconomicsService.estimateMessageCost(message.content)}
-                              quality={8} // Default quality, could be dynamic
-                              value="high" // Could be calculated based on response
-                              onRate={(rating) => {
-                                console.log('📊 [TokenIcon] Rating submitted:', message.metadata.agentName, rating);
-                                // This could trigger updates to agent metrics
+                          {/* Connecting Line for Behavior Responses */}
+                          {showConnectingLine && messageType === 'behavior-response' && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                left: -12,
+                                top: '50%',
+                                width: 8,
+                                height: 2,
+                                bgcolor: '#64748b',
+                                borderRadius: 1,
+                                transform: 'translateY(-50%)',
+                                opacity: 0.6
                               }}
                             />
                           )}
+                          
+                          {/* Connecting Line for Follow-up Responses */}
+                          {showConnectingLine && messageType === 'behavior-followup' && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                left: 12,
+                                top: '50%',
+                                width: 8,
+                                height: 2,
+                                bgcolor: '#10b981',
+                                borderRadius: 1,
+                                transform: 'translateY(-50%)',
+                                opacity: 0.6
+                              }}
+                            />
+                          )}
+                          
+                          <Box
+                            sx={{
+                              maxWidth: '75%',
+                              textAlign: message.sender === 'user' ? 'right' : 'left',
+                              // Subtle background tint for behavior responses
+                              ...(messageType === 'behavior-response' && {
+                                bgcolor: 'rgba(100, 116, 139, 0.05)',
+                                borderRadius: 2,
+                                p: 1.5,
+                                border: '1px solid rgba(100, 116, 139, 0.1)'
+                              })
+                            }}
+                          >
+                            {/* Message Type Indicator */}
+                            {messageType !== 'regular' && (
+                              <Box sx={{ mb: 0.5 }}>
+                                <Chip
+                                  label={
+                                    messageType === 'behavior-response' ? '🎭 Behavior Response' : 
+                                    messageType === 'behavior-followup' ? '💬 Follow-up' : ''
+                                  }
+                                  size="small"
+                                  sx={{
+                                    bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                    color: 'white',
+                                    fontSize: '0.65rem',
+                                    height: 20
+                                  }}
+                                />
+                              </Box>
+                            )}
+                            
+                            {/* Multi-Agent Message Header */}
+                            {message.metadata?.isMultiAgent && (
+                              <Box sx={{ mb: 1 }}>
+                                <Chip
+                                  label={`${message.metadata.agentName} (${Math.floor(message.metadata.processingTime / 1000)}s)`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: getAgentColor(message.metadata.agentId, message.metadata.agentName),
+                                    color: 'white',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              </Box>
+                            )}
+                            
+                            {/* Message Content */}
+                            <MarkdownRenderer 
+                              content={message.content}
+                              sx={{ 
+                                fontSize: '0.9rem',
+                                mb: 0.5
+                              }}
+                            />
+                            
+                            {/* Attachments Display */}
+                            <AttachmentRenderer 
+                              attachments={message.attachments || []}
+                              sx={{ mt: 1 }}
+                            />
+                            
+                            {/* Timestamp */}
+                            <Typography variant="caption" sx={{ 
+                              color: '#94a3b8', 
+                              fontSize: '0.75rem'
+                            }}>
+                              {message.timestamp.toLocaleTimeString()}
+                            </Typography>
+
+                            {/* Small token response icon for multi-agent responses */}
+                            {message.metadata?.isMultiAgent && message.sender === 'assistant' && (
+                              <TokenResponseIcon
+                                agentId={message.metadata.agentId}
+                                cost={tokenEconomicsService.estimateMessageCost(message.content)}
+                                quality={8} // Default quality, could be dynamic
+                                value="high" // Could be calculated based on response
+                                onRate={(rating) => {
+                                  console.log('📊 [TokenIcon] Rating submitted:', message.metadata.agentName, rating);
+                                  // This could trigger updates to agent metrics
+                                }}
+                              />
+                            )}
+                          </Box>
                         </Box>
-                      </Box>
-                    ))}
+                      );
+                    })}
                   </Stack>
                 )}
               </Box>
