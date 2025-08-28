@@ -2383,41 +2383,67 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       await handleSendMessage(triggerMessage, [agentId]);
       console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'mentioning:', mentionTarget);
       
-      // If we mentioned another agent, automatically trigger their response
-      if (!isSingleAgentMode && mentionTarget !== '@user' && mentionTarget !== '@previous-agent') {
-        // Wait a moment for the first response to be processed
+      // Enhanced automatic response chaining - works in both single and multi-agent modes
+      if (mentionTarget !== '@user' && mentionTarget !== '@previous-agent') {
+        // Wait for the first response to be processed
         setTimeout(async () => {
           try {
-            // Find the mentioned agent ID
+            // Find the mentioned agent ID with improved matching
             const mentionedAgentName = mentionTarget.replace('@', '');
             let mentionedAgentId = null;
+            let mentionedAgentDisplayName = mentionedAgentName;
             
+            console.log('🎭 [Auto-Response] Looking for mentioned agent:', mentionedAgentName);
+            
+            // Check host agent
             const hostAgent = getHostAgent();
-            if (hostAgent && hostAgent.name === mentionedAgentName) {
+            if (hostAgent && (
+              hostAgent.name === mentionedAgentName || 
+              hostAgent.name.toLowerCase().includes(mentionedAgentName.toLowerCase()) ||
+              mentionedAgentName.toLowerCase().includes(hostAgent.name.toLowerCase())
+            )) {
               mentionedAgentId = hostAgent.id;
+              mentionedAgentDisplayName = hostAgent.name;
+              console.log('🎭 [Auto-Response] Found host agent:', mentionedAgentDisplayName);
             } else {
-              const guestAgent = getGuestAgents().find(agent => agent.name === mentionedAgentName);
+              // Check guest agents
+              const guestAgent = getGuestAgents().find(agent => 
+                agent.name === mentionedAgentName || 
+                agent.name.toLowerCase().includes(mentionedAgentName.toLowerCase()) ||
+                mentionedAgentName.toLowerCase().includes(agent.name.toLowerCase())
+              );
               if (guestAgent) {
                 mentionedAgentId = guestAgent.id;
+                mentionedAgentDisplayName = guestAgent.name;
+                console.log('🎭 [Auto-Response] Found guest agent:', mentionedAgentDisplayName);
               }
             }
             
             if (mentionedAgentId) {
-              // Create a response prompt for the mentioned agent
-              const responsePrompt = `Please respond to the ${behavior} from ${agentName}. Address their points and continue the conversation.`;
+              // Create a contextual response prompt for the mentioned agent
+              const responsePrompt = `Please respond to the ${behavior} questions/points from ${agentName}. Address their specific questions and provide the requested information or clarification.`;
+              
+              console.log('🎭 [Auto-Response] Triggering response from:', mentionedAgentDisplayName);
+              console.log('🎭 [Auto-Response] Response prompt:', responsePrompt);
               
               // Set thinking indicator for the mentioned agent
-              setSmartThinkingIndicator(mentionedAgentId, mentionedAgentName, 'responding...');
+              setSmartThinkingIndicator(mentionedAgentId, mentionedAgentDisplayName, 'responding to questions...');
               
               // Trigger the mentioned agent's response
               await handleSendMessage(responsePrompt, [mentionedAgentId]);
-              console.log('🎭 [Auto-Response] Triggered automatic response from mentioned agent:', mentionedAgentName);
+              console.log('🎭 [Auto-Response] Successfully triggered automatic response from:', mentionedAgentDisplayName);
+            } else {
+              console.warn('🎭 [Auto-Response] Could not find mentioned agent:', mentionedAgentName);
+              console.log('🎭 [Auto-Response] Available agents:', {
+                host: hostAgent?.name,
+                guests: getGuestAgents().map(g => g.name)
+              });
             }
           } catch (error) {
             console.error('🎭 [Auto-Response] Error triggering mentioned agent response:', error);
             clearSmartThinkingIndicator();
           }
-        }, 2000); // Wait 2 seconds for the first response to complete
+        }, 3000); // Increased delay to 3 seconds for better reliability
       }
     } catch (error) {
       console.error('🎭 [Behavior Prompt] Error triggering response:', error);
