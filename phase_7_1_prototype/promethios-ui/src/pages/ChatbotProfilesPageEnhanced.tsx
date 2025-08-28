@@ -2902,7 +2902,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     try {
       // Always add user message to chat for immediate feedback (unless it's an internal system message)
-      if (!customMessage || !customMessage.startsWith('🤝') && !customMessage.startsWith('❓') && !customMessage.startsWith('😈') && !customMessage.startsWith('🎯') && !customMessage.startsWith('💡') && !customMessage.startsWith('🌧️')) {
+      if (!customMessage || (typeof customMessage === 'string' && !customMessage.startsWith('🤝') && !customMessage.startsWith('❓') && !customMessage.startsWith('😈') && !customMessage.startsWith('🎯') && !customMessage.startsWith('💡') && !customMessage.startsWith('🌧️'))) {
         const userMessage: ChatMessage = {
           id: `user_${Date.now()}`,
           content: messageToSend,

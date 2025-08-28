@@ -9,7 +9,7 @@
  * - Real-time human participation tracking
  */
 
-import { UserProfile, userProfileService } from './userProfileService';
+import { UserProfile, userProfileService } from './UserProfileService';
 import { TeamCollaborationIntegrationService } from './TeamCollaborationIntegrationService';
 import { UnifiedStorageService } from './UnifiedStorageService';
 
