@@ -2475,27 +2475,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     const mentionTarget = getMentionTarget();
 
-    // Create behavioral prompt templates - target the CLICKED agent, not the last responder
+    // Create behavioral prompt templates - include @mention to trigger original agent response
     const behaviorPrompts = {
-      collaborate: `🤝 Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective.`,
-      question: `❓ Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration.`,
-      devils_advocate: `😈 Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments.`,
-      expert: `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
-      creative: `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`,
-      pessimist: `🌧️ Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account.`
+      collaborate: `🤝 Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective. ${mentionTarget}, please respond to my collaboration points.`,
+      question: `❓ Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration. ${mentionTarget}, please address these questions.`,
+      devils_advocate: `😈 Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments. ${mentionTarget}, please respond to these challenges.`,
+      expert: `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed. ${mentionTarget}, please respond to this analysis.`,
+      creative: `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions. ${mentionTarget}, please build on these creative ideas.`,
+      pessimist: `🌧️ Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account. ${mentionTarget}, please address these concerns.`
     };
 
-    // Create the behavioral trigger message - send directly to the clicked agent
+    // Create the behavioral trigger message - send directly to the clicked agent with @mention
     const triggerMessage = behaviorPrompts[behavior as keyof typeof behaviorPrompts] || 
-      `Please respond to the last message with a ${behavior} approach.`;
+      `Please respond to the last message with a ${behavior} approach. ${mentionTarget}, please respond.`;
     
     try {
       // Set smart thinking indicator
       setSmartThinkingIndicator(agentId, agentName, behavior);
       
-      // Send the behavioral trigger message to the specific agent
+      // Send the behavioral trigger message to the specific agent (includes @mention for automatic response)
       await handleSendMessage(triggerMessage, [agentId]);
-      console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'mentioning:', mentionTarget);
+      console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'with mention:', mentionTarget);
       
       // Mark that we're expecting a behavior prompt response
       setBehaviorPromptActive({
@@ -2504,68 +2504,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         timestamp: Date.now()
       });
       
-      // Enhanced automatic response chaining - works in both single and multi-agent modes
-      if (mentionTarget !== '@user' && mentionTarget !== '@assistant') {
-        // Wait for the first response to be processed
-        setTimeout(async () => {
-          try {
-            // Find the mentioned agent ID with improved matching
-            const mentionedAgentName = mentionTarget.replace('@', '');
-            let mentionedAgentId = null;
-            let mentionedAgentDisplayName = mentionedAgentName;
-            
-            console.log('🎭 [Auto-Response] Looking for mentioned agent:', mentionedAgentName);
-            
-            // Check host agent
-            const hostAgent = getHostAgent();
-            if (hostAgent && (
-              hostAgent.name === mentionedAgentName || 
-              hostAgent.name.toLowerCase().includes(mentionedAgentName.toLowerCase()) ||
-              mentionedAgentName.toLowerCase().includes(hostAgent.name.toLowerCase())
-            )) {
-              mentionedAgentId = hostAgent.id;
-              mentionedAgentDisplayName = hostAgent.name;
-              console.log('🎭 [Auto-Response] Found host agent:', mentionedAgentDisplayName);
-            } else {
-              // Check guest agents
-              const guestAgent = getGuestAgents().find(agent => 
-                agent.name === mentionedAgentName || 
-                agent.name.toLowerCase().includes(mentionedAgentName.toLowerCase()) ||
-                mentionedAgentName.toLowerCase().includes(agent.name.toLowerCase())
-              );
-              if (guestAgent) {
-                mentionedAgentId = guestAgent.id;
-                mentionedAgentDisplayName = guestAgent.name;
-                console.log('🎭 [Auto-Response] Found guest agent:', mentionedAgentDisplayName);
-              }
-            }
-            
-            if (mentionedAgentId) {
-              // Create a contextual response prompt for the mentioned agent
-              const responsePrompt = `Please respond to the ${behavior} questions/points from ${agentName}. Address their specific questions and provide the requested information or clarification.`;
-              
-              console.log('🎭 [Auto-Response] Triggering response from:', mentionedAgentDisplayName);
-              console.log('🎭 [Auto-Response] Response prompt:', responsePrompt);
-              
-              // Set thinking indicator for the mentioned agent
-              setSmartThinkingIndicator(mentionedAgentId, mentionedAgentDisplayName, 'responding to questions...');
-              
-              // Trigger the mentioned agent's response
-              await handleSendMessage(responsePrompt, [mentionedAgentId]);
-              console.log('🎭 [Auto-Response] Successfully triggered automatic response from:', mentionedAgentDisplayName);
-            } else {
-              console.warn('🎭 [Auto-Response] Could not find mentioned agent:', mentionedAgentName);
-              console.log('🎭 [Auto-Response] Available agents:', {
-                host: hostAgent?.name,
-                guests: getGuestAgents().map(g => g.name)
-              });
-            }
-          } catch (error) {
-            console.error('🎭 [Auto-Response] Error triggering mentioned agent response:', error);
-            clearSmartThinkingIndicator();
-          }
-        }, 3000); // Increased delay to 3 seconds for better reliability
-      }
+      // Note: The @mention in the response will automatically trigger the original agent
+      // No need for automated setTimeout logic - let the mention system handle it
+      
     } catch (error) {
       console.error('🎭 [Behavior Prompt] Error triggering response:', error);
       clearSmartThinkingIndicator();
