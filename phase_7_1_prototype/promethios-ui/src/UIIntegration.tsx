@@ -54,6 +54,8 @@ import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOvervi
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
 import UserProfilePage from './pages/UserProfilePage';
+import LinkedInStyleProfilePage from './pages/LinkedInStyleProfilePage';
+import PublicProfilePage from './pages/PublicProfilePage';
 import PreferencesSettingsPage from './pages/PreferencesSettingsPage';
 import OrganizationSettingsPage from './pages/OrganizationSettingsPage';
 import IntegrationsSettingsPage from './pages/IntegrationsSettingsPage';
@@ -752,7 +754,7 @@ const UIIntegration: React.FC = () => {
         <Route path="social/profiles" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <UserProfilePage />
+              <LinkedInStyleProfilePage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
@@ -789,8 +791,25 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-                {/* Clean Profile Route - New Implementation */}
+                {/* LinkedIn-Style Profile Routes */}
         <Route path="profile" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <LinkedInStyleProfilePage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="profile/:userId" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <PublicProfilePage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Legacy Profile Route */}
+        <Route path="profile/settings" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <UserProfilePage />
