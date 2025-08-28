@@ -373,7 +373,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     name: string;
     avatar?: string;
   } | null>(null);
-  const [currentActivity, setCurrentActivity] = useState<string>('');
+  const [currentActivity, setCurrentActivity] = useState('');
+  const [behaviorPromptActive, setBehaviorPromptActive] = useState<{
+    agentId: string;
+    behavior: string;
+    timestamp: number;
+  } | null>(null);
   
   // Human participants state
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
@@ -1216,11 +1221,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const isBehaviorPromptResponse = (message, messages, index) => {
     if (message.sender === 'user' || index === 0) return false;
     
-    // Look at the previous message to see if it might have triggered a behavior prompt
-    const previousMessage = messages[index - 1];
-    if (!previousMessage) return false;
+    // Check if we have an active behavior prompt that matches this message
+    if (behaviorPromptActive) {
+      const timeDiff = message.timestamp.getTime() - behaviorPromptActive.timestamp;
+      // If this message is from the expected agent and within 30 seconds of the behavior prompt
+      if (timeDiff > 0 && timeDiff < 30000) {
+        // Check if this message is from the agent we sent the behavior prompt to
+        const messageAgentId = getAgentIdFromMessage(message);
+        if (messageAgentId === behaviorPromptActive.agentId) {
+          // Clear the active behavior prompt since we found the response
+          setBehaviorPromptActive(null);
+          return true;
+        }
+      }
+    }
     
-    // Check if the message content suggests it's responding to a behavior prompt
+    // Fallback: Check if the message content suggests it's responding to a behavior prompt
     const behaviorIndicators = [
       'Please ask thoughtful, clarifying questions',
       'Please collaborate with',
@@ -1231,14 +1247,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       '❓', '🤝', '😈', '🎯', '💡', '🌧️'
     ];
     
-    // Check if this message appears to be responding to a behavior prompt
-    const isResponseToBehavior = behaviorIndicators.some(indicator => 
-      message.content.toLowerCase().includes(indicator.toLowerCase()) ||
-      (previousMessage.metadata?.behaviorPrompt && 
-       Math.abs(message.timestamp.getTime() - previousMessage.timestamp.getTime()) < 10000) // Within 10 seconds
+    return behaviorIndicators.some(indicator => 
+      message.content.toLowerCase().includes(indicator.toLowerCase())
     );
-    
-    return isResponseToBehavior;
   };
 
   const isFollowUpToBehaviorResponse = (message, messages, index) => {
@@ -2464,33 +2475,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     const mentionTarget = getMentionTarget();
 
-    // Create behavioral prompt templates with @mentions for multi-agent mode
+    // Create behavioral prompt templates - target the CLICKED agent, not the last responder
     const behaviorPrompts = {
-      collaborate: isSingleAgentMode 
-        ? `🤝 Please collaborate further on your previous response. Build upon your own ideas and develop them more comprehensively.`
-        : `🤝 ${mentionTarget} Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective.`,
-      question: isSingleAgentMode
-        ? `❓ Please question and critically examine your own previous response. What assumptions did you make? What could be challenged or explored further?`
-        : `❓ ${mentionTarget} Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration.`,
-      devils_advocate: isSingleAgentMode
-        ? `😈 Please play devil's advocate to your own previous response. Challenge your own assumptions, point out potential weaknesses, and present alternative viewpoints.`
-        : `😈 ${mentionTarget} Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments.`,
-      expert: isSingleAgentMode
-        ? `🎯 Please provide an expert analysis of your own previous response. Evaluate its accuracy, completeness, and implications from a specialist perspective.`
-        : `🎯 ${mentionTarget} Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
-      creative: isSingleAgentMode
-        ? `💡 Please add creative ideas and innovative perspectives to your own previous response. Think outside the box and suggest novel approaches or creative extensions.`
-        : `💡 ${mentionTarget} Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`,
-      pessimist: isSingleAgentMode
-        ? `🌧️ Please provide a pessimistic perspective on your own previous response. Identify potential risks, downsides, and what could realistically go wrong with your own suggestions. Focus on practical concerns and worst-case scenarios.`
-        : `🌧️ ${mentionTarget} Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account.`
+      collaborate: `🤝 Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective.`,
+      question: `❓ Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration.`,
+      devils_advocate: `😈 Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments.`,
+      expert: `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
+      creative: `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`,
+      pessimist: `🌧️ Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account.`
     };
 
-    // Create the behavioral trigger message
+    // Create the behavioral trigger message - send directly to the clicked agent
     const triggerMessage = behaviorPrompts[behavior as keyof typeof behaviorPrompts] || 
-      (isSingleAgentMode 
-        ? `Please reflect on and respond to your previous message with a ${behavior} approach.`
-        : `${mentionTarget} Please respond to the last message with a ${behavior} approach.`);
+      `Please respond to the last message with a ${behavior} approach.`;
     
     try {
       // Set smart thinking indicator
@@ -2499,6 +2496,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Send the behavioral trigger message to the specific agent
       await handleSendMessage(triggerMessage, [agentId]);
       console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'mentioning:', mentionTarget);
+      
+      // Mark that we're expecting a behavior prompt response
+      setBehaviorPromptActive({
+        agentId,
+        behavior,
+        timestamp: Date.now()
+      });
       
       // Enhanced automatic response chaining - works in both single and multi-agent modes
       if (mentionTarget !== '@user' && mentionTarget !== '@assistant') {
@@ -2897,8 +2901,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (!messageToSend || !activeSession || chatLoading) return;
 
     try {
-      // Immediately add user message to chat before processing (only if not a custom message)
-      if (!customMessage) {
+      // Always add user message to chat for immediate feedback (unless it's an internal system message)
+      if (!customMessage || !customMessage.startsWith('🤝') && !customMessage.startsWith('❓') && !customMessage.startsWith('😈') && !customMessage.startsWith('🎯') && !customMessage.startsWith('💡') && !customMessage.startsWith('🌧️')) {
         const userMessage: ChatMessage = {
           id: `user_${Date.now()}`,
           content: messageToSend,
