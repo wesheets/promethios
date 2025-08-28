@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userProfileService, UserProfile } from '../services/UserProfileService';
+import { FirebaseUserDiscoveryService } from '../services/FirebaseUserDiscoveryService';
 import {
   Box,
   Card,
@@ -86,11 +88,21 @@ interface Skill {
 
 const LinkedInStyleProfilePage: React.FC = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [peopleAlsoViewed, setPeopleAlsoViewed] = useState<any[]>([]);
+  
+  // Firebase services
+  const discoveryService = new FirebaseUserDiscoveryService();
+
+  // Navigation handler
+  const handleViewProfile = (userId: string) => {
+    navigate(`/ui/profile/${userId}`);
+  };
 
   // Profile state with LinkedIn-style fields
   const [profile, setProfile] = useState<UserProfile & {
@@ -166,6 +178,37 @@ const LinkedInStyleProfilePage: React.FC = () => {
 
     loadProfile();
   }, [currentUser]);
+
+  // Load people also viewed from Firebase
+  useEffect(() => {
+    const loadPeopleAlsoViewed = async () => {
+      try {
+        // Get a few random users from Firebase for "People also viewed"
+        const users = await discoveryService.getAllUsers();
+        
+        // Filter out the current user and take first 3
+        const filteredUsers = users
+          .filter(user => user.id !== currentUser?.uid)
+          .slice(0, 3)
+          .map(user => ({
+            id: user.id,
+            name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Anonymous User',
+            title: user.title || user.jobTitle || 'Professional',
+            avatar: user.avatar || user.photoURL || ''
+          }));
+        
+        setPeopleAlsoViewed(filteredUsers);
+      } catch (error) {
+        console.error('Failed to load people also viewed:', error);
+        // Fallback to empty array if Firebase fails
+        setPeopleAlsoViewed([]);
+      }
+    };
+
+    if (currentUser) {
+      loadPeopleAlsoViewed();
+    }
+  }, [currentUser, discoveryService]);
 
   // Save profile changes
   const handleSave = async () => {
@@ -538,28 +581,55 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 People also viewed
               </Typography>
               
-              {[
-                { name: 'Sarah Chen', title: 'AI Research Director', avatar: '' },
-                { name: 'Marcus Rodriguez', title: 'ML Engineer', avatar: '' },
-                { name: 'Emily Watson', title: 'Data Scientist', avatar: '' }
-              ].map((person, index) => (
-                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <Avatar sx={{ width: 40, height: 40 }}>
-                    {person.name.split(' ').map(n => n[0]).join('')}
-                  </Avatar>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body2" fontWeight="bold">
-                      {person.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {person.title}
-                    </Typography>
+              {peopleAlsoViewed.length > 0 ? (
+                peopleAlsoViewed.map((person, index) => (
+                  <Box 
+                    key={person.id || index} 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 2, 
+                      mb: 2,
+                      cursor: 'pointer',
+                      p: 1,
+                      borderRadius: 1,
+                      '&:hover': {
+                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                      }
+                    }}
+                    onClick={() => handleViewProfile(person.id)}
+                  >
+                    <Avatar 
+                      src={person.avatar} 
+                      sx={{ width: 40, height: 40 }}
+                    >
+                      {person.name.split(' ').map(n => n[0]).join('')}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" fontWeight="bold">
+                        {person.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {person.title}
+                      </Typography>
+                    </Box>
+                    <Button 
+                      size="small" 
+                      variant="outlined"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent card click when clicking button
+                        // TODO: Implement connect functionality
+                      }}
+                    >
+                      Connect
+                    </Button>
                   </Box>
-                  <Button size="small" variant="outlined">
-                    Connect
-                  </Button>
-                </Box>
-              ))}
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                  No users found
+                </Typography>
+              )}
             </Box>
           </Card>
 
