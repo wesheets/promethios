@@ -128,8 +128,8 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
 
   const handleConfigureAgents = async (configurations: any[]) => {
     try {
-      // Generate session ID (in real implementation, this would come from the chat session)
-      const sessionId = `session_${Date.now()}`;
+      // Use the same session ID format as the multi-agent system
+      const sessionId = `conv_${Date.now()}`;
       
       // Convert configurations to temporary role assignments
       const assignments: TemporaryRoleAssignment[] = configurations.map(config => ({
@@ -137,10 +137,10 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
         agentName: config.agentName,
         careerRole: config.careerRole,
         behavior: config.behavior,
-        sessionId
+        sessionId: sessionId
       }));
-      
-      // Assign temporary roles
+
+      // Assign temporary roles using the service
       await temporaryRoleService.assignTemporaryRoles(sessionId, assignments);
       
       // Add all selected members (humans + configured AI agents)

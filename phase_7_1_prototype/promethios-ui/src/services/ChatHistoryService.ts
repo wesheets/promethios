@@ -123,13 +123,14 @@ export class ChatHistoryService {
   }
 
   /**
-   * Create a new chat session
+   * Create new chat session with cryptographic logging
    */
   async createChatSession(
     agentId: string,
     agentName: string,
     userId: string,
-    sessionName?: string
+    sessionName?: string,
+    isMultiAgent?: boolean
   ): Promise<ChatSession> {
     console.log('🔍 [Firebase Debug] Starting createChatSession');
     console.log('  - Agent ID:', agentId);
@@ -155,7 +156,7 @@ export class ChatHistoryService {
       createdAt: now,
       lastUpdated: now,
       messageCount: 0,
-      isShared: false,
+      isShared: isMultiAgent || false,
       governanceMetrics: {
         overallTrustScore: 100,
         totalViolations: 0,
@@ -166,6 +167,7 @@ export class ChatHistoryService {
         tags: [],
         keyTopics: [],
         lastActivity: now,
+        isMultiAgent: isMultiAgent || false,
       },
     };
 

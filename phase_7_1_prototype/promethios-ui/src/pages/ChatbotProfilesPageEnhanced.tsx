@@ -2574,12 +2574,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         }
       }
 
+      // Create or use existing multi-agent session ID
+      let sessionId = currentMultiAgentSession;
+      if (!sessionId) {
+        sessionId = `conv_${Date.now()}`;
+        setCurrentMultiAgentSession(sessionId);
+        console.log('🆕 [MultiAgent] Created new session ID:', sessionId);
+      }
+
       // Create routing context with conversation history
       const routingContext = {
         hostAgentId: activeContext.hostAgentId,
         guestAgents: activeContext.guestAgents,
         userId: user.uid,
-        conversationId: currentMultiAgentSession || `conv_${Date.now()}`,
+        conversationId: sessionId,
         conversationHistory: conversationHistory, // 🔧 CRITICAL: Include full conversation history
         selectedAgents: selectedAgents // 🔧 CRITICAL: Include avatar-selected agents
       };
@@ -2724,7 +2732,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           selectedChatbot.id,
           selectedChatbot.name,
           user.uid,
-          smartChatName || `Chat with ${selectedChatbot.name}`
+          smartChatName || `Chat with ${selectedChatbot.name}`,
+          guestAgents.length > 0 // Mark as multi-agent if there are guest agents
         );
         
         updateBotState(selectedChatbot.id, {
@@ -3372,111 +3381,125 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       👑 {selectedChatbot?.identity?.name || 'Host Agent'}
                                     </Typography>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'collaborate')}
-                                        sx={{
-                                          bgcolor: '#10b981',
-                                          color: 'white',
-                                          fontSize: '10px',
-                                          py: 0.5,
-                                          px: 1,
-                                          '&:hover': { bgcolor: '#059669' }
-                                        }}
-                                      >
-                                        🤝 Collaborate
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'question')}
-                                        sx={{
-                                          bgcolor: '#3b82f6',
-                                          color: 'white',
-                                          fontSize: '10px',
-                                          py: 0.5,
-                                          px: 1,
-                                          '&:hover': { bgcolor: '#2563eb' }
-                                        }}
-                                      >
-                                        ❓ Question
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'devils_advocate')}
-                                        sx={{
-                                          bgcolor: '#ef4444',
-                                          color: 'white',
-                                          fontSize: '10px',
-                                          py: 0.5,
-                                          px: 1,
-                                          '&:hover': { bgcolor: '#dc2626' }
-                                        }}
-                                      >
-                                        😈 Devil's Advocate
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'expert')}
-                                        sx={{
-                                          bgcolor: '#8b5cf6',
-                                          color: 'white',
-                                          fontSize: '10px',
-                                          py: 0.5,
-                                          px: 1,
-                                          '&:hover': { bgcolor: '#7c3aed' }
-                                        }}
-                                      >
-                                        🎯 Expert Analysis
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'critic')}
-                                        sx={{
-                                          bgcolor: '#f59e0b',
-                                          color: 'white',
-                                          fontSize: '10px',
-                                          py: 0.5,
-                                          px: 1,
-                                          '&:hover': { bgcolor: '#d97706' }
-                                        }}
-                                      >
-                                        🔍 Critical Review
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'creative')}
-                                        sx={{
-                                          bgcolor: '#ec4899',
-                                          color: 'white',
-                                          fontSize: '10px',
-                                          py: 0.5,
-                                          px: 1,
-                                          '&:hover': { bgcolor: '#db2777' }
-                                        }}
-                                      >
-                                        💡 Creative Ideas
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'analyst')}
-                                        sx={{
-                                          bgcolor: '#06b6d4',
-                                          color: 'white',
-                                          fontSize: '10px',
-                                          py: 0.5,
-                                          px: 1,
-                                          '&:hover': { bgcolor: '#0891b2' }
-                                        }}
-                                      >
-                                        📊 Analytical Response
-                                      </Button>
+                                      <Tooltip title="Agent will work cooperatively, build on ideas, and seek consensus" placement="left">
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'collaborate')}
+                                          sx={{
+                                            bgcolor: '#10b981',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#059669' }
+                                          }}
+                                        >
+                                          🤝 Collaborate
+                                        </Button>
+                                      </Tooltip>
+                                      <Tooltip title="Agent will ask clarifying questions and seek deeper understanding" placement="left">
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'question')}
+                                          sx={{
+                                            bgcolor: '#3b82f6',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#2563eb' }
+                                          }}
+                                        >
+                                          ❓ Question
+                                        </Button>
+                                      </Tooltip>
+                                      <Tooltip title="Agent will challenge ideas, ask tough questions, and identify potential problems" placement="left">
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'devils_advocate')}
+                                          sx={{
+                                            bgcolor: '#ef4444',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#dc2626' }
+                                          }}
+                                        >
+                                          😈 Devil's Advocate
+                                        </Button>
+                                      </Tooltip>
+                                      <Tooltip title="Agent will provide deep domain knowledge and authoritative insights" placement="left">
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'expert')}
+                                          sx={{
+                                            bgcolor: '#8b5cf6',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#7c3aed' }
+                                          }}
+                                        >
+                                          🎯 Expert Analysis
+                                        </Button>
+                                      </Tooltip>
+                                      <Tooltip title="Agent will provide constructive criticism and identify areas for improvement" placement="left">
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'critic')}
+                                          sx={{
+                                            bgcolor: '#f59e0b',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#d97706' }
+                                          }}
+                                        >
+                                          🔍 Critical Review
+                                        </Button>
+                                      </Tooltip>
+                                      <Tooltip title="Agent will generate innovative ideas and creative solutions" placement="left">
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'creative')}
+                                          sx={{
+                                            bgcolor: '#ec4899',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#db2777' }
+                                          }}
+                                        >
+                                          💡 Creative Ideas
+                                        </Button>
+                                      </Tooltip>
+                                      <Tooltip title="Agent will provide data-driven analysis and structured insights" placement="left">
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          onClick={() => handleHoverTriggeredResponse(selectedChatbot?.id || '', selectedChatbot?.identity?.name || 'Host Agent', 'analyst')}
+                                          sx={{
+                                            bgcolor: '#06b6d4',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            py: 0.5,
+                                            px: 1,
+                                            '&:hover': { bgcolor: '#0891b2' }
+                                          }}
+                                        >
+                                          📊 Analytical Response
+                                        </Button>
+                                      </Tooltip>
                                     </Box>
                                   </Box>
                                 }
@@ -3509,73 +3532,82 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                         🤖 {guest.name}
                                       </Typography>
                                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'collaborate')}
-                                          sx={{
-                                            bgcolor: '#10b981',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#059669' }
-                                          }}
-                                        >
-                                          🤝 Collaborate
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'question')}
-                                          sx={{
-                                            bgcolor: '#3b82f6',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#2563eb' }
-                                          }}
-                                        >
-                                          ❓ Question
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'devils_advocate')}
-                                          sx={{
-                                            bgcolor: '#ef4444',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#dc2626' }
-                                          }}
-                                        >
-                                          😈 Devil's Advocate
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'expert')}
-                                          sx={{
-                                            bgcolor: '#8b5cf6',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#7c3aed' }
-                                          }}
-                                        >
-                                          🎯 Expert Analysis
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'critic')}
-                                          sx={{
-                                            bgcolor: '#f59e0b',
-                                            color: 'white',
+                                        <Tooltip title="Agent will work cooperatively, build on ideas, and seek consensus" placement="left">
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'collaborate')}
+                                            sx={{
+                                              bgcolor: '#10b981',
+                                              color: 'white',
+                                              fontSize: '10px',
+                                              py: 0.5,
+                                              px: 1,
+                                              '&:hover': { bgcolor: '#059669' }
+                                            }}
+                                          >
+                                            🤝 Collaborate
+                                          </Button>
+                                        </Tooltip>
+                                        <Tooltip title="Agent will ask clarifying questions and seek deeper understanding" placement="left">
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'question')}
+                                            sx={{
+                                              bgcolor: '#3b82f6',
+                                              color: 'white',
+                                              fontSize: '10px',
+                                              py: 0.5,
+                                              px: 1,
+                                              '&:hover': { bgcolor: '#2563eb' }
+                                            }}
+                                          >
+                                            ❓ Question
+                                          </Button>
+                                        </Tooltip>
+                                        <Tooltip title="Agent will challenge ideas, ask tough questions, and identify potential problems" placement="left">
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'devils_advocate')}
+                                            sx={{
+                                              bgcolor: '#ef4444',
+                                              color: 'white',
+                                              fontSize: '10px',
+                                              py: 0.5,
+                                              px: 1,
+                                              '&:hover': { bgcolor: '#dc2626' }
+                                            }}
+                                          >
+                                            😈 Devil's Advocate
+                                          </Button>
+                                        </Tooltip>
+                                        <Tooltip title="Agent will provide deep domain knowledge and authoritative insights" placement="left">
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'expert')}
+                                            sx={{
+                                              bgcolor: '#8b5cf6',
+                                              color: 'white',
+                                              fontSize: '10px',
+                                              py: 0.5,
+                                              px: 1,
+                                              '&:hover': { bgcolor: '#7c3aed' }
+                                            }}
+                                          >
+                                            🎯 Expert Analysis
+                                          </Button>
+                                        </Tooltip>
+                                        <Tooltip title="Agent will provide constructive criticism and identify areas for improvement" placement="left">
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'critic')}
+                                            sx={{
+                                              bgcolor: '#f59e0b',
+                                              color: 'white',
                                             fontSize: '10px',
                                             py: 0.5,
                                             px: 1,
@@ -3584,36 +3616,41 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                         >
                                           🔍 Critical Review
                                         </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'creative')}
-                                          sx={{
-                                            bgcolor: '#ec4899',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#db2777' }
-                                          }}
-                                        >
-                                          💡 Creative Ideas
-                                        </Button>
-                                        <Button
-                                          size="small"
-                                          variant="contained"
-                                          onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'analyst')}
-                                          sx={{
-                                            bgcolor: '#06b6d4',
-                                            color: 'white',
-                                            fontSize: '10px',
-                                            py: 0.5,
-                                            px: 1,
-                                            '&:hover': { bgcolor: '#0891b2' }
-                                          }}
-                                        >
-                                          📊 Analytical Response
-                                        </Button>
+                                        </Tooltip>
+                                        <Tooltip title="Agent will generate innovative ideas and creative solutions" placement="left">
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'creative')}
+                                            sx={{
+                                              bgcolor: '#ec4899',
+                                              color: 'white',
+                                              fontSize: '10px',
+                                              py: 0.5,
+                                              px: 1,
+                                              '&:hover': { bgcolor: '#db2777' }
+                                            }}
+                                          >
+                                            💡 Creative Ideas
+                                          </Button>
+                                        </Tooltip>
+                                        <Tooltip title="Agent will provide data-driven analysis and structured insights" placement="left">
+                                          <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleHoverTriggeredResponse(guest.agentId, guest.name, 'analyst')}
+                                            sx={{
+                                              bgcolor: '#06b6d4',
+                                              color: 'white',
+                                              fontSize: '10px',
+                                              py: 0.5,
+                                              px: 1,
+                                              '&:hover': { bgcolor: '#0891b2' }
+                                            }}
+                                          >
+                                            📊 Analytical Response
+                                          </Button>
+                                        </Tooltip>
                                       </Box>
                                     </Box>
                                   }
