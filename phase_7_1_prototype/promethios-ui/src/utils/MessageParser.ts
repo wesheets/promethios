@@ -38,6 +38,12 @@ export class MessageParser {
    * - @everyone (routes to all agents)
    */
   public parseMessage(message: string, availableAgents: Array<{id: string, name: string}>): ParsedMessage {
+    // Type safety check - ensure message is a string
+    if (typeof message !== 'string') {
+      console.error('❌ [MessageParser] Invalid message type:', typeof message, 'Expected string, got:', message);
+      message = String(message || '');
+    }
+
     console.log('🔍 [MessageParser] Parsing message for @mentions:', message);
     console.log('🔍 [MessageParser] Available agents:', availableAgents);
     console.log('🔍 [MessageParser] Available agents detailed:', availableAgents.map(agent => ({

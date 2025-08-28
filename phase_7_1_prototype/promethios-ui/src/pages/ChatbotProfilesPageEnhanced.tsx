@@ -2962,6 +2962,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Multi-agent message handling
   const handleMultiAgentMessage = async (message: string, targetAgentIds?: string[]) => {
+    // Type safety check - ensure message is a string
+    if (typeof message !== 'string') {
+      console.error('❌ [ChatPanel] Invalid message type in handleMultiAgentMessage:', typeof message, 'Expected string, got:', message);
+      message = String(message || '');
+    }
+
     if (!selectedChatbot || !user?.uid) return;
 
     try {

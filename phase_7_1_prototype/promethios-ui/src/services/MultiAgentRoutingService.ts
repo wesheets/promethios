@@ -97,6 +97,12 @@ export class MultiAgentRoutingService {
     sourceAgentId?: string;
     targetAgentId?: string;
   }> {
+    // Type safety check - ensure message is a string
+    if (typeof message !== 'string') {
+      console.error('❌ [MultiAgentRouting] Invalid message type:', typeof message, 'Expected string, got:', message);
+      message = String(message || '');
+    }
+
     console.log('🎯 [MultiAgentRouting] Processing user message:', message);
     console.log('🎯 [MultiAgentRouting] Context:', context);
 
