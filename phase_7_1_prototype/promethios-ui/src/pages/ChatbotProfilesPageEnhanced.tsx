@@ -2429,7 +2429,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const hostAgent = getHostAgent();
       if (hostAgent && message.sender.includes(hostAgent.name)) return hostAgent.id;
       
-      const guestAgent = guestAgents.find(agent => message.sender.includes(agent.name));
+      const guestAgent = getGuestAgents().find(agent => message.sender.includes(agent.name));
       if (guestAgent) return guestAgent.id;
     }
     return null;
@@ -2742,59 +2742,60 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Enhanced multi-agent message handling
-  const handleSendMessage = async () => {
-    if (!messageInput.trim() || !activeSession || chatLoading) return;
+  const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
+    const messageToSend = customMessage || messageInput.trim();
+    if (!messageToSend || !activeSession || chatLoading) return;
 
     try {
-      // Immediately add user message to chat before processing
-      const userMessage: ChatMessage = {
-        id: `user_${Date.now()}`,
-        content: messageInput.trim(),
-        sender: 'user',
-        timestamp: new Date(),
-        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-      };
+      // Immediately add user message to chat before processing (only if not a custom message)
+      if (!customMessage) {
+        const userMessage: ChatMessage = {
+          id: `user_${Date.now()}`,
+          content: messageToSend,
+          sender: 'user',
+          timestamp: new Date(),
+          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+        };
 
-      // Add user message immediately to provide instant feedback
-      if (selectedChatbot) {
-        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
-        setBotStates(prev => {
-          const newStates = new Map(prev);
-          const currentState = newStates.get(botId) || initializeBotState(botId);
-          const updatedMessages = [...(currentState.chatMessages || []), userMessage];
-          const updatedState = { ...currentState, chatMessages: updatedMessages };
-          newStates.set(botId, updatedState);
-          return newStates;
-        });
+        // Add user message immediately to provide instant feedback
+        if (selectedChatbot) {
+          const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+          setBotStates(prev => {
+            const newStates = new Map(prev);
+            const currentState = newStates.get(botId) || initializeBotState(botId);
+            const updatedMessages = [...(currentState.chatMessages || []), userMessage];
+            const updatedState = { ...currentState, chatMessages: updatedMessages };
+            newStates.set(botId, updatedState);
+            return newStates;
+          });
+        }
+
+        // Clear input and attachments immediately
+        setMessageInput('');
+        setAttachedFiles([]);
       }
-
-      // Clear input and attachments immediately
-      const currentMessageInput = messageInput.trim();
-      const currentAttachedFiles = [...attachedFiles];
-      setMessageInput('');
-      setAttachedFiles([]);
 
       setChatLoading(true);
       setIsTyping(true);
       
       // Set smart thinking indicator
       const respondingAgent = getRespondingAgent();
-      const activityStatus = getActivityStatus(currentMessageInput);
+      const activityStatus = getActivityStatus(messageToSend);
       setCurrentRespondingAgent(respondingAgent);
       setCurrentActivity(activityStatus);
       
-      // Check if we're in multi-agent mode
+      // Check if we're in multi-agent mode or have specific target agents
       const activeContext = multiChatState.contexts.find(c => c.isActive);
       const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
       
-      if (hasGuestAgents && selectedChatbot && user?.uid) {
+      if ((hasGuestAgents || targetAgentIds) && selectedChatbot && user?.uid) {
         console.log('🤖 [MultiAgent] Processing multi-agent message');
-        await handleMultiAgentMessage(currentMessageInput);
+        await handleMultiAgentMessage(messageToSend, targetAgentIds);
         return;
       }
       
       // Original single-agent message handling
-      await handleSingleAgentMessage();
+      await handleSingleAgentMessage(messageToSend);
       
     } catch (error) {
       console.error('❌ [ChatPanel] Error sending message:', error);
@@ -2805,7 +2806,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Multi-agent message handling
-  const handleMultiAgentMessage = async (message: string) => {
+  const handleMultiAgentMessage = async (message: string, targetAgentIds?: string[]) => {
     if (!selectedChatbot || !user?.uid) return;
 
     try {
@@ -2939,10 +2940,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Original single-agent message handling
-  const handleSingleAgentMessage = async () => {
+  const handleSingleAgentMessage = async (message?: string) => {
     try {
       // Prepare the final message content
-      let finalMessageContent = messageInput.trim();
+      let finalMessageContent = message || messageInput.trim();
     
     // If there's an active chat reference, combine it with the user's message
     if (activeChatReference) {
