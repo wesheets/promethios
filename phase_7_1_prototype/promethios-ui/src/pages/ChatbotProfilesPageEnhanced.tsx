@@ -2852,7 +2852,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   const getActivityStatus = (messageContent: string = '') => {
-    const content = messageContent.toLowerCase();
+    // Ensure messageContent is a string and handle null/undefined cases
+    const safeContent = typeof messageContent === 'string' ? messageContent : String(messageContent || '');
+    const content = safeContent.toLowerCase();
     
     // Determine activity based on message content and context
     if (content.includes('search') || content.includes('find') || content.includes('lookup')) {
