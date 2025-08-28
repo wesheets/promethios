@@ -335,5 +335,6 @@ class FirebaseUserDiscoveryService {
 }
 
 export const firebaseUserDiscoveryService = new FirebaseUserDiscoveryService();
+export { FirebaseUserDiscoveryService };
 export default firebaseUserDiscoveryService;
 

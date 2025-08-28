@@ -746,44 +746,6 @@ class UserProfileService {
   }
 
   /**
-   * Update specific profile fields
-   */
-  async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
-    try {
-      // In production, this would update Firebase document
-      await this.delay(500);
-      
-      const currentProfile = await this.getCurrentUserProfile();
-      const updatedProfile = { ...currentProfile, ...updates };
-      
-      await this.saveProfile(updatedProfile);
-      return updatedProfile;
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get user profile by ID (for authenticated access)
-   */
-  async getUserProfile(userId: string): Promise<UserProfile> {
-    try {
-      // In production, this would check permissions and fetch from Firebase
-      await this.delay(500);
-      
-      if (userId === 'current-user') {
-        return this.getCurrentUserProfile();
-      }
-      
-      return this.getPublicProfile(userId);
-    } catch (error) {
-      console.error('Failed to get user profile:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Utility delay function for simulating API calls
    */
   private delay(ms: number): Promise<void> {
