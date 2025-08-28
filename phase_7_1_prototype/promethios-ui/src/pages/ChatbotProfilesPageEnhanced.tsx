@@ -3855,7 +3855,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     spacing={3}
                     sx={{
                       display: 'flex',
-                      flexDirection: 'column', // Normal order since we'll reverse the array
+                      flexDirection: 'column-reverse', // Reverse direction so newest messages appear at bottom
                       justifyContent: 'flex-start',
                       minHeight: '100%',
                       paddingBottom: 2
@@ -3864,7 +3864,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Multi-Agent Response Indicator */}
                     {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
-                    {[...chatMessages].reverse().map((message) => (
+                    {chatMessages.map((message) => (
                       <Box
                         key={message.id}
                         sx={{
