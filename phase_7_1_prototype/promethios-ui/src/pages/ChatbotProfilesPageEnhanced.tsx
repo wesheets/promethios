@@ -4900,6 +4900,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         visualAgentSelection: true,
                         mentionSystemEnabled: true
                       },
+                      // 🔧 CRITICAL FIX: Add missing agentToAgentCommunication property
+                      agentToAgentCommunication: {
+                        enabled: true,
+                        allowDirectTagging: true,
+                        hoverTriggeredResponses: false,
+                        autoResponseToMentions: true,
+                        crossAgentConversations: true,
+                        responseDelay: 2,
+                        maxChainLength: 3
+                      },
                       autonomousBehaviors: {
                         proactiveInterjection: false,
                         smartSuggestions: true,

@@ -433,7 +433,15 @@ const MASCollaborationPanel: React.FC<MASCollaborationPanelProps> = ({
         <AccordionDetails>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {availableAgents.map(agent => (
-              <Card key={agent.id} variant="outlined" sx={{ p: 1 }}>
+              <Card key={agent.id} variant="outlined" sx={{ 
+                p: 1,
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  borderColor: 'rgba(49, 130, 206, 0.3)'
+                }
+              }}>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                   {agent.name}
                 </Typography>
