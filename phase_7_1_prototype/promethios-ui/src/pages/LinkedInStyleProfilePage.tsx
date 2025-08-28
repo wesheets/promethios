@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userProfileService, UserProfile } from '../services/userProfileService';
+import { unifiedStorageService } from '../services/unifiedStorageService';
 import {
   Box,
   Card,
@@ -173,17 +174,31 @@ const LinkedInStyleProfilePage: React.FC = () => {
 
   // Save profile changes
   const handleSave = async () => {
-    if (!currentUser) return;
-
+    if (!currentUser?.uid) return;
+    
     try {
       setSaving(true);
-      await userProfileService.updateUserProfile(currentUser.uid, profile);
+      
+      // Save to unified storage
+      const profileKey = `user_profiles.${currentUser.uid}`;
+      const profileData = {
+        ...profile,
+        updatedAt: new Date().toISOString(),
+        lastModified: Date.now()
+      };
+      
+      await unifiedStorageService.set(profileKey, profileData);
+      
+      // Also save to userProfileService for backward compatibility
+      await userProfileService.updateProfile(currentUser.uid, profile);
+      
       setSaveSuccess(true);
-      setEditMode(false);
-      setEditingSection(null);
       setTimeout(() => setSaveSuccess(false), 3000);
+      
+      console.log('✅ Profile saved to unified storage and user service');
     } catch (error) {
-      console.error('Failed to save profile:', error);
+      console.error('❌ Failed to save profile:', error);
+      // Show error to user
     } finally {
       setSaving(false);
     }
@@ -202,7 +217,13 @@ const LinkedInStyleProfilePage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+    <Box sx={{ 
+      maxWidth: 1200, 
+      mx: 'auto', 
+      p: 3,
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh'
+    }}>
       {saveSuccess && (
         <Alert severity="success" sx={{ mb: 2 }}>
           Profile updated successfully!
@@ -215,8 +236,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Main Profile Card */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             position: 'relative'
           }}>
             {/* Cover Photo Area */}
@@ -324,9 +346,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 display: 'flex', 
                 gap: 3, 
                 p: 2, 
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                backgroundColor: '#f8f9fa',
                 borderRadius: 2,
-                border: '1px solid rgba(255, 255, 255, 0.05)'
+                border: '1px solid #e1e5e9'
               }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h6" color="primary">
@@ -359,8 +381,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* About Section */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -382,8 +405,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Experience Section */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -439,8 +463,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Skills Section */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -459,10 +484,11 @@ const LinkedInStyleProfilePage: React.FC = () => {
                     label={`${skill.name} • ${skill.endorsements}`}
                     variant="outlined"
                     sx={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
+                      backgroundColor: 'white',
+                      borderColor: '#e1e5e9',
+                      color: '#333',
                       '&:hover': { 
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: '#f8f9fa',
                         borderColor: 'primary.main'
                       }
                     }}
@@ -478,14 +504,15 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Profile Language */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                Profile language
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
+                Profile Language
               </Typography>
-              <Typography variant="body2">
+              <Typography variant="body2" color="text.secondary">
                 English
               </Typography>
             </Box>
@@ -494,27 +521,26 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Public Profile URL */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                Public profile & URL
+              <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
+                Public Profile URL
               </Typography>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                promethios.com/in/ted-sheets
+              <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
+                promethios.ai/in/{profile.username || 'user'}
               </Typography>
-              <Button size="small" startIcon={<Edit />}>
-                Edit
-              </Button>
             </Box>
           </Card>
 
           {/* People Also Viewed */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle2" sx={{ mb: 2 }}>
@@ -548,8 +574,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
 
           {/* Analytics */}
           <Card sx={{ 
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle2" sx={{ mb: 2 }}>

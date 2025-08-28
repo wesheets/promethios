@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userProfileService, UserProfile } from '../services/userProfileService';
+import { unifiedStorageService } from '../services/unifiedStorageService';
 import {
   Box,
   Card,
@@ -20,7 +21,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Alert
 } from '@mui/material';
 import {
   Person,
@@ -49,7 +51,11 @@ import {
   Share,
   MoreVert,
   Report,
-  Block
+  Block,
+  Send,
+  Close,
+  CheckCircle,
+  Schedule
 } from '@mui/icons-material';
 
 interface Experience {
@@ -188,14 +194,22 @@ const PublicProfilePage: React.FC = () => {
 
       try {
         setLoading(true);
-        // In a real app, this would fetch from the API
-        // const userProfile = await userProfileService.getUserProfile(userId);
         
-        // For now, use mock data
-        setTimeout(() => {
-          setProfile(mockProfile);
-          setLoading(false);
-        }, 1000);
+        // Load profile from unified storage
+        const profileKey = `user_profiles.${userId}`;
+        const profileData = await unifiedStorageService.get(profileKey);
+        
+        if (profileData) {
+          // Filter data based on privacy settings for public view
+          const publicProfile = filterPublicProfileData(profileData);
+          setProfile(publicProfile);
+        } else {
+          // Fallback to userProfileService if not in unified storage
+          const userProfile = await userProfileService.getPublicProfile(userId);
+          setProfile(userProfile);
+        }
+        
+        setLoading(false);
       } catch (error) {
         console.error('Failed to load profile:', error);
         setLoading(false);
@@ -204,6 +218,38 @@ const PublicProfilePage: React.FC = () => {
 
     loadProfile();
   }, [userId]);
+
+  // Filter profile data based on privacy settings
+  const filterPublicProfileData = (profileData: any) => {
+    const privacySettings = profileData.privacySettings || {};
+    
+    return {
+      ...profileData,
+      // Only include fields that are set to public
+      email: privacySettings.showEmail ? profileData.email : undefined,
+      phone: privacySettings.showPhone ? profileData.phone : undefined,
+      location: privacySettings.showLocation !== false ? profileData.location : undefined,
+      // Always show basic info
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      displayName: profileData.displayName,
+      avatar: profileData.avatar,
+      headline: profileData.headline,
+      bio: profileData.bio,
+      jobTitle: profileData.jobTitle,
+      organization: profileData.organization,
+      // Show professional info based on settings
+      experience: privacySettings.showExperience !== false ? profileData.experience : [],
+      education: privacySettings.showEducation !== false ? profileData.education : [],
+      skills: privacySettings.showSkills !== false ? profileData.skills : [],
+      // Social links are typically public
+      socialLinks: profileData.socialLinks,
+      // Connection info
+      connections: profileData.connections || 0,
+      emailVerified: profileData.emailVerified,
+      phoneVerified: profileData.phoneVerified
+    };
+  };
 
   const handleConnect = async () => {
     // In a real app, this would send a connection request
@@ -239,15 +285,22 @@ const PublicProfilePage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
+    <Box sx={{ 
+      maxWidth: 1200, 
+      mx: 'auto', 
+      p: 3,
+      backgroundColor: '#f8f9fa',
+      minHeight: '100vh'
+    }}>
       <Grid container spacing={3}>
         {/* Left Column */}
         <Grid item xs={12} md={8}>
           {/* Main Profile Card */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: 'white',
+            border: '1px solid #e1e5e9',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             position: 'relative'
           }}>
             {/* Cover Photo Area */}
