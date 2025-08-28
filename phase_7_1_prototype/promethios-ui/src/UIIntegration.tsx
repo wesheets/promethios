@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { 
   MainLayoutProxy, 
   DashboardProxy, 
@@ -155,6 +155,12 @@ import AutoResponses from './components/chat/automation/AutoResponses';
  */
 const UIIntegration: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Navigation handlers
+  const handleViewProfile = (userId: string) => {
+    navigate(`/ui/profile/${userId}`);
+  };
   
   // Debug logging
   console.log('📍 UIIntegration - Current location:', location.pathname);
@@ -746,7 +752,7 @@ const UIIntegration: React.FC = () => {
         <Route path="social/discovery" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <DiscoveryPage />
+              <DiscoveryPage onViewProfile={handleViewProfile} />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
