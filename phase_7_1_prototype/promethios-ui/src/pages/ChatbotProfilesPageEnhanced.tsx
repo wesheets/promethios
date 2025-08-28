@@ -2328,20 +2328,65 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       if (lastMessage.sender === 'user') {
         return '@user'; // Mention the user
       } else {
-        // Find the agent who made the last message
-        const lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+        // Find the agent who made the last message with improved detection
+        console.log('🎭 [getMentionTarget] Analyzing last message:', {
+          sender: lastMessage.sender,
+          content: lastMessage.content?.substring(0, 100),
+          metadata: lastMessage.metadata
+        });
+        
+        // First try to get agent ID from metadata
+        let lastResponderAgentId = lastMessage.metadata?.agentId;
+        
+        // If no metadata, try to parse from message
+        if (!lastResponderAgentId) {
+          lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+        }
+        
+        console.log('🎭 [getMentionTarget] Last responder agent ID:', lastResponderAgentId);
+        
         if (lastResponderAgentId) {
           const hostAgent = getHostAgent();
+          const guestAgents = getGuestAgents();
+          
+          console.log('🎭 [getMentionTarget] Available agents:', {
+            host: hostAgent?.name,
+            guests: guestAgents.map(g => g.name)
+          });
+          
           if (hostAgent && lastResponderAgentId === hostAgent.id) {
+            console.log('🎭 [getMentionTarget] Found host agent:', hostAgent.name);
             return `@${hostAgent.name}`;
           }
           
-          const guestAgent = getGuestAgents().find(agent => agent.id === lastResponderAgentId);
+          const guestAgent = guestAgents.find(agent => agent.id === lastResponderAgentId);
           if (guestAgent) {
+            console.log('🎭 [getMentionTarget] Found guest agent:', guestAgent.name);
             return `@${guestAgent.name}`;
           }
         }
-        return '@previous-agent'; // Fallback
+        
+        // Enhanced fallback: try to extract agent name from sender field
+        if (lastMessage.sender && lastMessage.sender !== 'assistant') {
+          // If sender contains agent name, use it
+          const hostAgent = getHostAgent();
+          const guestAgents = getGuestAgents();
+          
+          // Check if sender matches any agent name
+          const allAgents = [hostAgent, ...guestAgents].filter(Boolean);
+          const matchingAgent = allAgents.find(agent => 
+            lastMessage.sender.includes(agent.name) || 
+            agent.name.includes(lastMessage.sender)
+          );
+          
+          if (matchingAgent) {
+            console.log('🎭 [getMentionTarget] Found agent via sender field:', matchingAgent.name);
+            return `@${matchingAgent.name}`;
+          }
+        }
+        
+        console.warn('🎭 [getMentionTarget] Could not identify last responder, using fallback');
+        return '@assistant'; // Better fallback than @previous-agent
       }
     };
 
@@ -2384,7 +2429,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'mentioning:', mentionTarget);
       
       // Enhanced automatic response chaining - works in both single and multi-agent modes
-      if (mentionTarget !== '@user' && mentionTarget !== '@previous-agent') {
+      if (mentionTarget !== '@user' && mentionTarget !== '@assistant') {
         // Wait for the first response to be processed
         setTimeout(async () => {
           try {
