@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { userProfileService, UserProfile } from '../services/userProfileService';
+import { userProfileService, UserProfile } from '../services/UserProfileService';
 import {
   Box,
   Card,
@@ -129,21 +129,17 @@ const LinkedInStyleProfilePage: React.FC = () => {
     lastLogin: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    // LinkedIn-style additions
-    headline: 'AI Collaboration Specialist',
+    // LinkedIn-style additions - will be loaded from Firebase
+    headline: '',
     summary: '',
     experience: [],
     education: [],
-    skills: [
-      { id: '1', name: 'AI Collaboration', endorsements: 12 },
-      { id: '2', name: 'Machine Learning', endorsements: 8 },
-      { id: '3', name: 'Project Management', endorsements: 15 }
-    ],
-    languages: ['English', 'Spanish'],
-    connections: 247,
-    profileViews: 89,
-    postImpressions: 1240,
-    searchAppearances: 34
+    skills: [],
+    languages: [],
+    connections: 0,
+    profileViews: 0,
+    postImpressions: 0,
+    searchAppearances: 0
   });
 
   // Load user profile on mount
