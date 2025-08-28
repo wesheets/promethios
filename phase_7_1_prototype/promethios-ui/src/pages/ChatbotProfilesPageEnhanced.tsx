@@ -2375,6 +2375,43 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Send the behavioral trigger message to the specific agent
       await handleSendMessage(triggerMessage, [agentId]);
       console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'mentioning:', mentionTarget);
+      
+      // If we mentioned another agent, automatically trigger their response
+      if (!isSingleAgentMode && mentionTarget !== '@user' && mentionTarget !== '@previous-agent') {
+        // Wait a moment for the first response to be processed
+        setTimeout(async () => {
+          try {
+            // Find the mentioned agent ID
+            const mentionedAgentName = mentionTarget.replace('@', '');
+            let mentionedAgentId = null;
+            
+            const hostAgent = getHostAgent();
+            if (hostAgent && hostAgent.name === mentionedAgentName) {
+              mentionedAgentId = hostAgent.id;
+            } else {
+              const guestAgent = guestAgents.find(agent => agent.name === mentionedAgentName);
+              if (guestAgent) {
+                mentionedAgentId = guestAgent.id;
+              }
+            }
+            
+            if (mentionedAgentId) {
+              // Create a response prompt for the mentioned agent
+              const responsePrompt = `Please respond to the ${behavior} from ${agentName}. Address their points and continue the conversation.`;
+              
+              // Set thinking indicator for the mentioned agent
+              setSmartThinkingIndicator(mentionedAgentId, mentionedAgentName, 'responding...');
+              
+              // Trigger the mentioned agent's response
+              await handleSendMessage(responsePrompt, [mentionedAgentId]);
+              console.log('🎭 [Auto-Response] Triggered automatic response from mentioned agent:', mentionedAgentName);
+            }
+          } catch (error) {
+            console.error('🎭 [Auto-Response] Error triggering mentioned agent response:', error);
+            clearSmartThinkingIndicator();
+          }
+        }, 2000); // Wait 2 seconds for the first response to complete
+      }
     } catch (error) {
       console.error('🎭 [Behavior Prompt] Error triggering response:', error);
       clearSmartThinkingIndicator();
