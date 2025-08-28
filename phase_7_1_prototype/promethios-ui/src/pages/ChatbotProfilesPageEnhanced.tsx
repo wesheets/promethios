@@ -2696,26 +2696,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       setTargetAgents(result.targetAgents);
 
-      // Add user message to chat
-      const userMessage: ChatMessage = {
-        id: `user_${Date.now()}`,
-        content: message,
-        sender: 'user',
-        timestamp: new Date(),
-        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-      };
-
-      // Update chat messages
-      if (selectedChatbot) {
-        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
-        setBotStates(prev => {
-          const newStates = new Map(prev);
-          const currentState = newStates.get(botId) || initializeBotState(botId);
-          const updatedMessages = [...(currentState.chatMessages || []), userMessage];
-          newStates.set(botId, { ...currentState, chatMessages: updatedMessages });
-          return newStates;
-        });
-      }
+      // User message already added in handleSendMessage for instant feedback
+      // No need to add it again here to avoid duplicates
 
       // Handle responses
       if (result.responses && result.responses.length > 0) {
@@ -4158,7 +4140,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Multi-Agent Response Indicator */}
                     {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
-                    {[...chatMessages].reverse().map((message) => (
+                    {chatMessages.map((message) => (
                       <Box
                         key={message.id}
                         sx={{
@@ -4421,9 +4403,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                   </Box>
                                   
                                   <Typography variant="body2" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
-                                    {currentActivity || 
-                                     (currentRespondingAgent ? `${currentRespondingAgent.name} is ${currentActivity || 'thinking...'}` : 
-                                      `${selectedChatbot?.identity?.name || 'Agent'} is thinking...`)}
+                                    {currentRespondingAgent 
+                                      ? `${currentRespondingAgent.name} is ${currentActivity || 'thinking...'}` 
+                                      : `${selectedChatbot?.identity?.name || 'Agent'} is ${currentActivity || 'thinking...'}`}
                                   </Typography>
                                 </Box>
                               </Box>
