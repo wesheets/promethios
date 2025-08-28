@@ -31,6 +31,7 @@ import {
 
 // Import Firebase services
 import { firebaseUserDiscoveryService, FirebaseUser, DiscoveryFilters } from '../services/FirebaseUserDiscoveryService';
+import { useConnections } from '../hooks/useConnections';
 
 interface DiscoveryPageProps {
   onViewProfile?: (userId: string) => void;
@@ -53,6 +54,17 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
   const [trendingSkills, setTrendingSkills] = useState<string[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Connection management
+  const {
+    connections,
+    sendConnectionRequest,
+    sendingRequest,
+    isConnectedTo,
+    hasSentRequestTo,
+    hasPendingRequestFrom,
+    getConnectionStatus
+  } = useConnections();
 
   // Load initial data
   useEffect(() => {
@@ -136,9 +148,18 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
 
   const handleConnect = async (userId: string) => {
     try {
-      // TODO: Implement connection request logic
       console.log('🤝 [Discovery] Sending connection request to:', userId);
-      onConnect?.(userId);
+      
+      const success = await sendConnectionRequest(
+        userId, 
+        "Hi! I'd like to connect and explore AI collaboration opportunities together."
+      );
+      
+      if (success) {
+        // Show success feedback
+        console.log('🤝 [Discovery] Connection request sent successfully');
+        onConnect?.(userId);
+      }
     } catch (err) {
       console.error('Error sending connection request:', err);
     }
@@ -146,7 +167,6 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
 
   const handleMessage = async (userId: string) => {
     try {
-      // TODO: Implement messaging logic
       console.log('💬 [Discovery] Starting message with:', userId);
       onMessage?.(userId);
     } catch (err) {
@@ -156,12 +176,25 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
 
   const handleCollaborate = async (userId: string) => {
     try {
-      // TODO: Implement collaboration start logic
       console.log('🤖 [Discovery] Starting collaboration with:', userId);
       onStartCollaboration?.(userId);
     } catch (err) {
       console.error('Error starting collaboration:', err);
     }
+  };
+
+  // Get connection button state
+  const getConnectionButtonState = (userId: string) => {
+    if (isConnectedTo(userId)) {
+      return { text: 'Connected', disabled: true, variant: 'contained' as const };
+    }
+    if (hasSentRequestTo(userId)) {
+      return { text: 'Request Sent', disabled: true, variant: 'outlined' as const };
+    }
+    if (hasPendingRequestFrom(userId)) {
+      return { text: 'Accept Request', disabled: false, variant: 'contained' as const };
+    }
+    return { text: 'Connect', disabled: sendingRequest, variant: 'outlined' as const };
   };
 
   const UserCard: React.FC<{ user: FirebaseUser; variant?: 'full' | 'compact' }> = ({ 
@@ -298,44 +331,48 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Response
-                </Typography>
-              </Box>
-            </Box>
-          </>
-        )}
-
-        {/* Action Buttons */}
-        <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<PersonAdd />}
-            onClick={() => handleConnect(user.id)}
-            sx={{ flex: 1 }}
-          >
-            Connect
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Message />}
-            onClick={() => handleMessage(user.id)}
-            sx={{ flex: 1 }}
-          >
-            Message
-          </Button>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<Handshake />}
-            onClick={() => handleCollaborate(user.id)}
-            sx={{ flex: 1 }}
-          >
-            Collaborate
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
+                </Typog            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+              {(() => {
+                const buttonState = getConnectionButtonState(user.uid);
+                return (
+                  <Button
+                    variant={buttonState.variant}
+                    size="small"
+                    startIcon={<PersonAdd />}
+                    onClick={() => handleConnect(user.uid)}
+                    disabled={buttonState.disabled}
+                    sx={{ 
+                      minWidth: 120,
+                      color: buttonState.variant === 'contained' ? 'white' : 'primary.main'
+                    }}
+                  >
+                    {buttonState.text}
+                  </Button>
+                );
+              })()}
+              
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Message />}
+                onClick={() => handleMessage(user.uid)}
+                disabled={!isConnectedTo(user.uid)}
+                sx={{ minWidth: 100 }}
+              >
+                Message
+              </Button>
+              
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<SmartToy />}
+                onClick={() => handleCollaborate(user.uid)}
+                disabled={!isConnectedTo(user.uid)}
+                sx={{ minWidth: 120 }}
+              >
+                Collaborate
+              </Button>
+            </Box></Card>
   );
 
   return (
