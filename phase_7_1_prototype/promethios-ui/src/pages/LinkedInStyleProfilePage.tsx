@@ -178,7 +178,26 @@ const LinkedInStyleProfilePage: React.FC = () => {
             name: userProfile.name,
             id: userProfile.id
           });
-          setProfile(prev => ({ ...prev, ...userProfile }));
+          
+          // If name fields are empty, populate from auth data
+          const enhancedProfile = {
+            ...userProfile,
+            firstName: userProfile.firstName || currentUser.displayName?.split(' ')[0] || 'User',
+            lastName: userProfile.lastName || currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+            displayName: userProfile.displayName || currentUser.displayName || 'User',
+            email: userProfile.email || currentUser.email || '',
+            avatar: userProfile.avatar || currentUser.photoURL || '',
+            emailVerified: userProfile.emailVerified ?? currentUser.emailVerified,
+          };
+          
+          console.log('🔧 Enhanced profile with auth data:', {
+            firstName: enhancedProfile.firstName,
+            lastName: enhancedProfile.lastName,
+            displayName: enhancedProfile.displayName,
+            email: enhancedProfile.email
+          });
+          
+          setProfile(prev => ({ ...prev, ...enhancedProfile }));
         } else {
           // If no profile exists, populate with basic auth data only
           console.log('⚠️ No Firebase profile found, using auth data');
@@ -647,7 +666,13 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 Public Profile URL
               </Typography>
               <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
-                promethios.ai/in/{profile.username || 'user'}
+                promethios.ai/in/{
+                  profile.username || 
+                  (profile.firstName && profile.lastName 
+                    ? `${profile.firstName.toLowerCase()}-${profile.lastName.toLowerCase()}`.replace(/[^a-z0-9-]/g, '')
+                    : profile.displayName?.toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'user'
+                  )
+                }
               </Typography>
             </Box>
           </Card>
