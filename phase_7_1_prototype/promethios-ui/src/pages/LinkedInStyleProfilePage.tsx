@@ -158,21 +158,26 @@ const LinkedInStyleProfilePage: React.FC = () => {
   useEffect(() => {
     const loadProfile = async () => {
       if (!currentUser) {
+        console.log('🚨 No currentUser, skipping profile load');
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
+        console.log('🔍 Loading profile for user:', currentUser.uid);
         const userProfile = await userProfileService.getUserProfile(currentUser.uid);
         
         if (userProfile) {
           // Use real Firebase data
+          console.log('✅ Found Firebase profile data:', userProfile);
           setProfile(prev => ({ ...prev, ...userProfile }));
         } else {
           // If no profile exists, populate with basic auth data only
-          setProfile(prev => ({
+          console.log('⚠️ No Firebase profile found, using auth data');
+          const authProfile = {
             ...prev,
+            id: currentUser.uid,
             userId: currentUser.uid,
             firstName: currentUser.displayName?.split(' ')[0] || '',
             lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
@@ -182,10 +187,12 @@ const LinkedInStyleProfilePage: React.FC = () => {
             avatar: currentUser.photoURL || '',
             emailVerified: currentUser.emailVerified || false,
             phoneVerified: !!currentUser.phoneNumber
-          }));
+          };
+          console.log('📝 Setting auth profile data:', authProfile);
+          setProfile(prev => authProfile);
         }
       } catch (error) {
-        console.error('Failed to load profile:', error);
+        console.error('❌ Failed to load profile:', error);
       } finally {
         setLoading(false);
       }
