@@ -257,17 +257,45 @@ class FirebaseUserDiscoveryService {
   }
 
   /**
+   * Convert FirebaseUser to UserProfile format expected by UI components
+   */
+  private mapFirebaseUserToUserProfile(firebaseUser: FirebaseUser): any {
+    return {
+      id: firebaseUser.id,
+      name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Anonymous User',
+      title: firebaseUser.profile?.title || 'Professional',
+      company: firebaseUser.profile?.company || 'Company',
+      location: firebaseUser.profile?.location || 'Location',
+      bio: firebaseUser.profile?.bio || 'Professional focused on AI collaboration.',
+      avatar: firebaseUser.photoURL || null,
+      skills: firebaseUser.profile?.skills || [],
+      aiAgents: firebaseUser.profile?.aiAgents || [],
+      collaborationStyle: firebaseUser.profile?.collaborationStyle || [],
+      experienceLevel: firebaseUser.profile?.experienceLevel || 'Intermediate',
+      industry: firebaseUser.profile?.industry || 'Technology',
+      isOnline: firebaseUser.isOnline || false,
+      connections: firebaseUser.stats?.connections || 0,
+      collaborations: firebaseUser.stats?.collaborations || 0,
+      rating: firebaseUser.stats?.rating || 4.0,
+      responseTime: firebaseUser.stats?.responseTime || 15,
+      isPublic: firebaseUser.preferences?.isPublic !== false,
+      allowMessages: firebaseUser.preferences?.allowMessages !== false,
+      allowConnections: firebaseUser.preferences?.allowConnections !== false
+    };
+  }
+
+  /**
    * Get all users from Firebase Authentication and Firestore profiles
    */
-  async getAllUsers(filters?: DiscoveryFilters): Promise<FirebaseUser[]> {
+  async getAllUsers(filters?: DiscoveryFilters): Promise<any[]> {
     try {
       console.log('🔍 [Discovery] Fetching users from Firebase Authentication...');
       
       // Get authenticated users instead of Firestore users
-      const users = await this.getAuthenticatedUsers();
+      const firebaseUsers = await this.getAuthenticatedUsers();
       
-      // Apply filters
-      let filteredUsers = users;
+      // Apply filters to Firebase users first
+      let filteredUsers = firebaseUsers;
       
       if (filters?.isOnline !== undefined) {
         filteredUsers = filteredUsers.filter(user => user.isOnline === filters.isOnline);
@@ -289,13 +317,17 @@ class FirebaseUserDiscoveryService {
         );
       }
 
-      console.log(`🔍 [Discovery] Found ${filteredUsers.length} users matching criteria`);
-      return filteredUsers;
+      // Convert to UserProfile format
+      const userProfiles = filteredUsers.map(user => this.mapFirebaseUserToUserProfile(user));
+
+      console.log(`🔍 [Discovery] Found ${userProfiles.length} users matching criteria`);
+      return userProfiles;
 
     } catch (error) {
       console.error('🔍 [Discovery] Error fetching users:', error);
       // Fallback to mock users if authentication fails
-      return this.getMockUsers();
+      const mockUsers = this.getMockUsers();
+      return mockUsers.map(user => this.mapFirebaseUserToUserProfile(user));
     }
   }
   /**
@@ -353,9 +385,14 @@ class FirebaseUserDiscoveryService {
   /**
    * Get featured users (highly rated, active users)
    */
-  async getFeaturedUsers(limit: number = 6): Promise<FirebaseUser[]> {
-    const users = await this.getAllUsers({ minRating: 4.0, isOnline: true });
-    return users.slice(0, limit);
+  async getFeaturedUsers(limit: number = 6): Promise<any[]> {
+    try {
+      const allUsers = await this.getAllUsers({ minRating: 4.0, isOnline: true });
+      return allUsers.slice(0, limit);
+    } catch (error) {
+      console.error('🔍 [Discovery] Error fetching featured users:', error);
+      return [];
+    }
   }
 
   /**

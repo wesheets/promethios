@@ -208,7 +208,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
     if (currentUser) {
       loadPeopleAlsoViewed();
     }
-  }, [currentUser, discoveryService]);
+  }, [currentUser]); // ✅ Removed discoveryService to fix infinite loop
 
   // Save profile changes
   const handleSave = async () => {
