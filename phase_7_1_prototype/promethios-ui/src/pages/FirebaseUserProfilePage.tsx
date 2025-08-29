@@ -273,12 +273,12 @@ const FirebaseUserProfilePage: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {(profile.aiAgents || []).map((agent: any, index: number) => (
-                  <Tooltip key={agent.id || index} title={`${agent.name} - ${agent.specialization?.join(', ') || 'AI Assistant'}`}>
+                  <Tooltip key={agent?.id || index} title={`${typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')} - ${agent?.specialization?.join?.(', ') || 'AI Assistant'}`}>
                     <Chip
                       icon={<SmartToy />}
-                      label={agent.name || agent.type || 'AI'}
+                      label={typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')}
                       sx={{
-                        backgroundColor: getAIAgentColor(agent.type || 'Assistant'),
+                        backgroundColor: getAIAgentColor(agent?.type || 'Assistant'),
                         color: 'white',
                         fontWeight: 500,
                       }}
