@@ -221,7 +221,6 @@ const LinkedInStyleProfilePage: React.FC = () => {
           // If no profile exists, populate with basic auth data only
           console.log('⚠️ No Firebase profile found, using auth data');
           const authProfile = {
-            ...prev,
             id: currentUser.uid,
             userId: currentUser.uid,
             firstName: currentUser.displayName?.split(' ')[0] || '',
