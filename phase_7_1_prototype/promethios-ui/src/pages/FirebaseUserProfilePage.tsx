@@ -37,6 +37,7 @@ import {
   Schedule
 } from '@mui/icons-material';
 import TeamMemberBadge from '../components/social/TeamMemberBadge';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const FirebaseUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -139,7 +140,8 @@ const FirebaseUserProfilePage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <ErrorBoundary>
+      <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
       {/* Back Button */}
       <Button
         startIcon={<ArrowBack />}
@@ -386,7 +388,8 @@ const FirebaseUserProfilePage: React.FC = () => {
           </Paper>
         </Grid>
       </Grid>
-    </Box>
+      </Box>
+    </ErrorBoundary>
   );
 };
 
