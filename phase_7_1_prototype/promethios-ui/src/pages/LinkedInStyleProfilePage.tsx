@@ -104,7 +104,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
     navigate(`/ui/profile/${userId}`);
   };
 
-  // Profile state with LinkedIn-style fields
+  // Profile state with LinkedIn-style fields - no stubbed data
   const [profile, setProfile] = useState<UserProfile & {
     headline?: string;
     summary?: string;
@@ -118,12 +118,12 @@ const LinkedInStyleProfilePage: React.FC = () => {
     searchAppearances?: number;
   }>({
     userId: currentUser?.uid || '',
-    firstName: currentUser?.displayName?.split(' ')[0] || '',
-    lastName: currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
-    displayName: currentUser?.displayName || '',
-    email: currentUser?.email || '',
-    phone: currentUser?.phoneNumber || '',
-    avatar: currentUser?.photoURL || '',
+    firstName: '',
+    lastName: '',
+    displayName: '',
+    email: '',
+    phone: '',
+    avatar: '',
     bio: '',
     jobTitle: '',
     organization: '',
@@ -133,8 +133,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
     linkedIn: '',
     twitter: '',
     github: '',
-    emailVerified: currentUser?.emailVerified || false,
-    phoneVerified: !!currentUser?.phoneNumber,
+    emailVerified: false,
+    phoneVerified: false,
     twoFactorEnabled: false,
     loginNotifications: true,
     dateJoined: new Date().toISOString(),
@@ -167,7 +167,22 @@ const LinkedInStyleProfilePage: React.FC = () => {
         const userProfile = await userProfileService.getUserProfile(currentUser.uid);
         
         if (userProfile) {
+          // Use real Firebase data
           setProfile(prev => ({ ...prev, ...userProfile }));
+        } else {
+          // If no profile exists, populate with basic auth data only
+          setProfile(prev => ({
+            ...prev,
+            userId: currentUser.uid,
+            firstName: currentUser.displayName?.split(' ')[0] || '',
+            lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+            displayName: currentUser.displayName || '',
+            email: currentUser.email || '',
+            phone: currentUser.phoneNumber || '',
+            avatar: currentUser.photoURL || '',
+            emailVerified: currentUser.emailVerified || false,
+            phoneVerified: !!currentUser.phoneNumber
+          }));
         }
       } catch (error) {
         console.error('Failed to load profile:', error);

@@ -325,9 +325,7 @@ class FirebaseUserDiscoveryService {
 
     } catch (error) {
       console.error('🔍 [Discovery] Error fetching users:', error);
-      // Fallback to mock users if authentication fails
-      const mockUsers = this.getMockUsers();
-      return mockUsers.map(user => this.mapFirebaseUserToUserProfile(user));
+      return [];
     }
   }
   /**
@@ -444,113 +442,10 @@ class FirebaseUserDiscoveryService {
   }
 
   /**
-   * Mock users for development/fallback
+   * No mock users - using real Firebase data only
    */
   private getMockUsers(): FirebaseUser[] {
-    return [
-      {
-        id: 'mock-user-1',
-        email: 'chrisboy@gmail.com',
-        displayName: 'Chris Johnson',
-        photoURL: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        isOnline: true,
-        profile: {
-          firstName: 'Chris',
-          lastName: 'Johnson',
-          title: 'AI Strategy Consultant',
-          company: 'Innovation Labs',
-          location: 'San Francisco, CA',
-          bio: 'Passionate about AI governance and strategic implementation. Love collaborating with Claude on complex business challenges.',
-          skills: ['AI Strategy', 'Business Analysis', 'Claude Collaboration', 'Strategic Planning'],
-          aiAgents: [
-            { id: 'claude-mock-1', name: 'Claude', type: 'Assistant', specialization: ['Strategy', 'Analysis'] },
-            { id: 'chatgpt-mock-1', name: 'ChatGPT', type: 'Assistant', specialization: ['Research', 'Writing'] }
-          ],
-          collaborationStyle: ['Strategic', 'Analytical'],
-          experienceLevel: 'Expert',
-          industry: 'Consulting'
-        },
-        preferences: {
-          isPublic: true,
-          allowMessages: true,
-          allowConnections: true,
-          showOnlineStatus: true
-        },
-        stats: {
-          connections: 45,
-          collaborations: 23,
-          rating: 4.8,
-          responseTime: 12
-        }
-      },
-      {
-        id: 'mock-user-2',
-        email: 'ted@crowellville.com',
-        displayName: 'Ted Crowell',
-        photoURL: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        isOnline: false,
-        profile: {
-          firstName: 'Ted',
-          lastName: 'Crowell',
-          title: 'Product Manager',
-          company: 'Crowell Technologies',
-          location: 'Austin, TX',
-          bio: 'Building the future of AI-powered products. Always looking for creative collaborators to push boundaries.',
-          skills: ['Product Management', 'AI Integration', 'User Experience', 'Innovation'],
-          aiAgents: [
-            { id: 'claude-mock-2', name: 'Claude', type: 'Assistant', specialization: ['Product Strategy', 'Innovation'] },
-            { id: 'openai-mock-1', name: 'OpenAI', type: 'Assistant', specialization: ['Development', 'Research'] }
-          ],
-          collaborationStyle: ['Creative', 'User-Focused'],
-          experienceLevel: 'Senior',
-          industry: 'Technology'
-        },
-        preferences: {
-          isPublic: true,
-          allowMessages: true,
-          allowConnections: true,
-          showOnlineStatus: true
-        },
-        stats: {
-          connections: 32,
-          collaborations: 18,
-          rating: 4.6,
-          responseTime: 8
-        }
-      },
-      {
-        id: 'mock-user-3',
-        email: 'wesheets@gmail.com',
-        displayName: 'Wesley Sheets',
-        photoURL: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-        isOnline: true,
-        profile: {
-          firstName: 'Wesley',
-          lastName: 'Sheets',
-          title: 'AI Researcher & Entrepreneur',
-          company: 'Promethios',
-          location: 'San Francisco, CA',
-          bio: 'Founder of Promethios. Pioneering multi-agent AI collaboration systems. Always experimenting with new AI interaction patterns.',
-          skills: ['AI Research', 'Multi-Agent Systems', 'Entrepreneurship', 'System Architecture'],
-          aiAgents: ['Claude', 'OpenAI', 'Custom Agents'],
-          collaborationStyle: ['Innovative', 'Experimental', 'Strategic'],
-          experienceLevel: 'Expert',
-          industry: 'AI Research'
-        },
-        preferences: {
-          isPublic: true,
-          allowMessages: true,
-          allowConnections: true,
-          showOnlineStatus: true
-        },
-        stats: {
-          connections: 78,
-          collaborations: 45,
-          rating: 4.9,
-          responseTime: 5
-        }
-      }
-    ];
+    return [];
   }
 }
 
