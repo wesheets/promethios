@@ -67,7 +67,7 @@ class FirebaseUserDiscoveryService {
       // Instead, we'll create profiles based on known authenticated users
       // Get all users who have created profiles in Firestore
       // This discovers real users through their profile documents
-      const profilesSnapshot = await getDocs(collection(db, 'profiles'));
+      const profilesSnapshot = await getDocs(collection(db, 'userProfiles'));
       const realUsers: FirebaseUser[] = [];
 
       // Import UserProfileService to load real profile data
