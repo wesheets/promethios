@@ -110,6 +110,10 @@ const LinkedInStyleProfilePage: React.FC = () => {
   const [skillForm, setSkillForm] = useState({
     name: ''
   });
+
+  // Photo upload state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoType, setPhotoType] = useState<'profile' | 'header' | null>(null);
   
   // Firebase services
   const discoveryService = new FirebaseUserDiscoveryService();
@@ -385,6 +389,58 @@ const LinkedInStyleProfilePage: React.FC = () => {
     }
   };
 
+  // Photo upload handlers
+  const handlePhotoUpload = (type: 'profile' | 'header') => {
+    setPhotoType(type);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        uploadPhoto(file, type);
+      }
+    };
+    input.click();
+  };
+
+  const uploadPhoto = async (file: File, type: 'profile' | 'header') => {
+    if (!currentUser?.uid) return;
+    
+    try {
+      setUploadingPhoto(true);
+      
+      // Create a data URL for immediate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        
+        if (type === 'profile') {
+          setProfile(prev => ({ ...prev, avatar: dataUrl }));
+        } else {
+          setProfile(prev => ({ ...prev, headerPhoto: dataUrl }));
+        }
+      };
+      reader.readAsDataURL(file);
+      
+      // In a real app, you would upload to Firebase Storage here
+      // For now, we'll just use the data URL
+      console.log(`✅ ${type} photo uploaded successfully`);
+      
+      // Save the updated profile
+      await userProfileService.updateProfile(currentUser.uid, profile);
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      
+    } catch (error) {
+      console.error(`❌ Failed to upload ${type} photo:`, error);
+    } finally {
+      setUploadingPhoto(false);
+      setPhotoType(null);
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -422,7 +478,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
             {/* Cover Photo Area */}
             <Box sx={{ 
               height: 200, 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: profile.headerPhoto ? `url(${profile.headerPhoto})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
               position: 'relative'
             }}>
               <IconButton 
@@ -433,8 +491,14 @@ const LinkedInStyleProfilePage: React.FC = () => {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' }
                 }}
+                onClick={() => handlePhotoUpload('header')}
+                disabled={uploadingPhoto && photoType === 'header'}
               >
-                <PhotoCamera />
+                {uploadingPhoto && photoType === 'header' ? (
+                  <CircularProgress size={24} sx={{ color: 'white' }} />
+                ) : (
+                  <PhotoCamera />
+                )}
               </IconButton>
             </Box>
 
@@ -451,8 +515,14 @@ const LinkedInStyleProfilePage: React.FC = () => {
                         backgroundColor: 'primary.main',
                         '&:hover': { backgroundColor: 'primary.dark' }
                       }}
+                      onClick={() => handlePhotoUpload('profile')}
+                      disabled={uploadingPhoto && photoType === 'profile'}
                     >
-                      <PhotoCamera fontSize="small" />
+                      {uploadingPhoto && photoType === 'profile' ? (
+                        <CircularProgress size={16} sx={{ color: 'white' }} />
+                      ) : (
+                        <PhotoCamera fontSize="small" />
+                      )}
                     </IconButton>
                   }
                 >

@@ -11,6 +11,7 @@ export interface UserProfile {
   phone?: string;
   avatar?: string;
   coverPhoto?: string;
+  headerPhoto?: string; // Added for header/cover photo
   title?: string;
   company?: string;
   location?: string;
