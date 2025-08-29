@@ -112,12 +112,20 @@ import {
 } from '@mui/icons-material';
 import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import NotificationBell from './notifications/NotificationBell';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
+
+// Create a dark theme specifically for the navigation
+const navigationDarkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
@@ -704,12 +712,13 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   const DrawerComponent = collapsed ? StyledDrawerCollapsed : StyledDrawer;
 
   return (
-    <DrawerComponent
-      variant="permanent"
-      anchor="left"
-      sx={{
-        width: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH,
-        flexShrink: 0,
+    <ThemeProvider theme={navigationDarkTheme}>
+      <DrawerComponent
+        variant="permanent"
+        anchor="left"
+        sx={{
+          width: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH,
+          flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: collapsed ? DRAWER_WIDTH_COLLAPSED : DRAWER_WIDTH,
           boxSizing: 'border-box',
@@ -898,6 +907,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         </Box>
       )}
     </DrawerComponent>
+    </ThemeProvider>
   );
 };
 
