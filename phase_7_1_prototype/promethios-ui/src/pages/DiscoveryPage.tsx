@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -32,11 +32,13 @@ import {
 
 // Import Firebase services
 import { firebaseUserDiscoveryService, FirebaseUser, DiscoveryFilters } from '../services/FirebaseUserDiscoveryService';
+import { connectionService } from '../services/ConnectionService';
 import { useConnections } from '../hooks/useConnections';
+import { useAuth } from '../contexts/AuthContext';
 
 // Import components
 import UserSearchEngine from '../components/social/UserSearchEngine';
-import UserProfileCard from '../components/social/UserProfileCard';
+import UserProfileCard from '../components/social/UserProfileCard';ProfileCard';
 
 interface DiscoveryPageProps {
   onViewProfile?: (userId: string) => void;
@@ -51,6 +53,7 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
   onMessage,
   onStartCollaboration,
 }) => {
+  const { currentUser } = useAuth();
   const [searchResults, setSearchResults] = useState<FirebaseUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,21 +76,25 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
 
   // Load initial data
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    if (currentUser) {
+      loadInitialData();
+    }
+  }, [currentUser]);
 
   const loadInitialData = async () => {
+    if (!currentUser) return;
+    
     setLoading(true);
     try {
       console.log('🔍 [Discovery] Loading Firebase users...');
       
-      // Load all users from Firebase
-      const users = await firebaseUserDiscoveryService.getAllUsers();
+      // Load all users from Firebase (excluding current user)
+      const users = await firebaseUserDiscoveryService.getAllUsers(currentUser.uid);
       setAllUsers(users);
       
       // Load featured users (highly rated, online users)
       const featured = await firebaseUserDiscoveryService.getFeaturedUsers(6);
-      setFeaturedUsers(featured);
+      setFeaturedUsers(featured.filter(user => user.id !== currentUser.uid));
       
       // Extract trending skills from all users
       const skillsMap = new Map<string, number>();
@@ -116,6 +123,35 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
       console.error('Error loading Firebase users:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle connection request
+  const handleConnect = async (userId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      // Find the target user
+      const targetUser = allUsers.find(user => user.id === userId);
+      if (!targetUser) {
+        throw new Error('User not found');
+      }
+
+      // Send connection request using the connection service
+      await connectionService.sendConnectionRequest(
+        currentUser.uid,
+        userId,
+        currentUser.displayName || currentUser.email || 'User',
+        targetUser.displayName || targetUser.email || 'User',
+        currentUser.photoURL || undefined,
+        targetUser.photoURL || undefined,
+        `Hi ${targetUser.displayName || 'there'}, I'd like to connect with you!`
+      );
+
+      console.log(`✅ [Discovery] Connection request sent to ${targetUser.displayName}`);
+    } catch (error) {
+      console.error('❌ [Discovery] Error sending connection request:', error);
+      setError(error instanceof Error ? error.message : 'Failed to send connection request');
     }
   };
 

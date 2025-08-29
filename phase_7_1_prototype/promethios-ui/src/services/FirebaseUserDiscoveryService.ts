@@ -56,10 +56,10 @@ class FirebaseUserDiscoveryService {
 
   /**
    * Get authenticated users from Firebase Authentication
-   * Note: This requires Firebase Admin SDK for production use
-   * For now, we'll use a hybrid approach with existing user data
+   * Note: This requires Firebase Admin SDK for productio  /**
+   * Get all users from Firebase Authentication and their profiles
    */
-  async getAuthenticatedUsers(): Promise<FirebaseUser[]> {
+  async getAuthenticatedUsers(currentUserId?: string): Promise<FirebaseUser[]> {
     try {
       console.log('🔍 [Discovery] Fetching authenticated users...');
       
@@ -77,6 +77,12 @@ class FirebaseUserDiscoveryService {
       for (const doc of profilesSnapshot.docs) {
         const userId = doc.id; // This is the real Firebase UID
         
+        // Skip current user's profile
+        if (currentUserId && userId === currentUserId) {
+          console.log(`🚫 [Discovery] Skipping current user profile: ${userId}`);
+          continue;
+        }
+        
         console.log(`🔍 [Discovery] Found profile document for user: ${userId}`);
         
         try {
@@ -87,8 +93,7 @@ class FirebaseUserDiscoveryService {
             const userName = realProfile.name || realProfile.displayName;
             console.log(`✅ [Discovery] Loaded real profile for: ${userName} (UID: ${userId})`);
             
-            realUsers.push({
-              id: userId, // Real Firebase UID
+            realUsers.push({              id: userId, // Real Firebase UID
               email: realProfile.email || `user-${userId}@example.com`,
               displayName: userName || 'User',
               photoURL: realProfile.avatar || realProfile.profilePhoto || null,
@@ -272,22 +277,26 @@ class FirebaseUserDiscoveryService {
       allowConnections: firebaseUser.preferences?.allowConnections !== false
     };
   }
-
   /**
-   * Get all users from Firebase Authentication and Firestore profiles
+   * Get all users with optional filtering
    */
-  async getAllUsers(filters?: DiscoveryFilters): Promise<any[]> {
+  async getAllUsers(currentUserId?: string, filters?: DiscoveryFilters): Promise<FirebaseUser[]> {
     try {
       console.log('🔍 [Discovery] Fetching users from Firebase Authentication...');
       
-      // Get authenticated users instead of Firestore users
-      const firebaseUsers = await this.getAuthenticatedUsers();
+      // Get authenticated users (excluding current user)
+      const users = await this.getAuthenticatedUsers(currentUserId);
       
-      // Apply filters to Firebase users first
-      let filteredUsers = firebaseUsers;
+      if (!filters) {
+        return users;
+      }
       
-      if (filters?.isOnline !== undefined) {
-        filteredUsers = filteredUsers.filter(user => user.isOnline === filters.isOnline);
+      return this.applyFilters(users, filters);
+    } catch (error) {
+      console.error('❌ [Discovery] Error fetching all users:', error);
+      return [];
+    }
+  }dUsers.filter(user => user.isOnline === filters.isOnline);
       }
 
       if (filters?.minRating) {
