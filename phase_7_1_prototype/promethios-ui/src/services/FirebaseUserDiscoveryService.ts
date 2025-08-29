@@ -308,21 +308,32 @@ class FirebaseUserDiscoveryService {
       filteredUsers = filteredUsers.filter(user => user.isOnline === filters.isOnline);
     }
 
-      if (filters?.minRating) {
-        filteredUsers = filteredUsers.filter(user => (user.stats?.rating || 0) >= filters.minRating!);
-      }
+    if (filters?.minRating) {
+      filteredUsers = filteredUsers.filter(user => (user.stats?.rating || 0) >= filters.minRating!);
+    }
 
-      if (filters?.query) {
-        const searchTerm = filters.query.toLowerCase();
-        filteredUsers = filteredUsers.filter(user => 
-          user.displayName?.toLowerCase().includes(searchTerm) ||
-          user.email.toLowerCase().includes(searchTerm) ||
-          user.profile?.title?.toLowerCase().includes(searchTerm) ||
-          user.profile?.company?.toLowerCase().includes(searchTerm) ||
-          user.profile?.bio?.toLowerCase().includes(searchTerm) ||
-          user.profile?.skills?.some(skill => skill.toLowerCase().includes(searchTerm))
-        );
-      }
+    if (filters?.query) {
+      const searchTerm = filters.query.toLowerCase();
+      filteredUsers = filteredUsers.filter(user => 
+        user.displayName?.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm) ||
+        user.profile?.title?.toLowerCase().includes(searchTerm) ||
+        user.profile?.company?.toLowerCase().includes(searchTerm) ||
+        user.profile?.bio?.toLowerCase().includes(searchTerm) ||
+        user.profile?.skills?.some(skill => skill.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    return filteredUsers;
+  }
+
+  /**
+   * Search users with filters
+   */
+  async searchUsers(filters: DiscoveryFilters): Promise<UserProfile[]> {
+    try {
+      const users = await this.getAllUsers();
+      const filteredUsers = this.applyFilters(users, filters);
 
       // Convert to UserProfile format
       const userProfiles = filteredUsers.map(user => this.mapFirebaseUserToUserProfile(user));
@@ -335,6 +346,7 @@ class FirebaseUserDiscoveryService {
       return [];
     }
   }
+
   /**
    * Get a specific user by ID
    */
@@ -368,7 +380,7 @@ class FirebaseUserDiscoveryService {
   /**
    * Search users by query string
    */
-  async searchUsers(query: string, filters?: DiscoveryFilters): Promise<FirebaseUser[]> {
+  async searchUsersByQuery(query: string, filters?: DiscoveryFilters): Promise<FirebaseUser[]> {
     const allUsers = await this.getAllUsers(filters);
     
     if (!query.trim()) {
