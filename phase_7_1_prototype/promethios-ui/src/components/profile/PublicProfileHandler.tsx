@@ -23,11 +23,17 @@ const PublicProfileHandler: React.FC = () => {
 
       console.log('🔍 PublicProfileHandler: Looking for username:', username);
 
-      // Direct mapping for known users (temporary solution)
+      // Direct mapping for known users (using real Firebase UIDs from Auth console)
       const directMappings: Record<string, string> = {
+        // Ted Sheets (your profile)
         'ted-sheets': 'HSf4SIwCcRRzAFPuFXlFE9CsQ6W2',
-        'wes-sheets': 'HSf4SIwCcRRzAFPuFXlFE9CsQ6W2',
-        'wesley-sheets': 'HSf4SIwCcRRzAFPuFXlFE9CsQ6W2'
+        
+        // Real Firebase Auth users from the authentication console
+        'oldecboy': 'OkYBqbJvqpGUdRYHKw.jaqJ...',  // oldecboy@gmail.com
+        'therma-sheets': 'VzlnRmqJyb92fezqzFqQD5B...',  // thermawesheets@gmail.com  
+        'ted-crowell': 'fuezlnvJOYgutPWZRJBVX7...',  // ted@crowellville.com
+        'wesley-sheets': '4Hf4FmpcdlnrSaFSGqLdW2',  // wesheets@hotmail.com
+        'ted-majestic': 'XKZCZOLPKqBwKbSdpLKjB...'  // ted@majesticgoods.com
       };
 
       if (directMappings[username.toLowerCase()]) {
