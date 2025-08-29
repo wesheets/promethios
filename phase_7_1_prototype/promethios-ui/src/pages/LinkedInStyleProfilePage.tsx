@@ -361,8 +361,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
             </Box>
 
             {/* Profile Info */}
-            <Box sx={{ p: 3, pt: 0 }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-end', mb: 2, mt: -8 }}>
+            <Box sx={{ p: 3, pt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2, mt: -6 }}>
                 <Badge
                   overlap="circular"
                   anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -391,9 +391,16 @@ const LinkedInStyleProfilePage: React.FC = () => {
                   </Avatar>
                 </Badge>
                 
-                <Box sx={{ ml: 3, flex: 1 }}>
+                <Box sx={{ ml: 3, flex: 1, mt: 8 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="h4" fontWeight="bold">
+                    <Typography 
+                      variant="h4" 
+                      fontWeight="bold"
+                      sx={{ 
+                        color: 'text.primary',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                      }}
+                    >
                       {profile.displayName || `${profile.firstName} ${profile.lastName}`}
                     </Typography>
                     {profile.emailVerified && (
@@ -550,7 +557,10 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 <Typography variant="h6" fontWeight="bold">
                   Experience
                 </Typography>
-                <IconButton size="small">
+                <IconButton 
+                  size="small"
+                  onClick={() => handleEditSection('experience')}
+                >
                   <Add />
                 </IconButton>
               </Box>
@@ -608,7 +618,10 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 <Typography variant="h6" fontWeight="bold">
                   Skills
                 </Typography>
-                <IconButton size="small">
+                <IconButton 
+                  size="small"
+                  onClick={() => handleEditSection('skills')}
+                >
                   <Add />
                 </IconButton>
               </Box>
@@ -818,6 +831,68 @@ const LinkedInStyleProfilePage: React.FC = () => {
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </Box>
+      )}
+
+      {/* Edit Dialogs */}
+      {editingSection === 'experience' && (
+        <Dialog open={true} onClose={handleCancelEdit} maxWidth="md" fullWidth>
+          <DialogTitle>Add Experience</DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1 }}>
+              <TextField
+                fullWidth
+                label="Job Title"
+                margin="normal"
+                placeholder="e.g. Software Engineer"
+              />
+              <TextField
+                fullWidth
+                label="Company"
+                margin="normal"
+                placeholder="e.g. Google"
+              />
+              <TextField
+                fullWidth
+                label="Location"
+                margin="normal"
+                placeholder="e.g. San Francisco, CA"
+              />
+              <TextField
+                fullWidth
+                label="Description"
+                margin="normal"
+                multiline
+                rows={4}
+                placeholder="Describe your role and achievements..."
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelEdit}>Cancel</Button>
+            <Button onClick={handleSaveSection} variant="contained">Save</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {editingSection === 'skills' && (
+        <Dialog open={true} onClose={handleCancelEdit} maxWidth="sm" fullWidth>
+          <DialogTitle>Add Skills</DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1 }}>
+              <TextField
+                fullWidth
+                label="Skill"
+                margin="normal"
+                placeholder="e.g. JavaScript, Python, React"
+                helperText="Add one skill at a time"
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCancelEdit}>Cancel</Button>
+            <Button onClick={handleSaveSection} variant="contained">Add Skill</Button>
+          </DialogActions>
+        </Dialog>
       )}
     </Box>
   );
