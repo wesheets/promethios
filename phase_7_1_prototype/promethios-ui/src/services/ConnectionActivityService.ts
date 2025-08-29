@@ -1,4 +1,4 @@
-import { firestore } from '../firebase/config';
+import { db } from '../firebase/config';
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { ConnectionActivity, ConnectionActivityUser } from '../components/social/ConnectionActivityPost';
@@ -63,7 +63,7 @@ export class ConnectionActivityService {
       };
 
       // Add to Firestore
-      const docRef = await addDoc(collection(firestore, 'connectionActivities'), activityData);
+      const docRef = await addDoc(collection(db, 'connectionActivities'), activityData);
       return docRef.id;
     } catch (error) {
       console.error('Error creating connection activity:', error);
@@ -76,7 +76,7 @@ export class ConnectionActivityService {
    */
   async getRecentConnectionActivities(limit = 10): Promise<ConnectionActivity[]> {
     try {
-      const activitiesRef = collection(firestore, 'connectionActivities');
+      const activitiesRef = collection(db, 'connectionActivities');
       const q = query(
         activitiesRef,
         where('visibility', '==', 'public'),
@@ -134,13 +134,13 @@ export class ConnectionActivityService {
    */
   private async getUserData(userId: string): Promise<any> {
     try {
-      const userProfilesRef = collection(firestore, 'userProfiles');
+      const userProfilesRef = collection(db, 'userProfiles');
       const q = query(userProfilesRef, where('userId', '==', userId));
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
         // Try to get from Firebase Auth users collection
-        const usersRef = collection(firestore, 'users');
+        const usersRef = collection(db, 'users');
         const userQuery = query(usersRef, where('uid', '==', userId));
         const userSnapshot = await getDocs(userQuery);
         
@@ -182,7 +182,7 @@ export class ConnectionActivityService {
   ): Promise<ConnectionActivityUser[]> {
     try {
       // Get connections for user1
-      const connectionsRef = collection(firestore, 'connections');
+      const connectionsRef = collection(db, 'connections');
       const q1 = query(connectionsRef, where('userId', '==', userId1), where('status', '==', 'connected'));
       const snapshot1 = await getDocs(q1);
       
