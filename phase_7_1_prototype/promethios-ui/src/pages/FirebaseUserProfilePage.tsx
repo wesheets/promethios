@@ -102,6 +102,20 @@ const FirebaseUserProfilePage: React.FC = () => {
     navigate('/ui/social/discovery');
   };
 
+  // Safety function to ensure we never render objects as React elements
+  const safeRender = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return value.toString();
+    if (typeof value === 'boolean') return value.toString();
+    if (Array.isArray(value)) return value.join(', ');
+    if (typeof value === 'object') {
+      // If it's an object, try to extract a meaningful string
+      return value.name || value.title || value.label || JSON.stringify(value);
+    }
+    return String(value);
+  };
+
   const getAIAgentColor = (type: string) => {
     const colors = {
       'Claude': '#FF6B35',
@@ -199,7 +213,7 @@ const FirebaseUserProfilePage: React.FC = () => {
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                    {profile?.name || profile?.displayName || 'Anonymous User'}
+                    {safeRender(profile?.name || profile?.displayName || 'Anonymous User')}
                   </Typography>
                   {profile?.connectionStatus === 'connected' && (
                     <TeamMemberBadge variant="chip" size="medium" />
@@ -212,9 +226,9 @@ const FirebaseUserProfilePage: React.FC = () => {
                 
                 {(profile?.title || profile?.company) && (
                   <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                    {profile?.title && profile?.company ? `${profile.title} at ${profile.company}` : 
-                     profile?.title ? profile.title : 
-                     profile?.company ? `Professional at ${profile.company}` : ''}
+                    {profile?.title && profile?.company ? `${safeRender(profile.title)} at ${safeRender(profile.company)}` : 
+                     profile?.title ? safeRender(profile.title) : 
+                     profile?.company ? `Professional at ${safeRender(profile.company)}` : ''}
                   </Typography>
                 )}
                 
@@ -222,7 +236,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                   {profile?.location && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                       <LocationOn fontSize="small" color="action" />
-                      <Typography variant="body2">{profile.location}</Typography>
+                      <Typography variant="body2">{safeRender(profile.location)}</Typography>
                     </Box>
                   )}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -262,13 +276,13 @@ const FirebaseUserProfilePage: React.FC = () => {
             <Divider sx={{ my: 3 }} />
 
             {/* About Section */}
-            {profile?.about && typeof profile.about === 'string' && (
+            {profile?.about && (
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   About
                 </Typography>
                 <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                  {profile.about}
+                  {safeRender(profile.about)}
                 </Typography>
               </Box>
             )}
@@ -284,10 +298,10 @@ const FirebaseUserProfilePage: React.FC = () => {
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {(profile.aiAgents || []).map((agent: any, index: number) => (
-                    <Tooltip key={agent?.id || index} title={`${typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')} - ${agent?.specialization?.join?.(', ') || 'AI Assistant'}`}>
+                    <Tooltip key={agent?.id || index} title={`${safeRender(agent?.name || agent?.type || 'AI')} - ${safeRender(agent?.specialization?.join?.(', ') || 'AI Assistant')}`}>
                       <Chip
                         icon={<SmartToy />}
-                        label={typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')}
+                        label={safeRender(agent?.name || agent?.type || 'AI')}
                         sx={{
                           backgroundColor: getAIAgentColor(agent?.type || 'Assistant'),
                           color: 'white',
@@ -312,7 +326,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                   {(profile.skills || []).map((skill: any, index: number) => (
                     <Chip
                       key={index}
-                      label={typeof skill === 'string' ? skill : (skill?.name || 'Skill')}
+                      label={safeRender(skill)}
                       variant="outlined"
                       sx={{ borderColor: 'primary.main', color: 'primary.main' }}
                     />
