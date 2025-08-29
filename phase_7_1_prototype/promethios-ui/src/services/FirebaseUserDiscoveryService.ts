@@ -118,28 +118,82 @@ class FirebaseUserDiscoveryService {
         }
       ];
 
-      const users: FirebaseUser[] = knownAuthUsers.map(authUser => ({
-        id: authUser.uid,
-        email: authUser.email,
-        displayName: authUser.displayName || authUser.email.split('@')[0],
-        photoURL: authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || authUser.email)}&background=6366f1&color=fff`,
-        createdAt: authUser.metadata.creationTime,
-        lastSignIn: authUser.metadata.lastSignInTime,
-        isOnline: this.isRecentlyActive(authUser.metadata.lastSignInTime),
-        profile: this.generateProfileFromEmail(authUser.email, authUser.displayName),
-        preferences: {
-          isPublic: true,
-          allowMessages: true,
-          allowConnections: true,
-          showOnlineStatus: true
-        },
-        stats: {
-          connections: Math.floor(Math.random() * 50) + 10,
-          collaborations: Math.floor(Math.random() * 30) + 5,
-          rating: 4.0 + Math.random() * 0.9,
-          responseTime: Math.floor(Math.random() * 20) + 5
+      // Load real profile data for each user
+      const users: FirebaseUser[] = [];
+      
+      // Import UserProfileService to load real profile data
+      const { UserProfileService } = await import('./UserProfileService');
+      const profileService = new UserProfileService();
+
+      for (const authUser of knownAuthUsers) {
+        try {
+          console.log(`🔍 [Discovery] Loading real profile data for: ${authUser.displayName}`);
+          
+          // Try to load real Firestore profile data
+          const realProfile = await profileService.getUserProfile(authUser.uid);
+          
+          let profileData;
+          if (realProfile) {
+            console.log(`✅ [Discovery] Found real profile for: ${authUser.displayName}`);
+            // Use real profile data
+            profileData = {
+              firstName: realProfile.firstName,
+              lastName: realProfile.lastName,
+              title: realProfile.title,
+              company: realProfile.company,
+              location: realProfile.location,
+              bio: realProfile.about,
+              skills: realProfile.skills || [],
+              aiAgents: realProfile.aiAgents || [],
+              collaborationStyle: realProfile.collaborationStyle || [],
+              experienceLevel: realProfile.experienceLevel,
+              industry: realProfile.industry
+            };
+          } else {
+            console.log(`⚠️ [Discovery] No profile found for: ${authUser.displayName}, using basic info only`);
+            // Use basic Firebase Auth info only - no fake data
+            profileData = {
+              firstName: authUser.displayName?.split(' ')[0] || authUser.email.split('@')[0],
+              lastName: authUser.displayName?.split(' ')[1] || '',
+              title: '', // Empty instead of fake title
+              company: '',
+              location: '',
+              bio: '',
+              skills: [],
+              aiAgents: [],
+              collaborationStyle: [],
+              experienceLevel: '',
+              industry: ''
+            };
+          }
+
+          users.push({
+            id: authUser.uid,
+            email: authUser.email,
+            displayName: authUser.displayName || authUser.email.split('@')[0],
+            photoURL: realProfile?.profilePhoto || authUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(authUser.displayName || authUser.email)}&background=6366f1&color=fff`,
+            createdAt: authUser.metadata.creationTime,
+            lastSignIn: authUser.metadata.lastSignInTime,
+            isOnline: this.isRecentlyActive(authUser.metadata.lastSignInTime),
+            profile: profileData,
+            preferences: {
+              isPublic: true,
+              allowMessages: true,
+              allowConnections: true,
+              showOnlineStatus: true
+            },
+            stats: {
+              connections: realProfile?.connections || 0,
+              collaborations: realProfile?.collaborations || 0,
+              rating: realProfile?.rating || 0,
+              responseTime: realProfile?.responseTime || 0
+            }
+          });
+
+        } catch (error) {
+          console.error(`💥 [Discovery] Error loading profile for ${authUser.displayName}:`, error);
         }
-      }));
+      }
 
       console.log(`🔍 [Discovery] Found ${users.length} authenticated users`);
       return users;

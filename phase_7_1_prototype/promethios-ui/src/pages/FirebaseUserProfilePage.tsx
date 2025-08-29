@@ -159,8 +159,8 @@ const FirebaseUserProfilePage: React.FC = () => {
             <Box
               sx={{
                 height: 200,
-                background: profile.headerPhoto 
-                  ? `url(${profile.headerPhoto}) center/cover`
+                background: (profile?.headerPhoto || profile?.headerImage)
+                  ? `url(${profile.headerPhoto || profile.headerImage}) center/cover`
                   : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 position: 'relative',
                 display: 'flex',
@@ -182,50 +182,50 @@ const FirebaseUserProfilePage: React.FC = () => {
                       width: 20,
                       height: 20,
                       borderRadius: '50%',
-                      backgroundColor: profile.isOnline ? '#4CAF50' : '#FFA726',
+                      backgroundColor: (profile?.isOnline) ? '#4CAF50' : '#FFA726',
                       border: '3px solid white',
                     }}
                   />
                 }
               >
                 <Avatar 
-                  src={profile.profilePhoto} 
+                  src={profile?.profilePhoto || profile?.avatar || profile?.photoURL} 
                   sx={{ width: 120, height: 120, fontSize: '3rem' }}
                 >
-                  {profile.name?.charAt(0) || '?'}
+                  {profile?.name?.charAt(0) || profile?.displayName?.charAt(0) || '?'}
                 </Avatar>
               </Badge>
               
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                    {profile.name || 'Anonymous User'}
+                    {profile?.name || profile?.displayName || 'Anonymous User'}
                   </Typography>
-                  {profile.connectionStatus === 'connected' && (
+                  {profile?.connectionStatus === 'connected' && (
                     <TeamMemberBadge variant="chip" size="medium" />
                   )}
-                  {profile.rating >= 4.5 && (
+                  {(profile?.rating || 0) >= 4.5 && (
                     <Verified sx={{ color: '#1976D2', fontSize: 28 }} />
                   )}
                   <Public sx={{ color: 'text.secondary', fontSize: 24 }} />
                 </Box>
                 
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                  {profile.title || 'Professional'} at {profile.company || 'Company'}
+                  {profile?.title || 'Professional'} at {profile?.company || 'Company'}
                 </Typography>
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <LocationOn fontSize="small" color="action" />
-                    <Typography variant="body2">{profile.location || 'Remote'}</Typography>
+                    <Typography variant="body2">{profile?.location || 'Remote'}</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Group fontSize="small" color="action" />
-                    <Typography variant="body2">{profile.connections || 0} connections</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Group sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Typography variant="body2">{profile?.connections || 0} connections</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Star fontSize="small" color="action" />
-                    <Typography variant="body2">{(profile.rating || 4.0).toFixed(1)} rating</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Star sx={{ fontSize: 16, color: '#FFA726' }} />
+                    <Typography variant="body2">{(profile?.rating || 4.0).toFixed(1)} rating</Typography>
                   </Box>
                 </Box>
 
@@ -235,7 +235,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                     variant="contained"
                     startIcon={<PersonAdd />}
                     onClick={handleConnect}
-                    disabled={connectionRequested || profile.id === currentUser?.uid}
+                    disabled={connectionRequested || profile?.id === currentUser?.uid}
                   >
                     {connectionRequested ? 'Request Sent' : 'Connect'}
                   </Button>
@@ -243,7 +243,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                     variant="outlined"
                     startIcon={<Message />}
                     onClick={handleMessage}
-                    disabled={profile.id === currentUser?.uid}
+                    disabled={profile?.id === currentUser?.uid}
                   >
                     Message
                   </Button>
