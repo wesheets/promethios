@@ -89,12 +89,27 @@ interface Skill {
 const LinkedInStyleProfilePage: React.FC = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [peopleAlsoViewed, setPeopleAlsoViewed] = useState<any[]>([]);
+
+  // Form state for dialogs
+  const [experienceForm, setExperienceForm] = useState({
+    title: '',
+    company: '',
+    location: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    current: false
+  });
+
+  const [skillForm, setSkillForm] = useState({
+    name: ''
+  });
   
   // Firebase services
   const discoveryService = new FirebaseUserDiscoveryService();
@@ -302,9 +317,72 @@ const LinkedInStyleProfilePage: React.FC = () => {
   };
 
   const handleSaveSection = async () => {
-    await handleSave();
-    setEditingSection(null);
-    setEditMode(false);
+    if (!currentUser?.uid) return;
+    
+    try {
+      setSaving(true);
+      
+      if (editingSection === 'experience') {
+        // Add new experience to the profile
+        const newExperience = {
+          id: Date.now().toString(), // Simple ID generation
+          ...experienceForm
+        };
+        
+        const updatedProfile = {
+          ...profile,
+          experience: [...(profile.experience || []), newExperience]
+        };
+        
+        setProfile(updatedProfile);
+        await userProfileService.updateProfile(currentUser.uid, updatedProfile);
+        
+        // Reset form
+        setExperienceForm({
+          title: '',
+          company: '',
+          location: '',
+          description: '',
+          startDate: '',
+          endDate: '',
+          current: false
+        });
+        
+      } else if (editingSection === 'skills') {
+        // Add new skill to the profile
+        const newSkill = {
+          id: Date.now().toString(),
+          name: skillForm.name,
+          endorsements: 0
+        };
+        
+        const updatedProfile = {
+          ...profile,
+          skills: [...(profile.skills || []), newSkill]
+        };
+        
+        setProfile(updatedProfile);
+        await userProfileService.updateProfile(currentUser.uid, updatedProfile);
+        
+        // Reset form
+        setSkillForm({ name: '' });
+        
+      } else {
+        // For other sections (like About), just save the current profile
+        await userProfileService.updateProfile(currentUser.uid, profile);
+      }
+      
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      
+      console.log('✅ Profile section saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save profile section:', error);
+    } finally {
+      setSaving(false);
+      setEditingSection(null);
+      setEditMode(false);
+    }
   };
 
   if (loading) {
@@ -844,18 +922,24 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 label="Job Title"
                 margin="normal"
                 placeholder="e.g. Software Engineer"
+                value={experienceForm.title}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, title: e.target.value }))}
               />
               <TextField
                 fullWidth
                 label="Company"
                 margin="normal"
                 placeholder="e.g. Google"
+                value={experienceForm.company}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, company: e.target.value }))}
               />
               <TextField
                 fullWidth
                 label="Location"
                 margin="normal"
                 placeholder="e.g. San Francisco, CA"
+                value={experienceForm.location}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, location: e.target.value }))}
               />
               <TextField
                 fullWidth
@@ -864,12 +948,20 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 multiline
                 rows={4}
                 placeholder="Describe your role and achievements..."
+                value={experienceForm.description}
+                onChange={(e) => setExperienceForm(prev => ({ ...prev, description: e.target.value }))}
               />
             </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCancelEdit}>Cancel</Button>
-            <Button onClick={handleSaveSection} variant="contained">Save</Button>
+            <Button 
+              onClick={handleSaveSection} 
+              variant="contained"
+              disabled={!experienceForm.title || !experienceForm.company}
+            >
+              Save
+            </Button>
           </DialogActions>
         </Dialog>
       )}
@@ -885,12 +977,20 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 margin="normal"
                 placeholder="e.g. JavaScript, Python, React"
                 helperText="Add one skill at a time"
+                value={skillForm.name}
+                onChange={(e) => setSkillForm(prev => ({ ...prev, name: e.target.value }))}
               />
             </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCancelEdit}>Cancel</Button>
-            <Button onClick={handleSaveSection} variant="contained">Add Skill</Button>
+            <Button 
+              onClick={handleSaveSection} 
+              variant="contained"
+              disabled={!skillForm.name.trim()}
+            >
+              Add Skill
+            </Button>
           </DialogActions>
         </Dialog>
       )}
