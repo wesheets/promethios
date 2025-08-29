@@ -162,3 +162,269 @@ html, body {
 .dark .MuiSelect-select {
   color: white !important;
 }
+
+
+/* ========================================
+   COMPREHENSIVE THEME OVERRIDES
+   Force all components to use theme colors
+   ======================================== */
+
+/* Light Mode Global Overrides */
+html:not(.dark) * {
+  /* Force light backgrounds on common elements */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #1a202c;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+}
+
+/* Dark Mode Global Overrides */
+.dark * {
+  /* Force dark backgrounds on common elements */
+  --bg-primary: #2d3748;
+  --bg-secondary: #1a202c;
+  --bg-tertiary: #374151;
+  --text-primary: #ffffff;
+  --text-secondary: #d1d5db;
+  --border-color: #4b5563;
+}
+
+/* Force Material-UI Components to use theme colors */
+/* Cards and Papers */
+.dark .MuiCard-root,
+.dark .MuiPaper-root,
+.dark .MuiDialog-paper,
+.dark .MuiPopover-paper,
+.dark .MuiMenu-paper {
+  background-color: #2d3748 !important;
+  color: white !important;
+}
+
+.dark .MuiCard-root *,
+.dark .MuiPaper-root *,
+.dark .MuiDialog-paper *,
+.dark .MuiPopover-paper *,
+.dark .MuiMenu-paper * {
+  color: white !important;
+}
+
+/* Buttons */
+.dark .MuiButton-root:not(.MuiButton-contained) {
+  color: white !important;
+  border-color: #4b5563 !important;
+}
+
+.dark .MuiIconButton-root {
+  color: white !important;
+}
+
+/* Typography */
+.dark .MuiTypography-root {
+  color: white !important;
+}
+
+.dark .MuiTypography-colorTextSecondary {
+  color: #d1d5db !important;
+}
+
+/* Dividers */
+.dark .MuiDivider-root {
+  border-color: #4b5563 !important;
+  background-color: #4b5563 !important;
+}
+
+/* Lists */
+.dark .MuiList-root {
+  background-color: #2d3748 !important;
+}
+
+.dark .MuiListItem-root {
+  color: white !important;
+}
+
+.dark .MuiListItemText-primary {
+  color: white !important;
+}
+
+.dark .MuiListItemText-secondary {
+  color: #d1d5db !important;
+}
+
+/* Force override any hardcoded white backgrounds */
+.dark [style*="background-color: white"],
+.dark [style*="background-color: #fff"],
+.dark [style*="background-color: #ffffff"],
+.dark [style*="background-color: rgb(255, 255, 255)"] {
+  background-color: #2d3748 !important;
+}
+
+/* Force override any hardcoded black text */
+.dark [style*="color: black"],
+.dark [style*="color: #000"],
+.dark [style*="color: #000000"],
+.dark [style*="color: rgb(0, 0, 0)"] {
+  color: white !important;
+}
+
+/* Force override any hardcoded light backgrounds */
+.dark [style*="background-color: #f"],
+.dark [style*="background-color: #e"],
+.dark [style*="background-color: #d"] {
+  background-color: #2d3748 !important;
+}
+
+/* Navigation and Sidebar overrides */
+.dark nav,
+.dark aside,
+.dark .sidebar,
+.dark .navigation {
+  background-color: #1a202c !important;
+  color: white !important;
+}
+
+.dark nav *,
+.dark aside *,
+.dark .sidebar *,
+.dark .navigation * {
+  color: white !important;
+}
+
+/* Chat interface specific overrides */
+.dark .chat-container,
+.dark .chat-interface,
+.dark .chat-panel {
+  background-color: #1a202c !important;
+  color: white !important;
+}
+
+.dark .chat-message,
+.dark .message-bubble {
+  background-color: #2d3748 !important;
+  color: white !important;
+}
+
+.dark .chat-input,
+.dark .message-input {
+  background-color: #374151 !important;
+  color: white !important;
+  border-color: #4b5563 !important;
+}
+
+/* Form elements */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  background-color: #374151 !important;
+  color: white !important;
+  border-color: #4b5563 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Tables */
+.dark table,
+.dark .MuiTable-root {
+  background-color: #2d3748 !important;
+  color: white !important;
+}
+
+.dark th,
+.dark td,
+.dark .MuiTableCell-root {
+  color: white !important;
+  border-color: #4b5563 !important;
+}
+
+/* Tooltips */
+.dark .MuiTooltip-tooltip {
+  background-color: #374151 !important;
+  color: white !important;
+}
+
+/* Chips and Tags */
+.dark .MuiChip-root {
+  background-color: #374151 !important;
+  color: white !important;
+}
+
+/* Progress indicators */
+.dark .MuiLinearProgress-root {
+  background-color: #374151 !important;
+}
+
+/* Accordions */
+.dark .MuiAccordion-root {
+  background-color: #2d3748 !important;
+  color: white !important;
+}
+
+/* Tabs */
+.dark .MuiTabs-root {
+  background-color: #2d3748 !important;
+}
+
+.dark .MuiTab-root {
+  color: #d1d5db !important;
+}
+
+.dark .MuiTab-root.Mui-selected {
+  color: white !important;
+}
+
+/* Light mode overrides for consistency */
+html:not(.dark) .MuiCard-root,
+html:not(.dark) .MuiPaper-root,
+html:not(.dark) .MuiDialog-paper {
+  background-color: #ffffff !important;
+  color: #1a202c !important;
+}
+
+html:not(.dark) .MuiTypography-root {
+  color: #1a202c !important;
+}
+
+html:not(.dark) .MuiTypography-colorTextSecondary {
+  color: #64748b !important;
+}
+
+/* Ensure transitions work smoothly */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* Override any CSS-in-JS styles that might conflict */
+.dark [class*="makeStyles"],
+.dark [class*="jss"],
+.dark [class*="css-"] {
+  color: inherit !important;
+}
+
+/* Force iframe content (like embedded components) */
+.dark iframe {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Special handling for code blocks and pre elements */
+.dark pre,
+.dark code {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Avatar and image containers */
+.dark .MuiAvatar-root {
+  background-color: #374151 !important;
+  color: white !important;
+}
+
+/* Badge components */
+.dark .MuiBadge-badge {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
