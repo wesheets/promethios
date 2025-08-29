@@ -202,16 +202,13 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
   return (
     <Container maxWidth="lg" sx={{ py: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
       {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
-            AI Collaboration Network
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Discover communities, share insights, and connect with AI professionals
-          </Typography>
-        </Box>
-        <SocialThemeToggle />
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
+          AI Collaboration Network
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Discover communities, share insights, and connect with AI professionals
+        </Typography>
       </Box>
 
       {/* Error Alert */}
