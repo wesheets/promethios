@@ -50,6 +50,7 @@ import {
   Verified as AttestationsIcon,
 } from '@mui/icons-material';
 import GlobalThemeToggle from './navigation/GlobalThemeToggle';
+import NotificationBell from './notifications/NotificationBell';
   // Social Collaboration Icons
   Search as DiscoveryIcon,
   Person as ProfileIcon,
@@ -724,7 +725,12 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           borderBottom: '1px solid #2d3748',
         }}
       >
-        {!collapsed && <GlobalThemeToggle collapsed={false} />}
+        {!collapsed && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <GlobalThemeToggle collapsed={false} />
+            <NotificationBell collapsed={false} />
+          </Box>
+        )}
         <IconButton onClick={handleToggleCollapse} sx={{ color: 'white' }}>
           {collapsed ? <ChevronRight /> : <ChevronLeft />}
         </IconButton>
@@ -739,6 +745,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       {collapsed && (
         <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid #2d3748' }}>
           <GlobalThemeToggle collapsed={true} />
+          <NotificationBell collapsed={true} />
           <Tooltip title="Profile" placement="right" arrow>
             <IconButton 
               sx={{ color: 'white', width: '100%', mb: 0.5 }}
