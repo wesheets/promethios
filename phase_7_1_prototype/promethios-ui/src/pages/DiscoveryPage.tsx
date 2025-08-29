@@ -513,6 +513,47 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
                 </Box>
               )}
             </Paper>
+
+            {/* All Users Section */}
+            <Paper sx={{ 
+              p: 3, 
+              mb: 3, 
+              backgroundColor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'text.primary' }}>
+                <People sx={{ color: 'primary.main' }} />
+                All AI Collaboration Partners ({allUsers.length})
+              </Typography>
+              
+              <Grid container spacing={2}>
+                {allUsers.map((user) => (
+                  <Grid item xs={12} md={6} lg={4} key={user.id}>
+                    <UserProfileCard
+                      profile={mapFirebaseUserToProfile(user)}
+                      variant="compact"
+                      onViewProfile={() => onViewProfile?.(user.id)}
+                      onConnect={() => handleConnect(user.id)}
+                      onMessage={() => onMessage?.(user.id)}
+                      onStartCollaboration={() => onStartCollaboration?.(user.id)}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+              
+              {allUsers.length === 0 && (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <People sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h6" sx={{ mb: 1 }}>
+                    No Users Found
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    We're loading AI collaboration partners for you
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
           </Grid>
 
           {/* Sidebar */}
