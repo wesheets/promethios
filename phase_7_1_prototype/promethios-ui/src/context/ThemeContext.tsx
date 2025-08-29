@@ -8,8 +8,11 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to dark mode
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Default to light mode, load from localStorage
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme-preference');
+    return saved === 'dark';
+  });
 
   useEffect(() => {
     // Apply theme to document
@@ -18,11 +21,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Save preference to localStorage
+    localStorage.setItem('theme-preference', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
-    // Save preference to localStorage in a real implementation
   };
 
   return (
