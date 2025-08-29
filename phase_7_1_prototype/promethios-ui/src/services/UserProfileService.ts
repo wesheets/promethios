@@ -246,21 +246,32 @@ export class UserProfileService {
    * Get user profile by ID
    */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
+    console.log('🔍 UserProfileService.getUserProfile called with userId:', userId);
+    
     try {
       // Real Firebase implementation
       const { doc, getDoc } = await import('firebase/firestore');
       const { db } = await import('../firebase/config');
       
+      console.log('📊 UserProfileService: Creating document reference for:', userId);
       const userDocRef = doc(db, 'userProfiles', userId);
+      
+      console.log('🔥 UserProfileService: Fetching document from Firestore...');
       const userDoc = await getDoc(userDocRef);
       
+      console.log('📋 UserProfileService: Document exists:', userDoc.exists());
+      
       if (userDoc.exists()) {
-        return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+        const profileData = { id: userDoc.id, ...userDoc.data() } as UserProfile;
+        console.log('✅ UserProfileService: Profile data found:', profileData);
+        return profileData;
+      } else {
+        console.log('❌ UserProfileService: No document found for userId:', userId);
       }
       
       return null;
     } catch (error) {
-      console.error('Error getting user profile:', error);
+      console.error('💥 UserProfileService: Error getting user profile:', error);
       throw error;
     }
   }

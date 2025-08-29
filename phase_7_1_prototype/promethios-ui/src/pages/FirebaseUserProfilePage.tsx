@@ -53,26 +53,31 @@ const FirebaseUserProfilePage: React.FC = () => {
   useEffect(() => {
     const loadProfile = async () => {
       if (!userId) {
+        console.error('❌ FirebaseUserProfilePage: No userId provided');
         setError('User ID not provided');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('🔍 FirebaseUserProfilePage: Loading profile for userId:', userId);
         setLoading(true);
         
         // Load profile data from the same source as the edit page
         const userProfile = await profileService.getUserProfile(userId);
+        console.log('📊 FirebaseUserProfilePage: Profile data received:', userProfile);
         
         if (userProfile) {
+          console.log('✅ FirebaseUserProfilePage: Profile found, setting state');
           setProfile(userProfile);
         } else {
+          console.error('❌ FirebaseUserProfilePage: No profile found for userId:', userId);
           setError('User profile not found');
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Failed to load user profile:', error);
+        console.error('💥 FirebaseUserProfilePage: Failed to load user profile:', error);
         setError('Failed to load user profile');
         setLoading(false);
       }
