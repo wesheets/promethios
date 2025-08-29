@@ -210,23 +210,31 @@ const FirebaseUserProfilePage: React.FC = () => {
                   <Public sx={{ color: 'text.secondary', fontSize: 24 }} />
                 </Box>
                 
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-                  {profile?.title || 'Professional'} at {profile?.company || 'Company'}
-                </Typography>
+                {(profile?.title || profile?.company) && (
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                    {profile?.title && profile?.company ? `${profile.title} at ${profile.company}` : 
+                     profile?.title ? profile.title : 
+                     profile?.company ? `Professional at ${profile.company}` : ''}
+                  </Typography>
+                )}
                 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <LocationOn fontSize="small" color="action" />
-                    <Typography variant="body2">{profile?.location || 'Remote'}</Typography>
-                  </Box>
+                  {profile?.location && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <LocationOn fontSize="small" color="action" />
+                      <Typography variant="body2">{profile.location}</Typography>
+                    </Box>
+                  )}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Group sx={{ fontSize: 16, color: 'text.secondary' }} />
                     <Typography variant="body2">{profile?.connections || 0} connections</Typography>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Star sx={{ fontSize: 16, color: '#FFA726' }} />
-                    <Typography variant="body2">{(profile?.rating || 4.0).toFixed(1)} rating</Typography>
-                  </Box>
+                  {profile?.rating && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Star sx={{ fontSize: 16, color: '#FFA726' }} />
+                      <Typography variant="body2">{profile.rating.toFixed(1)} rating</Typography>
+                    </Box>
+                  )}
                 </Box>
 
                 {/* Action Buttons */}
@@ -254,68 +262,64 @@ const FirebaseUserProfilePage: React.FC = () => {
             <Divider sx={{ my: 3 }} />
 
             {/* About Section */}
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                About
-              </Typography>
-              <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                {typeof profile?.about === 'string' ? profile.about : 'Professional focused on AI collaboration and innovation.'}
-              </Typography>
-            </Box>
+            {profile?.about && typeof profile.about === 'string' && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  About
+                </Typography>
+                <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
+                  {profile.about}
+                </Typography>
+              </Box>
+            )}
 
             <Divider sx={{ my: 3 }} />
 
             {/* AI Collaborators Section */}
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SmartToy />
-                AI Collaborators
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {(profile.aiAgents || []).map((agent: any, index: number) => (
-                  <Tooltip key={agent?.id || index} title={`${typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')} - ${agent?.specialization?.join?.(', ') || 'AI Assistant'}`}>
-                    <Chip
-                      icon={<SmartToy />}
-                      label={typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')}
-                      sx={{
-                        backgroundColor: getAIAgentColor(agent?.type || 'Assistant'),
-                        color: 'white',
-                        fontWeight: 500,
-                      }}
-                    />
-                  </Tooltip>
-                ))}
-                {(profile.aiAgents || []).length === 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    No AI collaborators listed
-                  </Typography>
-                )}
+            {(profile.aiAgents || []).length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SmartToy />
+                  AI Collaborators
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {(profile.aiAgents || []).map((agent: any, index: number) => (
+                    <Tooltip key={agent?.id || index} title={`${typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')} - ${agent?.specialization?.join?.(', ') || 'AI Assistant'}`}>
+                      <Chip
+                        icon={<SmartToy />}
+                        label={typeof agent?.name === 'string' ? agent.name : (agent?.type || 'AI')}
+                        sx={{
+                          backgroundColor: getAIAgentColor(agent?.type || 'Assistant'),
+                          color: 'white',
+                          fontWeight: 500,
+                        }}
+                      />
+                    </Tooltip>
+                  ))}
+                </Box>
               </Box>
-            </Box>
+            )}
 
             <Divider sx={{ my: 3 }} />
 
             {/* Skills Section */}
-            <Box>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                Skills & Expertise
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {(profile.skills || []).map((skill: any, index: number) => (
-                  <Chip
-                    key={index}
-                    label={typeof skill === 'string' ? skill : (skill?.name || 'Skill')}
-                    variant="outlined"
-                    sx={{ borderColor: 'primary.main', color: 'primary.main' }}
-                  />
-                ))}
-                {(profile.skills || []).length === 0 && (
-                  <Typography variant="body2" color="text.secondary">
-                    No skills listed
-                  </Typography>
-                )}
+            {(profile.skills || []).length > 0 && (
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  Skills & Expertise
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {(profile.skills || []).map((skill: any, index: number) => (
+                    <Chip
+                      key={index}
+                      label={typeof skill === 'string' ? skill : (skill?.name || 'Skill')}
+                      variant="outlined"
+                      sx={{ borderColor: 'primary.main', color: 'primary.main' }}
+                    />
+                  ))}
+                </Box>
               </Box>
-            </Box>
+            )}
             </Box>
           </Card>
         </Grid>
