@@ -17,6 +17,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { connectionActivityService } from './ConnectionActivityService';
 
 export interface ConnectionRequest {
   id: string;
@@ -154,6 +155,19 @@ class FirebaseConnectionService {
       await this.updateUserConnectionStats(fromUserId, { sentRequests: increment(1) });
       await this.updateUserConnectionStats(toUserId, { pendingRequests: increment(1) });
 
+      // Create connection activity in social feed
+      try {
+        await connectionActivityService.createConnectionActivity(
+          'new_connection',
+          fromUserId,
+          toUserId,
+          message
+        );
+      } catch (activityError) {
+        console.error('🤝 [Connection] Error creating connection activity:', activityError);
+        // Non-blocking error - connection request is still sent
+      }
+
       console.log(`🤝 [Connection] Request sent successfully: ${requestId}`);
       return { success: true, requestId };
 
@@ -251,6 +265,18 @@ class FirebaseConnectionService {
           actionUrl: `/profile/${request.fromUserId}`
         })
       ]);
+
+      // Create connection activity in social feed
+      try {
+        await connectionActivityService.createConnectionActivity(
+          'connection_accepted',
+          request.toUserId,
+          request.fromUserId
+        );
+      } catch (activityError) {
+        console.error('🤝 [Connection] Error creating connection activity:', activityError);
+        // Non-blocking error - connection is still established
+      }
 
       console.log(`🤝 [Connection] Request accepted: ${requestId}`);
       return { success: true };

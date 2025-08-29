@@ -37,6 +37,7 @@ import {
 import SocialFeed from '../components/social/SocialFeed';
 import { socialFeedService } from '../services/SocialFeedService';
 import { useChatIntegration } from '../components/social/ChatIntegrationProvider';
+import ConnectionActivitiesFeed from '../components/social/ConnectionActivitiesFeed';
 import SocialThemeToggle from '../components/social/SocialThemeToggle';
 
 interface AICollaborationServer {
@@ -248,29 +249,37 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {activeUsers.map((user) => (
                 <Box 
-                  key={user.id} 
+                  key={user.id}
                   sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: 2,
                     cursor: 'pointer',
-                    p: 1,
-                    borderRadius: 1,
-                    '&:hover': {
-                      backgroundColor: 'action.hover'
-                    }
+                    '&:hover': { opacity: 0.8 }
                   }}
-                  onClick={() => handleStartChat(user.id, user.name, user.avatar)}
+                  onClick={() => onViewProfile(user.id)}
                 >
-                  <Badge
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    badgeContent={
-                      <Box
-                        sx={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: '50%',
+                  <Avatar src={user.avatar} />
+                  <Box>
+                    <Typography variant="body2" fontWeight={500}>{user.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">{user.activity}</Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+          
+          {/* Connection Activities */}
+          <Paper sx={{ 
+            p: 3, 
+            mb: 3,
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <ConnectionActivitiesFeed limit={3} />
+          </Paper>
+
+          {/* Featured Communities */}
                           backgroundColor: '#4CAF50',
                           border: '2px solid white',
                         }}
