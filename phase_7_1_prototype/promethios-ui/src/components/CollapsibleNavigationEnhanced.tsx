@@ -48,6 +48,8 @@ import {
   Psychology as VeritasIcon,
   Shield as BoundariesIcon,
   Verified as AttestationsIcon,
+} from '@mui/icons-material';
+import GlobalThemeToggle from './navigation/GlobalThemeToggle';
   // Social Collaboration Icons
   Search as DiscoveryIcon,
   Person as ProfileIcon,
@@ -717,11 +719,12 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-end',
+          justifyContent: collapsed ? 'center' : 'space-between',
           padding: '8px',
           borderBottom: '1px solid #2d3748',
         }}
       >
+        {!collapsed && <GlobalThemeToggle collapsed={false} />}
         <IconButton onClick={handleToggleCollapse} sx={{ color: 'white' }}>
           {collapsed ? <ChevronRight /> : <ChevronLeft />}
         </IconButton>
@@ -735,6 +738,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       {/* Footer section for collapsed state */}
       {collapsed && (
         <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid #2d3748' }}>
+          <GlobalThemeToggle collapsed={true} />
           <Tooltip title="Profile" placement="right" arrow>
             <IconButton 
               sx={{ color: 'white', width: '100%', mb: 0.5 }}
