@@ -336,8 +336,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Main Profile Card */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             position: 'relative'
           }}>
@@ -460,7 +460,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 p: 2, 
                 backgroundColor: '#f8f9fa',
                 borderRadius: 2,
-                border: '1px solid #e1e5e9'
+                border: '1px solid', borderColor: 'divider'
               }}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography variant="h6" color="primary">
@@ -493,8 +493,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* About Section */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 3 }}>
@@ -548,8 +548,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Experience Section */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 3 }}>
@@ -609,8 +609,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Skills Section */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 3 }}>
@@ -633,7 +633,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                     label={`${skill.name} • ${skill.endorsements}`}
                     variant="outlined"
                     sx={{ 
-                      backgroundColor: 'white',
+                      backgroundColor: 'background.paper',
                       borderColor: '#e1e5e9',
                       color: '#333',
                       '&:hover': { 
@@ -653,8 +653,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Profile Language */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>
@@ -670,8 +670,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* Public Profile URL */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>
@@ -693,8 +693,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
           {/* People Also Viewed */}
           <Card sx={{ 
             mb: 3,
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>
@@ -756,8 +756,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
 
           {/* Analytics */}
           <Card sx={{ 
-            backgroundColor: 'white',
-            border: '1px solid #e1e5e9',
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             <Box sx={{ p: 2 }}>

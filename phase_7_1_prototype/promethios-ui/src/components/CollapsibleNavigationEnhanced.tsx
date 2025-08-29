@@ -123,9 +123,9 @@ const DRAWER_WIDTH_COLLAPSED = 60;
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
     width: DRAWER_WIDTH,
-    backgroundColor: '#1a202c',
-    borderRight: '1px solid #2d3748',
-    color: 'white',
+    backgroundColor: theme.palette.background.paper,
+    borderRight: `1px solid ${theme.palette.divider}`,
+    color: theme.palette.text.primary,
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.enteringScreen,
@@ -137,9 +137,9 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
 const StyledDrawerCollapsed = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
     width: DRAWER_WIDTH_COLLAPSED,
-    backgroundColor: '#1a202c',
-    borderRight: '1px solid #2d3748',
-    color: 'white',
+    backgroundColor: theme.palette.background.paper,
+    borderRight: `1px solid ${theme.palette.divider}`,
+    color: theme.palette.text.primary,
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
