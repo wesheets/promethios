@@ -202,6 +202,33 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
     return { text: 'Connect', disabled: sendingRequest, variant: 'outlined' as const };
   };
 
+  // Convert FirebaseUser to UserProfile format for UserProfileCard
+  const mapFirebaseUserToProfile = (user: FirebaseUser): any => {
+    return {
+      id: user.id,
+      name: user.displayName || user.email || 'Unknown User',
+      title: user.profile?.title || 'AI Collaboration Partner',
+      company: user.profile?.company || 'Independent',
+      location: user.profile?.location || 'Remote',
+      industry: user.profile?.industry || 'Technology',
+      avatar: user.photoURL || '',
+      bio: user.profile?.bio || 'Passionate about AI collaboration and innovation.',
+      skills: user.profile?.skills || [],
+      aiAgents: user.profile?.aiAgents || [],
+      rating: user.profile?.rating || 4.5,
+      collaborationCount: user.profile?.collaborationCount || 0,
+      responseTime: user.profile?.responseTime || '< 1 hour',
+      availability: user.profile?.availability || 'Available',
+      isOnline: user.isOnline || false,
+      lastActive: user.lastActive || new Date(),
+      isVerified: user.profile?.isVerified || false,
+      isConnected: false,
+      connectionStatus: 'none' as const,
+      mutualConnections: 0,
+      preferences: user.preferences || {}
+    };
+  };
+
   const UserCard: React.FC<{ user: FirebaseUser; variant?: 'full' | 'compact' }> = ({ 
     user, 
     variant = 'full' 
@@ -425,20 +452,20 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
             Search Results ({searchResults.length})
           </Typography>
           
-          <Grid container spacing={2}>
-            {searchResults.map((user) => (
-              <Grid item xs={12} md={6} lg={4} key={user.id}>
-                <UserProfileCard
-                  user={user}
-                  variant="compact"
-                  onViewProfile={() => onViewProfile?.(user.id)}
-                  onConnect={() => handleConnect(user.id)}
-                  onMessage={() => onMessage?.(user.id)}
-                  onStartCollaboration={() => onStartCollaboration?.(user.id)}
-                />
+              <Grid container spacing={2}>
+                {searchResults.map((user) => (
+                  <Grid item xs={12} md={6} lg={4} key={user.id}>
+                    <UserProfileCard
+                      profile={mapFirebaseUserToProfile(user)}
+                      variant="compact"
+                      onViewProfile={() => onViewProfile?.(user.id)}
+                      onConnect={() => handleConnect(user.id)}
+                      onMessage={() => onMessage?.(user.id)}
+                      onStartCollaboration={() => onStartCollaboration?.(user.id)}
+                    />
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
         </Box>
       )}
 
@@ -463,7 +490,7 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
                 {featuredUsers.map((user) => (
                   <Grid item xs={12} md={6} key={user.id}>
                     <UserProfileCard
-                      user={user}
+                      profile={mapFirebaseUserToProfile(user)}
                       variant="minimal"
                       onViewProfile={() => onViewProfile?.(user.id)}
                       onConnect={() => handleConnect(user.id)}
