@@ -948,9 +948,236 @@ const LinkedInStyleProfilePage: React.FC = () => {
                   See how often you appear in search results
                 </Typography>
               </Box>
+            </Box>
+          </Card>
 
-              <Button 
-                fullWidth 
+          {/* Professional Details */}
+          <Card sx={{ 
+            mb: 3,
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            <Box sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Professional Details
+                </Typography>
+                <IconButton size="small" onClick={() => handleEditSection('professional')}>
+                  <Edit />
+                </IconButton>
+              </Box>
+              
+              {editingSection === 'professional' ? (
+                <Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Industry"
+                        value={profile.industry || ''}
+                        onChange={(e) => handleFieldChange('industry', e.target.value)}
+                        placeholder="e.g., Technology, Healthcare, Finance"
+                        sx={{ mb: 2 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Experience Level"
+                        select
+                        value={profile.experienceLevel || ''}
+                        onChange={(e) => handleFieldChange('experienceLevel', e.target.value)}
+                        SelectProps={{ native: true }}
+                        sx={{ mb: 2 }}
+                      >
+                        <option value="">Select Level</option>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                        <option value="Expert">Expert</option>
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Response Time (minutes)"
+                        type="number"
+                        value={profile.responseTime || ''}
+                        onChange={(e) => handleFieldChange('responseTime', parseInt(e.target.value) || 15)}
+                        placeholder="15"
+                        sx={{ mb: 2 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={profile.isOnline || false}
+                            onChange={(e) => handleFieldChange('isOnline', e.target.checked)}
+                          />
+                        }
+                        label="Show as Online"
+                      />
+                    </Grid>
+                  </Grid>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                    <Button 
+                      variant="contained" 
+                      size="small" 
+                      onClick={handleSaveSection}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Industry</Typography>
+                    <Typography variant="body1">{profile.industry || 'Not specified'}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Experience Level</Typography>
+                    <Typography variant="body1">{profile.experienceLevel || 'Not specified'}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Response Time</Typography>
+                    <Typography variant="body1">{profile.responseTime || 15} minutes</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Status</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: profile.isOnline ? '#4CAF50' : '#FFA726',
+                        }}
+                      />
+                      <Typography variant="body1">
+                        {profile.isOnline ? 'Online' : 'Offline'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              )}
+            </Box>
+          </Card>
+
+          {/* AI Collaborators */}
+          <Card sx={{ 
+            mb: 3,
+            backgroundColor: 'background.paper',
+            border: '1px solid', borderColor: 'divider',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+          }}>
+            <Box sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  AI Collaborators
+                </Typography>
+                <IconButton size="small" onClick={() => handleEditSection('aiAgents')}>
+                  <Edit />
+                </IconButton>
+              </Box>
+              
+              {editingSection === 'aiAgents' ? (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Add AI agents and tools you collaborate with
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Agent Name"
+                        value={profile.agentName || ''}
+                        onChange={(e) => handleFieldChange('agentName', e.target.value)}
+                        placeholder="e.g., Claude, GPT-4, Custom Agent"
+                        sx={{ mb: 2 }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Agent Type"
+                        select
+                        value={profile.agentType || ''}
+                        onChange={(e) => handleFieldChange('agentType', e.target.value)}
+                        SelectProps={{ native: true }}
+                        sx={{ mb: 2 }}
+                      >
+                        <option value="">Select Type</option>
+                        <option value="Assistant">General Assistant</option>
+                        <option value="Analyst">Data Analyst</option>
+                        <option value="Writer">Content Writer</option>
+                        <option value="Developer">Code Developer</option>
+                        <option value="Designer">Creative Designer</option>
+                        <option value="Researcher">Research Assistant</option>
+                        <option value="Custom">Custom Agent</option>
+                      </TextField>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Specialization Areas"
+                        value={profile.agentSpecialization || ''}
+                        onChange={(e) => handleFieldChange('agentSpecialization', e.target.value)}
+                        placeholder="e.g., Natural Language Processing, Data Analysis, Creative Writing"
+                        sx={{ mb: 2 }}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                    <Button 
+                      variant="contained" 
+                      size="small" 
+                      onClick={handleSaveSection}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Box>
+                  {(profile.aiAgents && profile.aiAgents.length > 0) ? (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {profile.aiAgents.map((agent: any, index: number) => (
+                        <Chip
+                          key={index}
+                          label={`${agent.name || agent.type || 'AI Agent'} - ${agent.specialization || 'General'}`}
+                          variant="outlined"
+                          sx={{ borderColor: 'primary.main', color: 'primary.main' }}
+                        />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No AI collaborators added yet. Add your AI agents and tools to showcase your collaboration experience.
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </Box>
+          </Card>    fullWidth 
                 variant="outlined" 
                 sx={{ 
                   mt: 2,
