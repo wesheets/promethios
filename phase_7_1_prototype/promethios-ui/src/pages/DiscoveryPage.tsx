@@ -187,25 +187,6 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
     handleSearch(query);
   };
 
-  const handleConnect = async (userId: string) => {
-    try {
-      console.log('🤝 [Discovery] Sending connection request to:', userId);
-      
-      const success = await sendConnectionRequest(
-        userId, 
-        "Hi! I'd like to connect and explore AI collaboration opportunities together."
-      );
-      
-      if (success) {
-        // Show success feedback
-        console.log('🤝 [Discovery] Connection request sent successfully');
-        onConnect?.(userId);
-      }
-    } catch (err) {
-      console.error('Error sending connection request:', err);
-    }
-  };
-
   const handleMessage = async (userId: string) => {
     try {
       console.log('💬 [Discovery] Starting message with:', userId);
