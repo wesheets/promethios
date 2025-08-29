@@ -177,19 +177,28 @@ class FirebaseUserDiscoveryService {
       'gmail.com': {
         industry: 'Technology',
         skills: ['AI Collaboration', 'Strategic Thinking', 'Innovation'],
-        aiAgents: ['Claude', 'ChatGPT'],
+        aiAgents: [
+          { id: 'claude-1', name: 'Claude', type: 'Assistant', specialization: ['Analysis', 'Writing'] },
+          { id: 'chatgpt-1', name: 'ChatGPT', type: 'Assistant', specialization: ['Research', 'Coding'] }
+        ],
         collaborationStyle: ['Creative', 'Analytical']
       },
       'crowellville.com': {
         industry: 'Real Estate',
         skills: ['Property Management', 'Business Development', 'AI Integration'],
-        aiAgents: ['Claude', 'OpenAI'],
+        aiAgents: [
+          { id: 'claude-2', name: 'Claude', type: 'Assistant', specialization: ['Strategy', 'Analysis'] },
+          { id: 'openai-1', name: 'OpenAI', type: 'Assistant', specialization: ['Research', 'Planning'] }
+        ],
         collaborationStyle: ['Strategic', 'Results-Driven']
       },
       'majesticgoods.com': {
         industry: 'E-commerce',
         skills: ['Product Management', 'Digital Marketing', 'Customer Experience'],
-        aiAgents: ['ChatGPT', 'Claude'],
+        aiAgents: [
+          { id: 'chatgpt-2', name: 'ChatGPT', type: 'Assistant', specialization: ['Marketing', 'Content'] },
+          { id: 'claude-3', name: 'Claude', type: 'Assistant', specialization: ['Strategy', 'Analysis'] }
+        ],
         collaborationStyle: ['Customer-Focused', 'Data-Driven']
       }
     };
@@ -416,7 +425,10 @@ class FirebaseUserDiscoveryService {
           location: 'San Francisco, CA',
           bio: 'Passionate about AI governance and strategic implementation. Love collaborating with Claude on complex business challenges.',
           skills: ['AI Strategy', 'Business Analysis', 'Claude Collaboration', 'Strategic Planning'],
-          aiAgents: ['Claude', 'ChatGPT'],
+          aiAgents: [
+            { id: 'claude-mock-1', name: 'Claude', type: 'Assistant', specialization: ['Strategy', 'Analysis'] },
+            { id: 'chatgpt-mock-1', name: 'ChatGPT', type: 'Assistant', specialization: ['Research', 'Writing'] }
+          ],
           collaborationStyle: ['Strategic', 'Analytical'],
           experienceLevel: 'Expert',
           industry: 'Consulting'
@@ -448,7 +460,10 @@ class FirebaseUserDiscoveryService {
           location: 'Austin, TX',
           bio: 'Building the future of AI-powered products. Always looking for creative collaborators to push boundaries.',
           skills: ['Product Management', 'AI Integration', 'User Experience', 'Innovation'],
-          aiAgents: ['Claude', 'OpenAI'],
+          aiAgents: [
+            { id: 'claude-mock-2', name: 'Claude', type: 'Assistant', specialization: ['Product Strategy', 'Innovation'] },
+            { id: 'openai-mock-1', name: 'OpenAI', type: 'Assistant', specialization: ['Development', 'Research'] }
+          ],
           collaborationStyle: ['Creative', 'User-Focused'],
           experienceLevel: 'Senior',
           industry: 'Technology'
