@@ -25,8 +25,11 @@ const PublicProfileHandler: React.FC = () => {
 
       // Direct mapping for known users (using real Firebase UIDs from Auth console)
       const directMappings: Record<string, string> = {
-        // Ted Sheets (your profile)
+        // Ted Sheets (original user)
         'ted-sheets': 'HSf4SIwCcRRzAFPuFXlFE9CsQ6W2',
+        
+        // Ted Sheets (new user - ted@crownavellc.com)
+        'ted-crownavellc': 't8RZC8wnUNURzSQohLtvMEA8hqw1',
         
         // Real Firebase Auth users from the authentication console
         'oldecboy': 'OkYBqbJvqpGUdRYHKw.jaqJ...',  // oldecboy@gmail.com
