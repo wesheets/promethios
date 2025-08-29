@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FirebaseUserDiscoveryService } from '../services/FirebaseUserDiscoveryService';
+import { UserProfileService } from '../services/UserProfileService';
 import {
   Box,
   Card,
@@ -47,6 +48,7 @@ const FirebaseUserProfilePage: React.FC = () => {
   const [connectionRequested, setConnectionRequested] = useState(false);
 
   const discoveryService = new FirebaseUserDiscoveryService();
+  const profileService = new UserProfileService();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -59,9 +61,8 @@ const FirebaseUserProfilePage: React.FC = () => {
       try {
         setLoading(true);
         
-        // Get all users and find the one with matching ID
-        const allUsers = await discoveryService.getAllUsers();
-        const userProfile = allUsers.find(user => user.id === userId);
+        // Load profile data from the same source as the edit page
+        const userProfile = await profileService.getUserProfile(userId);
         
         if (userProfile) {
           setProfile(userProfile);
@@ -71,7 +72,7 @@ const FirebaseUserProfilePage: React.FC = () => {
         
         setLoading(false);
       } catch (error) {
-        console.error('Failed to load Firebase user profile:', error);
+        console.error('Failed to load user profile:', error);
         setError('Failed to load user profile');
         setLoading(false);
       }
@@ -146,7 +147,23 @@ const FirebaseUserProfilePage: React.FC = () => {
       <Grid container spacing={3}>
         {/* Main Profile Card */}
         <Grid item xs={12} md={8}>
-          <Card sx={{ p: 4, mb: 3 }}>
+          <Card sx={{ p: 0, mb: 3, overflow: 'hidden' }}>
+            {/* Header Photo */}
+            <Box
+              sx={{
+                height: 200,
+                background: profile.headerPhoto 
+                  ? `url(${profile.headerPhoto}) center/cover`
+                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'flex-end',
+                p: 3
+              }}
+            />
+            
+            {/* Profile Content */}
+            <Box sx={{ p: 4, pt: 2 }}>
             {/* Profile Header */}
             <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
               <Badge
@@ -165,7 +182,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                 }
               >
                 <Avatar 
-                  src={profile.avatar} 
+                  src={profile.profilePhoto} 
                   sx={{ width: 120, height: 120, fontSize: '3rem' }}
                 >
                   {profile.name?.charAt(0) || '?'}
@@ -235,7 +252,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                 About
               </Typography>
               <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                {profile.bio || 'Professional focused on AI collaboration and innovation.'}
+                {profile.about || 'Professional focused on AI collaboration and innovation.'}
               </Typography>
             </Box>
 
@@ -291,6 +308,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                   </Typography>
                 )}
               </Box>
+            </Box>
             </Box>
           </Card>
         </Grid>
