@@ -251,6 +251,23 @@ const LinkedInStyleProfilePage: React.FC = () => {
     setProfile(prev => ({ ...prev, [field]: value }));
   };
 
+  // Edit handlers
+  const handleEditSection = (section: string) => {
+    setEditingSection(section);
+    setEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSection(null);
+    setEditMode(false);
+  };
+
+  const handleSaveSection = async () => {
+    await handleSave();
+    setEditingSection(null);
+    setEditMode(false);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -439,15 +456,46 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 <Typography variant="h6" fontWeight="bold">
                   About
                 </Typography>
-                <IconButton size="small">
+                <IconButton size="small" onClick={() => handleEditSection('about')}>
                   <Edit />
                 </IconButton>
               </Box>
               
-              <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                {profile.summary || profile.bio || 
-                  "Passionate about AI collaboration and human-machine partnerships. Experienced in building innovative solutions that bridge the gap between artificial intelligence and human creativity."}
-              </Typography>
+              {editingSection === 'about' ? (
+                <Box>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    value={profile.summary || profile.bio || ''}
+                    onChange={(e) => handleFieldChange('summary', e.target.value)}
+                    placeholder="Write about yourself..."
+                    sx={{ mb: 2 }}
+                  />
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button 
+                      variant="contained" 
+                      size="small" 
+                      onClick={handleSaveSection}
+                      disabled={saving}
+                    >
+                      {saving ? 'Saving...' : 'Save'}
+                    </Button>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                  </Box>
+                </Box>
+              ) : (
+                <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
+                  {profile.summary || profile.bio || 
+                    "Passionate about AI collaboration and human-machine partnerships. Experienced in building innovative solutions that bridge the gap between artificial intelligence and human creativity."}
+                </Typography>
+              )}
             </Box>
           </Card>
 
