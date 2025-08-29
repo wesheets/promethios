@@ -35,6 +35,7 @@ import {
   Public,
   Schedule
 } from '@mui/icons-material';
+import TeamMemberBadge from '../components/social/TeamMemberBadge';
 
 const FirebaseUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -176,6 +177,9 @@ const FirebaseUserProfilePage: React.FC = () => {
                   <Typography variant="h4" sx={{ fontWeight: 600 }}>
                     {profile.name || 'Anonymous User'}
                   </Typography>
+                  {profile.connectionStatus === 'connected' && (
+                    <TeamMemberBadge variant="chip" size="medium" />
+                  )}
                   {profile.rating >= 4.5 && (
                     <Verified sx={{ color: '#1976D2', fontSize: 28 }} />
                   )}

@@ -33,6 +33,7 @@ import {
   Lock,
   People,
 } from '@mui/icons-material';
+import TeamMemberBadge from './TeamMemberBadge';
 
 interface AIAgent {
   id: string;
@@ -174,9 +175,14 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
             </Badge>
             
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="subtitle2" noWrap>
-                {profile.name}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Typography variant="subtitle2" noWrap>
+                  {profile.name}
+                </Typography>
+                {profile.connectionStatus === 'connected' && (
+                  <TeamMemberBadge variant="icon" size="small" />
+                )}
+              </Box>
               <Typography variant="caption" color="text.secondary" noWrap>
                 {profile.title} at {profile.company}
               </Typography>
@@ -249,6 +255,9 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
                 <Typography variant="h6" noWrap sx={{ fontWeight: 600 }}>
                   {profile.name || 'Anonymous User'}
                 </Typography>
+                {profile.connectionStatus === 'connected' && (
+                  <TeamMemberBadge variant="chip" size="small" />
+                )}
                 {profile.collaborationRating >= 4.5 && (
                   <Verified sx={{ color: '#1976D2', fontSize: 20 }} />
                 )}
@@ -415,6 +424,9 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           <Box sx={{ flex: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography variant="h5">{profile.name}</Typography>
+              {profile.connectionStatus === 'connected' && (
+                <TeamMemberBadge variant="chip" size="medium" />
+              )}
               {profile.collaborationRating >= 4.5 && (
                 <Verified sx={{ color: '#1976D2', fontSize: 24 }} />
               )}
