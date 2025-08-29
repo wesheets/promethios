@@ -34,7 +34,7 @@ import {
 import { firebaseUserDiscoveryService, FirebaseUser, DiscoveryFilters } from '../services/FirebaseUserDiscoveryService';
 import { connectionService } from '../services/ConnectionService';
 import { useConnections } from '../hooks/useConnections';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 // Import components
 import UserSearchEngine from '../components/social/UserSearchEngine';

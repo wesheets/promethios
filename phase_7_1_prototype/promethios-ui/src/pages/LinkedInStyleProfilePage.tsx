@@ -483,7 +483,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
       mx: 'auto', 
       p: 3,
       pt: 5, // Extra top padding to prevent content hiding under header
-      backgroundColor: '#f8f9fa',
+      backgroundColor: 'background.default',
       minHeight: '100vh'
     }}>
       {saveSuccess && (
@@ -500,13 +500,13 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            boxShadow: 1,
             position: 'relative'
           }}>
             {/* Cover Photo Area */}
             <Box sx={{ 
               height: 200, 
-              background: profile.headerPhoto ? `url(${profile.headerPhoto})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: profile.headerPhoto ? `url(${profile.headerPhoto})` : (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               position: 'relative'
@@ -516,8 +516,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
                   position: 'absolute', 
                   top: 16, 
                   right: 16,
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' }
+                  backgroundColor: 'action.hover',
+                  '&:hover': { backgroundColor: 'action.selected' }
                 }}
                 onClick={() => handlePhotoUpload('header')}
                 disabled={uploadingPhoto && photoType === 'header'}
