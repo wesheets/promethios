@@ -71,6 +71,7 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
   const [trendingTopics, setTrendingTopics] = useState<{ tag: string; count: number }[]>([]);
   const [featuredServers, setFeaturedServers] = useState<AICollaborationServer[]>([]);
   const [activeUsers, setActiveUsers] = useState<any[]>([]);
+  const [featuredCommunities, setFeaturedCommunities] = useState<any[]>([]);
   
   // Chat integration
   const { openDirectMessage } = useChatIntegration();
@@ -178,6 +179,13 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
         { id: '2', name: 'Marcus Rodriguez', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', status: 'Research session' },
         { id: '3', name: 'Emily Watson', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150', status: 'Creative brainstorming' },
       ]);
+      
+      // Mock featured communities
+      setFeaturedCommunities([
+        { id: 'c1', name: 'AI Ethics Group', avatar: '', members: 1245 },
+        { id: 'c2', name: 'Prompt Engineering', avatar: '', members: 3782 },
+        { id: 'c3', name: 'AI for Good', avatar: '', members: 2198 },
+      ]);
     } catch (err) {
       setError('Failed to load social feed data');
       console.error('Error loading data:', err);
@@ -189,6 +197,11 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
   const handleJoinServer = (serverId: string) => {
     console.log('Joining server:', serverId);
     onJoinServer?.(serverId);
+  };
+
+  const handleJoinCommunity = (communityId: string) => {
+    console.log('Joining community:', communityId);
+    // Implementation would go here
   };
 
   const handleStartChat = (userId: string, userName: string, userAvatar?: string) => {
@@ -280,25 +293,54 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           </Paper>
 
           {/* Featured Communities */}
-                          backgroundColor: '#4CAF50',
-                          border: '2px solid white',
-                        }}
-                      />
-                    }
-                  >
-                    <Avatar src={user.avatar} sx={{ width: 32, height: 32 }}>
-                      {user.name.charAt(0)}
-                    </Avatar>
-                  </Badge>
+          <Paper sx={{ 
+            p: 3, 
+            mb: 3,
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)'
+          }}>
+            <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <People />
+              Featured Communities
+            </Typography>
+            
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {featuredCommunities.map((community) => (
+                <Box 
+                  key={community.id}
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    cursor: 'pointer',
+                    '&:hover': { opacity: 0.8 }
+                  }}
+                  onClick={() => handleJoinCommunity(community.id)}
+                >
+                  <Avatar src={community.avatar}>
+                    {community.name.charAt(0)}
+                  </Avatar>
                   
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {user.name}
+                      {community.name}
                     </Typography>
                     <Typography variant="caption" color="text.secondary" noWrap>
-                      {user.status}
+                      {community.members} members
                     </Typography>
                   </Box>
+                  
+                  <Button 
+                    variant="contained" 
+                    size="small" 
+                    color="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleJoinCommunity(community.id);
+                    }}
+                  >
+                    Join
+                  </Button>
                 </Box>
               ))}
             </Box>
