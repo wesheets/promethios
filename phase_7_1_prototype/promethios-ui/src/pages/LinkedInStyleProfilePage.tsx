@@ -826,12 +826,9 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 Public Profile URL
               </Typography>
               <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
-                {window.location.origin}/in/{
-                  profile.username || 
-                  (profile.firstName && profile.lastName 
-                    ? `${profile.firstName.toLowerCase()}-${profile.lastName.toLowerCase()}`.replace(/[^a-z0-9-]/g, '')
-                    : profile.displayName?.toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'user'
-                  )
+                {profile.profileURL 
+                  ? `${window.location.origin}/in/${profile.profileURL}`
+                  : `${window.location.origin}/user` // Fallback for users without generated URL
                 }
               </Typography>
             </Box>

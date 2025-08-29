@@ -48,6 +48,7 @@ export interface UserProfile {
   experienceLevel?: string;
   responseTime?: number;
   collaborations?: number;
+  profileURL?: string; // Auto-generated unique URL for public profile
 }
 
 /**

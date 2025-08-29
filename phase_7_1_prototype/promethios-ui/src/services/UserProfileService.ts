@@ -147,6 +147,7 @@ export class UserProfileService {
     try {
       const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
       const { db } = await import('../firebase/config');
+      const { ProfileURLService } = await import('./ProfileURLService');
       
       // Create document reference
       const profileRef = doc(db, 'userProfiles', userId);
@@ -155,11 +156,25 @@ export class UserProfileService {
       const existingDoc = await getDoc(profileRef);
       const existingData = existingDoc.exists() ? existingDoc.data() : {};
       
+      // Auto-generate profile URL if this is a new profile or if name/email changed
+      let profileURL = existingData.profileURL;
+      
+      if (!profileURL || updates.displayName || updates.email) {
+        const displayName = updates.displayName || existingData.displayName || '';
+        const email = updates.email || existingData.email || '';
+        
+        if (displayName && email) {
+          profileURL = await ProfileURLService.generateUniqueURL(displayName, email, userId);
+          console.log(`🔗 Auto-generated profile URL: ${profileURL}`);
+        }
+      }
+      
       // Merge updates with existing data
       const updatedProfile = {
         ...existingData,
         ...updates,
         userId,
+        profileURL, // Add the generated URL
         updatedAt: serverTimestamp(),
         createdAt: existingData.createdAt || serverTimestamp()
       };
