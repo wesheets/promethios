@@ -428,3 +428,166 @@ html:not(.dark) .MuiTypography-colorTextSecondary {
   color: white !important;
 }
 
+
+/* ========================================
+   ULTRA-AGGRESSIVE THEME OVERRIDES
+   Catch every remaining white background
+   ======================================== */
+
+/* Force ALL white/light backgrounds in dark mode */
+.dark * {
+  /* Override any remaining white backgrounds */
+  background-color: var(--bg-primary, #2d3748) !important;
+}
+
+/* But preserve specific elements that should stay white */
+.dark img,
+.dark svg,
+.dark canvas,
+.dark video,
+.dark .MuiAvatar-img,
+.dark [role="img"],
+.dark .logo,
+.dark .icon {
+  background-color: transparent !important;
+}
+
+/* Force main content areas */
+.dark main,
+.dark .main-content,
+.dark .content,
+.dark .page-content,
+.dark [class*="content"],
+.dark [class*="main"],
+.dark [class*="page"] {
+  background-color: #1a202c !important;
+  color: white !important;
+}
+
+/* Force all containers and wrappers */
+.dark .container,
+.dark .wrapper,
+.dark .layout,
+.dark [class*="container"],
+.dark [class*="wrapper"],
+.dark [class*="layout"] {
+  background-color: #1a202c !important;
+  color: white !important;
+}
+
+/* Force all grid and flex containers */
+.dark .grid,
+.dark .flex,
+.dark [class*="grid"],
+.dark [class*="flex"],
+.dark [style*="display: flex"],
+.dark [style*="display: grid"] {
+  background-color: inherit !important;
+}
+
+/* Force all sections and divs */
+.dark section,
+.dark div:not([class*="avatar"]):not([class*="image"]):not([class*="photo"]) {
+  background-color: inherit !important;
+  color: inherit !important;
+}
+
+/* Force specific background color patterns */
+.dark [style*="background-color: #f"],
+.dark [style*="background-color: #e"],
+.dark [style*="background-color: #d"],
+.dark [style*="background-color: #c"],
+.dark [style*="background-color: #b"],
+.dark [style*="background-color: rgb(2"],
+.dark [style*="background-color: rgb(3"],
+.dark [style*="background-color: hsl("] {
+  background-color: #2d3748 !important;
+}
+
+/* Force Material-UI specific components */
+.dark .MuiBox-root,
+.dark .MuiContainer-root,
+.dark .MuiGrid-root,
+.dark .MuiStack-root {
+  background-color: inherit !important;
+  color: white !important;
+}
+
+/* Force any remaining text colors */
+.dark * {
+  color: white !important;
+}
+
+/* But preserve specific text elements */
+.dark .MuiButton-contained,
+.dark .MuiChip-filled,
+.dark [class*="primary"],
+.dark [class*="secondary"] {
+  color: inherit !important;
+}
+
+/* Force override any CSS custom properties */
+.dark {
+  --background-color: #1a202c !important;
+  --bg-color: #1a202c !important;
+  --surface-color: #2d3748 !important;
+  --text-color: #ffffff !important;
+  --primary-bg: #2d3748 !important;
+  --secondary-bg: #374151 !important;
+}
+
+/* Force any CSS variables that might be used */
+.dark * {
+  --mui-palette-background-default: #1a202c !important;
+  --mui-palette-background-paper: #2d3748 !important;
+  --mui-palette-text-primary: #ffffff !important;
+  --mui-palette-text-secondary: #d1d5db !important;
+}
+
+/* Nuclear option - force everything except images */
+.dark *:not(img):not(svg):not(canvas):not(video):not([role="img"]) {
+  background-color: inherit !important;
+  color: white !important;
+}
+
+/* Specific overrides for common class patterns */
+.dark [class*="bg-white"],
+.dark [class*="bg-light"],
+.dark [class*="bg-gray-50"],
+.dark [class*="bg-gray-100"],
+.dark [class*="bg-slate-50"],
+.dark [class*="bg-slate-100"] {
+  background-color: #2d3748 !important;
+}
+
+.dark [class*="text-black"],
+.dark [class*="text-gray-900"],
+.dark [class*="text-slate-900"] {
+  color: white !important;
+}
+
+/* Force any remaining Material-UI surfaces */
+.dark .MuiPaper-elevation0,
+.dark .MuiPaper-elevation1,
+.dark .MuiPaper-elevation2,
+.dark .MuiPaper-elevation3,
+.dark .MuiPaper-elevation4 {
+  background-color: #2d3748 !important;
+  color: white !important;
+}
+
+/* Force any inline styles that might override */
+.dark [style] {
+  background-color: #2d3748 !important;
+  color: white !important;
+}
+
+/* But preserve images and media */
+.dark img[style],
+.dark svg[style],
+.dark canvas[style],
+.dark video[style] {
+  background-color: transparent !important;
+  color: initial !important;
+}
+
