@@ -1,6 +1,5 @@
 import { db } from '../firebase/config';
 import { collection, query, where, orderBy, limit, getDocs, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { useAuth } from '../context/AuthContext';
 import { ConnectionActivity, ConnectionActivityUser } from '../components/social/ConnectionActivityPost';
 
 /**
@@ -12,13 +11,6 @@ import { ConnectionActivity, ConnectionActivityUser } from '../components/social
  * - Liking, commenting, and sharing connection activities
  */
 export class ConnectionActivityService {
-  private currentUserId: string | null = null;
-
-  constructor() {
-    const auth = useAuth();
-    this.currentUserId = auth?.currentUser?.uid || null;
-  }
-
   /**
    * Create a new connection activity post when users connect
    */
