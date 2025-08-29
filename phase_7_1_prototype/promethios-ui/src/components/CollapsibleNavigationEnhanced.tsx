@@ -48,9 +48,6 @@ import {
   Psychology as VeritasIcon,
   Shield as BoundariesIcon,
   Verified as AttestationsIcon,
-} from '@mui/icons-material';
-import GlobalThemeToggle from './navigation/GlobalThemeToggle';
-import NotificationBell from './notifications/NotificationBell';
   // Social Collaboration Icons
   Search as DiscoveryIcon,
   Person as ProfileIcon,
@@ -117,6 +114,8 @@ import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserPreferences } from '../hooks/useUserPreferences';
+import GlobalThemeToggle from './navigation/GlobalThemeToggle';
+import NotificationBell from './notifications/NotificationBell';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
