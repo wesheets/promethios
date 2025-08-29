@@ -306,6 +306,17 @@
     "retention": "7y",
     "compliance": ["GDPR", "HIPAA", "SOX"],
     "description": "Enterprise compliance policies, regulatory requirements, and audit rules"
+  },
+  "compliance_audit_events": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 220752000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7y",
+    "compliance": ["GDPR", "HIPAA", "SOX"],
+    "description": "Compliance audit events, policy violations, and regulatory audit trails"
   }
 }
 
