@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FirebaseUserDiscoveryService } from '../services/FirebaseUserDiscoveryService';
 import { UserProfileService } from '../services/UserProfileService';
+import { ConnectionService } from '../services/ConnectionService';
 import {
   Box,
   Card,
@@ -42,6 +43,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 const FirebaseUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { currentUser } = useAuth();
+  const connectionService = new ConnectionService();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -88,9 +90,26 @@ const FirebaseUserProfilePage: React.FC = () => {
   }, [userId]);
 
   const handleConnect = async () => {
-    // TODO: Implement connection logic
-    setConnectionRequested(true);
-    console.log('Connection request sent to:', userId);
+    if (!currentUser) {
+      console.error('❌ [Connection] No current user found');
+      return;
+    }
+
+    try {
+      console.log('🤝 [Connection] Sending connection request to:', userId);
+      
+      await connectionService.sendConnectionRequest(
+        currentUser.uid,
+        userId,
+        `Hi! I'd like to connect with you on Promethios.`
+      );
+      
+      setConnectionRequested(true);
+      console.log('✅ [Connection] Connection request sent successfully');
+      
+    } catch (error) {
+      console.error('❌ [Connection] Failed to send connection request:', error);
+    }
   };
 
   const handleMessage = () => {
