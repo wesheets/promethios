@@ -38,7 +38,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 // Import components
 import UserSearchEngine from '../components/social/UserSearchEngine';
-import UserProfileCard from '../components/social/UserProfileCard';ProfileCard';
+import UserProfileCard from '../components/social/UserProfileCard';
 
 interface DiscoveryPageProps {
   onViewProfile?: (userId: string) => void;
