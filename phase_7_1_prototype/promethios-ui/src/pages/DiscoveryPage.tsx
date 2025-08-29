@@ -204,26 +204,49 @@ const DiscoveryPage: React.FC<DiscoveryPageProps> = ({
 
   // Convert FirebaseUser to UserProfile format for UserProfileCard
   const mapFirebaseUserToProfile = (user: FirebaseUser): any => {
+    // Get connection status
+    const connectionStatus = getConnectionStatus(user.id);
+    
+    // Create proper AI agents array with objects instead of strings
+    const aiAgents = (user.profile?.aiAgents || []).map((agent, index) => {
+      if (typeof agent === 'string') {
+        // Convert string to proper object
+        return {
+          id: `agent-${index}`,
+          name: agent,
+          type: agent.includes('Claude') ? 'Claude' : 
+                agent.includes('GPT') ? 'OpenAI' : 
+                agent.includes('Gemini') ? 'Gemini' : 'Custom',
+          specialization: ['AI Assistant'],
+          color: agent.includes('Claude') ? '#6366F1' : 
+                 agent.includes('GPT') ? '#10A37F' : 
+                 agent.includes('Gemini') ? '#4285F4' : '#8B5CF6'
+        };
+      }
+      return agent;
+    });
+    
     return {
       id: user.id,
-      name: user.displayName || user.email || 'Unknown User',
+      name: user.displayName || user.email?.split('@')[0] || 'Anonymous User',
       title: user.profile?.title || 'AI Collaboration Partner',
       company: user.profile?.company || 'Independent',
       location: user.profile?.location || 'Remote',
       industry: user.profile?.industry || 'Technology',
-      avatar: user.photoURL || '',
+      avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'User')}&background=6366f1&color=fff`,
       bio: user.profile?.bio || 'Passionate about AI collaboration and innovation.',
       skills: user.profile?.skills || [],
-      aiAgents: user.profile?.aiAgents || [],
-      rating: user.profile?.rating || 4.5,
+      aiAgents: aiAgents,
+      rating: user.stats?.rating || 4.5,
+      collaborationRating: user.stats?.rating || 4.5,
+      connections: user.stats?.connections || 0,
       collaborationCount: user.profile?.collaborationCount || 0,
       responseTime: user.profile?.responseTime || '< 1 hour',
       availability: user.profile?.availability || 'Available',
       isOnline: user.isOnline || false,
-      lastActive: user.lastActive || new Date(),
+      lastActive: user.lastSignIn ? new Date(user.lastSignIn) : new Date(),
       isVerified: user.profile?.isVerified || false,
-      isConnected: false,
-      connectionStatus: 'none' as const,
+      connectionStatus: connectionStatus,
       mutualConnections: 0,
       preferences: user.preferences || {}
     };
