@@ -307,52 +307,74 @@ class UserProfileService {
    * Get current user's profile
    */
   async getCurrentUserProfile(): Promise<UserProfile> {
-    // In production, this would fetch from API
-    await this.delay(500);
-    
-    return {
-      id: 'current-user',
-      name: 'John Doe',
-      title: 'Software Engineer',
-      company: 'Promethios',
-      location: 'San Francisco, CA',
-      industry: 'Technology',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-      bio: 'Full-stack developer passionate about AI collaboration tools.',
-      experience: '5 years',
-      education: 'UC Berkeley - BS Computer Science',
-      skills: ['JavaScript', 'React', 'Node.js', 'AI Integration'],
-      aiAgents: [
-        {
-          id: 'openai-current',
-          name: 'Dev Assistant',
-          type: 'OpenAI',
-          specialization: ['Code Review', 'Documentation'],
-          color: '#00A67E',
-          isActive: true,
-          createdAt: '2024-01-01',
-          lastUsed: '2024-08-27',
-        },
-      ],
-      aiSkills: ['Code Review', 'Technical Documentation', 'Problem Solving'],
-      collaborationStyle: 'Technical',
-      connectionCount: 89,
-      collaborationRating: 4.6,
-      totalCollaborations: 45,
-      isOnline: true,
-      lastActive: '2024-08-27T11:00:00Z',
-      profileVisibility: 'public',
-      allowDiscovery: true,
-      allowDirectMessages: true,
-      allowCollaborationInvites: true,
-      email: 'john.doe@promethios.com',
-      isConnected: false,
-      connectionStatus: 'none',
-      mutualConnections: 0,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-08-27',
-      lastLoginAt: '2024-08-27T11:00:00Z',
-    };
+    try {
+      // Get current user from Firebase Auth
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+      
+      // Try to get existing profile from Firestore
+      const existingProfile = await this.getUserProfile(user.uid);
+      
+      if (existingProfile) {
+        return existingProfile;
+      }
+      
+      // Create a default profile if none exists
+      const defaultProfile: UserProfile = {
+        id: user.uid,
+        name: user.displayName || user.email?.split('@')[0] || 'New User',
+        title: 'AI Collaboration Partner',
+        company: 'Independent',
+        location: '',
+        industry: 'Technology',
+        avatar: user.photoURL || '',
+        bio: 'Passionate about AI collaboration and human-machine partnerships.',
+        experience: '',
+        education: '',
+        skills: ['AI Collaboration'],
+        aiAgents: [
+          {
+            id: 'claude-1',
+            name: 'Claude',
+            type: 'Claude',
+            specialization: ['Analysis', 'Writing'],
+            color: '#7C3AED',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            lastUsed: new Date().toISOString()
+          }
+        ],
+        aiSkills: ['AI Collaboration'],
+        collaborationStyle: 'Collaborative',
+        connectionCount: 0,
+        collaborationRating: 4.5,
+        totalCollaborations: 0,
+        isOnline: true,
+        lastActive: new Date().toISOString(),
+        profileVisibility: 'public',
+        allowDiscovery: true,
+        allowDirectMessages: true,
+        allowCollaborationInvites: true,
+        isConnected: false,
+        connectionStatus: 'none',
+        mutualConnections: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString()
+      };
+      
+      // Save the default profile
+      await this.saveProfile(defaultProfile);
+      return defaultProfile;
+    } catch (error) {
+      console.error('Error getting current user profile:', error);
+      throw error;
+    }
   }
 
   /**
@@ -497,26 +519,23 @@ class UserProfileService {
    * Get user profile by ID
    */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
-    await this.delay(300);
-    
-    const user = this.mockUsers.find(u => u.id === userId);
-    if (!user) return null;
-    
-    // Update connection status
-    const connection = this.mockConnections.find(conn =>
-      (conn.fromUserId === 'current-user' && conn.toUserId === userId) ||
-      (conn.toUserId === 'current-user' && conn.fromUserId === userId)
-    );
-    
-    if (connection) {
-      return {
-        ...user,
-        isConnected: connection.status === 'accepted',
-        connectionStatus: connection.status,
-      };
+    try {
+      // Real Firebase implementation
+      const { doc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase/config');
+      
+      const userDocRef = doc(db, 'userProfiles', userId);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        return { id: userDoc.id, ...userDoc.data() } as UserProfile;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting user profile:', error);
+      throw error;
     }
-    
-    return user;
   }
 
   /**
@@ -734,13 +753,35 @@ class UserProfileService {
    */
   async saveProfile(profile: UserProfile): Promise<void> {
     try {
-      // In production, this would save to Firebase
-      await this.delay(1000);
+      // Real Firebase implementation
+      const { doc, setDoc, updateDoc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase/config');
       
-      console.log('Profile saved successfully:', profile.id);
-      // TODO: Implement Firebase save operation
+      const userDocRef = doc(db, 'userProfiles', profile.id);
+      
+      // Update the updatedAt timestamp
+      const dataToSave = {
+        ...profile,
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Check if document exists
+      const docSnap = await getDoc(userDocRef);
+      
+      if (docSnap.exists()) {
+        // Update existing document
+        await updateDoc(userDocRef, dataToSave);
+      } else {
+        // Create new document
+        await setDoc(userDocRef, {
+          ...dataToSave,
+          createdAt: new Date().toISOString()
+        });
+      }
+      
+      console.log('Profile saved successfully to Firebase:', profile.id);
     } catch (error) {
-      console.error('Failed to save profile:', error);
+      console.error('Failed to save profile to Firebase:', error);
       throw error;
     }
   }
