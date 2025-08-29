@@ -1177,18 +1177,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 </Box>
               )}
             </Box>
-          </Card>    fullWidth 
-                variant="outlined" 
-                sx={{ 
-                  mt: 2,
-                  borderColor: 'rgba(255, 255, 255, 0.3)',
-                  '&:hover': { borderColor: 'primary.main' }
-                }}
-              >
-                Show all analytics
-              </Button>
-            </Box>
           </Card>
+
         </Grid>
       </Grid>
 
