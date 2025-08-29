@@ -284,6 +284,28 @@
     "retention": "30d",
     "compliance": [],
     "description": "Budget alerts, warnings, and cost notifications for token management"
+  },
+  "communication_protocols": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 31536000000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "1y",
+    "compliance": [],
+    "description": "Agent communication protocols, message formats, and interaction patterns"
+  },
+  "compliance_policies": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 220752000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7y",
+    "compliance": ["GDPR", "HIPAA", "SOX"],
+    "description": "Enterprise compliance policies, regulatory requirements, and audit rules"
   }
 }
 
