@@ -39,11 +39,14 @@ export interface TeamConversation {
   createdBy: string;
 }
 
+import FirebaseTeamService from './FirebaseTeamService';
+
 class HumanChatService {
   private static instance: HumanChatService;
   private conversations: Map<string, TeamConversation> = new Map();
   private teamMembers: Map<string, TeamMember> = new Map();
   private currentUserId: string | null = null;
+  private firebaseTeamService: FirebaseTeamService;
 
   static getInstance(): HumanChatService {
     if (!HumanChatService.instance) {
@@ -52,13 +55,26 @@ class HumanChatService {
     return HumanChatService.instance;
   }
 
+  constructor() {
+    this.firebaseTeamService = FirebaseTeamService.getInstance();
+  }
+
   /**
    * Initialize the service with current user
    */
   initialize(userId: string): void {
     this.currentUserId = userId;
-    this.loadTeamMembers();
+    
+    // Initialize Firebase team service
+    this.firebaseTeamService.initialize(userId);
+    
+    // Load conversations
     this.loadConversations();
+    
+    // Load team members (now from Firebase connections)
+    this.loadTeamMembers();
+    
+    console.log('🔄 [HumanChat] Initialized with user:', userId);
   }
 
   /**
@@ -201,10 +217,11 @@ class HumanChatService {
   }
 
   /**
-   * Load team members from storage
+   * Load team members from Firebase connections
    */
   private loadTeamMembers(): void {
     try {
+      // First check if we have stored team members
       const stored = localStorage.getItem('promethios_team_members');
       if (stored) {
         const members = JSON.parse(stored);
@@ -214,12 +231,36 @@ class HumanChatService {
             lastSeen: new Date(member.lastSeen)
           });
         });
-      } else {
-        // Initialize with demo team members
+      }
+      
+      // Then get real connected users from Firebase
+      const firebaseTeamMembers = this.firebaseTeamService.getTeamMembers();
+      
+      if (firebaseTeamMembers.length > 0) {
+        // If we have real connected users, use them instead
+        this.teamMembers.clear();
+        
+        firebaseTeamMembers.forEach(member => {
+          this.teamMembers.set(member.id, {
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            avatar: member.avatar,
+            status: member.status,
+            lastSeen: member.lastSeen,
+            role: member.role
+          });
+        });
+        
+        console.log('👥 [HumanChat] Loaded team members from Firebase:', firebaseTeamMembers.length);
+        this.saveTeamMembers();
+      } else if (this.teamMembers.size === 0) {
+        // If no stored members and no Firebase connections, use demo members
+        console.log('👥 [HumanChat] No connected users found, using demo members');
         this.initializeDemoTeamMembers();
       }
     } catch (error) {
-      console.error('Error loading team members:', error);
+      console.error('❌ [HumanChat] Error loading team members:', error);
       this.initializeDemoTeamMembers();
     }
   }
