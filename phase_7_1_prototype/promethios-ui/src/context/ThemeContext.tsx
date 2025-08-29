@@ -8,10 +8,11 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to light mode, load from localStorage
+  // Default to dark mode, load from localStorage
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme-preference');
-    return saved === 'dark';
+    // If no saved preference, default to dark mode
+    return saved ? saved === 'dark' : true;
   });
 
   useEffect(() => {
