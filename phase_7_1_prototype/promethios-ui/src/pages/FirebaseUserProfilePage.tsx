@@ -259,7 +259,7 @@ const FirebaseUserProfilePage: React.FC = () => {
                 About
               </Typography>
               <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                {profile.about || 'Professional focused on AI collaboration and innovation.'}
+                {typeof profile?.about === 'string' ? profile.about : 'Professional focused on AI collaboration and innovation.'}
               </Typography>
             </Box>
 
@@ -301,10 +301,10 @@ const FirebaseUserProfilePage: React.FC = () => {
                 Skills & Expertise
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {(profile.skills || []).map((skill: string, index: number) => (
+                {(profile.skills || []).map((skill: any, index: number) => (
                   <Chip
                     key={index}
-                    label={skill}
+                    label={typeof skill === 'string' ? skill : (skill?.name || 'Skill')}
                     variant="outlined"
                     sx={{ borderColor: 'primary.main', color: 'primary.main' }}
                   />
