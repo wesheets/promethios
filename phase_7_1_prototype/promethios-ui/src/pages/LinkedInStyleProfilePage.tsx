@@ -409,31 +409,60 @@ const LinkedInStyleProfilePage: React.FC = () => {
     try {
       setUploadingPhoto(true);
       
-      // Create a data URL for immediate preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        
-        if (type === 'profile') {
-          setProfile(prev => ({ ...prev, avatar: dataUrl }));
-        } else {
-          setProfile(prev => ({ ...prev, headerPhoto: dataUrl }));
-        }
+      const { ImageUtils } = await import('../utils/imageUtils');
+      
+      // Validate file
+      const validation = ImageUtils.validateImageFile(file);
+      if (!validation.valid) {
+        console.error('❌ Invalid image file:', validation.error);
+        return;
+      }
+      
+      // Create immediate preview (small data URL)
+      const previewDataURL = await ImageUtils.createPreviewDataURL(file);
+      
+      // Update UI with preview immediately
+      if (type === 'profile') {
+        setProfile(prev => ({ ...prev, avatar: previewDataURL }));
+      } else {
+        setProfile(prev => ({ ...prev, headerPhoto: previewDataURL }));
+      }
+      
+      // Upload to Firebase Storage in background
+      const downloadURL = await ImageUtils.uploadToFirebaseStorage(
+        file, 
+        currentUser.uid, 
+        type === 'profile' ? 'avatar' : 'header'
+      );
+      
+      // Update profile with Firebase Storage URL
+      const updatedProfile = {
+        ...profile,
+        [type === 'profile' ? 'avatar' : 'headerPhoto']: downloadURL
       };
-      reader.readAsDataURL(file);
       
-      // In a real app, you would upload to Firebase Storage here
-      // For now, we'll just use the data URL
-      console.log(`✅ ${type} photo uploaded successfully`);
+      // Save the updated profile with Firebase Storage URL
+      await userProfileService.updateProfile(currentUser.uid, updatedProfile);
       
-      // Save the updated profile
-      await userProfileService.updateProfile(currentUser.uid, profile);
+      // Update local state with final URL
+      if (type === 'profile') {
+        setProfile(prev => ({ ...prev, avatar: downloadURL }));
+      } else {
+        setProfile(prev => ({ ...prev, headerPhoto: downloadURL }));
+      }
       
+      console.log(`✅ ${type} photo uploaded and saved successfully`);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
       
     } catch (error) {
       console.error(`❌ Failed to upload ${type} photo:`, error);
+      // Revert to previous state on error
+      if (type === 'profile') {
+        setProfile(prev => ({ ...prev, avatar: profile.avatar }));
+      } else {
+        setProfile(prev => ({ ...prev, headerPhoto: profile.headerPhoto }));
+      }
     } finally {
       setUploadingPhoto(false);
       setPhotoType(null);
