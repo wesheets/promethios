@@ -171,6 +171,13 @@ const LinkedInStyleProfilePage: React.FC = () => {
         if (userProfile) {
           // Use real Firebase data
           console.log('✅ Found Firebase profile data:', userProfile);
+          console.log('📝 Profile fields:', {
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            displayName: userProfile.displayName,
+            name: userProfile.name,
+            id: userProfile.id
+          });
           setProfile(prev => ({ ...prev, ...userProfile }));
         } else {
           // If no profile exists, populate with basic auth data only
@@ -189,6 +196,12 @@ const LinkedInStyleProfilePage: React.FC = () => {
             phoneVerified: !!currentUser.phoneNumber
           };
           console.log('📝 Setting auth profile data:', authProfile);
+          console.log('📝 Auth profile fields:', {
+            firstName: authProfile.firstName,
+            lastName: authProfile.lastName,
+            displayName: authProfile.displayName,
+            currentUserDisplayName: currentUser.displayName
+          });
           setProfile(prev => authProfile);
         }
       } catch (error) {
