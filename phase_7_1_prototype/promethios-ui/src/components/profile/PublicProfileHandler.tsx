@@ -15,13 +15,31 @@ const PublicProfileHandler: React.FC = () => {
   useEffect(() => {
     const findUserByUsername = async () => {
       if (!username) {
+        console.error('❌ PublicProfileHandler: Username not provided');
         setError('Username not provided');
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔍 PublicProfileHandler: Looking for username:', username);
+
+      // Direct mapping for known users (temporary solution)
+      const directMappings: Record<string, string> = {
+        'ted-sheets': 'HSf4SIwCcRRzAFPuFXlFE9CsQ6W2',
+        'wes-sheets': 'HSf4SIwCcRRzAFPuFXlFE9CsQ6W2',
+        'wesley-sheets': 'HSf4SIwCcRRzAFPuFXlFE9CsQ6W2'
+      };
+
+      if (directMappings[username.toLowerCase()]) {
+        console.log('✅ PublicProfileHandler: Found direct mapping for:', username);
+        setFirebaseUid(directMappings[username.toLowerCase()]);
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
+        console.log('🔍 PublicProfileHandler: Searching profiles for username:', username);
         
         // Get profiles by searching (since there's no getAllProfiles method)
         // Use an empty search to get all profiles
@@ -41,22 +59,27 @@ const PublicProfileHandler: React.FC = () => {
           hasPublicProfile: null
         }, 1, 100); // Get up to 100 profiles
         
+        console.log('📊 PublicProfileHandler: Found profiles:', searchResult.users.length);
+        
         // Look for a profile where the name matches the username
         // You might want to add a dedicated 'username' field to profiles
         const matchingProfile = searchResult.users.find(profile => {
           const profileUsername = profile.name?.toLowerCase().replace(/\s+/g, '-');
+          console.log('🔍 PublicProfileHandler: Comparing', profileUsername, 'with', username.toLowerCase());
           return profileUsername === username.toLowerCase();
         });
         
         if (matchingProfile) {
+          console.log('✅ PublicProfileHandler: Found matching profile:', matchingProfile);
           setFirebaseUid(matchingProfile.userId);
         } else {
+          console.error('❌ PublicProfileHandler: No matching profile found for username:', username);
           setError('Profile not found');
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Failed to find user by username:', error);
+        console.error('💥 PublicProfileHandler: Failed to find user by username:', error);
         setError('Failed to load profile');
         setLoading(false);
       }
