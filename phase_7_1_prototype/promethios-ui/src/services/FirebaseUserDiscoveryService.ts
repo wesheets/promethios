@@ -83,13 +83,14 @@ class FirebaseUserDiscoveryService {
           // Load the actual profile data using the real UID
           const realProfile = await profileService.getUserProfile(userId);
           
-          if (realProfile && realProfile.name) {
-            console.log(`✅ [Discovery] Loaded real profile for: ${realProfile.name} (UID: ${userId})`);
+          if (realProfile && (realProfile.name || realProfile.displayName)) {
+            const userName = realProfile.name || realProfile.displayName;
+            console.log(`✅ [Discovery] Loaded real profile for: ${userName} (UID: ${userId})`);
             
             realUsers.push({
               id: userId, // Real Firebase UID
               email: realProfile.email || `user-${userId}@example.com`,
-              displayName: realProfile.name || realProfile.displayName || 'User',
+              displayName: userName || 'User',
               photoURL: realProfile.avatar || realProfile.profilePhoto || null,
               isOnline: realProfile.isOnline || false,
               profile: {
