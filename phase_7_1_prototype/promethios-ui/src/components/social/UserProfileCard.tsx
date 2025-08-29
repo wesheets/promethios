@@ -213,9 +213,17 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
 
   if (variant === 'compact') {
     return (
-      <Card sx={{ mb: 2 }}>
-        <CardContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+      <Card sx={{ 
+        mb: 2, 
+        height: '100%',
+        cursor: 'pointer',
+        '&:hover': {
+          boxShadow: 3,
+          borderColor: 'primary.main'
+        }
+      }} onClick={() => onViewProfile?.(profile.id)}>
+        <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
             <Badge
               overlap="circular"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -232,86 +240,113 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
               }
             >
               <Avatar src={profile.avatar} sx={{ width: 60, height: 60 }}>
-                {profile.name.charAt(0)}
+                {profile.name?.charAt(0) || '?'}
               </Avatar>
             </Badge>
             
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                <Typography variant="h6">{profile.name}</Typography>
+                <Typography variant="h6" noWrap sx={{ fontWeight: 600 }}>
+                  {profile.name || 'Anonymous User'}
+                </Typography>
                 {profile.collaborationRating >= 4.5 && (
                   <Verified sx={{ color: '#1976D2', fontSize: 20 }} />
                 )}
                 {getVisibilityIcon()}
               </Box>
               
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {profile.title} at {profile.company}
+              <Typography 
+                variant="body2" 
+                color="text.secondary" 
+                sx={{ mb: 2, lineHeight: 1.4 }}
+                noWrap
+              >
+                {profile.title || 'Professional'} at {profile.company || 'Company'}
               </Typography>
               
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <LocationOn fontSize="small" color="action" />
-                  <Typography variant="caption">{profile.location}</Typography>
+                  <Typography variant="caption" noWrap>{profile.location || 'Remote'}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <People fontSize="small" color="action" />
-                  <Typography variant="caption">{profile.connectionCount} connections</Typography>
+                  <Typography variant="caption">{profile.connections || 0} connections</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <Star fontSize="small" color="action" />
-                  <Typography variant="caption">{profile.collaborationRating.toFixed(1)}</Typography>
+                  <Typography variant="caption">{(profile.rating || 4.0).toFixed(1)}</Typography>
                 </Box>
               </Box>
-              
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-                {profile.aiAgents.map((agent) => (
-                  <Tooltip key={agent.id} title={`${agent.name} - ${agent.specialization.join(', ')}`}>
-                    <Chip
-                      size="small"
-                      icon={<SmartToy />}
-                      label={agent.type}
-                      sx={{
-                        backgroundColor: getAIAgentColor(agent.type),
-                        color: 'white',
-                      }}
-                    />
-                  </Tooltip>
-                ))}
-              </Box>
-              
-              {showActions && (
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
+            </Box>
+          </Box>
+          
+          {/* AI Agents Section */}
+          <Box sx={{ mb: 2, flex: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+              AI Collaborators:
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+              {(profile.aiAgents || []).slice(0, 3).map((agent, index) => (
+                <Tooltip key={agent.id || index} title={`${agent.name} - ${agent.specialization?.join(', ') || 'AI Assistant'}`}>
+                  <Chip
                     size="small"
-                    color={getConnectionButtonColor()}
-                    startIcon={<PersonAdd />}
-                    onClick={() => onConnect?.(profile.id)}
-                    disabled={profile.connectionStatus === 'pending' || profile.connectionStatus === 'blocked'}
-                  >
-                    {getConnectionButtonText()}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<Message />}
-                    onClick={() => onMessage?.(profile.id)}
-                  >
-                    Message
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<AutoAwesome />}
-                    onClick={() => onStartCollaboration?.(profile.id)}
-                  >
-                    Collaborate
-                  </Button>
-                </Box>
+                    label={agent.name || agent.type || 'AI'}
+                    sx={{
+                      backgroundColor: getAIAgentColor(agent.type || 'Assistant'),
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      height: 24,
+                    }}
+                  />
+                </Tooltip>
+              ))}
+              {(profile.aiAgents || []).length > 3 && (
+                <Chip
+                  size="small"
+                  label={`+${(profile.aiAgents || []).length - 3}`}
+                  sx={{
+                    backgroundColor: 'grey.400',
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    height: 24,
+                  }}
+                />
               )}
             </Box>
           </Box>
+          
+          {/* Action Buttons */}
+          {showActions && (
+            <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
+              <Button
+                variant="contained"
+                size="small"
+                color={getConnectionButtonColor()}
+                startIcon={<PersonAdd />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onConnect?.(profile.id);
+                }}
+                disabled={profile.connectionStatus === 'pending' || profile.connectionStatus === 'blocked'}
+                sx={{ flex: 1 }}
+              >
+                {getConnectionButtonText()}
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<Message />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMessage?.(profile.id);
+                }}
+                sx={{ flex: 1 }}
+              >
+                Message
+              </Button>
+            </Box>
+          )}
         </CardContent>
       </Card>
     );

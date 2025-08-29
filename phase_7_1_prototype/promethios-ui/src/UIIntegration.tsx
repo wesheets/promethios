@@ -53,9 +53,10 @@ import AgentToChatbotConverter from './components/chat/conversion/AgentToChatbot
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
-import UserProfilePage from './pages/UserProfilePage';
 import LinkedInStyleProfilePage from './pages/LinkedInStyleProfilePage';
+import UserProfilePage from './pages/UserProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
+import FirebaseUserProfilePage from './pages/FirebaseUserProfilePage';
 import PreferencesSettingsPage from './pages/PreferencesSettingsPage';
 import OrganizationSettingsPage from './pages/OrganizationSettingsPage';
 import IntegrationsSettingsPage from './pages/IntegrationsSettingsPage';
@@ -807,6 +808,15 @@ const UIIntegration: React.FC = () => {
         } />
         
         <Route path="profile/:userId" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <FirebaseUserProfilePage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Legacy Public Profile Route */}
+        <Route path="profile/legacy/:userId" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <PublicProfilePage />
