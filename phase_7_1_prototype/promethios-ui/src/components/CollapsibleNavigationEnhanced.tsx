@@ -114,7 +114,6 @@ import { Timeline as TimelineIcon } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserPreferences } from '../hooks/useUserPreferences';
-import GlobalThemeToggle from './navigation/GlobalThemeToggle';
 import NotificationBell from './notifications/NotificationBell';
 
 const DRAWER_WIDTH = 260;
@@ -733,7 +732,6 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       >
         {!collapsed && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <GlobalThemeToggle collapsed={false} />
             <NotificationBell collapsed={false} />
           </Box>
         )}
@@ -750,7 +748,6 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       {/* Footer section for collapsed state */}
       {collapsed && (
         <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid #2d3748' }}>
-          <GlobalThemeToggle collapsed={true} />
           <NotificationBell collapsed={true} />
           <Tooltip title="Profile" placement="right" arrow>
             <IconButton 
