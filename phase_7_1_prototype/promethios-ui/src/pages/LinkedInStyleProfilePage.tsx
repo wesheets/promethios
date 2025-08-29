@@ -559,7 +559,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
                     sx={{ 
                       width: 120, 
                       height: 120,
-                      border: '4px solid rgba(255, 255, 255, 0.1)',
+                      border: '4px solid',
+                      borderColor: 'action.hover',
                       fontSize: '3rem'
                     }}
                   >
@@ -573,8 +574,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                       variant="h4" 
                       fontWeight="bold"
                       sx={{ 
-                        color: 'text.primary',
-                        textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        color: 'common.white'
                       }}
                     >
                       {profile.displayName || `${profile.firstName} ${profile.lastName}`}
@@ -609,7 +609,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                           variant="outlined" 
                           sx={{ 
                             borderRadius: 20,
-                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            borderColor: 'action.hover',
                             '&:hover': { borderColor: 'primary.main' }
                           }}
                         >
@@ -619,7 +619,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
                     )}
                     <IconButton 
                       sx={{ 
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
+                        border: '1px solid',
+                        borderColor: 'action.hover',
                         '&:hover': { borderColor: 'primary.main' }
                       }}
                     >
@@ -634,7 +635,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 display: 'flex', 
                 gap: 3, 
                 p: 2, 
-                backgroundColor: '#f8f9fa',
+                backgroundColor: 'background.default',
                 borderRadius: 2,
                 border: '1px solid', borderColor: 'divider'
               }}>
@@ -671,7 +672,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -726,7 +727,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -787,7 +788,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -810,10 +811,10 @@ const LinkedInStyleProfilePage: React.FC = () => {
                     variant="outlined"
                     sx={{ 
                       backgroundColor: 'background.paper',
-                      borderColor: '#e1e5e9',
-                      color: '#333',
+                      borderColor: 'divider',
+                      color: 'text.primary',
                       '&:hover': { 
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: 'background.default',
                         borderColor: 'primary.main'
                       }
                     }}
@@ -831,7 +832,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
@@ -848,7 +849,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
@@ -868,7 +869,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle2" sx={{ mb: 2 }}>
@@ -888,7 +889,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                       p: 1,
                       borderRadius: 1,
                       '&:hover': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                        backgroundColor: 'action.hover'
                       }
                     }}
                     onClick={() => handleViewProfile(person.id)}
@@ -931,7 +932,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
           <Card sx={{ 
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle2" sx={{ mb: 2 }}>
@@ -981,7 +982,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -1086,7 +1087,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                           width: 8,
                           height: 8,
                           borderRadius: '50%',
-                          backgroundColor: profile.isOnline ? '#4CAF50' : '#FFA726',
+                          backgroundColor: profile.isOnline ? 'success.main' : 'warning.main',
                         }}
                       />
                       <Typography variant="body1">
@@ -1104,7 +1105,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
             mb: 3,
             backgroundColor: 'background.paper',
             border: '1px solid', borderColor: 'divider',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 1
           }}>
             <Box sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
