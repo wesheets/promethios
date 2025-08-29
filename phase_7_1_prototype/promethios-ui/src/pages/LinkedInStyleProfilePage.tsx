@@ -827,7 +827,7 @@ const LinkedInStyleProfilePage: React.FC = () => {
                 Public Profile URL
               </Typography>
               <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
-                promethios.ai/in/{
+                {window.location.origin}/in/{
                   profile.username || 
                   (profile.firstName && profile.lastName 
                     ? `${profile.firstName.toLowerCase()}-${profile.lastName.toLowerCase()}`.replace(/[^a-z0-9-]/g, '')
