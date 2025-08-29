@@ -167,6 +167,19 @@ export class UserProfileService {
           profileURL = await ProfileURLService.generateUniqueURL(displayName, email, userId);
           console.log(`🔗 Auto-generated profile URL: ${profileURL}`);
         }
+      } else if (profileURL) {
+        // Check if existing URL is still valid (not taken by another user)
+        const isStillAvailable = await ProfileURLService.isURLAvailable(profileURL, userId);
+        if (!isStillAvailable) {
+          console.log(`⚠️ Existing URL ${profileURL} is no longer available, regenerating...`);
+          const displayName = existingData.displayName || '';
+          const email = existingData.email || '';
+          
+          if (displayName && email) {
+            profileURL = await ProfileURLService.generateUniqueURL(displayName, email, userId);
+            console.log(`🔗 Regenerated profile URL: ${profileURL}`);
+          }
+        }
       }
       
       // Merge updates with existing data

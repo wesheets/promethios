@@ -84,7 +84,7 @@ export class ProfileURLService {
   /**
    * Check if a URL is available (not used by another user)
    */
-  private static async isURLAvailable(url: string, currentUserId: string): Promise<boolean> {
+  static async isURLAvailable(url: string, currentUserId: string): Promise<boolean> {
     try {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const { db } = await import('../firebase/config');
