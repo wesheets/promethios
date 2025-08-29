@@ -808,13 +808,7 @@ const UIIntegration: React.FC = () => {
         } />
         
                 {/* LinkedIn-Style Profile Routes */}
-        <Route path="profile" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <MainLayoutProxy>
-              <LinkedInStyleProfilePage />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
+        {/* Removed duplicate profile route - use /social/profiles instead */}
         
         <Route path="profile/:userId" element={
           <ProtectedRoute requireOnboarding={false}>
