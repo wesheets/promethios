@@ -61,7 +61,7 @@ export interface SearchResult {
   };
 }
 
-class UserProfileService {
+export class UserProfileService {
   private baseUrl = '/api/users';
   
   // No mock data - using real Firebase data only
