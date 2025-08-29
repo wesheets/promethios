@@ -296,8 +296,17 @@ class FirebaseUserDiscoveryService {
       console.error('❌ [Discovery] Error fetching all users:', error);
       return [];
     }
-  }dUsers.filter(user => user.isOnline === filters.isOnline);
-      }
+  }
+
+  /**
+   * Apply filters to users
+   */
+  private applyFilters(users: FirebaseUser[], filters: DiscoveryFilters): FirebaseUser[] {
+    let filteredUsers = users;
+
+    if (filters?.isOnline !== undefined) {
+      filteredUsers = filteredUsers.filter(user => user.isOnline === filters.isOnline);
+    }
 
       if (filters?.minRating) {
         filteredUsers = filteredUsers.filter(user => (user.stats?.rating || 0) >= filters.minRating!);
