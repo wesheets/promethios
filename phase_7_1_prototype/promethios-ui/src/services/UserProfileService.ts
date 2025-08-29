@@ -5,68 +5,7 @@
  * in the Promethios AI collaboration platform.
  */
 
-export interface AIAgent {
-  id: string;
-  name: string;
-  type: 'Claude' | 'OpenAI' | 'Gemini' | 'Custom';
-  specialization: string[];
-  color: string;
-  isActive: boolean;
-  createdAt: string;
-  lastUsed: string;
-}
-
-export interface UserProfile {
-  id: string;
-  name: string;
-  title: string;
-  company: string;
-  location: string;
-  industry: string;
-  avatar: string;
-  coverImage?: string;
-  bio: string;
-  
-  // Professional Info
-  experience: string;
-  education: string;
-  skills: string[];
-  
-  // AI Specialization
-  aiAgents: AIAgent[];
-  aiSkills: string[];
-  collaborationStyle: 'Analytical' | 'Creative' | 'Technical' | 'Strategic' | 'Collaborative';
-  
-  // Social Info
-  connectionCount: number;
-  collaborationRating: number;
-  totalCollaborations: number;
-  isOnline: boolean;
-  lastActive: string;
-  
-  // Privacy
-  profileVisibility: 'public' | 'connections' | 'private';
-  allowDiscovery: boolean;
-  allowDirectMessages: boolean;
-  allowCollaborationInvites: boolean;
-  
-  // Contact
-  email?: string;
-  linkedin?: string;
-  twitter?: string;
-  github?: string;
-  website?: string;
-  
-  // Status
-  isConnected: boolean;
-  connectionStatus: 'none' | 'pending' | 'connected' | 'blocked';
-  mutualConnections: number;
-  
-  // Metadata
-  createdAt: string;
-  updatedAt: string;
-  lastLoginAt: string;
-}
+import { UserProfile, AIAgent, Experience, Education, Skill } from '../types/profile';
 
 export interface Connection {
   id: string;
@@ -204,17 +143,43 @@ class UserProfileService {
   /**
    * Update current user's profile
    */
-  async updateProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
-    await this.delay(1000);
-    
-    const currentProfile = await this.getCurrentUserProfile();
-    const updatedProfile = {
-      ...currentProfile,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    return updatedProfile;
+  async updateProfile(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
+      const { db } = await import('../firebase/config');
+      
+      // Create document reference
+      const profileRef = doc(db, 'userProfiles', userId);
+      
+      // Get existing profile data
+      const existingDoc = await getDoc(profileRef);
+      const existingData = existingDoc.exists() ? existingDoc.data() : {};
+      
+      // Merge updates with existing data
+      const updatedProfile = {
+        ...existingData,
+        ...updates,
+        userId,
+        updatedAt: serverTimestamp(),
+        createdAt: existingData.createdAt || serverTimestamp()
+      };
+      
+      // Save to Firebase
+      await setDoc(profileRef, updatedProfile, { merge: true });
+      
+      console.log('✅ Profile saved to Firebase:', userId);
+      
+      // Return the updated profile (convert serverTimestamp to string for return)
+      return {
+        ...updatedProfile,
+        updatedAt: new Date().toISOString(),
+        createdAt: existingData.createdAt || new Date().toISOString()
+      } as UserProfile;
+      
+    } catch (error) {
+      console.error('❌ Failed to save profile to Firebase:', error);
+      throw error;
+    }
   }
 
   /**
