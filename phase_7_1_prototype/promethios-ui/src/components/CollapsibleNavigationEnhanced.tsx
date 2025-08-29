@@ -105,6 +105,7 @@ import NotificationBell from './notifications/NotificationBell';
   Facebook as SocialIcon,
   Handyman as WorkflowBuilderIcon,
   PersonAdd as HandoffIcon,
+  PersonAdd as ConnectionIcon,
   Language as MultiLanguageIcon,
   Palette as BrandingIcon,
   Speed,
@@ -312,6 +313,12 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           label: 'Channels', 
           icon: <ChannelsIcon />, 
           path: '/ui/social/channels' 
+        },
+        { 
+          id: 'connections', 
+          label: 'Connections', 
+          icon: <ConnectionIcon />, 
+          path: '/ui/social/connections' 
         },
       ],
     },

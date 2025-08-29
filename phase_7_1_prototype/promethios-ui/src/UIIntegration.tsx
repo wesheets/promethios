@@ -107,6 +107,7 @@ import DiscoveryPage from './pages/DiscoveryPage';
 import SocialFeedPage from './pages/SocialFeedPage';
 import OrganizationsPage from './pages/OrganizationsPage';
 import ChannelsPage from './pages/ChannelsPage';
+import ConnectionManagementPage from './pages/ConnectionManagementPage';
 import DirectMessageSidebar from './components/social/DirectMessageSidebar';
 import ChatIntegrationProvider from './components/social/ChatIntegrationProvider';
 import FloatingChatWidget from './components/social/FloatingChatWidget';
@@ -786,6 +787,14 @@ const UIIntegration: React.FC = () => {
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
               <ChannelsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="social/connections" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <ConnectionManagementPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
