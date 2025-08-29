@@ -37,6 +37,7 @@ import GovernedVsUngoverned from './pages/GovernedVsUngoverned';
 import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
 import UIIntegration from './UIIntegration';
+import PublicProfileHandler from './components/profile/PublicProfileHandler';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -144,6 +145,9 @@ const AppContent: React.FC = () => {
                   <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
                   <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
                   <Route path="/admin/export-waitlist" element={<AdminExportWaitlist />} />
+                  
+                  {/* Public Profile Routes */}
+                  <Route path="/in/:username" element={<PublicProfileHandler />} />
                   
                   {/* UI Integration Routes */}
                   <Route path="/ui/*" element={<UIIntegration />} />
