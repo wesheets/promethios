@@ -546,7 +546,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                 sx={{
                   minWidth: 0,
                   justifyContent: 'center',
-                  color: isItemActive ? '#4299e1' : 'white',
+                  color: isItemActive ? 'primary.main' : 'text.primary',
                 }}
               >
                 {item.badge ? (
@@ -606,7 +606,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                 sx={{
                   minWidth: 0,
                   justifyContent: 'center',
-                  color: isItemActive ? '#4299e1' : 'white',
+                  color: isItemActive ? 'primary.main' : 'text.primary',
                 }}
               >
                 {item.badge ? (
@@ -646,7 +646,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
             <ListItemIcon
               sx={{
                 minWidth: 40,
-                color: isItemActive ? '#4299e1' : 'white',
+                color: isItemActive ? 'primary.main' : 'text.primary',
               }}
             >
               {item.badge ? (
@@ -677,7 +677,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                 </Box>
               }
               sx={{ 
-                color: isItemActive ? '#4299e1' : 'white',
+                color: isItemActive ? 'primary.main' : 'text.primary',
                 '& .MuiListItemText-primary': {
                   fontSize: '14px',
                   fontWeight: isItemActive ? 600 : 400,
@@ -685,7 +685,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
               }} 
             />
             {hasChildren && (
-              isExpanded ? <ExpandLess sx={{ color: 'white' }} /> : <ExpandMore sx={{ color: 'white' }} />
+              isExpanded ? <ExpandLess sx={{ color: 'text.primary' }} /> : <ExpandMore sx={{ color: 'text.primary' }} />
             )}
           </ListItemButton>
         </ListItem>
@@ -727,7 +727,8 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
           padding: '8px',
-          borderBottom: '1px solid #2d3748',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
         {!collapsed && (
@@ -735,7 +736,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
             <NotificationBell collapsed={false} />
           </Box>
         )}
-        <IconButton onClick={handleToggleCollapse} sx={{ color: 'white' }}>
+        <IconButton onClick={handleToggleCollapse} sx={{ color: 'text.primary' }}>
           {collapsed ? <ChevronRight /> : <ChevronLeft />}
         </IconButton>
       </Box>
@@ -747,11 +748,11 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
 
       {/* Footer section for collapsed state */}
       {collapsed && (
-        <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid #2d3748' }}>
+        <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid', borderColor: 'divider' }}>
           <NotificationBell collapsed={true} />
           <Tooltip title="Profile" placement="right" arrow>
             <IconButton 
-              sx={{ color: 'white', width: '100%', mb: 0.5 }}
+              sx={{ color: 'text.primary', width: '100%', mb: 0.5 }}
               onClick={() => handleNavigation('/ui/profile')}
             >
               <PersonIcon />
@@ -759,7 +760,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           </Tooltip>
           <Tooltip title="Settings" placement="right" arrow>
             <IconButton 
-              sx={{ color: 'white', width: '100%', mb: 0.5 }}
+              sx={{ color: 'text.primary', width: '100%', mb: 0.5 }}
               onClick={() => handleNavigation('/ui/settings')}
             >
               <SettingsIcon />
@@ -767,7 +768,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           </Tooltip>
           <Tooltip title="Help" placement="right" arrow>
             <IconButton 
-              sx={{ color: 'white', width: '100%', mb: 0.5 }}
+              sx={{ color: 'text.primary', width: '100%', mb: 0.5 }}
               onClick={() => handleNavigation('/ui/help')}
             >
               <HelpIcon />
@@ -775,7 +776,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           </Tooltip>
           <Tooltip title="Logout" placement="right" arrow>
             <IconButton 
-              sx={{ color: 'white', width: '100%' }}
+              sx={{ color: 'text.primary', width: '100%' }}
               onClick={() => {
                 // Add logout logic here
                 window.location.href = '/';
@@ -790,96 +791,96 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       {/* Footer section for expanded state */}
       {!collapsed && (
         <Box sx={{ mt: 'auto' }}>
-          <Divider sx={{ borderColor: '#2d3748' }} />
+          <Divider sx={{ borderColor: 'divider' }} />
           <List>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/profile')}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <PersonIcon />
                 </ListItemIcon>
-                <ListItemText primary="Profile" sx={{ color: 'white' }} />
+                <ListItemText primary="Profile" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/settings')}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <SettingsIcon />
                 </ListItemIcon>
-                <ListItemText primary="Settings" sx={{ color: 'white' }} />
+                <ListItemText primary="Settings" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             {/* Settings Sub-Items */}
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/settings/preferences')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <PreferencesIcon />
                 </ListItemIcon>
-                <ListItemText primary="Preferences" sx={{ color: 'white' }} />
+                <ListItemText primary="Preferences" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/settings/organization')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <OrganizationIcon />
                 </ListItemIcon>
-                <ListItemText primary="Organization" sx={{ color: 'white' }} />
+                <ListItemText primary="Organization" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/settings/integrations')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <IntegrationsIcon />
                 </ListItemIcon>
-                <ListItemText primary="Integrations" sx={{ color: 'white' }} />
+                <ListItemText primary="Integrations" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/settings/data')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <DataIcon />
                 </ListItemIcon>
-                <ListItemText primary="Data Management" sx={{ color: 'white' }} />
+                <ListItemText primary="Data Management" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/settings/api-keys')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <ApiKeyIcon />
                 </ListItemIcon>
-                <ListItemText primary="API Keys" sx={{ color: 'white' }} />
+                <ListItemText primary="API Keys" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/help')}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <HelpIcon />
                 </ListItemIcon>
-                <ListItemText primary="Help & Support" sx={{ color: 'white' }} />
+                <ListItemText primary="Help & Support" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             {/* Help Sub-Items */}
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/help/tours')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <ToursIcon />
                 </ListItemIcon>
-                <ListItemText primary="Guided Tours" sx={{ color: 'white' }} />
+                <ListItemText primary="Guided Tours" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/help/documentation')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <DocsIcon />
                 </ListItemIcon>
-                <ListItemText primary="Documentation" sx={{ color: 'white' }} />
+                <ListItemText primary="Documentation" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigation('/ui/help/support')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <SupportIcon />
                 </ListItemIcon>
-                <ListItemText primary="Support" sx={{ color: 'white' }} />
+                <ListItemText primary="Support" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
@@ -887,10 +888,10 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                 // Add logout logic here
                 window.location.href = '/';
               }}>
-                <ListItemIcon sx={{ color: 'white' }}>
+                <ListItemIcon sx={{ color: 'text.primary' }}>
                   <LogoutIcon />
                 </ListItemIcon>
-                <ListItemText primary="Logout" sx={{ color: 'white' }} />
+                <ListItemText primary="Logout" sx={{ color: 'text.primary' }} />
               </ListItemButton>
             </ListItem>
           </List>
