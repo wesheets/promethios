@@ -671,37 +671,52 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
             </Typography>
           ) : (
             <Grid container spacing={2}>
-              {userConnections.map((connection) => (
-                <Grid item xs={12} key={connection.userId}>
-                  <Card 
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': { backgroundColor: 'action.hover' }
-                    }}
-                    onClick={() => {
-                      handleStartConversation(connection);
-                      setNewChatModalOpen(false);
-                    }}
-                  >
-                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
-                      <Avatar 
-                        src={connection.profile?.avatar || connection.avatar}
-                        sx={{ width: 40, height: 40 }}
-                      >
-                        {connection.userName?.[0] || connection.profile?.firstName?.[0] || '?'}
-                      </Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          {connection.userName || `${connection.profile?.firstName || ''} ${connection.profile?.lastName || ''}`.trim() || 'Unknown User'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {connection.profile?.title || connection.profile?.jobTitle || 'Professional'}
-                        </Typography>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+              {userConnections.map((connection) => {
+                // Determine which user is the "other" user (not current user)
+                const isUser1 = connection.userId1 === currentUserId;
+                const otherUserId = isUser1 ? connection.userId2 : connection.userId1;
+                const otherUserName = isUser1 ? connection.user2Name : connection.user1Name;
+                const otherUserAvatar = isUser1 ? connection.user2Avatar : connection.user1Avatar;
+                
+                console.log('🔍 [New Chat] Connection data:', connection);
+                console.log('🔍 [New Chat] Other user:', { otherUserId, otherUserName, otherUserAvatar });
+                
+                return (
+                  <Grid item xs={12} key={otherUserId}>
+                    <Card 
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover': { backgroundColor: 'action.hover' }
+                      }}
+                      onClick={() => {
+                        handleStartConversation({
+                          userId: otherUserId,
+                          userName: otherUserName,
+                          avatar: otherUserAvatar
+                        });
+                        setNewChatModalOpen(false);
+                      }}
+                    >
+                      <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
+                        <Avatar 
+                          src={otherUserAvatar}
+                          sx={{ width: 40, height: 40 }}
+                        >
+                          {otherUserName?.[0] || '?'}
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            {otherUserName || 'Unknown User'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Connected User
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
           )}
         </DialogContent>
