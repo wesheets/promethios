@@ -1949,6 +1949,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🔍 [Team Members] Current teamMembers array:', teamMembers);
     console.log('🔍 [Team Members] teamMembers length:', teamMembers.length);
     
+    // If no real team members loaded, provide demo data for testing
+    if (teamMembers.length === 0) {
+      console.log('🔍 [Team Members] No real team members found, using demo data');
+      return [
+        {
+          id: 'ted-sheets-demo',
+          name: 'Ted Sheets',
+          type: 'human' as const,
+          role: 'Team Member',
+          avatar: '/api/placeholder/32/32',
+          status: 'online' as const
+        }
+      ];
+    }
+    
     // Use real team members from TeamPanel's team data
     // Filter for humans, but be flexible about the type field
     const realTeamMembers = teamMembers
