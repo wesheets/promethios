@@ -178,6 +178,12 @@ export class ConnectionService {
    */
   async getConnectionRequests(userId: string): Promise<ConnectionRequest[]> {
     try {
+      // Validate userId to prevent Firebase errors
+      if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+        console.warn('❌ [Connection] Invalid userId provided to getConnectionRequests:', userId);
+        return [];
+      }
+
       const q = query(
         collection(db, 'connectionRequests'),
         where('toUserId', '==', userId),
@@ -202,6 +208,12 @@ export class ConnectionService {
    */
   async getUserConnections(userId: string): Promise<Connection[]> {
     try {
+      // Validate userId to prevent Firebase errors
+      if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+        console.warn('❌ [Connection] Invalid userId provided to getUserConnections:', userId);
+        return [];
+      }
+
       const q1 = query(
         collection(db, 'connections'),
         where('userId1', '==', userId)
@@ -247,6 +259,13 @@ export class ConnectionService {
    */
   async areUsersConnected(userId1: string, userId2: string): Promise<boolean> {
     try {
+      // Validate userIds to prevent Firebase errors
+      if (!userId1 || !userId2 || typeof userId1 !== 'string' || typeof userId2 !== 'string' || 
+          userId1.trim() === '' || userId2.trim() === '') {
+        console.warn('❌ [Connection] Invalid userIds provided to areUsersConnected:', { userId1, userId2 });
+        return false;
+      }
+
       const q1 = query(
         collection(db, 'connections'),
         where('userId1', '==', userId1),

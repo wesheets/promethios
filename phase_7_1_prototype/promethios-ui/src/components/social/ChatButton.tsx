@@ -41,7 +41,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
 
   // Calculate total unread messages from all conversations
   useEffect(() => {
-    const totalUnread = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
+    const totalUnread = (conversations || []).reduce((sum, conv) => sum + (conv?.unreadCount || 0), 0);
     setUnreadCount(totalUnread);
   }, [conversations]);
 
