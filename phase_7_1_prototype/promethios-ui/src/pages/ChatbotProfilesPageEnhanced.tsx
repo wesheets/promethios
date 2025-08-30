@@ -1942,35 +1942,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }));
   };
 
-  // Get team members for guest selector
+  // Get team members for guest selector - using real connections instead of stubbed data
   const getTeamMembers = () => {
-    // Mock team data based on the Team Collaboration panel
-    return [
-      {
-        id: 'alice-johnson',
-        name: 'Alice Johnson',
-        type: 'human' as const,
-        role: 'Product Manager',
-        status: 'online' as const,
-        avatar: 'A'
-      },
-      {
-        id: 'bob-smith',
-        name: 'Bob Smith',
-        type: 'human' as const,
-        role: 'Developer',
-        status: 'away' as const,
-        avatar: 'B'
-      },
-      {
-        id: 'carol-davis',
-        name: 'Carol Davis',
-        type: 'human' as const,
-        role: 'Designer',
-        status: 'online' as const,
-        avatar: 'C'
-      }
-    ];
+    // Use real team members from TeamPanel's team data
+    // This should be populated from ConnectionService or actual user connections
+    const realTeamMembers = teamMembers.filter(member => member.type === 'human').map(member => ({
+      id: member.id,
+      name: member.name,
+      type: 'human' as const,
+      role: member.role || 'Team Member',
+      status: member.status || 'offline' as const,
+      avatar: member.avatar || member.name.charAt(0)
+    }));
+
+    // If no real team members, return empty array instead of stubbed data
+    if (realTeamMembers.length === 0) {
+      console.log('🔍 [Team Members] No real team members found, returning empty array');
+      return [];
+    }
+
+    console.log('🔍 [Team Members] Using real team members:', realTeamMembers);
+    return realTeamMembers;
   };
 
   // Get AI agents for guest selector

@@ -484,6 +484,25 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     }
   };
 
+  // New handler for adding humans to chat
+  const handleAddHumanToChat = (humanId: string) => {
+    const human = teamMembers.find(m => m.id === humanId);
+    if (human && onAddGuestAgent) {
+      // Add human to chat just like an agent
+      onAddGuestAgent(human.id, human.name, human.avatar);
+      console.log(`👤 [Human] Added human ${human.name} to chat`);
+    } else {
+      console.log(`👤 [Human] Human ${humanId} not found for adding to chat`);
+    }
+  };
+
+  // New handler for viewing user profile
+  const handleUserProfile = (userId: string) => {
+    // Navigate to user's profile page instead of command center
+    navigate(`/ui/profile/${userId}`);
+    console.log(`👤 [Human] Navigating to user profile: ${userId}`);
+  };
+
   const handleConfigureAgents = (configurations: Array<{
     agentId: string;
     careerRole: string;
@@ -881,9 +900,14 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               </ListItemAvatar>
               <ListItemText
                 primary={
-                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                    {member.name}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                      {member.name}
+                    </Typography>
+                    {favoriteAgents.has(member.id) && (
+                      <Star sx={{ fontSize: 14, color: '#fbbf24' }} />
+                    )}
+                  </Box>
                 }
                 secondary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -898,11 +922,50 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
                       }}
                     />
                     <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                      {member.role}
+                      {member.role || 'Team Member'}
                     </Typography>
                   </Box>
                 }
               />
+              {/* Human team member tools - same as agents */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Tooltip title={favoriteAgents.has(member.id) ? 'Remove from favorites' : 'Add to favorites'}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavoriteAgent(member.id);
+                    }}
+                    sx={{ color: favoriteAgents.has(member.id) ? '#fbbf24' : '#6b7280' }}
+                  >
+                    {favoriteAgents.has(member.id) ? <Star sx={{ fontSize: 16 }} /> : <StarBorder sx={{ fontSize: 16 }} />}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Add to Current Chat">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddHumanToChat(member.id);
+                    }}
+                    sx={{ color: '#10b981', '&:hover': { color: '#059669' } }}
+                  >
+                    <Add sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="View User Profile">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUserProfile(member.id);
+                    }}
+                    sx={{ color: '#6b7280', '&:hover': { color: '#3b82f6' } }}
+                  >
+                    <Launch sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </ListItem>
           ))}
         </List>
