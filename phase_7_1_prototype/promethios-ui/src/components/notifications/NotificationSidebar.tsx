@@ -135,7 +135,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
     // Mark as read
     handleMarkAsRead(notification.id);
     
-    // Check if this is a connection request notification
+    // Check if this is a connection request notification (new format)
     if (notification.metadata?.notificationType === 'connection_request') {
       // Open the connection request modal
       setSelectedConnectionRequest({
@@ -143,6 +143,42 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
         fromUserId: notification.metadata.fromUserId,
         fromUserName: notification.metadata.fromUserName,
         fromUserAvatar: notification.metadata.fromUserAvatar
+      });
+      setModalOpen(true);
+      return;
+    }
+    
+    // Check if this is a connection request notification (old format)
+    // Look for notifications with type 'connection_request' or message containing connection request keywords
+    if (notification.type === 'connection_request' || 
+        (notification.message && notification.message.toLowerCase().includes('wants to connect'))) {
+      
+      // Extract information from the notification for old format
+      const fromUserName = notification.metadata?.fromUserName || 
+                          notification.fromUserName || 
+                          (notification.message && notification.message.split(' wants to connect')[0]) ||
+                          'Unknown User';
+      
+      const fromUserId = notification.metadata?.fromUserId || 
+                        notification.fromUserId || 
+                        notification.userId ||
+                        '';
+      
+      const fromUserAvatar = notification.metadata?.fromUserAvatar || 
+                            notification.fromUserAvatar || 
+                            notification.avatar ||
+                            '';
+      
+      // For old notifications, we might not have a requestId, so we'll use the notification id
+      const requestId = notification.metadata?.requestId || 
+                       notification.requestId || 
+                       notification.id;
+      
+      setSelectedConnectionRequest({
+        requestId: requestId,
+        fromUserId: fromUserId,
+        fromUserName: fromUserName,
+        fromUserAvatar: fromUserAvatar
       });
       setModalOpen(true);
       return;
@@ -190,6 +226,13 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
     if (onConnectionUpdate) {
       onConnectionUpdate();
     }
+  };
+
+  // Helper function to identify connection request notifications (both old and new formats)
+  const isConnectionRequestNotification = (notification: any): boolean => {
+    return notification.metadata?.notificationType === 'connection_request' ||
+           notification.type === 'connection_request' ||
+           (notification.message && notification.message.toLowerCase().includes('wants to connect'));
   };
 
   // Get notification icon based on type
@@ -389,14 +432,14 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
             ) : (
               <>
                 {/* Connection Request Notifications */}
-                {notifications.filter(n => n.metadata?.notificationType === 'connection_request').length > 0 && (
+                {notifications.filter(isConnectionRequestNotification).length > 0 && (
                   <>
                     <Typography variant="subtitle2" sx={{ p: 2, pb: 1, fontWeight: 600 }}>
                       New Requests
                     </Typography>
                     <List sx={{ p: 0 }}>
                       {notifications
-                        .filter(n => n.metadata?.notificationType === 'connection_request')
+                        .filter(isConnectionRequestNotification)
                         .map((notification: any) => (
                         <React.Fragment key={notification.id}>
                           <ListItem 
@@ -446,7 +489,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
                 {/* Existing Connection Requests from Firebase */}
                 {pendingRequests.length > 0 && (
                   <>
-                    {notifications.filter(n => n.metadata?.notificationType === 'connection_request').length > 0 && (
+                    {notifications.filter(isConnectionRequestNotification).length > 0 && (
                       <Typography variant="subtitle2" sx={{ p: 2, pb: 1, fontWeight: 600 }}>
                         Pending Requests
                       </Typography>
@@ -499,7 +542,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
 
                 {/* No connection requests */}
                 {pendingRequests.length === 0 && 
-                 notifications.filter(n => n.metadata?.notificationType === 'connection_request').length === 0 && (
+                 notifications.filter(isConnectionRequestNotification).length === 0 && (
                   <Box sx={{ p: 4, textAlign: 'center' }}>
                     <Typography color="text.secondary">No connection requests</Typography>
                   </Box>
