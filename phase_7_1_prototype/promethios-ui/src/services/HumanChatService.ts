@@ -75,7 +75,9 @@ class HumanChatService {
    * Get all team members
    */
   getTeamMembers(): TeamMember[] {
-    return Array.from(this.teamMembers.values());
+    const members = Array.from(this.teamMembers.values());
+    console.log('🔍 [HumanChat] getTeamMembers called - returning', members.length, 'members:', members);
+    return members;
   }
 
   /**
