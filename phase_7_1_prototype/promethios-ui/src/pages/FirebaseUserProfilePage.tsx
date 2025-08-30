@@ -43,7 +43,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 const FirebaseUserProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const { currentUser } = useAuth();
-  const connectionService = new ConnectionService();
+  const connectionService = ConnectionService.getInstance();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -95,12 +95,27 @@ const FirebaseUserProfilePage: React.FC = () => {
       return;
     }
 
+    if (!profile) {
+      console.error('❌ [Connection] No profile data found');
+      return;
+    }
+
     try {
       console.log('🤝 [Connection] Sending connection request to:', userId);
       
+      // Get current user's name from auth context or profile
+      const fromUserName = currentUser.displayName || currentUser.email || 'Anonymous User';
+      
+      // Get target user's name from profile
+      const toUserName = profile.name || profile.displayName || 'Anonymous User';
+      
       await connectionService.sendConnectionRequest(
         currentUser.uid,
-        userId,
+        userId!,
+        fromUserName,
+        toUserName,
+        currentUser.photoURL || undefined,
+        profile.profilePhoto || profile.avatar || profile.photoURL || undefined,
         `Hi! I'd like to connect with you on Promethios.`
       );
       

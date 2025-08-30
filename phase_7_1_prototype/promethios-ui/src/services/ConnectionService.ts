@@ -324,32 +324,29 @@ export class ConnectionService {
   private async sendConnectionNotification(requestId: string, request: any): Promise<void> {
     this.notificationService.addNotification({
       id: `connection-request-${requestId}`,
-      type: 'connection_request',
+      type: 'info',
       title: 'New Connection Request',
       message: `${request.fromUserName} wants to connect with you`,
-      userId: request.toUserId,
-      data: {
+      timestamp: new Date().toISOString(),
+      read: false,
+      priority: 'medium',
+      category: 'social',
+      metadata: {
         requestId,
         fromUserId: request.fromUserId,
         fromUserName: request.fromUserName,
         fromUserAvatar: request.fromUserAvatar
       },
-      priority: 'medium',
-      category: 'social',
-      timestamp: new Date(),
-      isRead: false,
       actions: [
         {
-          id: 'accept',
           label: 'Accept',
-          type: 'primary',
-          action: () => this.acceptConnectionRequest(requestId)
+          handler: () => this.acceptConnectionRequest(requestId),
+          style: 'primary'
         },
         {
-          id: 'reject',
           label: 'Reject',
-          type: 'secondary',
-          action: () => this.rejectConnectionRequest(requestId)
+          handler: () => this.rejectConnectionRequest(requestId),
+          style: 'secondary'
         }
       ]
     });
@@ -361,19 +358,18 @@ export class ConnectionService {
   private async sendAcceptanceNotification(request: ConnectionRequest): Promise<void> {
     this.notificationService.addNotification({
       id: `connection-accepted-${request.id}`,
-      type: 'connection_accepted',
+      type: 'success',
       title: 'Connection Accepted',
       message: `${request.toUserName} accepted your connection request`,
-      userId: request.fromUserId,
-      data: {
+      timestamp: new Date().toISOString(),
+      read: false,
+      priority: 'medium',
+      category: 'social',
+      metadata: {
         connectionUserId: request.toUserId,
         connectionUserName: request.toUserName,
         connectionUserAvatar: request.toUserAvatar
-      },
-      priority: 'medium',
-      category: 'social',
-      timestamp: new Date(),
-      isRead: false
+      }
     });
   }
 
@@ -383,18 +379,17 @@ export class ConnectionService {
   private async sendRejectionNotification(request: ConnectionRequest): Promise<void> {
     this.notificationService.addNotification({
       id: `connection-rejected-${request.id}`,
-      type: 'connection_rejected',
+      type: 'warning',
       title: 'Connection Request Declined',
       message: `${request.toUserName} declined your connection request`,
-      userId: request.fromUserId,
-      data: {
-        userId: request.toUserId,
-        userName: request.toUserName
-      },
+      timestamp: new Date().toISOString(),
+      read: false,
       priority: 'low',
       category: 'social',
-      timestamp: new Date(),
-      isRead: false
+      metadata: {
+        userId: request.toUserId,
+        userName: request.toUserName
+      }
     });
   }
 

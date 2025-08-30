@@ -43,7 +43,7 @@ export class NotificationService {
   /**
    * Add a notification
    */
-  addNotification(notification: Notification): void {
+  addNotification(notification: AppNotification): void {
     // Check if notification already exists
     const existingIndex = this.notifications.findIndex(n => n.id === notification.id);
     
@@ -71,7 +71,7 @@ export class NotificationService {
   /**
    * Get all notifications with optional filtering
    */
-  getNotifications(filter?: NotificationFilter): Notification[] {
+  getNotifications(filter?: NotificationFilter): AppNotification[] {
     let filtered = [...this.notifications];
 
     if (filter) {
@@ -178,7 +178,7 @@ export class NotificationService {
   /**
    * Subscribe to notification changes
    */
-  subscribe(callback: (notifications: Notification[]) => void): () => void {
+  subscribe(callback: (notifications: AppNotification[]) => void): () => void {
     this.listeners.add(callback);
     
     // Immediately call with current notifications
@@ -192,13 +192,13 @@ export class NotificationService {
   /**
    * Create a test notification
    */
-  createTestNotification(type: Notification['type'] = 'info'): void {
-    const testNotification: Notification = {
+  createTestNotification(type: AppNotification['type'] = 'info'): void {
+    const testNotification: AppNotification = {
       id: `test-${Date.now()}`,
       type,
       title: `Test ${type} notification`,
       message: `This is a test ${type} notification created at ${new Date().toLocaleTimeString()}`,
-      timestamp: Date.now(),
+      timestamp: new Date().toISOString(),
       read: false,
       priority: type === 'error' ? 'high' : 'medium',
       category: 'test'
@@ -246,7 +246,7 @@ export class NotificationService {
     });
   }
 
-  private showDesktopNotification(notification: Notification): void {
+  private showDesktopNotification(notification: AppNotification): void {
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
         new Notification(notification.title, {
