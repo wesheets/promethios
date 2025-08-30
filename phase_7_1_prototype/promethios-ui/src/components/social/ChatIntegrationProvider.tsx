@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import DirectMessageSidebar from './DirectMessageSidebar';
+import ChatWindowManager from './ChatWindowManager';
 
 interface ChatIntegrationContextType {
   isDirectMessageOpen: boolean;
@@ -84,15 +84,8 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
     <ChatIntegrationContext.Provider value={contextValue}>
       {children}
       
-      {/* Direct Message Sidebar */}
-      <DirectMessageSidebar
-        isOpen={isDirectMessageOpen}
-        onClose={closeDirectMessage}
-        initialConversationId={activeConversationId}
-        currentUserId={currentUserId}
-        onStartVideoCall={startVideoCall}
-        onStartVoiceCall={startVoiceCall}
-      />
+      {/* Floating Chat Window Manager */}
+      <ChatWindowManager />
     </ChatIntegrationContext.Provider>
   );
 };

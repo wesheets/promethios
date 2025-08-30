@@ -108,7 +108,6 @@ import SocialFeedPage from './pages/SocialFeedPage';
 import OrganizationsPage from './pages/OrganizationsPage';
 import ChannelsPage from './pages/ChannelsPage';
 import ConnectionManagementPage from './pages/ConnectionManagementPage';
-import DirectMessageSidebar from './components/social/DirectMessageSidebar';
 import ChatIntegrationProvider from './components/social/ChatIntegrationProvider';
 import FloatingChatWidget from './components/social/FloatingChatWidget';
 import ChatbotWrappingWizard from './components/chat/builder/ChatbotWrappingWizard';
@@ -802,7 +801,20 @@ const UIIntegration: React.FC = () => {
         <Route path="social/messages" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <DirectMessageSidebar isOpen={true} onClose={() => {}} />
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '60vh',
+                flexDirection: 'column',
+                gap: '20px'
+              }}>
+                <h2 style={{ color: '#9ca3af' }}>Messages</h2>
+                <p style={{ color: '#6b7280', textAlign: 'center' }}>
+                  Click the MESSAGE button on user profiles or use the floating chat windows<br/>
+                  to start conversations with your connections.
+                </p>
+              </div>
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
