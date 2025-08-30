@@ -392,6 +392,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showHumanInviteConfirmDialog, setShowHumanInviteConfirmDialog] = useState(false);
+  const [humansToInvite, setHumansToInvite] = useState<any[]>([]);
   const [pendingHumanInvites, setPendingHumanInvites] = useState<any[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [selectedTarget, setSelectedTarget] = useState<string>(''); // Current messaging target (human or agent ID)
@@ -5049,7 +5050,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     onAddGuestAgent={addGuestAgent}
                     onAddHumanToChat={(humans) => {
                       setHumansToInvite(humans);
-                      setShowHumanInviteConfirm(true);
+                      setShowHumanInviteConfirmDialog(true);
                     }}
                   />
                 )}
