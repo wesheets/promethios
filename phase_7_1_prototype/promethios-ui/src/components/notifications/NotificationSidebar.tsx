@@ -34,6 +34,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useConnections } from '../../hooks/useConnections';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import ConnectionRequestModal from '../social/ConnectionRequestModal';
 
 interface NotificationSidebarProps {
   open: boolean;
@@ -55,6 +56,8 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
   width = 320,
 }) => {
   const [tabValue, setTabValue] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedConnectionRequest, setSelectedConnectionRequest] = useState<any>(null);
   const navigate = useNavigate();
   
   // Get notifications from the notification system
@@ -130,11 +133,53 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
     // Mark as read
     handleMarkAsRead(notification.id);
     
+    // Check if this is a connection request notification
+    if (notification.metadata?.notificationType === 'connection_request') {
+      // Open the connection request modal
+      setSelectedConnectionRequest({
+        requestId: notification.metadata.requestId,
+        fromUserId: notification.metadata.fromUserId,
+        fromUserName: notification.metadata.fromUserName,
+        fromUserAvatar: notification.metadata.fromUserAvatar
+      });
+      setModalOpen(true);
+      return;
+    }
+    
     // Navigate to the appropriate page based on notification type
     if (notification.actionUrl) {
       navigate(notification.actionUrl);
       onClose();
     }
+  };
+
+  // Handle opening connection request modal from connections tab
+  const handleConnectionRequestClick = (request: any) => {
+    setSelectedConnectionRequest({
+      requestId: request.id,
+      fromUserId: request.fromUserId,
+      fromUserName: request.fromUserName,
+      fromUserAvatar: request.fromUserAvatar
+    });
+    setModalOpen(true);
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedConnectionRequest(null);
+  };
+
+  // Handle connection accept from modal
+  const handleModalAccept = () => {
+    // The modal handles the acceptance, we just need to refresh
+    handleModalClose();
+  };
+
+  // Handle connection reject from modal
+  const handleModalReject = () => {
+    // The modal handles the rejection, we just need to refresh
+    handleModalClose();
   };
 
   // Get notification icon based on type
@@ -331,76 +376,143 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                 <CircularProgress />
               </Box>
-            ) : pendingRequests.length === 0 ? (
-              <Box sx={{ p: 4, textAlign: 'center' }}>
-                <Typography color="text.secondary">No connection requests</Typography>
-              </Box>
             ) : (
-              <List sx={{ p: 0 }}>
-                {pendingRequests.map((request: any) => (
-                  <React.Fragment key={request.id}>
-                    <ListItem 
-                      alignItems="flex-start"
-                      sx={{ 
-                        '&:hover': { bgcolor: 'action.hover' },
-                      }}
-                    >
-                      <ListItemAvatar>
-                        <Avatar src={request.fromUserPhoto}>
-                          {request.fromUserName?.charAt(0) || 'U'}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={request.fromUserName || 'Unknown User'}
-                        secondary={
-                          <React.Fragment>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              color="text.primary"
-                            >
-                              {request.message || 'Wants to connect with you'}
-                            </Typography>
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              display="block"
-                              color="text.secondary"
-                            >
-                              {formatDistanceToNow(new Date(request.createdAt.toDate()), { addSuffix: true })}
-                            </Typography>
-                            <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="primary"
-                                startIcon={<AcceptIcon />}
-                                onClick={() => handleAcceptConnection(request.id)}
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                                startIcon={<DeclineIcon />}
-                                onClick={() => handleDeclineConnection(request.id)}
-                              >
-                                Decline
-                              </Button>
-                            </Box>
-                          </React.Fragment>
-                        }
-                      />
-                    </ListItem>
-                    <Divider component="li" />
-                  </React.Fragment>
-                ))}
-              </List>
+              <>
+                {/* Connection Request Notifications */}
+                {notifications.filter(n => n.metadata?.notificationType === 'connection_request').length > 0 && (
+                  <>
+                    <Typography variant="subtitle2" sx={{ p: 2, pb: 1, fontWeight: 600 }}>
+                      New Requests
+                    </Typography>
+                    <List sx={{ p: 0 }}>
+                      {notifications
+                        .filter(n => n.metadata?.notificationType === 'connection_request')
+                        .map((notification: any) => (
+                        <React.Fragment key={notification.id}>
+                          <ListItem 
+                            alignItems="flex-start"
+                            sx={{ 
+                              bgcolor: notification.read ? 'transparent' : 'action.hover',
+                              '&:hover': { bgcolor: 'action.selected' },
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => handleNotificationClick(notification)}
+                          >
+                            <ListItemAvatar>
+                              <Avatar src={notification.metadata?.fromUserAvatar}>
+                                {notification.metadata?.fromUserName?.charAt(0) || 'U'}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={notification.metadata?.fromUserName || 'Unknown User'}
+                              secondary={
+                                <React.Fragment>
+                                  <Typography
+                                    component="span"
+                                    variant="body2"
+                                    color="text.primary"
+                                  >
+                                    {notification.message}
+                                  </Typography>
+                                  <Typography
+                                    component="span"
+                                    variant="caption"
+                                    display="block"
+                                    color="text.secondary"
+                                  >
+                                    {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
+                                  </Typography>
+                                </React.Fragment>
+                              }
+                            />
+                          </ListItem>
+                          <Divider component="li" />
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  </>
+                )}
+
+                {/* Existing Connection Requests from Firebase */}
+                {pendingRequests.length > 0 && (
+                  <>
+                    {notifications.filter(n => n.metadata?.notificationType === 'connection_request').length > 0 && (
+                      <Typography variant="subtitle2" sx={{ p: 2, pb: 1, fontWeight: 600 }}>
+                        Pending Requests
+                      </Typography>
+                    )}
+                    <List sx={{ p: 0 }}>
+                      {pendingRequests.map((request: any) => (
+                        <React.Fragment key={request.id}>
+                          <ListItem 
+                            alignItems="flex-start"
+                            sx={{ 
+                              '&:hover': { bgcolor: 'action.hover' },
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => handleConnectionRequestClick(request)}
+                          >
+                            <ListItemAvatar>
+                              <Avatar src={request.fromUserPhoto}>
+                                {request.fromUserName?.charAt(0) || 'U'}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={request.fromUserName || 'Unknown User'}
+                              secondary={
+                                <React.Fragment>
+                                  <Typography
+                                    component="span"
+                                    variant="body2"
+                                    color="text.primary"
+                                  >
+                                    {request.message || 'Wants to connect with you'}
+                                  </Typography>
+                                  <Typography
+                                    component="span"
+                                    variant="caption"
+                                    display="block"
+                                    color="text.secondary"
+                                  >
+                                    {formatDistanceToNow(new Date(request.createdAt.toDate()), { addSuffix: true })}
+                                  </Typography>
+                                </React.Fragment>
+                              }
+                            />
+                          </ListItem>
+                          <Divider component="li" />
+                        </React.Fragment>
+                      ))}
+                    </List>
+                  </>
+                )}
+
+                {/* No connection requests */}
+                {pendingRequests.length === 0 && 
+                 notifications.filter(n => n.metadata?.notificationType === 'connection_request').length === 0 && (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography color="text.secondary">No connection requests</Typography>
+                  </Box>
+                )}
+              </>
             )}
           </>
         )}
       </Box>
+
+      {/* Connection Request Modal */}
+      {selectedConnectionRequest && (
+        <ConnectionRequestModal
+          open={modalOpen}
+          onClose={handleModalClose}
+          requestId={selectedConnectionRequest.requestId}
+          fromUserId={selectedConnectionRequest.fromUserId}
+          fromUserName={selectedConnectionRequest.fromUserName}
+          fromUserAvatar={selectedConnectionRequest.fromUserAvatar}
+          onAccept={handleModalAccept}
+          onReject={handleModalReject}
+        />
+      )}
     </Drawer>
   );
 };

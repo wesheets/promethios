@@ -335,20 +335,9 @@ export class ConnectionService {
         requestId,
         fromUserId: request.fromUserId,
         fromUserName: request.fromUserName,
-        fromUserAvatar: request.fromUserAvatar
-      },
-      actions: [
-        {
-          label: 'Accept',
-          handler: () => this.acceptConnectionRequest(requestId),
-          style: 'primary'
-        },
-        {
-          label: 'Reject',
-          handler: () => this.rejectConnectionRequest(requestId),
-          style: 'secondary'
-        }
-      ]
+        fromUserAvatar: request.fromUserAvatar,
+        notificationType: 'connection_request'
+      }
     });
   }
 
