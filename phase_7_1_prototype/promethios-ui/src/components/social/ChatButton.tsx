@@ -10,6 +10,7 @@ import {
   Chat as ChatIcon,
 } from '@mui/icons-material';
 import ResponsiveMessageInterface from './ResponsiveMessageInterface';
+import { ConnectionService } from '../../services/ConnectionService';
 
 interface ChatButtonProps {
   collapsed: boolean;
@@ -18,6 +19,25 @@ interface ChatButtonProps {
 const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [connections, setConnections] = useState<any[]>([]);
+
+  // Load connections when panel opens
+  useEffect(() => {
+    if (isPanelOpen) {
+      loadConnections();
+    }
+  }, [isPanelOpen]);
+
+  const loadConnections = async () => {
+    try {
+      const connectionService = ConnectionService.getInstance();
+      const userConnections = await connectionService.getUserConnections();
+      setConnections(userConnections);
+    } catch (error) {
+      console.error('Failed to load connections:', error);
+      setConnections([]);
+    }
+  };
 
   // Calculate total unread messages from floating chat system
   useEffect(() => {
@@ -68,6 +88,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
           isOpen={isPanelOpen}
           onClose={handleClosePanel}
           onOpenFloatingChat={handleOpenFloatingChat}
+          connections={connections}
         />
       </>
     );
@@ -112,6 +133,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
         isOpen={isPanelOpen}
         onClose={handleClosePanel}
         onOpenFloatingChat={handleOpenFloatingChat}
+        connections={connections}
       />
     </>
   );
