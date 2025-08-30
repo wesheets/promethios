@@ -41,6 +41,7 @@ interface NotificationSidebarProps {
   onClose: () => void;
   anchor?: 'left' | 'right';
   width?: number;
+  onConnectionUpdate?: () => void;
 }
 
 /**
@@ -54,6 +55,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
   onClose,
   anchor = 'left',
   width = 320,
+  onConnectionUpdate,
 }) => {
   const [tabValue, setTabValue] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
@@ -174,12 +176,20 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
   const handleModalAccept = () => {
     // The modal handles the acceptance, we just need to refresh
     handleModalClose();
+    // Trigger connection update in parent component
+    if (onConnectionUpdate) {
+      onConnectionUpdate();
+    }
   };
 
   // Handle connection reject from modal
   const handleModalReject = () => {
     // The modal handles the rejection, we just need to refresh
     handleModalClose();
+    // Trigger connection update in parent component
+    if (onConnectionUpdate) {
+      onConnectionUpdate();
+    }
   };
 
   // Get notification icon based on type

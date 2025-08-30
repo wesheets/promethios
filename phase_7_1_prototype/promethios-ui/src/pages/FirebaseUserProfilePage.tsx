@@ -38,6 +38,7 @@ import {
   Schedule
 } from '@mui/icons-material';
 import TeamMemberBadge from '../components/social/TeamMemberBadge';
+import UserConnectionsModal from '../components/social/UserConnectionsModal';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 const FirebaseUserProfilePage: React.FC = () => {
@@ -49,6 +50,8 @@ const FirebaseUserProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [connectionRequested, setConnectionRequested] = useState(false);
+  const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
+  const [realConnectionCount, setRealConnectionCount] = useState<number>(0);
 
   const discoveryService = new FirebaseUserDiscoveryService();
   const profileService = new UserProfileService();
@@ -66,13 +69,19 @@ const FirebaseUserProfilePage: React.FC = () => {
         console.log('🔍 FirebaseUserProfilePage: Loading profile for userId:', userId);
         setLoading(true);
         
-        // Load profile data from the same source as the edit page
-        const userProfile = await profileService.getUserProfile(userId);
+        // Load profile data and connection count in parallel
+        const [userProfile, connectionCount] = await Promise.all([
+          profileService.getUserProfile(userId),
+          loadConnectionCount(userId)
+        ]);
+        
         console.log('📊 FirebaseUserProfilePage: Profile data received:', userProfile);
+        console.log('🔗 FirebaseUserProfilePage: Connection count:', connectionCount);
         
         if (userProfile) {
           console.log('✅ FirebaseUserProfilePage: Profile found, setting state');
           setProfile(userProfile);
+          setRealConnectionCount(connectionCount);
         } else {
           console.error('❌ FirebaseUserProfilePage: No profile found for userId:', userId);
           setError('User profile not found');
@@ -83,6 +92,16 @@ const FirebaseUserProfilePage: React.FC = () => {
         console.error('💥 FirebaseUserProfilePage: Failed to load user profile:', error);
         setError('Failed to load user profile');
         setLoading(false);
+      }
+    };
+
+    const loadConnectionCount = async (userId: string): Promise<number> => {
+      try {
+        const connections = await connectionService.getUserConnections(userId);
+        return connections.length;
+      } catch (error) {
+        console.error('Failed to load connection count:', error);
+        return 0;
       }
     };
 
@@ -130,6 +149,21 @@ const FirebaseUserProfilePage: React.FC = () => {
   const handleMessage = () => {
     // TODO: Implement messaging logic
     console.log('Starting message with:', userId);
+  };
+
+  const handleConnectionsClick = () => {
+    setConnectionsModalOpen(true);
+  };
+
+  const refreshConnectionCount = async () => {
+    if (userId) {
+      try {
+        const connections = await connectionService.getUserConnections(userId);
+        setRealConnectionCount(connections.length);
+      } catch (error) {
+        console.error('Failed to refresh connection count:', error);
+      }
+    }
   };
 
   const handleBack = () => {
@@ -273,9 +307,25 @@ const FirebaseUserProfilePage: React.FC = () => {
                       <Typography variant="body2">{safeRender(profile.location)}</Typography>
                     </Box>
                   )}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: 'primary.main',
+                        '& .MuiSvgIcon-root': {
+                          color: 'primary.main'
+                        }
+                      }
+                    }}
+                    onClick={handleConnectionsClick}
+                  >
                     <Group sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    <Typography variant="body2">{profile?.connections || 0} connections</Typography>
+                    <Typography variant="body2">
+                      {realConnectionCount} connection{realConnectionCount !== 1 ? 's' : ''}
+                    </Typography>
                   </Box>
                   {profile?.rating && (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -441,6 +491,14 @@ const FirebaseUserProfilePage: React.FC = () => {
         </Grid>
       </Grid>
       </Box>
+
+      {/* User Connections Modal */}
+      <UserConnectionsModal
+        open={connectionsModalOpen}
+        onClose={() => setConnectionsModalOpen(false)}
+        userId={userId || ''}
+        userName={profile?.name || profile?.displayName}
+      />
     </ErrorBoundary>
   );
 };
