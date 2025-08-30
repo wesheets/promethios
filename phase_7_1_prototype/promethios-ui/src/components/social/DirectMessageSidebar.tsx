@@ -20,6 +20,13 @@ import {
   MenuItem,
   Tooltip,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
 } from '@mui/material';
 import {
   Close,
@@ -33,8 +40,11 @@ import {
   Minimize,
   Maximize,
   Circle,
+  Add,
 } from '@mui/icons-material';
 import { MessageService, ChatMessage, ChatConversation } from '../../services/MessageService';
+import { ConnectionService } from '../../services/ConnectionService';
+import { useAuth } from '../../context/AuthContext';
 
 interface DirectMessage {
   id: string;
@@ -86,7 +96,11 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [newChatModalOpen, setNewChatModalOpen] = useState(false);
+  const [userConnections, setUserConnections] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { currentUser } = useAuth();
   
   const messageService = MessageService.getInstance();
   const currentUserId = messageService.getCurrentUserId() || propCurrentUserId;
@@ -202,6 +216,25 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Load user connections for New Chat modal
+  useEffect(() => {
+    const loadUserConnections = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const connectionService = ConnectionService.getInstance();
+        const connections = await connectionService.getUserConnections(currentUser.uid);
+        setUserConnections(connections);
+      } catch (error) {
+        console.error('❌ Failed to load user connections:', error);
+      }
+    };
+
+    if (newChatModalOpen) {
+      loadUserConnections();
+    }
+  }, [newChatModalOpen, currentUser]);
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !activeConversationId || !currentUserId) return;
@@ -408,6 +441,20 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
           {totalUnreadCount > 0 && (
             <Badge badgeContent={totalUnreadCount} color="primary" />
           )}
+          <Box sx={{ ml: 'auto' }}>
+            <Tooltip title="New Chat">
+              <IconButton
+                size="small"
+                onClick={() => setNewChatModalOpen(true)}
+                sx={{ 
+                  color: 'primary.main',
+                  '&:hover': { backgroundColor: 'primary.main', color: 'white' }
+                }}
+              >
+                <Add />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
         
         <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -597,6 +644,68 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
           Clear History
         </MenuItem>
       </Menu>
+
+      {/* New Chat Modal */}
+      <Dialog
+        open={newChatModalOpen}
+        onClose={() => setNewChatModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">Start New Chat</Typography>
+            <IconButton onClick={() => setNewChatModalOpen(false)}>
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select a connection to start chatting with:
+          </Typography>
+          
+          {userConnections.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+              No connections available. Connect with other users first!
+            </Typography>
+          ) : (
+            <Grid container spacing={2}>
+              {userConnections.map((connection) => (
+                <Grid item xs={12} key={connection.userId}>
+                  <Card 
+                    sx={{ 
+                      cursor: 'pointer',
+                      '&:hover': { backgroundColor: 'action.hover' }
+                    }}
+                    onClick={() => {
+                      handleStartConversation(connection);
+                      setNewChatModalOpen(false);
+                    }}
+                  >
+                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
+                      <Avatar 
+                        src={connection.profile?.avatar || connection.avatar}
+                        sx={{ width: 40, height: 40 }}
+                      >
+                        {connection.userName?.[0] || connection.profile?.firstName?.[0] || '?'}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          {connection.userName || `${connection.profile?.firstName || ''} ${connection.profile?.lastName || ''}`.trim() || 'Unknown User'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {connection.profile?.title || connection.profile?.jobTitle || 'Professional'}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </DialogContent>
+      </Dialog>
     </Drawer>
   );
 };

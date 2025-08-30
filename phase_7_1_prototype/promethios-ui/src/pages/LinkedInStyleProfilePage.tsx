@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { userProfileService, UserProfile } from '../services/UserProfileService';
 import { FirebaseUserDiscoveryService } from '../services/FirebaseUserDiscoveryService';
+import { ConnectionService } from '../services/ConnectionService';
+import UserConnectionsModal from '../components/social/UserConnectionsModal';
 import {
   Box,
   Card,
@@ -95,6 +97,10 @@ const LinkedInStyleProfilePage: React.FC = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [peopleAlsoViewed, setPeopleAlsoViewed] = useState<any[]>([]);
+  
+  // Connections state
+  const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
+  const [connectionCount, setConnectionCount] = useState(0);
 
   // Form state for dialogs
   const [experienceForm, setExperienceForm] = useState({
@@ -249,6 +255,30 @@ const LinkedInStyleProfilePage: React.FC = () => {
     };
 
     loadProfile();
+  }, [currentUser]);
+
+  // Load connection count
+  useEffect(() => {
+    const loadConnectionCount = async () => {
+      if (!currentUser) return;
+      
+      try {
+        console.log('🔍 Loading connection count for user:', currentUser.uid);
+        const connectionService = ConnectionService.getInstance();
+        const connections = await connectionService.getUserConnections(currentUser.uid);
+        const count = connections.length;
+        
+        console.log('✅ Loaded connection count:', count);
+        setConnectionCount(count);
+        
+        // Also update the profile connections field
+        setProfile(prev => ({ ...prev, connections: count }));
+      } catch (error) {
+        console.error('❌ Failed to load connection count:', error);
+      }
+    };
+
+    loadConnectionCount();
   }, [currentUser]);
 
   // Load people also viewed from Firebase
@@ -591,7 +621,17 @@ const LinkedInStyleProfilePage: React.FC = () => {
                   </Typography>
                   
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {profile.location} • {profile.connections} connections
+                    {profile.location} • <Typography 
+                      component="span" 
+                      sx={{ 
+                        cursor: 'pointer', 
+                        textDecoration: 'underline',
+                        '&:hover': { color: 'primary.main' }
+                      }}
+                      onClick={() => setConnectionsModalOpen(true)}
+                    >
+                      {profile.connections} connections
+                    </Typography>
                   </Typography>
 
                   <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
@@ -1307,6 +1347,14 @@ const LinkedInStyleProfilePage: React.FC = () => {
           </DialogActions>
         </Dialog>
       )}
+
+      {/* Connections Modal */}
+      <UserConnectionsModal
+        open={connectionsModalOpen}
+        onClose={() => setConnectionsModalOpen(false)}
+        userId={currentUser?.uid || ''}
+        userName={profile.displayName || `${profile.firstName} ${profile.lastName}`}
+      />
     </Box>
   );
 };

@@ -34,8 +34,10 @@ import {
 } from '@mui/icons-material';
 import { ConnectionService } from '../../services/ConnectionService';
 import { UserProfileService } from '../../services/UserProfileService';
+import { MessageService } from '../../services/MessageService';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useChatIntegration } from '../social/ChatIntegrationProvider';
 
 interface UserConnectionsModalProps {
   open: boolean;
@@ -66,6 +68,7 @@ const UserConnectionsModal: React.FC<UserConnectionsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const { openChat } = useChatIntegration();
 
   const connectionService = ConnectionService.getInstance();
   const profileService = new UserProfileService();
@@ -137,13 +140,32 @@ const UserConnectionsModal: React.FC<UserConnectionsModalProps> = ({
   };
 
   const handleViewProfile = (connectionUserId: string) => {
-    navigate(`/ui/profile/${connectionUserId}`);
+    console.log('🔍 Navigating to profile for user:', connectionUserId);
+    // Navigate to the public profile page for this user
+    navigate(`/ui/social/profiles/${connectionUserId}`);
     onClose();
   };
 
-  const handleMessage = (connectionUserId: string) => {
-    // TODO: Implement messaging functionality
-    console.log('Starting message with:', connectionUserId);
+  const handleMessage = async (connectionUserId: string) => {
+    try {
+      console.log('💬 Starting message with user:', connectionUserId);
+      
+      // Find the connection to get user details
+      const connection = connections.find(conn => conn.userId === connectionUserId);
+      if (!connection) {
+        console.error('❌ Connection not found for user:', connectionUserId);
+        return;
+      }
+
+      // Open chat with this user
+      await openChat(connectionUserId, connection.userName);
+      console.log('✅ Chat opened with:', connection.userName);
+      
+      // Close the connections modal
+      onClose();
+    } catch (error) {
+      console.error('❌ Failed to start message:', error);
+    }
   };
 
   const safeRender = (value: any): string => {
