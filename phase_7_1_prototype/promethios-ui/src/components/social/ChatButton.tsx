@@ -9,7 +9,7 @@ import {
 import {
   Chat as ChatIcon,
 } from '@mui/icons-material';
-import CompactMessagePanel from './CompactMessagePanel';
+import ResponsiveMessageInterface from './ResponsiveMessageInterface';
 
 interface ChatButtonProps {
   collapsed: boolean;
@@ -64,7 +64,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
           </IconButton>
         </Tooltip>
         
-        <CompactMessagePanel
+        <ResponsiveMessageInterface
           isOpen={isPanelOpen}
           onClose={handleClosePanel}
           onOpenFloatingChat={handleOpenFloatingChat}
@@ -108,7 +108,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
         </Box>
       </Tooltip>
       
-      <CompactMessagePanel
+      <ResponsiveMessageInterface
         isOpen={isPanelOpen}
         onClose={handleClosePanel}
         onOpenFloatingChat={handleOpenFloatingChat}
