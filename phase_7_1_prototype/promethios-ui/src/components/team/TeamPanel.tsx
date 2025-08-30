@@ -22,7 +22,13 @@ import {
   Tooltip,
   Button,
   Divider,
-  Paper
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import {
   Search,
@@ -93,6 +99,22 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     avatar?: string;
   }>>([]);
   
+  // Collaborative Teams state
+  interface CollaborativeTeam {
+    id: string;
+    name: string;
+    description: string;
+    humanMembers: TeamMember[];
+    aiMembers: ChatbotProfile[];
+    createdAt: Date;
+    isActive: boolean;
+  }
+  
+  const [collaborativeTeams, setCollaborativeTeams] = useState<CollaborativeTeam[]>([]);
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [selectedAiAgents, setSelectedAiAgents] = useState<string[]>([]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Debug effect to track aiTeammates changes
@@ -118,7 +140,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         // Initialize all services with individual error handling
         try {
           console.log('🔍 [Team] Initializing HumanChatService...');
-          humanChatService.initialize(currentUserId);
+          await humanChatService.initialize(currentUserId);
           console.log('✅ [Team] HumanChatService initialized');
         } catch (error) {
           console.error('❌ [Team] HumanChatService failed:', error);
@@ -137,6 +159,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         // Load initial data with individual error handling
         try {
           console.log('🔍 [Team] Loading team data...');
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait for services to initialize
           loadTeamData();
           console.log('✅ [Team] Team data loaded');
         } catch (error) {
@@ -480,6 +503,68 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     // Close the popup and clear selections
     setShowConfigPopup(false);
     setSelectedAgentsForConfig([]);
+  };
+
+  // Collaborative Team Management Functions
+  const createCollaborativeTeam = (name: string, description: string) => {
+    const selectedHumans = teamMembers.filter(member => selectedTeamMembers.includes(member.id));
+    const selectedAI = aiTeammates.filter(agent => selectedAiAgents.includes(agent.id));
+    
+    const newTeam: CollaborativeTeam = {
+      id: `team-${Date.now()}`,
+      name,
+      description,
+      humanMembers: selectedHumans,
+      aiMembers: selectedAI,
+      createdAt: new Date(),
+      isActive: true
+    };
+    
+    setCollaborativeTeams(prev => [...prev, newTeam]);
+    setSelectedTeamMembers([]);
+    setSelectedAiAgents([]);
+    setShowCreateTeamDialog(false);
+    
+    console.log('🎯 [Collaborative Teams] Created new team:', newTeam);
+  };
+
+  const toggleTeamMemberSelection = (memberId: string) => {
+    setSelectedTeamMembers(prev => 
+      prev.includes(memberId) 
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  const toggleAiAgentSelection = (agentId: string) => {
+    setSelectedAiAgents(prev => 
+      prev.includes(agentId) 
+        ? prev.filter(id => id !== agentId)
+        : [...prev, agentId]
+    );
+  };
+
+  const activateCollaborativeTeam = (teamId: string) => {
+    const team = collaborativeTeams.find(t => t.id === teamId);
+    if (team) {
+      // Add all team members to active collaboration
+      team.humanMembers.forEach(member => {
+        console.log(`👥 [Collaborative Teams] Activating human member: ${member.name}`);
+        // Could open chat windows or add to active collaboration
+      });
+      
+      team.aiMembers.forEach(agent => {
+        if (onAddGuestAgent) {
+          const agentId = agent.identity?.id || agent.id;
+          const agentName = agent.identity?.name || agent.name || 'AI Agent';
+          const agentAvatar = agent.identity?.avatar;
+          onAddGuestAgent(agentId, agentName, agentAvatar);
+          console.log(`🤖 [Collaborative Teams] Activated AI agent: ${agentName}`);
+        }
+      });
+      
+      console.log('🎯 [Collaborative Teams] Activated team:', team.name);
+    }
   };
 
   const getAgentStatus = (agent: ChatbotProfile) => {
@@ -938,6 +1023,113 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         </List>
       </Box>
 
+      {/* Collaborative Teams section */}
+      <Box sx={{ flex: 1, overflowY: 'auto', p: 2, borderTop: '1px solid #334155' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="subtitle2" sx={{ color: '#9ca3af', fontWeight: 'bold' }}>
+            <Group sx={{ fontSize: 16, mr: 1, verticalAlign: 'middle' }} />
+            Collaborative Teams ({collaborativeTeams.length})
+          </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Add />}
+            onClick={() => setShowCreateTeamDialog(true)}
+            sx={{
+              color: '#3b82f6',
+              borderColor: '#3b82f6',
+              '&:hover': { bgcolor: '#1e3a8a', borderColor: '#2563eb' },
+              fontSize: '0.75rem',
+              py: 0.5
+            }}
+          >
+            Create Team
+          </Button>
+        </Box>
+        
+        {collaborativeTeams.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Typography variant="body2" sx={{ color: '#6b7280', mb: 1 }}>
+              No collaborative teams yet
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+              Create teams with both human and AI members
+            </Typography>
+          </Box>
+        ) : (
+          <List sx={{ p: 0 }}>
+            {collaborativeTeams.map((team) => (
+              <ListItem
+                key={team.id}
+                sx={{
+                  p: 1,
+                  borderRadius: 1,
+                  mb: 0.5,
+                  border: '1px solid #374151',
+                  '&:hover': { bgcolor: '#374151' }
+                }}
+              >
+                <ListItemAvatar>
+                  <Avatar sx={{ bgcolor: '#059669', width: 32, height: 32 }}>
+                    <Group sx={{ fontSize: 18 }} />
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                      {team.name}
+                    </Typography>
+                  }
+                  secondary={
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                        {team.description}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip
+                          label={`${team.humanMembers.length} humans`}
+                          size="small"
+                          sx={{
+                            bgcolor: '#3b82f6',
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: 16
+                          }}
+                        />
+                        <Chip
+                          label={`${team.aiMembers.length} AI`}
+                          size="small"
+                          sx={{
+                            bgcolor: '#8b5cf6',
+                            color: 'white',
+                            fontSize: '0.7rem',
+                            height: 16
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  }
+                />
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={() => activateCollaborativeTeam(team.id)}
+                  sx={{
+                    bgcolor: '#059669',
+                    '&:hover': { bgcolor: '#047857' },
+                    fontSize: '0.75rem',
+                    py: 0.5,
+                    px: 1
+                  }}
+                >
+                  Activate
+                </Button>
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </Box>
+
       {/* Agent Configuration Popup */}
       <AgentConfigurationPopup
         open={showConfigPopup}
@@ -953,6 +1145,117 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         }))}
         onConfigureAgents={handleConfigureAgents}
       />
+
+      {/* Create Collaborative Team Dialog */}
+      <Dialog
+        open={showCreateTeamDialog}
+        onClose={() => setShowCreateTeamDialog(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { bgcolor: '#1e293b', color: 'white' }
+        }}
+      >
+        <DialogTitle sx={{ color: 'white' }}>
+          Create Collaborative Team
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 3 }}>
+            <TextField
+              fullWidth
+              label="Team Name"
+              variant="outlined"
+              sx={{ mb: 2, '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' } }}
+              id="team-name"
+            />
+            <TextField
+              fullWidth
+              label="Team Description"
+              variant="outlined"
+              multiline
+              rows={2}
+              sx={{ '& .MuiOutlinedInput-root': { color: 'white' }, '& .MuiInputLabel-root': { color: '#9ca3af' } }}
+              id="team-description"
+            />
+          </Box>
+          
+          <Typography variant="subtitle2" sx={{ color: '#9ca3af', mb: 1 }}>
+            Select Human Team Members:
+          </Typography>
+          <Box sx={{ maxHeight: 200, overflowY: 'auto', mb: 3, border: '1px solid #374151', borderRadius: 1, p: 1 }}>
+            {teamMembers.map((member) => (
+              <FormControlLabel
+                key={member.id}
+                control={
+                  <Checkbox
+                    checked={selectedTeamMembers.includes(member.id)}
+                    onChange={() => toggleTeamMemberSelection(member.id)}
+                    sx={{ color: '#3b82f6' }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Avatar sx={{ width: 24, height: 24, bgcolor: '#3b82f6' }}>
+                      {member.name.charAt(0)}
+                    </Avatar>
+                    <Typography variant="body2" sx={{ color: 'white' }}>
+                      {member.name} - {member.role}
+                    </Typography>
+                  </Box>
+                }
+                sx={{ width: '100%', m: 0 }}
+              />
+            ))}
+          </Box>
+          
+          <Typography variant="subtitle2" sx={{ color: '#9ca3af', mb: 1 }}>
+            Select AI Agents:
+          </Typography>
+          <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid #374151', borderRadius: 1, p: 1 }}>
+            {aiTeammates.map((agent) => (
+              <FormControlLabel
+                key={agent.id}
+                control={
+                  <Checkbox
+                    checked={selectedAiAgents.includes(agent.id)}
+                    onChange={() => toggleAiAgentSelection(agent.id)}
+                    sx={{ color: '#8b5cf6' }}
+                  />
+                }
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Avatar sx={{ width: 24, height: 24, bgcolor: '#8b5cf6' }}>
+                      <SmartToy sx={{ fontSize: 14 }} />
+                    </Avatar>
+                    <Typography variant="body2" sx={{ color: 'white' }}>
+                      {agent.identity?.name || agent.name || 'AI Agent'}
+                    </Typography>
+                  </Box>
+                }
+                sx={{ width: '100%', m: 0 }}
+              />
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowCreateTeamDialog(false)} sx={{ color: '#9ca3af' }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              const nameInput = document.getElementById('team-name') as HTMLInputElement;
+              const descInput = document.getElementById('team-description') as HTMLInputElement;
+              if (nameInput?.value && (selectedTeamMembers.length > 0 || selectedAiAgents.length > 0)) {
+                createCollaborativeTeam(nameInput.value, descInput?.value || '');
+              }
+            }}
+            variant="contained"
+            sx={{ bgcolor: '#059669', '&:hover': { bgcolor: '#047857' } }}
+          >
+            Create Team
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

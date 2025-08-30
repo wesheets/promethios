@@ -172,14 +172,6 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim()) return;
-    
-    // TODO: Integrate with MessageService
-    console.log('📤 Sending message:', messageInput);
-    setMessageInput('');
-  };
-
   if (isMinimized) {
     return null; // Minimized state handled by ChatWindowManager
   }

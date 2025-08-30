@@ -5,7 +5,7 @@
  * to replace the mock team members in the team panel.
  */
 
-import { firebaseConnectionService, Connection } from './FirebaseConnectionService';
+import { ConnectionService, Connection } from './ConnectionService';
 import { db, auth } from '../firebase/config';
 import { 
   collection, 
@@ -33,6 +33,7 @@ class FirebaseTeamService {
   private teamMembers: Map<string, FirebaseTeamMember> = new Map();
   private currentUserId: string | null = null;
   private connectionListeners: (() => void)[] = [];
+  private connectionService: ConnectionService;
 
   static getInstance(): FirebaseTeamService {
     if (!FirebaseTeamService.instance) {
@@ -41,12 +42,48 @@ class FirebaseTeamService {
     return FirebaseTeamService.instance;
   }
 
+  constructor() {
+    this.connectionService = ConnectionService.getInstance();
+  }
+
   /**
    * Initialize the service with current user
    */
-  initialize(userId: string): void {
+  async initialize(userId: string): Promise<void> {
     this.currentUserId = userId;
+    
+    // Load initial connections
+    await this.loadInitialConnections();
+    
+    // Setup real-time listeners
     this.setupConnectionListeners();
+  }
+
+  /**
+   * Load initial connections from ConnectionService
+   */
+  private async loadInitialConnections(): Promise<void> {
+    if (!this.currentUserId) return;
+    
+    try {
+      console.log('🔄 [FirebaseTeam] Loading initial connections for user:', this.currentUserId);
+      
+      const connections = await this.connectionService.getUserConnections(this.currentUserId);
+      console.log('🔄 [FirebaseTeam] Found', connections.length, 'connections');
+      
+      // Clear existing team members
+      this.teamMembers.clear();
+      
+      // Add each connection as a team member
+      for (const connection of connections) {
+        await this.addTeamMemberFromConnection(connection);
+      }
+      
+      console.log('✅ [FirebaseTeam] Loaded', this.teamMembers.size, 'team members');
+      
+    } catch (error) {
+      console.error('❌ [FirebaseTeam] Error loading initial connections:', error);
+    }
   }
 
   /**
@@ -74,77 +111,48 @@ class FirebaseTeamService {
     
     console.log('🔄 [FirebaseTeam] Setting up connection listeners for user:', this.currentUserId);
     
-    // Listen for connections where user is userId1
-    const connections1Listener = onSnapshot(
-      query(
-        collection(db, 'connections'),
-        where('userId1', '==', this.currentUserId)
-      ),
-      (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-          const connection = { id: change.doc.id, ...change.doc.data() } as Connection;
-          
-          if (change.type === 'added' || change.type === 'modified') {
-            this.addTeamMemberFromConnection(connection, 'userId2');
-          } else if (change.type === 'removed') {
-            this.removeTeamMember(connection.userId2);
-          }
-        });
-        
-        console.log('🔄 [FirebaseTeam] Updated connections (as userId1)');
-      },
-      (error) => {
-        console.error('🔄 [FirebaseTeam] Error in connections1 listener:', error);
+    // Use ConnectionService's real-time listener
+    const unsubscribe = this.connectionService.onConnectionsChange(this.currentUserId, async (connections) => {
+      console.log('🔄 [FirebaseTeam] Connections changed, updating team members');
+      
+      // Clear existing team members
+      this.teamMembers.clear();
+      
+      // Add each connection as a team member
+      for (const connection of connections) {
+        await this.addTeamMemberFromConnection(connection);
       }
-    );
+      
+      console.log('✅ [FirebaseTeam] Updated team members:', this.teamMembers.size);
+    });
     
-    // Listen for connections where user is userId2
-    const connections2Listener = onSnapshot(
-      query(
-        collection(db, 'connections'),
-        where('userId2', '==', this.currentUserId)
-      ),
-      (snapshot) => {
-        snapshot.docChanges().forEach(change => {
-          const connection = { id: change.doc.id, ...change.doc.data() } as Connection;
-          
-          if (change.type === 'added' || change.type === 'modified') {
-            this.addTeamMemberFromConnection(connection, 'userId1');
-          } else if (change.type === 'removed') {
-            this.removeTeamMember(connection.userId1);
-          }
-        });
-        
-        console.log('🔄 [FirebaseTeam] Updated connections (as userId2)');
-      },
-      (error) => {
-        console.error('🔄 [FirebaseTeam] Error in connections2 listener:', error);
-      }
-    );
-    
-    // Store listeners for cleanup
-    this.connectionListeners.push(connections1Listener, connections2Listener);
+    // Store listener for cleanup
+    this.connectionListeners.push(unsubscribe);
   }
 
   /**
    * Add a team member from a connection
    */
-  private async addTeamMemberFromConnection(connection: Connection, userIdField: 'userId1' | 'userId2'): Promise<void> {
-    const userId = connection[userIdField];
-    const userName = userIdField === 'userId1' ? connection.user1Name : connection.user2Name;
-    const userPhoto = userIdField === 'userId1' ? connection.user1Photo : connection.user2Photo;
+  private async addTeamMemberFromConnection(connection: Connection): Promise<void> {
+    if (!this.currentUserId) return;
+    
+    // Determine which user is the connected user (not the current user)
+    const isCurrentUserUserId1 = connection.userId1 === this.currentUserId;
+    const connectedUserId = isCurrentUserUserId1 ? connection.userId2 : connection.userId1;
+    const connectedUserName = isCurrentUserUserId1 ? connection.user2Name : connection.user1Name;
+    const connectedUserAvatar = isCurrentUserUserId1 ? connection.user2Avatar : connection.user1Avatar;
     
     try {
       // Get additional user data from Firestore if available
-      const userDoc = await getDoc(doc(db, 'users', userId));
+      const userDoc = await getDoc(doc(db, 'users', connectedUserId));
       const userData = userDoc.exists() ? userDoc.data() : null;
       
       // Create team member object
       const teamMember: FirebaseTeamMember = {
-        id: userId,
-        name: userName || 'Unknown User',
-        email: userData?.email || `${userId}@example.com`,
-        avatar: userPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'User')}&background=6366f1&color=fff`,
+        id: connectedUserId,
+        name: connectedUserName || 'Unknown User',
+        email: userData?.email || `${connectedUserId}@example.com`,
+        avatar: connectedUserAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(connectedUserName || 'User')}&background=6366f1&color=fff`,
         status: userData?.isOnline ? 'online' : 'offline',
         lastSeen: userData?.lastSeen ? (userData.lastSeen as Timestamp).toDate() : new Date(),
         role: userData?.profile?.title || 'Team Member',
@@ -152,7 +160,7 @@ class FirebaseTeamService {
       };
       
       // Add to team members map
-      this.teamMembers.set(userId, teamMember);
+      this.teamMembers.set(connectedUserId, teamMember);
       console.log('👤 [FirebaseTeam] Added team member:', teamMember.name);
       
     } catch (error) {

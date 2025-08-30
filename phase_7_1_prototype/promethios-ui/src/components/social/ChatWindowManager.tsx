@@ -112,7 +112,7 @@ const ChatWindowManager: React.FC<ChatWindowManagerProps> = ({ children }) => {
     console.log('🔓 [ChatWindowManager] Unpinned window:', windowId);
   }, []);
 
-  const handleMinimize = useCallback((windowId: string) => {indow = useCallback((windowId: string) => {
+  const handleMinimize = useCallback((windowId: string) => {
     setChatWindows(prev => {
       const newWindows = new Map(prev);
       const window = newWindows.get(windowId);
@@ -202,7 +202,7 @@ const ChatWindowManager: React.FC<ChatWindowManagerProps> = ({ children }) => {
           size={window.size}
           zIndex={window.zIndex}
           onClose={() => closeChatWindow(window.id)}
-          onMinimize={() => minimizeChatWindow(window.id)}
+          onMinimize={() => handleMinimize(window.id)}
           onMaximize={() => bringToFront(window.id)}
           onPin={() => handlePin(window.id)}
           onUnpin={() => handleUnpin(window.id)}

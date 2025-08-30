@@ -39,14 +39,11 @@ export interface TeamConversation {
   createdBy: string;
 }
 
-import FirebaseTeamService from './FirebaseTeamService';
-
 class HumanChatService {
   private static instance: HumanChatService;
   private conversations: Map<string, TeamConversation> = new Map();
   private teamMembers: Map<string, TeamMember> = new Map();
   private currentUserId: string | null = null;
-  private firebaseTeamService: FirebaseTeamService;
 
   static getInstance(): HumanChatService {
     if (!HumanChatService.instance) {
@@ -56,23 +53,20 @@ class HumanChatService {
   }
 
   constructor() {
-    this.firebaseTeamService = FirebaseTeamService.getInstance();
+    // Service is ready to use
   }
 
   /**
    * Initialize the service with current user
    */
-  initialize(userId: string): void {
+  async initialize(userId: string): Promise<void> {
     this.currentUserId = userId;
-    
-    // Initialize Firebase team service
-    this.firebaseTeamService.initialize(userId);
     
     // Load conversations
     this.loadConversations();
     
-    // Load team members (now from Firebase connections)
-    this.loadTeamMembers();
+    // Load team members (now directly from ConnectionService)
+    await this.loadTeamMembers();
     
     console.log('🔄 [HumanChat] Initialized with user:', userId);
   }
@@ -217,50 +211,60 @@ class HumanChatService {
   }
 
   /**
-   * Load team members from Firebase connections
+   * Load team members from real connections
    */
-  private loadTeamMembers(): void {
+  private async loadTeamMembers(): Promise<void> {
+    if (!this.currentUserId) {
+      console.log('👥 [HumanChat] No current user, using demo members');
+      this.initializeDemoTeamMembers();
+      return;
+    }
+
     try {
-      // First check if we have stored team members
-      const stored = localStorage.getItem('promethios_team_members');
-      if (stored) {
-        const members = JSON.parse(stored);
-        members.forEach((member: any) => {
-          this.teamMembers.set(member.id, {
-            ...member,
-            lastSeen: new Date(member.lastSeen)
-          });
-        });
-      }
+      console.log('👥 [HumanChat] Loading real connections for user:', this.currentUserId);
       
-      // Then get real connected users from Firebase
-      const firebaseTeamMembers = this.firebaseTeamService.getTeamMembers();
+      // Import ConnectionService directly
+      const { ConnectionService } = await import('./ConnectionService');
+      const connectionService = ConnectionService.getInstance();
       
-      if (firebaseTeamMembers.length > 0) {
-        // If we have real connected users, use them instead
+      // Get real user connections
+      const connections = await connectionService.getUserConnections(this.currentUserId);
+      console.log('👥 [HumanChat] Found', connections.length, 'real connections');
+      
+      if (connections.length > 0) {
+        // Clear existing team members
         this.teamMembers.clear();
         
-        firebaseTeamMembers.forEach(member => {
-          this.teamMembers.set(member.id, {
-            id: member.id,
-            name: member.name,
-            email: member.email,
-            avatar: member.avatar,
-            status: member.status,
-            lastSeen: member.lastSeen,
-            role: member.role
-          });
+        // Convert connections to team members
+        connections.forEach(connection => {
+          // Determine which user is the connected user (not the current user)
+          const isCurrentUserUserId1 = connection.userId1 === this.currentUserId;
+          const connectedUserId = isCurrentUserUserId1 ? connection.userId2 : connection.userId1;
+          const connectedUserName = isCurrentUserUserId1 ? connection.user2Name : connection.user1Name;
+          const connectedUserAvatar = isCurrentUserUserId1 ? connection.user2Avatar : connection.user1Avatar;
+          
+          const teamMember: TeamMember = {
+            id: connectedUserId,
+            name: connectedUserName || 'Connected User',
+            email: `${connectedUserId}@promethios.com`, // Placeholder email
+            avatar: connectedUserAvatar,
+            status: 'online', // Default to online, could be enhanced with real status
+            lastSeen: new Date(),
+            role: 'Team Member' // Default role, could be enhanced
+          };
+          
+          this.teamMembers.set(connectedUserId, teamMember);
         });
         
-        console.log('👥 [HumanChat] Loaded team members from Firebase:', firebaseTeamMembers.length);
+        console.log('✅ [HumanChat] Loaded', this.teamMembers.size, 'real team members from connections');
         this.saveTeamMembers();
-      } else if (this.teamMembers.size === 0) {
-        // If no stored members and no Firebase connections, use demo members
-        console.log('👥 [HumanChat] No connected users found, using demo members');
+      } else {
+        console.log('👥 [HumanChat] No real connections found, using demo members');
         this.initializeDemoTeamMembers();
       }
     } catch (error) {
-      console.error('❌ [HumanChat] Error loading team members:', error);
+      console.error('❌ [HumanChat] Error loading real connections:', error);
+      console.log('👥 [HumanChat] Falling back to demo members');
       this.initializeDemoTeamMembers();
     }
   }
