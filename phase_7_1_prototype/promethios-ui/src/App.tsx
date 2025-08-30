@@ -38,6 +38,7 @@ import CMUPlaygroundPage from './pages/CMUPlaygroundPage';
 import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
 import UIIntegration from './UIIntegration';
 import PublicProfileHandler from './components/profile/PublicProfileHandler';
+import ChatWindowManager from './components/social/ChatWindowManager';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -95,10 +96,11 @@ const AppContent: React.FC = () => {
   }
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900 text-white">
-      {/* Only show NewHeader for non-UI routes */}
-      {!isUIRoute && <NewHeader />}
-      <div className={`flex-grow bg-gray-900 ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
+    <ChatWindowManager>
+      <div className="min-h-screen flex flex-col bg-gray-900 text-white">
+        {/* Only show NewHeader for non-UI routes */}
+        {!isUIRoute && <NewHeader />}
+        <div className={`flex-grow bg-gray-900 ${!isUIRoute ? 'pt-16' : ''}`}> {/* Add padding only for non-UI routes */}
                 <Routes>
                   <Route path="/" element={<NewLandingPage />} />
                   <Route path="/signup" element={<LoginWaitlistPage />} />
@@ -155,11 +157,12 @@ const AppContent: React.FC = () => {
                   {/* Catch-all route */}
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+        </div>
+        {/* Only show Footer for non-UI routes */}
+        {!isUIRoute && <Footer />}
+        {/* <FeedbackWidget /> */}
       </div>
-      {/* Only show Footer for non-UI routes */}
-      {!isUIRoute && <Footer />}
-      {/* <FeedbackWidget /> */}
-    </div>
+    </ChatWindowManager>
   );
 };
 

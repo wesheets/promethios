@@ -148,7 +148,7 @@ const UserConnectionsModal: React.FC<UserConnectionsModalProps> = ({
 
   const handleMessage = async (connectionUserId: string) => {
     try {
-      console.log('💬 Starting message with user:', connectionUserId);
+      console.log('💬 [UserConnectionsModal] Starting message with user:', connectionUserId);
       
       // Find the connection to get user details
       const connection = connections.find(conn => conn.userId === connectionUserId);
@@ -157,14 +157,23 @@ const UserConnectionsModal: React.FC<UserConnectionsModalProps> = ({
         return;
       }
 
-      // Open chat with this user
-      await openChat(connectionUserId, connection.userName);
-      console.log('✅ Chat opened with:', connection.userName);
-      
-      // Close the connections modal
-      onClose();
+      // Use floating chat system
+      if ((window as any).openFloatingChat) {
+        (window as any).openFloatingChat({
+          participantId: connectionUserId,
+          participantName: connection.userName,
+          participantAvatar: connection.avatar,
+        });
+        
+        console.log('✅ [UserConnectionsModal] Opened floating chat for:', connection.userName);
+        
+        // Close the connections modal
+        onClose();
+      } else {
+        console.error('❌ [UserConnectionsModal] openFloatingChat not available');
+      }
     } catch (error) {
-      console.error('❌ Failed to start message:', error);
+      console.error('❌ [UserConnectionsModal] Error starting message:', error);
     }
   };
 
