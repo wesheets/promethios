@@ -71,9 +71,30 @@ const emailTemplates = {
             </div>
             
             <div style="background: #fff8e1; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #ffcc02;">
-              <h4 style="color: #f57c00; margin: 0 0 10px 0; font-size: 16px;">⏰ What's Next?</h4>
+              <h4 style="color: #f57c00; margin: 0 0 10px 0; font-size: 16px;">🔑 Your Login Credentials</h4>
+              <p style="color: #666; line-height: 1.6; margin: 0 0 15px 0;">
+                Your account has been created! You can sign in immediately while we review your application:
+              </p>
+              <div style="background: white; padding: 15px; border-radius: 6px; font-family: monospace; border: 1px solid #ddd;">
+                <p style="margin: 0 0 8px 0; color: #333;"><strong>Email:</strong> ${userData.email}</p>
+                <p style="margin: 0; color: #333;"><strong>Password:</strong> ${userData.tempPassword || '[Contact support for password]'}</p>
+              </div>
+              <p style="color: #666; line-height: 1.6; margin: 15px 0 0 0; font-size: 14px;">
+                <strong>Important:</strong> Please change your password after your first login for security.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="https://spark.promethios.ai/login" 
+                 style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                Sign In to Spark
+              </a>
+            </div>
+            
+            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #4caf50;">
+              <h4 style="color: #2e7d32; margin: 0 0 10px 0; font-size: 16px;">⏰ What's Next?</h4>
               <p style="color: #666; line-height: 1.6; margin: 0;">
-                Our team will review your application within <strong>2-3 business days</strong>. You'll receive an email once your access is approved, and you can start collaborating with governed AI agents immediately.
+                Our team will review your application within <strong>2-3 business days</strong>. You can sign in now to explore the platform, but full access will be granted once approved.
               </p>
             </div>
             

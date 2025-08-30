@@ -367,13 +367,13 @@ const LoginWaitlistPage: React.FC = () => {
       
       console.log('📝 Creating account with data:', { ...signupData, password: '[HIDDEN]' });
       
-      // Try Google OAuth first (most users prefer this)
-      const result = await betaSignupService.signupWithGoogle(signupData);
+      // Use simplified signup (regular user with approval gating)
+      const result = await betaSignupService.signupForBetaAccess(signupData);
       
       if (result.success) {
         console.log('✅ Spark beta signup successful!');
         setSubmitted(true);
-        setSubmitMessage('Account created successfully! You can now sign in and will see your approval status.');
+        setSubmitMessage('Account created successfully! Check your email for confirmation and login instructions.');
       } else {
         console.error('❌ Spark beta signup failed:', result.error);
         setWaitlistError(result.error || 'Failed to create account. Please try again.');

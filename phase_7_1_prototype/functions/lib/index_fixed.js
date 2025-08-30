@@ -45,11 +45,12 @@ const admin = __importStar(require("firebase-admin"));
 const resend_1 = require("resend");
 // Initialize Firebase Admin
 admin.initializeApp();
-// Initialize Resend with API key from environment
-const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
-// Email configuration
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@spark.com'; // Update with your verified domain
-const ADMIN_EMAIL = 'wesheets@gmail.com';
+// Initialize Resend with API key from Firebase config
+const resend = new resend_1.Resend(functions.config().resend.api_key);
+// Email configuration from Firebase config
+const FROM_EMAIL = functions.config().email.from || 'noreply@spark.com';
+const ADMIN_EMAIL = functions.config().email.admin || 'wesheets@gmail.com';
+const APP_URL = functions.config().app.url || 'https://spark.promethios.ai';
 /**
  * Email Templates
  */
@@ -102,30 +103,9 @@ const emailTemplates = {
             </div>
             
             <div style="background: #fff8e1; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #ffcc02;">
-              <h4 style="color: #f57c00; margin: 0 0 10px 0; font-size: 16px;">🔑 Your Login Credentials</h4>
-              <p style="color: #666; line-height: 1.6; margin: 0 0 15px 0;">
-                Your account has been created! You can sign in immediately while we review your application:
-              </p>
-              <div style="background: white; padding: 15px; border-radius: 6px; font-family: monospace; border: 1px solid #ddd;">
-                <p style="margin: 0 0 8px 0; color: #333;"><strong>Email:</strong> ${userData.email}</p>
-                <p style="margin: 0; color: #333;"><strong>Password:</strong> ${userData.tempPassword || '[Contact support for password]'}</p>
-              </div>
-              <p style="color: #666; line-height: 1.6; margin: 15px 0 0 0; font-size: 14px;">
-                <strong>Important:</strong> Please change your password after your first login for security.
-              </p>
-            </div>
-            
-            <div style="text-align: center; margin: 25px 0;">
-              <a href="https://spark.promethios.ai/login" 
-                 style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                Sign In to Spark
-              </a>
-            </div>
-            
-            <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 25px 0; border: 1px solid #4caf50;">
-              <h4 style="color: #2e7d32; margin: 0 0 10px 0; font-size: 16px;">⏰ What's Next?</h4>
+              <h4 style="color: #f57c00; margin: 0 0 10px 0; font-size: 16px;">⏰ What's Next?</h4>
               <p style="color: #666; line-height: 1.6; margin: 0;">
-                Our team will review your application within <strong>2-3 business days</strong>. You can sign in now to explore the platform, but full access will be granted once approved.
+                Our team will review your application within <strong>2-3 business days</strong>. You'll receive an email once your access is approved, and you can start collaborating with governed AI agents immediately.
               </p>
             </div>
             
@@ -191,7 +171,7 @@ const emailTemplates = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://spark.promethios.ai/login" 
+            <a href="${APP_URL}/login" 
                style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
               Access Spark Platform
             </a>
@@ -298,7 +278,7 @@ const emailTemplates = {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://spark.promethios.ai/ui/admin/beta-signups" 
+            <a href="${APP_URL}/ui/admin/beta-signups" 
                style="background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-right: 10px;">
               Review in Admin Panel
             </a>
@@ -388,67 +368,58 @@ exports.onNewUserSignup = functions.firestore
     const userData = snapshot.data();
     // Only send notification for pending signups
     if (userData.approvalStatus !== 'pending') {
-        console.log('👀 New user created but not pending approval');
+        console.log('👀 Skipping email for non-pending signup:', userData.approvalStatus);
         return;
     }
-    console.log(`🆕 New beta signup: ${userData.email}`);
+    console.log('🆕 New user signup detected:', userData.email);
     try {
         // Send confirmation email to user
         await sendEmail(userData.email, emailTemplates.signupConfirmation.subject, emailTemplates.signupConfirmation.html(userData));
-        console.log('✅ Signup confirmation sent to user:', userData.email);
+        console.log('✅ Signup confirmation email sent to:', userData.email);
         // Send notification email to admin
         await sendEmail(ADMIN_EMAIL, emailTemplates.adminNotification.subject, emailTemplates.adminNotification.html(userData));
-        console.log('✅ Admin notification sent for new signup:', userData.email);
+        console.log('✅ Admin notification email sent to:', ADMIN_EMAIL);
     }
     catch (error) {
         console.error('❌ Error sending signup emails:', error);
     }
 });
 /**
- * HTTP function: Test email sending (for debugging)
+ * Test email function for debugging
  */
 exports.testEmail = functions.https.onRequest(async (req, res) => {
     try {
-        const { to, type = 'approval' } = req.query;
-        if (!to) {
-            res.status(400).json({ error: 'Missing "to" parameter' });
-            return;
-        }
-        let subject;
-        let html;
-        switch (type) {
-            case 'approval':
-                subject = emailTemplates.approval.subject;
-                html = emailTemplates.approval.html('Test User', to);
-                break;
-            case 'rejection':
-                subject = emailTemplates.rejection.subject;
-                html = emailTemplates.rejection.html('Test User', to, 'This is a test rejection');
-                break;
-            default:
-                res.status(400).json({ error: 'Invalid email type' });
-                return;
-        }
-        await sendEmail(to, subject, html);
+        const testData = {
+            name: 'Test User',
+            email: 'test@example.com',
+            displayName: 'Test User'
+        };
+        await sendEmail(ADMIN_EMAIL, 'Test Email from Spark Functions', emailTemplates.signupConfirmation.html(testData));
         res.json({
             success: true,
-            message: `Test ${type} email sent to ${to}`
+            message: 'Test email sent successfully',
+            config: {
+                fromEmail: FROM_EMAIL,
+                adminEmail: ADMIN_EMAIL,
+                appUrl: APP_URL
+            }
         });
     }
     catch (error) {
-        console.error('❌ Test email error:', error);
+        console.error('❌ Test email failed:', error);
         res.status(500).json({
-            error: 'Failed to send test email',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            success: false,
+            error: error.message
         });
     }
 });
 /**
- * HTTP function: Get signup statistics (for admin dashboard)
+ * Get signup statistics
  */
 exports.getSignupStats = functions.https.onRequest(async (req, res) => {
     try {
-        const usersRef = admin.firestore().collection('userProfiles');
+        const db = admin.firestore();
+        const usersRef = db.collection('userProfiles');
         const [pendingSnapshot, approvedSnapshot, rejectedSnapshot] = await Promise.all([
             usersRef.where('approvalStatus', '==', 'pending').get(),
             usersRef.where('approvalStatus', '==', 'approved').get(),
@@ -464,7 +435,7 @@ exports.getSignupStats = functions.https.onRequest(async (req, res) => {
     }
     catch (error) {
         console.error('❌ Error getting signup stats:', error);
-        res.status(500).json({ error: 'Failed to get signup statistics' });
+        res.status(500).json({ error: error.message });
     }
 });
-//# sourceMappingURL=index.js.map
+//# sourceMappingURL=index_fixed.js.map

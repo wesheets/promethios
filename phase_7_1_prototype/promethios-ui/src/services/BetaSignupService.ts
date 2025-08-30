@@ -102,6 +102,100 @@ export class BetaSignupService {
   }
   
   /**
+   * Simplified beta signup: Create regular user with temporary password and approval gating
+   */
+  async signupForBetaAccess(signupData: Omit<BetaSignupData, 'password'>): Promise<BetaSignupResult> {
+    try {
+      console.log('🚀 [BetaSignup] Starting simplified beta signup for:', signupData.email);
+      
+      // Generate a secure temporary password
+      const tempPassword = this.generateTempPassword();
+      
+      // Create Firebase Auth account with temporary password
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        signupData.email, 
+        tempPassword
+      );
+      
+      const user = userCredential.user;
+      console.log('✅ [BetaSignup] Firebase Auth account created:', user.uid);
+      
+      // Update display name if provided
+      if (signupData.name) {
+        await updateProfile(user, { displayName: signupData.name });
+      }
+      
+      // Create regular user profile with approval gating
+      const fullSignupData: BetaSignupData = {
+        ...signupData,
+        password: tempPassword // Store for potential future use
+      };
+      
+      const profile = await this.createPendingProfile(user, fullSignupData);
+      
+      console.log('✅ [BetaSignup] Regular user profile created with pending approval');
+      
+      return {
+        success: true,
+        user,
+        profile,
+        needsEmailVerification: !user.emailVerified
+      };
+      
+    } catch (error: any) {
+      console.error('❌ [BetaSignup] Simplified beta signup failed:', error);
+      return {
+        success: false,
+        error: this.getErrorMessage(error)
+      };
+    }
+  }
+
+  /**
+   * Generate a secure temporary password for beta users
+   */
+  private generateTempPassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 16; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
+
+  /**
+   * Sign up user with email-only (no password), creating account with pending approval
+   * This is the simplified beta signup flow that doesn't require authentication
+   */
+  async signupEmailOnly(signupData: Omit<BetaSignupData, 'password'>): Promise<BetaSignupResult> {
+    try {
+      console.log('📧 [BetaSignup] Starting email-only beta signup for:', signupData.email);
+      
+      // Generate a temporary user ID for the beta signup
+      const tempUserId = `beta_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create beta profile directly in Firestore without Firebase Auth
+      const profile = await this.createBetaProfile(tempUserId, signupData);
+      
+      console.log('✅ [BetaSignup] Beta profile created with pending approval');
+      
+      return {
+        success: true,
+        profile,
+        needsEmailVerification: false
+      };
+      
+    } catch (error: any) {
+      console.error('❌ [BetaSignup] Email-only beta signup failed:', error);
+      return {
+        success: false,
+        error: this.getErrorMessage(error)
+      };
+    }
+  }
+
+  /**
    * Sign up user with Google OAuth, creating account with pending approval
    */
   async signupWithGoogle(signupData: Omit<BetaSignupData, 'email' | 'password'>): Promise<BetaSignupResult> {
@@ -200,7 +294,10 @@ export class BetaSignupService {
       // Email tracking
       approvalEmailSent: false,
       welcomeEmailSent: false,
-      rejectionEmailSent: false
+      rejectionEmailSent: false,
+      
+      // Temporary password for beta users (will be sent in confirmation email)
+      tempPassword: signupData.password
     };
     
     // Save to Firestore
@@ -211,6 +308,74 @@ export class BetaSignupService {
     await this.logSignupEvent(user.uid, signupData);
     
     console.log('✅ [BetaSignup] Profile saved to Firestore with pending status and profile URL');
+    
+    return profile;
+  }
+  
+  /**
+   * Create a beta user profile in Firestore (email-only signup)
+   */
+  private async createBetaProfile(userId: string, signupData: Omit<BetaSignupData, 'password'>): Promise<UserProfile> {
+    const now = new Date().toISOString();
+    
+    // Generate unique profile URL
+    const displayName = signupData.name || '';
+    const email = signupData.email;
+    const profileURL = await ProfileURLService.generateUniqueURL(displayName, email, userId);
+    
+    console.log(`🔗 [BetaSignup] Generated profile URL: ${profileURL}`);
+    
+    const profile: UserProfile = {
+      id: userId,
+      email: email,
+      name: signupData.name,
+      displayName: signupData.name,
+      profileURL, // Auto-generated unique profile URL
+      
+      // Beta signup data
+      role: signupData.role,
+      organization: signupData.organization,
+      whyAccess: signupData.whyAccess,
+      currentAiTools: signupData.currentAiTools,
+      socialProfile: signupData.socialProfile,
+      onboardingCall: signupData.onboardingCall,
+      
+      // Approval system
+      approvalStatus: 'pending',
+      signupSource: signupData.signupSource,
+      signupAt: now,
+      invitedBy: signupData.invitedBy,
+      
+      // Basic profile setup
+      isPublic: false,
+      emailVerified: false, // Email-only signup, no verification yet
+      createdAt: now,
+      updatedAt: now,
+      
+      // Default values
+      title: this.getDefaultTitle(signupData.role),
+      bio: `Interested in AI collaboration with Spark. ${signupData.whyAccess}`,
+      industry: 'Technology',
+      
+      // Email tracking
+      approvalEmailSent: false,
+      welcomeEmailSent: false,
+      rejectionEmailSent: false,
+      
+      // Beta-specific fields
+      isBetaUser: true,
+      betaSignupCompleted: true,
+      authMethod: 'email-only'
+    };
+    
+    // Save to Firestore
+    const userDocRef = doc(db, 'userProfiles', userId);
+    await setDoc(userDocRef, profile);
+    
+    // Also log the signup for admin tracking
+    await this.logSignupEvent(userId, signupData);
+    
+    console.log('✅ [BetaSignup] Beta profile saved to Firestore with pending status');
     
     return profile;
   }
