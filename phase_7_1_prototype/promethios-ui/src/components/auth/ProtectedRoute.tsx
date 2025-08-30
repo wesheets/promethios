@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { checkOnboardingStatus } from '../../firebase/userService';
+import ApprovalGateScreen from './ApprovalGateScreen';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,7 +20,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireOnboarding = true
 }) => {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, approvalStatus, userProfile } = useAuth();
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
@@ -114,6 +115,47 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (!currentUser) {
     console.log("ProtectedRoute Debug: User not authenticated, redirecting to /login");
     return <Navigate to="/login" replace />;
+  }
+
+  // Check approval status for authenticated users
+  if (currentUser && userProfile) {
+    // Show approval gate for pending users
+    if (approvalStatus === 'pending') {
+      console.log("ProtectedRoute Debug: User has pending approval status, showing approval gate");
+      return <ApprovalGateScreen />;
+    }
+    
+    // Show rejection message for rejected users
+    if (approvalStatus === 'rejected') {
+      console.log("ProtectedRoute Debug: User has been rejected, showing rejection message");
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-900">
+          <div className="max-w-md mx-auto text-center p-8 bg-gray-800 rounded-lg border border-red-500">
+            <div className="text-red-500 text-6xl mb-4">❌</div>
+            <h2 className="text-2xl font-bold text-white mb-4">Access Denied</h2>
+            <p className="text-gray-300 mb-4">
+              Your application for Spark beta access has been reviewed and unfortunately was not approved at this time.
+            </p>
+            {userProfile.adminNotes && (
+              <div className="bg-gray-700 p-4 rounded mb-4">
+                <p className="text-sm text-gray-300">
+                  <strong>Admin Notes:</strong> {userProfile.adminNotes}
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-gray-400">
+              You may reapply in the future when additional beta slots become available.
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // If user is authenticated but no profile exists, redirect to signup
+  if (currentUser && !userProfile && !loading) {
+    console.log("ProtectedRoute Debug: User authenticated but no profile exists, redirecting to signup");
+    return <Navigate to="/signup" replace />;
   }
 
   // Redirect to onboarding if required and not completed (including null state for new users)

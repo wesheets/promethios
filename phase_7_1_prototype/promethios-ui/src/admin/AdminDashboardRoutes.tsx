@@ -4,6 +4,7 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 import AgentManagementRoutes from './AgentManagementRoutes';
 import DualVeritasAdminPage from './EmotionalVeritasAdminPage';
 import AgentsManagementDashboard from './AgentsManagementDashboard';
+import AdminBetaSignupsPage from '../pages/AdminBetaSignupsPage';
 
 /**
  * AdminDashboardRoutes Component
@@ -21,6 +22,9 @@ const AdminDashboardRoutes: React.FC = () => {
       
       {/* Analytics Dashboard */}
       <Route path="/analytics" element={<AnalyticsDashboard />} />
+      
+      {/* Beta Signups Management */}
+      <Route path="/beta-signups" element={<AdminBetaSignupsPage />} />
       
       {/* Agent Management Routes - uses nested routing */}
       <Route path="/agents/*" element={<AgentManagementRoutes />} />

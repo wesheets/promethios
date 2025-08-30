@@ -2,7 +2,7 @@ import { useAuth } from '../context/AuthContext';
 
 // List of admin email addresses
 const ADMIN_EMAILS = [
-  'wesheets@hotmail.com',
+  'wesheets@gmail.com',
   'admin@promethios.com',
   // Add more admin emails as needed
 ];

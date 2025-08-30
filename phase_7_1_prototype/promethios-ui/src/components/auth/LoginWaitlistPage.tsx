@@ -8,6 +8,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../../firebase/config';
 import { addToWaitlistRobust, testFirestoreConnection, debugFirestoreAccess } from '../../firebase/robustWaitlistService';
 import { checkUserInvitation } from '../../firebase/invitationService';
+import { betaSignupService, BetaSignupData } from '../../services/BetaSignupService';
 import '../../styles/animated-background.css';
 import '../../styles/video-background.css';
 
@@ -26,22 +27,19 @@ const LoginWaitlistPage: React.FC = () => {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetPasswordSuccess, setResetPasswordSuccess] = useState(false);
   
-  // Enhanced state for waitlist form with 2-step flow
+  // Enhanced state for beta signup form with 2-step flow
   const [currentStep, setCurrentStep] = useState(1);
   const [step1Data, setStep1Data] = useState({
     email: '',
+    name: '',
     role: '',
-    aiConcern: ''
+    organization: ''
   });
   const [step2Data, setStep2Data] = useState({
     whyAccess: '',
-    organization: '',
-    deploymentUrgency: '',
-    socialProfile: '',
-    onboardingCall: false,
     currentAiTools: '',
-    biggestAiFailure: '',
-    additionalConcerns: ''
+    socialProfile: '',
+    onboardingCall: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
@@ -326,7 +324,7 @@ const LoginWaitlistPage: React.FC = () => {
     setWaitlistError('');
     
     // Validate step 1 fields
-    if (!step1Data.email || !step1Data.role || !step1Data.aiConcern) {
+    if (!step1Data.email || !step1Data.name || !step1Data.role || !step1Data.organization) {
       setWaitlistError('Please fill in all required fields.');
       return;
     }
@@ -345,46 +343,44 @@ const LoginWaitlistPage: React.FC = () => {
     setWaitlistError('');
     
     try {
-      console.log('🚀 Starting waitlist submission...');
+      console.log('🚀 Starting Spark beta signup...');
       
-      // Show connection status
-      if (connectionStatus === 'failed') {
-        setWaitlistError('Database connection failed. Please try again or contact support.');
+      // Validate step 2 required fields
+      if (!step2Data.whyAccess.trim()) {
+        setWaitlistError('Please tell us why you want access to Spark.');
         setIsSubmitting(false);
         return;
       }
       
       // Combine step 1 and step 2 data
-      const completeData = {
-        ...step1Data,
-        ...step2Data
+      const signupData: BetaSignupData = {
+        email: step1Data.email,
+        name: step1Data.name,
+        role: step1Data.role,
+        organization: step1Data.organization,
+        whyAccess: step2Data.whyAccess,
+        currentAiTools: step2Data.currentAiTools || undefined,
+        socialProfile: step2Data.socialProfile || undefined,
+        onboardingCall: step2Data.onboardingCall,
+        signupSource: 'waitlist'
       };
       
-      console.log('📝 Submitting data:', completeData);
+      console.log('📝 Creating account with data:', { ...signupData, password: '[HIDDEN]' });
       
-      const result = await addToWaitlistRobust(completeData);
+      // Try Google OAuth first (most users prefer this)
+      const result = await betaSignupService.signupWithGoogle(signupData);
       
       if (result.success) {
-        console.log('✅ Waitlist submission successful! ID:', result.id);
+        console.log('✅ Spark beta signup successful!');
         setSubmitted(true);
-      } else if (result.exists) {
-        console.log('⚠️ Email already in waitlist:', step1Data.email);
-        setWaitlistError('This email is already registered in our waitlist.');
+        setSubmitMessage('Account created successfully! You can now sign in and will see your approval status.');
       } else {
-        console.error('❌ Waitlist submission failed:', result.error);
-        setWaitlistError(result.error || 'Failed to join waitlist. Please try again later.');
-        
-        // Show debug info if available
-        if (result.error?.includes('permission') || result.error?.includes('rules')) {
-          setDebugInfo(`Database Error: ${result.error}. This may be a Firestore security rules issue.`);
-          setShowDebugInfo(true);
-        }
+        console.error('❌ Spark beta signup failed:', result.error);
+        setWaitlistError(result.error || 'Failed to create account. Please try again.');
       }
     } catch (error: any) {
-      console.error('❌ Waitlist submission error:', error);
+      console.error('❌ Spark beta signup error:', error);
       setWaitlistError('An unexpected error occurred. Please try again.');
-      setDebugInfo(`Unexpected error: ${error.message}`);
-      setShowDebugInfo(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -669,6 +665,25 @@ const LoginWaitlistPage: React.FC = () => {
                 </div>
 
                 <div>
+                  <label htmlFor="full-name" className="block text-sm font-medium">
+                    Full name
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="full-name"
+                      name="name"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      value={step1Data.name}
+                      onChange={(e) => updateStep1Data('name', e.target.value)}
+                      placeholder="Your full name"
+                      className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
+                    />
+                  </div>
+                </div>
+
+                <div>
                   <label htmlFor="role" className="block text-sm font-medium">
                     I am a...
                   </label>
@@ -682,41 +697,35 @@ const LoginWaitlistPage: React.FC = () => {
                       className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                     >
                       <option value="">Select your role</option>
-                      <option value="enterprise-cto">Enterprise CTO</option>
-                      <option value="security-engineer">Security Engineer</option>
-                      <option value="ai-researcher">AI Researcher</option>
-                      <option value="product-founder">Product Founder</option>
-                      <option value="vc-investor">VC / Investor</option>
-                      <option value="parent-concerned">Parent (concerned)</option>
-                      <option value="journalist">Journalist</option>
-                      <option value="student">Student</option>
-                      <option value="other">Other</option>
+                      <option value="Developer">Developer</option>
+                      <option value="Data Scientist">Data Scientist</option>
+                      <option value="Product Manager">Product Manager</option>
+                      <option value="Business Analyst">Business Analyst</option>
+                      <option value="Researcher">Researcher</option>
+                      <option value="Consultant">Consultant</option>
+                      <option value="Executive">Executive</option>
+                      <option value="Student">Student</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="ai-concern" className="block text-sm font-medium">
-                    What are you most concerned about with AI today?
+                  <label htmlFor="organization" className="block text-sm font-medium">
+                    Company or Organization
                   </label>
                   <div className="mt-1">
-                    <select
-                      id="ai-concern"
-                      name="aiConcern"
+                    <input
+                      id="organization"
+                      name="organization"
+                      type="text"
+                      autoComplete="organization"
                       required
-                      value={step1Data.aiConcern}
-                      onChange={(e) => updateStep1Data('aiConcern', e.target.value)}
+                      value={step1Data.organization}
+                      onChange={(e) => updateStep1Data('organization', e.target.value)}
+                      placeholder="Your company or organization"
                       className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                    >
-                      <option value="">Select your primary concern</option>
-                      <option value="hallucinations">Hallucinations</option>
-                      <option value="security-breaches">Security breaches</option>
-                      <option value="misinformation">Misinformation</option>
-                      <option value="compliance">Compliance (GDPR, HIPAA)</option>
-                      <option value="kids-unsupervised">My kids using AI unsupervised</option>
-                      <option value="black-box-decisions">Black-box decisions</option>
-                      <option value="other">Other</option>
-                    </select>
+                    />
                   </div>
                 </div>
 
@@ -746,9 +755,9 @@ const LoginWaitlistPage: React.FC = () => {
                   <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 mb-3">
                     Step 2 of 2
                   </div>
-                  <h3 className="text-lg font-medium mb-2">Complete Your Application</h3>
+                  <h3 className="text-lg font-medium mb-2">Tell Us More</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    To help us prioritize access and match you with the right governance approach, we'd love a bit more context.
+                    Help us understand your interest in Spark and how we can best support you.
                   </p>
                 </div>
                 
@@ -765,62 +774,42 @@ const LoginWaitlistPage: React.FC = () => {
                   
                   <div>
                     <label htmlFor="why-access" className="block text-sm font-medium">
-                      Why do you want access?
+                      Why do you want access to Spark? <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1">
                       <textarea
                         id="why-access"
                         name="whyAccess"
                         rows={3}
+                        required
                         value={step2Data.whyAccess}
                         onChange={(e) => updateStep2Data('whyAccess', e.target.value)}
-                        placeholder="What problem are you trying to solve with Promethios?"
+                        placeholder="What problem are you trying to solve with Spark? What interests you about AI collaboration?"
                         className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="organization" className="block text-sm font-medium">
-                      Organization or Affiliation
+                    <label htmlFor="current-ai-tools" className="block text-sm font-medium">
+                      What AI tools do you currently use? (Optional)
                     </label>
                     <div className="mt-1">
                       <input
-                        id="organization"
-                        name="organization"
+                        id="current-ai-tools"
+                        name="currentAiTools"
                         type="text"
-                        value={step2Data.organization}
-                        onChange={(e) => updateStep2Data('organization', e.target.value)}
-                        placeholder="Company, university, lab, or independent"
+                        value={step2Data.currentAiTools}
+                        onChange={(e) => updateStep2Data('currentAiTools', e.target.value)}
+                        placeholder="e.g., ChatGPT, Claude, GitHub Copilot, etc."
                         className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                       />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="deployment-urgency" className="block text-sm font-medium">
-                      How soon would you deploy this?
-                    </label>
-                    <div className="mt-1">
-                      <select
-                        id="deployment-urgency"
-                        name="deploymentUrgency"
-                        value={step2Data.deploymentUrgency}
-                        onChange={(e) => updateStep2Data('deploymentUrgency', e.target.value)}
-                        className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
-                      >
-                        <option value="">Select timeline</option>
-                        <option value="right-away">Right away (critical need)</option>
-                        <option value="within-30-days">Within 30 days</option>
-                        <option value="just-exploring">Just exploring</option>
-                        <option value="not-sure">Not sure</option>
-                      </select>
                     </div>
                   </div>
 
                   <div>
                     <label htmlFor="social-profile" className="block text-sm font-medium">
-                      Twitter / LinkedIn / Website
+                      LinkedIn / Professional Profile (Optional)
                     </label>
                     <div className="mt-1">
                       <input
@@ -829,7 +818,7 @@ const LoginWaitlistPage: React.FC = () => {
                         type="url"
                         value={step2Data.socialProfile}
                         onChange={(e) => updateStep2Data('socialProfile', e.target.value)}
-                        placeholder="Where can we find your thoughts?"
+                        placeholder="Your LinkedIn or professional website"
                         className={`appearance-none block w-full px-3 py-2 border ${isDarkMode ? 'border-gray-700 bg-gray-700 text-white' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm`}
                       />
                     </div>
@@ -845,7 +834,7 @@ const LoginWaitlistPage: React.FC = () => {
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                     />
                     <label htmlFor="onboarding-call" className="ml-2 block text-sm">
-                      Would you be open to a brief onboarding call if selected?
+                      I'd be interested in a brief onboarding call if approved
                     </label>
                   </div>
 
@@ -862,7 +851,7 @@ const LoginWaitlistPage: React.FC = () => {
                       disabled={isSubmitting}
                       className="flex-1 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
                     >
-                      {isSubmitting ? 'Submitting...' : 'Complete Application'}
+                      {isSubmitting ? 'Creating Account...' : 'Create Spark Account'}
                     </button>
                   </div>
                 </form>

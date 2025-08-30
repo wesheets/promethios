@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   User,
   onAuthStateChanged,
@@ -10,13 +10,16 @@ import {
   createUserWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
-import { Firestore } from 'firebase/firestore';
+import { Firestore, doc, getDoc } from 'firebase/firestore';
 
 import app, { auth, googleProvider, db } from '../firebase/config';
+import { UserProfile, ApprovalStatus } from '../types/profile';
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
+  approvalStatus: ApprovalStatus | null;
+  userProfile: UserProfile | null;
   db: Firestore | null; // Add db to the context type
   loginWithEmail: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<any>;
@@ -28,6 +31,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   loading: true,
+  approvalStatus: null,
+  userProfile: null,
   db: null, // Initialize db as null
   loginWithEmail: async () => {},
   loginWithGoogle: async () => {},
@@ -47,30 +52,68 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [dbInstance, setDbInstance] = useState<Firestore | null>(db); // Use db from config directly
   const [authStable, setAuthStable] = useState(false); // Add stability flag
+
+  // Function to check user's profile and approval status
+  const checkUserApprovalStatus = async (user: User) => {
+    try {
+      console.log("AuthContext: Checking approval status for user:", user.email);
+      
+      const userDocRef = doc(db, 'userProfiles', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const profile = userDocSnap.data() as UserProfile;
+        console.log("AuthContext: User profile found, approval status:", profile.approvalStatus);
+        
+        setUserProfile(profile);
+        setApprovalStatus(profile.approvalStatus || 'pending');
+      } else {
+        console.log("AuthContext: No user profile found - user needs to complete signup");
+        setUserProfile(null);
+        setApprovalStatus(null);
+      }
+    } catch (error) {
+      console.error("AuthContext: Error checking approval status:", error);
+      setUserProfile(null);
+      setApprovalStatus(null);
+    }
+  };
 
   useEffect(() => {
     console.log("AuthContext: Setting up auth state listener");
     
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log("AuthContext: Auth state changed. User object:", user);
       
       if (user) {
         console.log("AuthContext: User detected. UID:", user.uid, "Email:", user.email);
+        setCurrentUser(user);
+        
+        // Check user's approval status
+        await checkUserApprovalStatus(user);
+        
         setAuthStable(true); // Mark as stable when user is authenticated
       } else {
         console.log("AuthContext: No user detected (null).");
+        setCurrentUser(null);
+        setUserProfile(null);
+        setApprovalStatus(null);
         // Keep database connection alive even when no user - needed for invitation checks
         // setDbInstance(null); // REMOVED: Don't clear Firestore instance
         setAuthStable(true); // Mark as stable for null state too
       }
-      setCurrentUser(user);
       setLoading(false);
       console.log("AuthContext: currentUser set, loading is now false.");
     }, (error) => {
       console.error("AuthContext: Auth state change error:", error);
       setLoading(false);
+      setCurrentUser(null);
+      setUserProfile(null);
+      setApprovalStatus(null);
       // Keep db connection even on auth errors
       // setDbInstance(null); // REMOVED: Don't clear db on auth errors
     });
@@ -119,13 +162,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = useMemo(() => ({
     currentUser,
     loading,
+    approvalStatus,
+    userProfile,
     db: dbInstance, // Provide the Firestore instance
     loginWithEmail,
     loginWithGoogle,
     signup,
     resetPassword,
     logout,
-  }), [currentUser, loading, dbInstance]);
+  }), [currentUser, loading, approvalStatus, userProfile, dbInstance]);
 
   return (
     <AuthContext.Provider value={value}>

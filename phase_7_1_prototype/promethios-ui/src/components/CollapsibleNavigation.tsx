@@ -165,9 +165,12 @@ const CollapsibleNavigation: React.FC<CollapsibleNavigationProps> = ({
   if (isAdmin) {
     navigationItems.push({
       id: 'admin',
-      label: 'Admin Dashboard',
+      label: 'Admin',
       icon: <AdminIcon />,
-      path: '/ui/admin/dashboard',
+      children: [
+        { id: 'admin-dashboard', label: 'Dashboard', icon: <DashboardIcon />, path: '/ui/admin/dashboard' },
+        { id: 'beta-signups', label: 'Beta Signups', icon: <People />, path: '/ui/admin/beta-signups' },
+      ],
       adminOnly: true,
     });
   }

@@ -49,6 +49,32 @@ export interface UserProfile {
   responseTime?: number;
   collaborations?: number;
   profileURL?: string; // Auto-generated unique URL for public profile
+  
+  // Beta Signup & Approval System
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  signupSource?: 'waitlist' | 'invitation' | 'direct';
+  signupAt?: string;
+  invitedBy?: string; // User ID who invited this user
+  
+  // Beta Signup Form Data
+  role?: string; // From "I am a..." dropdown
+  whyAccess?: string; // Why they want Spark access
+  organization?: string; // Their organization
+  currentAiTools?: string; // Current AI tools they use
+  onboardingCall?: boolean; // Whether they want an onboarding call
+  socialProfile?: string; // LinkedIn or other social profile
+  
+  // Admin Approval Fields
+  approvedBy?: string; // Admin user ID who approved
+  approvedAt?: string; // Timestamp of approval
+  rejectedBy?: string; // Admin user ID who rejected
+  rejectedAt?: string; // Timestamp of rejection
+  adminNotes?: string; // Admin notes about the user
+  
+  // Email Notifications
+  approvalEmailSent?: boolean;
+  welcomeEmailSent?: boolean;
+  rejectionEmailSent?: boolean;
 }
 
 /**
