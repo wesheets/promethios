@@ -12,7 +12,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { NotificationService } from './NotificationService';
+import { notificationService } from './NotificationService';
 
 export interface ConnectionRequest {
   id: string;
@@ -41,10 +41,9 @@ export interface Connection {
 
 export class ConnectionService {
   private static instance: ConnectionService;
-  private notificationService: NotificationService;
 
   private constructor() {
-    this.notificationService = new NotificationService();
+    // Use the singleton instance instead of creating a new one
   }
 
   static getInstance(): ConnectionService {
@@ -341,7 +340,7 @@ export class ConnectionService {
    * Send connection request notification
    */
   private async sendConnectionNotification(requestId: string, request: any): Promise<void> {
-    this.notificationService.addNotification({
+    notificationService.addNotification({
       id: `connection-request-${requestId}`,
       type: 'info',
       title: 'New Connection Request',
@@ -364,7 +363,7 @@ export class ConnectionService {
    * Send acceptance notification
    */
   private async sendAcceptanceNotification(request: ConnectionRequest): Promise<void> {
-    this.notificationService.addNotification({
+    notificationService.addNotification({
       id: `connection-accepted-${request.id}`,
       type: 'success',
       title: 'Connection Accepted',
@@ -385,7 +384,7 @@ export class ConnectionService {
    * Send rejection notification
    */
   private async sendRejectionNotification(request: ConnectionRequest): Promise<void> {
-    this.notificationService.addNotification({
+    notificationService.addNotification({
       id: `connection-rejected-${request.id}`,
       type: 'warning',
       title: 'Connection Request Declined',

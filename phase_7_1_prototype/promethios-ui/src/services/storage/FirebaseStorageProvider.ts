@@ -75,7 +75,7 @@ export class FirebaseStorageProvider implements StorageProvider {
       
       // Cache the failed connection
       FirebaseStorageProvider.connectionStatus = false;
-      FirebaseStorageProvider.lastConnectionTest = now;
+      FirebaseStorageProvider.lastConnectionTest = Date.now();
       
       // Check specific error types
       if (error instanceof Error) {

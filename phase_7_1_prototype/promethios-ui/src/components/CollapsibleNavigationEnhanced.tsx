@@ -472,8 +472,29 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   };
 
   const handleNavigation = (path: string) => {
-    console.log('🔄 Navigating to:', path);
-    navigate(path);
+    console.log('🔄 Navigating via path for:', path);
+    console.log('📍 Current location before navigation:', location.pathname);
+    
+    try {
+      // Attempt React Router navigation first
+      console.log('🚀 Executing React Router navigate() for:', path);
+      navigate(path);
+      
+      // Log success
+      console.log('✅ React Router navigation executed successfully for:', path);
+      
+    } catch (error) {
+      console.error('❌ React Router navigation failed for:', path, 'Error:', error);
+      
+      // Fallback to window.location.href for critical failures
+      console.log('🔄 Falling back to window.location.href for:', path);
+      try {
+        window.location.href = path;
+        console.log('✅ Fallback navigation executed for:', path);
+      } catch (fallbackError) {
+        console.error('❌ Fallback navigation also failed for:', path, 'Error:', fallbackError);
+      }
+    }
   };
 
   const handleConnectionsClick = () => {
@@ -522,7 +543,15 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                     cursor: 'pointer',
                     '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
                   }}
-                  onClick={() => child.path && handleNavigation(child.path)}
+                  onClick={() => {
+                    console.log('🖱️ Child navigation item clicked:', child.label, 'Path:', child.path);
+                    if (child.path) {
+                      console.log('🎯 Executing navigation for child item:', child.label);
+                      handleNavigation(child.path);
+                    } else {
+                      console.warn('⚠️ Child item has no path defined:', child.label);
+                    }
+                  }}
                 >
                   <Box sx={{ mr: 1, display: 'flex' }}>{child.icon}</Box>
                   <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -610,10 +639,17 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           <ListItem disablePadding>
             <ListItemButton
               onClick={() => {
+                console.log('🖱️ Main navigation item clicked:', item.label);
+                console.log('📋 Item details:', { id: item.id, path: item.path, hasOnClick: !!item.onClick });
+                
                 if (item.onClick) {
+                  console.log('🎯 Executing custom onClick for:', item.label);
                   item.onClick();
                 } else if (item.path) {
+                  console.log('🎯 Executing navigation for:', item.label, 'to path:', item.path);
                   handleNavigation(item.path);
+                } else {
+                  console.warn('⚠️ Navigation item has no onClick or path defined:', item.label);
                 }
               }}
               sx={{
@@ -653,12 +689,20 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         <ListItem disablePadding sx={{ pl: level * 2 }}>
           <ListItemButton
             onClick={() => {
+              console.log('🖱️ Expanded navigation item clicked:', item.label);
+              console.log('📋 Item details:', { id: item.id, path: item.path, hasChildren, hasOnClick: !!item.onClick });
+              
               if (hasChildren) {
+                console.log('🔄 Toggling section for:', item.label);
                 handleSectionToggle(item.id);
               } else if (item.onClick) {
+                console.log('🎯 Executing custom onClick for:', item.label);
                 item.onClick();
               } else if (item.path) {
+                console.log('🎯 Executing navigation for:', item.label, 'to path:', item.path);
                 handleNavigation(item.path);
+              } else {
+                console.warn('⚠️ Expanded navigation item has no action defined:', item.label);
               }
             }}
             sx={{
