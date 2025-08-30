@@ -503,6 +503,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const activeSession = currentBotState?.activeSession || null;
   const isWorkspaceMode = currentBotState?.isWorkspaceMode || false;
   
+  // Debug workspace mode
+  console.log(`🔍 [WORKSPACE DEBUG] selectedChatbotId: ${selectedChatbotId}`);
+  console.log(`🔍 [WORKSPACE DEBUG] currentBotState:`, currentBotState);
+  console.log(`🔍 [WORKSPACE DEBUG] isWorkspaceMode: ${isWorkspaceMode}`);
+  
   // Debug logging for chat state
   if (renderCountRef.current <= 5 || renderCountRef.current % 5 === 0) {
     console.log(`🔍 [ChatState] RENDER #${renderCountRef.current} - selectedChatbotId: ${selectedChatbotId}`);
