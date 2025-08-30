@@ -122,8 +122,12 @@ const FirebaseUserProfilePage: React.FC = () => {
     try {
       console.log('🤝 [Connection] Sending connection request to:', userId);
       
-      // Get current user's name from auth context or profile
-      const fromUserName = currentUser.displayName || currentUser.email || 'Anonymous User';
+      // Get current user's profile to get their actual Promethios profile photo
+      const currentUserProfile = await userProfileService.getUserProfile(currentUser.uid);
+      
+      // Get current user's name and avatar from their Promethios profile or auth
+      const fromUserName = currentUserProfile?.name || currentUserProfile?.displayName || currentUser.displayName || currentUser.email || 'Anonymous User';
+      const fromUserAvatar = currentUserProfile?.profilePhoto || currentUserProfile?.avatar || currentUser.photoURL || undefined;
       
       // Get target user's name from profile
       const toUserName = profile.name || profile.displayName || 'Anonymous User';
@@ -133,7 +137,7 @@ const FirebaseUserProfilePage: React.FC = () => {
         userId!,
         fromUserName,
         toUserName,
-        currentUser.photoURL || undefined,
+        fromUserAvatar,
         profile.profilePhoto || profile.avatar || profile.photoURL || undefined,
         `Hi! I'd like to connect with you on Promethios.`
       );

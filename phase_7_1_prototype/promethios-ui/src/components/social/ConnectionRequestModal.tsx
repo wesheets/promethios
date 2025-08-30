@@ -141,6 +141,11 @@ const ConnectionRequestModal: React.FC<ConnectionRequestModalProps> = ({
     }
   };
 
+  const handleViewProfile = () => {
+    // Navigate to the sender's profile page
+    window.open(`/ui/profile/${fromUserId}`, '_blank');
+  };
+
   const safeRender = (value: any): string => {
     if (value === null || value === undefined) return '';
     if (typeof value === 'string') return value;
@@ -224,7 +229,18 @@ const ConnectionRequestModal: React.FC<ConnectionRequestModalProps> = ({
                 >
                   <Avatar 
                     src={profile?.profilePhoto || profile?.avatar || fromUserAvatar} 
-                    sx={{ width: 80, height: 80, fontSize: '2rem' }}
+                    sx={{ 
+                      width: 80, 
+                      height: 80, 
+                      fontSize: '2rem',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8,
+                        transform: 'scale(1.05)',
+                        transition: 'all 0.2s ease-in-out'
+                      }
+                    }}
+                    onClick={() => handleViewProfile()}
                   >
                     {(profile?.name || fromUserName)?.charAt(0) || '?'}
                   </Avatar>
@@ -232,7 +248,18 @@ const ConnectionRequestModal: React.FC<ConnectionRequestModalProps> = ({
                 
                 <Box sx={{ flex: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          color: 'primary.main',
+                          textDecoration: 'underline'
+                        }
+                      }}
+                      onClick={() => handleViewProfile()}
+                    >
                       {safeRender(profile?.name || profile?.displayName || fromUserName)}
                     </Typography>
                     {(profile?.rating || 0) >= 4.5 && (

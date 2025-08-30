@@ -74,7 +74,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   isOpen,
   onClose,
   initialConversationId,
-  currentUserId = 'current-user',
+  currentUserId: propCurrentUserId = 'current-user',
   onStartVideoCall,
   onStartVoiceCall,
   connections = [],
@@ -89,7 +89,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const messageService = MessageService.getInstance();
-  const currentUserId = messageService.getCurrentUserId();
+  const currentUserId = messageService.getCurrentUserId() || propCurrentUserId;
   const currentUserName = messageService.getCurrentUserName();
   const currentUserAvatar = messageService.getCurrentUserAvatar();
 
