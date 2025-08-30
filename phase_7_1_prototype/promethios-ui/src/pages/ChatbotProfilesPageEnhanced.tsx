@@ -391,6 +391,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Human participants state
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showHumanInviteConfirmDialog, setShowHumanInviteConfirmDialog] = useState(false);
+  const [pendingHumanInvites, setPendingHumanInvites] = useState<any[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [selectedTarget, setSelectedTarget] = useState<string>(''); // Current messaging target (human or agent ID)
   const humanParticipantService = HumanParticipantService.getInstance();
@@ -1944,24 +1946,36 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Get team members for guest selector - using real connections instead of stubbed data
   const getTeamMembers = () => {
+    console.log('🔍 [Team Members] Current teamMembers array:', teamMembers);
+    console.log('🔍 [Team Members] teamMembers length:', teamMembers.length);
+    
     // Use real team members from TeamPanel's team data
-    // This should be populated from ConnectionService or actual user connections
-    const realTeamMembers = teamMembers.filter(member => member.type === 'human').map(member => ({
-      id: member.id,
-      name: member.name,
-      type: 'human' as const,
-      role: member.role || 'Team Member',
-      status: member.status || 'offline' as const,
-      avatar: member.avatar || member.name.charAt(0)
-    }));
+    // Filter for humans, but be flexible about the type field
+    const realTeamMembers = teamMembers
+      .filter(member => {
+        // Accept if type is explicitly 'human' OR if type is undefined (assume human)
+        const isHuman = member.type === 'human' || !member.type || member.type === undefined;
+        console.log('🔍 [Team Members] Member:', member.name, 'Type:', member.type, 'IsHuman:', isHuman);
+        return isHuman;
+      })
+      .map(member => ({
+        id: member.id,
+        name: member.name,
+        type: 'human' as const,
+        role: member.role || 'Team Member',
+        status: member.status || 'online' as const, // Default to online for better UX
+        avatar: member.avatar || member.name.charAt(0)
+      }));
 
-    // If no real team members, return empty array instead of stubbed data
+    console.log('🔍 [Team Members] Filtered real team members:', realTeamMembers);
+
+    // Always return the team members, even if empty - let the UI handle empty state
     if (realTeamMembers.length === 0) {
-      console.log('🔍 [Team Members] No real team members found, returning empty array');
-      return [];
+      console.log('🔍 [Team Members] No real team members found, but returning empty array for UI to handle');
+    } else {
+      console.log('✅ [Team Members] Using', realTeamMembers.length, 'real team members');
     }
-
-    console.log('🔍 [Team Members] Using real team members:', realTeamMembers);
+    
     return realTeamMembers;
   };
 
@@ -1993,7 +2007,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     const humanGuests = guests.filter(guest => guest.type === 'human');
     
     if (aiGuests.length > 0) {
-      // Add AI agents to multi-agent context
+      // Add AI agents to multi-agent context immediately (no confirmation needed)
       setMultiChatState(prev => {
         const activeContext = prev.contexts.find(c => c.isActive);
         if (!activeContext) return prev;
@@ -2024,9 +2038,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
     
     if (humanGuests.length > 0) {
-      // Add humans to conversation participants
-      console.log('👥 Adding human guests to conversation:', humanGuests);
-      handleAddHumans(humanGuests);
+      // Show confirmation dialog for human invitations
+      console.log('👥 Requesting confirmation to invite human guests:', humanGuests);
+      setPendingHumanInvites(humanGuests);
+      setShowHumanInviteConfirmDialog(true);
     }
   };
 
@@ -6963,6 +6978,92 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             }}
           >
             Send Invitation
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Human Invitation Confirmation Dialog */}
+      <Dialog
+        open={showHumanInviteConfirmDialog}
+        onClose={() => {
+          setShowHumanInviteConfirmDialog(false);
+          setPendingHumanInvites([]);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e293b',
+            border: '1px solid #334155',
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: '#e2e8f0', borderBottom: '1px solid #334155' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonAdd sx={{ color: '#3b82f6' }} />
+            <Typography variant="h6">Send Chat Invitation?</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Typography variant="body1" sx={{ color: '#e2e8f0', mb: 2 }}>
+            You're about to invite {pendingHumanInvites.length} team member{pendingHumanInvites.length !== 1 ? 's' : ''} to join this conversation:
+          </Typography>
+          
+          {pendingHumanInvites.map((human, index) => (
+            <Box key={human.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+              <Avatar sx={{ bgcolor: '#3b82f6', width: 32, height: 32 }}>
+                {human.name.charAt(0)}
+              </Avatar>
+              <Box>
+                <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 500 }}>
+                  {human.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                  {human.role || 'Team Member'}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+          
+          <Typography variant="body2" sx={{ color: '#94a3b8', mt: 2 }}>
+            They will receive a notification and can choose to accept or decline the invitation.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid #334155' }}>
+          <Button
+            onClick={() => {
+              setShowHumanInviteConfirmDialog(false);
+              setPendingHumanInvites([]);
+            }}
+            sx={{ color: '#94a3b8' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              console.log('📨 Sending invitations to:', pendingHumanInvites);
+              
+              // Send invitations (this would integrate with your notification system)
+              for (const human of pendingHumanInvites) {
+                // TODO: Implement actual notification sending
+                console.log(`📨 Sending invitation to ${human.name} (${human.id})`);
+                
+                // For now, add them directly (in real implementation, wait for acceptance)
+                await handleAddHumans([human]);
+              }
+              
+              setShowHumanInviteConfirmDialog(false);
+              setPendingHumanInvites([]);
+            }}
+            sx={{
+              bgcolor: '#3b82f6',
+              color: 'white',
+              '&:hover': { bgcolor: '#2563eb' }
+            }}
+          >
+            Send Invitation{pendingHumanInvites.length !== 1 ? 's' : ''}
           </Button>
         </DialogActions>
       </Dialog>
