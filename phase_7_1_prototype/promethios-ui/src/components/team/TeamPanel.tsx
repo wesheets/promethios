@@ -54,11 +54,13 @@ interface TeamPanelProps {
   currentUserId?: string;
   onChatReference?: (reference: string) => void;
   onAddGuestAgent?: (agentId: string, agentName: string, agentAvatar?: string) => void;
+  onAddHumanToChat?: (humans: TeamMember[]) => void;
 }
 
 const TeamPanel: React.FC<TeamPanelProps> = ({ 
   onChatReference,
-  onAddGuestAgent
+  onAddGuestAgent,
+  onAddHumanToChat
 }) => {
   // Navigation hook
   const navigate = useNavigate();
@@ -487,12 +489,12 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   // New handler for adding humans to chat
   const handleAddHumanToChat = (humanId: string) => {
     const human = teamMembers.find(m => m.id === humanId);
-    if (human && onAddGuestAgent) {
-      // Add human to chat just like an agent
-      onAddGuestAgent(human.id, human.name, human.avatar);
-      console.log(`👤 [Human] Added human ${human.name} to chat`);
+    if (human && onAddHumanToChat) {
+      // Call the parent's human invitation handler to show confirmation dialog
+      onAddHumanToChat([human]);
+      console.log(`👤 [Human] Requesting invitation for ${human.name}`);
     } else {
-      console.log(`👤 [Human] Human ${humanId} not found for adding to chat`);
+      console.log(`👤 [Human] Human ${humanId} not found or no invitation handler available`);
     }
   };
 

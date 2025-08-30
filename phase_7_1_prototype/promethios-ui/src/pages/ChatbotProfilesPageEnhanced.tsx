@@ -5045,6 +5045,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   <TeamPanel 
                     currentUserId={user?.uid} 
                     onAddGuestAgent={addGuestAgent}
+                    onAddHumanToChat={(humans) => {
+                      setHumansToInvite(humans);
+                      setShowHumanInviteConfirm(true);
+                    }}
                   />
                 )}
                 
