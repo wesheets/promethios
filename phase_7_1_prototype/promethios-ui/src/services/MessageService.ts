@@ -12,8 +12,8 @@ import {
   getDocs,
   limit
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { auth } from '../config/firebase';
+import { db } from '../firebase/config';
+import { auth } from '../firebase/config';
 
 export interface ChatMessage {
   id: string;

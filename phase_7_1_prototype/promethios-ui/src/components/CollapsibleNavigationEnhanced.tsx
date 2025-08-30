@@ -115,8 +115,10 @@ import { styled } from '@mui/material/styles';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserPreferences } from '../hooks/useUserPreferences';
+import { useAuth } from '../context/AuthContext';
 import NotificationBell from './notifications/NotificationBell';
 import ChatButton from './social/ChatButton';
+import UserConnectionsModal from './social/UserConnectionsModal';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
@@ -161,6 +163,7 @@ interface NavigationItem {
   label: string;
   icon: React.ReactNode;
   path?: string;
+  onClick?: () => void;
   children?: NavigationItem[];
   adminOnly?: boolean;
   badge?: number | string;
@@ -177,7 +180,9 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   isAdmin = false,
 }) => {
   const { preferences, updateNavigationState } = useUserPreferences();
+  const { currentUser } = useAuth();
   const [expandedSections, setExpandedSections] = useState<string[]>(['multi-agent-systems']); // Expand MAS by default
+  const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -325,7 +330,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           id: 'connections', 
           label: 'Connections', 
           icon: <ConnectionIcon />, 
-          path: '/ui/social/connections' 
+          onClick: () => handleConnectionsClick()
         },
       ],
     },
@@ -471,6 +476,10 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
     navigate(path);
   };
 
+  const handleConnectionsClick = () => {
+    setConnectionsModalOpen(true);
+  };
+
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
@@ -600,7 +609,13 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         >
           <ListItem disablePadding>
             <ListItemButton
-              onClick={() => item.path && handleNavigation(item.path)}
+              onClick={() => {
+                if (item.onClick) {
+                  item.onClick();
+                } else if (item.path) {
+                  handleNavigation(item.path);
+                }
+              }}
               sx={{
                 minHeight: 48,
                 justifyContent: 'center',
@@ -640,6 +655,8 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
             onClick={() => {
               if (hasChildren) {
                 handleSectionToggle(item.id);
+              } else if (item.onClick) {
+                item.onClick();
               } else if (item.path) {
                 handleNavigation(item.path);
               }
@@ -910,6 +927,16 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         </Box>
       )}
     </DrawerComponent>
+
+    {/* Connections Modal */}
+    {currentUser && (
+      <UserConnectionsModal
+        open={connectionsModalOpen}
+        onClose={() => setConnectionsModalOpen(false)}
+        userId={currentUser.uid}
+        userName={currentUser.displayName || 'User'}
+      />
+    )}
     </ThemeProvider>
   );
 };
