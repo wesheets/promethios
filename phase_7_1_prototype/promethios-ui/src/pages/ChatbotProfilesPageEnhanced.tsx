@@ -1346,9 +1346,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const notifs = await collaborationService.getNotifications();
       setNotifications(notifs);
       
-      // Load team members
-      const members = await humanChatService.getTeamMembers();
+      // Load team members - wait a bit for service to initialize like TeamPanel does
+      await new Promise(resolve => setTimeout(resolve, 500)); // Wait for services to initialize
+      const members = humanChatService.getTeamMembers(); // This is synchronous, not async
       setTeamMembers(members);
+      console.log('✅ [Team] Loaded team members:', members.length);
       
       // Load organizations
       const orgs = await orgService.getUserOrganizations(user?.uid || '');
@@ -1949,22 +1951,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🔍 [Team Members] Current teamMembers array:', teamMembers);
     console.log('🔍 [Team Members] teamMembers length:', teamMembers.length);
     
-    // If no real team members loaded, provide demo data for testing
-    if (teamMembers.length === 0) {
-      console.log('🔍 [Team Members] No real team members found, using demo data');
-      return [
-        {
-          id: 'ted-sheets-demo',
-          name: 'Ted Sheets',
-          type: 'human' as const,
-          role: 'Team Member',
-          avatar: '/api/placeholder/32/32',
-          status: 'online' as const
-        }
-      ];
-    }
-    
-    // Use real team members from TeamPanel's team data
+    // Use real team members from HumanChatService (same as TeamPanel)
     // Filter for humans, but be flexible about the type field
     const realTeamMembers = teamMembers
       .filter(member => {
