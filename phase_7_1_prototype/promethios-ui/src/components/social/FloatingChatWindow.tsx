@@ -9,6 +9,7 @@ import {
   Button,
   Divider,
   Tooltip,
+  CircularProgress,
 } from '@mui/material';
 import {
   Close,
@@ -23,6 +24,8 @@ import {
   PushPinOutlined,
 } from '@mui/icons-material';
 import Draggable from 'react-draggable';
+import { MessageService, ChatMessage } from '../../services/MessageService';
+import { useAuth } from '../../context/AuthContext';
 
 interface FloatingChatWindowProps {
   conversationId: string;
@@ -62,14 +65,85 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
   zIndex = 1000,
 }) => {
   const [messageInput, setMessageInput] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isResizing, setIsResizing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const windowRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { user } = useAuth();
+  const messageService = MessageService.getInstance();
 
   // Calculate pinned position (bottom-right corner)
   const pinnedPosition = { x: window.innerWidth - size.width - 20, y: window.innerHeight - size.height - 20 };
   const currentPosition = isPinned ? pinnedPosition : position;
+
+  // Load messages and set up real-time listener
+  useEffect(() => {
+    if (!conversationId) return;
+
+    console.log('💬 [FloatingChatWindow] Setting up message listener for:', conversationId);
+    setIsLoading(true);
+
+    const unsubscribe = messageService.subscribeToMessages(
+      conversationId,
+      (newMessages) => {
+        console.log('📨 [FloatingChatWindow] Received messages:', newMessages.length);
+        setMessages(newMessages);
+        setIsLoading(false);
+        
+        // Scroll to bottom when new messages arrive
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    );
+
+    return () => {
+      console.log('🔌 [FloatingChatWindow] Cleaning up message listener');
+      unsubscribe();
+    };
+  }, [conversationId, messageService]);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Send message function
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !user || isSending) return;
+
+    try {
+      setIsSending(true);
+      console.log('📤 [FloatingChatWindow] Sending message:', messageInput);
+
+      await messageService.sendMessage(
+        conversationId,
+        user.uid,
+        user.displayName || 'Unknown User',
+        messageInput.trim(),
+        user.photoURL || undefined
+      );
+
+      setMessageInput('');
+      console.log('✅ [FloatingChatWindow] Message sent successfully');
+    } catch (error) {
+      console.error('❌ [FloatingChatWindow] Error sending message:', error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Handle Enter key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
   // Handle window resizing
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -228,7 +302,21 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
             gap: 1,
           }}
         >
-          {messages.length === 0 ? (
+          {isLoading ? (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              height: '100%',
+              flexDirection: 'column',
+              gap: 2
+            }}>
+              <CircularProgress size={24} />
+              <Typography variant="body2" color="text.secondary">
+                Loading messages...
+              </Typography>
+            </Box>
+          ) : messages.length === 0 ? (
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -241,31 +329,50 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
               </Typography>
             </Box>
           ) : (
-            messages.map((message, index) => (
-              <Box
-                key={index}
-                sx={{
-                  alignSelf: message.senderId === participantId ? 'flex-start' : 'flex-end',
-                  maxWidth: '80%',
-                }}
-              >
-                <Paper
+            <>
+              {messages.map((message, index) => (
+                <Box
+                  key={message.id || index}
                   sx={{
-                    p: 1,
-                    backgroundColor: message.senderId === participantId 
-                      ? 'grey.100' 
-                      : 'primary.main',
-                    color: message.senderId === participantId 
-                      ? 'text.primary' 
-                      : 'primary.contrastText',
+                    alignSelf: message.senderId === user?.uid ? 'flex-end' : 'flex-start',
+                    maxWidth: '80%',
+                    mb: 1,
                   }}
                 >
-                  <Typography variant="body2">
-                    {message.content}
-                  </Typography>
-                </Paper>
-              </Box>
-            ))
+                  <Paper
+                    sx={{
+                      p: 1.5,
+                      backgroundColor: message.senderId === user?.uid 
+                        ? 'primary.main' 
+                        : 'grey.100',
+                      color: message.senderId === user?.uid 
+                        ? 'primary.contrastText' 
+                        : 'text.primary',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography variant="body2">
+                      {message.content}
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        opacity: 0.7, 
+                        display: 'block', 
+                        mt: 0.5,
+                        fontSize: '0.7rem'
+                      }}
+                    >
+                      {message.timestamp instanceof Date 
+                        ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'Now'
+                      }
+                    </Typography>
+                  </Paper>
+                </Box>
+              ))}
+              <div ref={messagesEndRef} />
+            </>
           )}
         </Box>
 
@@ -279,38 +386,38 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
               placeholder={`Message ${participantName}...`}
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
+              onKeyPress={handleKeyPress}
+              disabled={isSending}
               variant="outlined"
               size="small"
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  borderRadius: 3,
-                }
+                  borderRadius: 2,
+                },
               }}
             />
-            <Button
-              variant="contained"
+            <IconButton
               onClick={handleSendMessage}
-              disabled={!messageInput.trim()}
+              disabled={!messageInput.trim() || isSending}
+              color="primary"
               sx={{
-                minWidth: 'auto',
-                px: 2,
-                borderRadius: 3,
+                backgroundColor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': {
+                  backgroundColor: 'primary.dark',
+                },
+                '&:disabled': {
+                  backgroundColor: 'grey.300',
+                },
               }}
             >
-              <Send />
-            </Button>
+              {isSending ? <CircularProgress size={20} /> : <Send />}
+            </IconButton>
           </Box>
         </Box>
 
         {/* Resize Handle */}
         <Box
-          ref={resizeRef}
           onMouseDown={handleMouseDown}
           sx={{
             position: 'absolute',
