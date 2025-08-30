@@ -404,6 +404,11 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         currentParticipants={currentParticipants}
         teamMembers={teamMembers}
         aiAgents={aiAgents}
+        onAddHumans={(humans) => {
+          // Forward human invitations to parent component
+          onAddGuests?.(humans);
+          setGuestSelectorOpen(false);
+        }}
       />
     </Box>
   );

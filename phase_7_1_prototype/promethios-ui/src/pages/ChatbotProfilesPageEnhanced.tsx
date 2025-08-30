@@ -5049,7 +5049,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     currentUserId={user?.uid} 
                     onAddGuestAgent={addGuestAgent}
                     onAddHumanToChat={(humans) => {
-                      setHumansToInvite(humans);
+                      setPendingHumanInvites(humans);
                       setShowHumanInviteConfirmDialog(true);
                     }}
                   />
