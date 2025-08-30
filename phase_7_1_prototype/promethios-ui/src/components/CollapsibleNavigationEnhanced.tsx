@@ -475,18 +475,40 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
     console.log('🔄 Navigating via path for:', path);
     console.log('📍 Current location before navigation:', location.pathname);
     
+    const currentPath = location.pathname;
+    
     try {
       // Attempt React Router navigation first
       console.log('🚀 Executing React Router navigate() for:', path);
       navigate(path);
       
-      // Log success
-      console.log('✅ React Router navigation executed successfully for:', path);
+      // Log that navigate() was called (doesn't mean it worked)
+      console.log('✅ React Router navigate() called for:', path);
+      
+      // Check if navigation actually happened after a short delay
+      setTimeout(() => {
+        console.log('🔍 Checking navigation result...');
+        console.log('📍 Current location after navigation attempt:', location.pathname);
+        
+        if (location.pathname === currentPath) {
+          console.warn('⚠️ React Router navigation did not change location! Falling back to window.location.href');
+          console.log('🔄 Falling back to window.location.href for:', path);
+          
+          try {
+            window.location.href = path;
+            console.log('✅ Fallback navigation executed for:', path);
+          } catch (fallbackError) {
+            console.error('❌ Fallback navigation also failed for:', path, 'Error:', fallbackError);
+          }
+        } else {
+          console.log('✅ React Router navigation successful! Changed from', currentPath, 'to', location.pathname);
+        }
+      }, 100); // Check after 100ms
       
     } catch (error) {
       console.error('❌ React Router navigation failed for:', path, 'Error:', error);
       
-      // Fallback to window.location.href for critical failures
+      // Immediate fallback for caught errors
       console.log('🔄 Falling back to window.location.href for:', path);
       try {
         window.location.href = path;
