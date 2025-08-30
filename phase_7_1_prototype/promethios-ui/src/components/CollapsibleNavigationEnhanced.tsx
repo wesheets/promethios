@@ -116,6 +116,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import NotificationBell from './notifications/NotificationBell';
+import ChatButton from './social/ChatButton';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
@@ -743,6 +744,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         {!collapsed && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <NotificationBell collapsed={false} />
+            <ChatButton collapsed={false} />
           </Box>
         )}
         <IconButton onClick={handleToggleCollapse} sx={{ color: 'text.primary' }}>
@@ -759,6 +761,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
       {collapsed && (
         <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid', borderColor: 'divider' }}>
           <NotificationBell collapsed={true} />
+          <ChatButton collapsed={true} />
           <Tooltip title="Profile" placement="right" arrow>
             <IconButton 
               sx={{ color: 'text.primary', width: '100%', mb: 0.5 }}

@@ -1007,8 +1007,7 @@ const UIIntegration: React.FC = () => {
         } />
       </Routes>
       
-      {/* Floating Chat Widget - Always visible */}
-      <FloatingChatWidget />
+      {/* Chat is now integrated into the sidebar via ChatButton */}
     </ObserverProvider>
     </ChatIntegrationProvider>
   );

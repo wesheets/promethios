@@ -34,6 +34,7 @@ import {
   Maximize,
   Circle,
 } from '@mui/icons-material';
+import { MessageService, ChatMessage, ChatConversation } from '../../services/MessageService';
 
 interface DirectMessage {
   id: string;
@@ -66,6 +67,7 @@ interface DirectMessageSidebarProps {
   currentUserId?: string;
   onStartVideoCall?: (participantId: string) => void;
   onStartVoiceCall?: (participantId: string) => void;
+  connections?: any[];
 }
 
 const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
@@ -75,182 +77,174 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   currentUserId = 'current-user',
   onStartVideoCall,
   onStartVoiceCall,
+  connections = [],
 }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [isMinimized, setIsMinimized] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const messageService = MessageService.getInstance();
+  const currentUserId = messageService.getCurrentUserId();
+  const currentUserName = messageService.getCurrentUserName();
+  const currentUserAvatar = messageService.getCurrentUserAvatar();
 
-  // Mock data
-  const mockConversations: Conversation[] = [
-    {
-      id: '1',
-      participantId: 'sarah-chen',
-      participantName: 'Sarah Chen',
-      participantAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150',
-      isOnline: true,
-      unreadCount: 2,
+  // Convert connections to conversations
+  const createConversationsFromConnections = (connections: any[]): Conversation[] => {
+    return connections.map((connection, index) => ({
+      id: connection.id || `conv-${index}`,
+      participantId: connection.userId || connection.id,
+      participantName: connection.displayName || connection.name || 'Unknown User',
+      participantAvatar: connection.photoURL || connection.avatar,
+      isOnline: Math.random() > 0.5, // Random online status for now
+      unreadCount: 0, // Start with no unread messages
       isTyping: false,
-      lastMessage: {
-        id: '1',
-        senderId: 'sarah-chen',
-        senderName: 'Sarah Chen',
-        content: 'Did you see Claude\'s analysis on the marketing strategy?',
-        timestamp: '2 minutes ago',
-        isRead: false,
-        type: 'text',
-      },
-      messages: [
-        {
-          id: '1',
-          senderId: 'sarah-chen',
-          senderName: 'Sarah Chen',
-          content: 'Hey! How\'s the AI collaboration going?',
-          timestamp: '10 minutes ago',
-          isRead: true,
-          type: 'text',
-        },
-        {
-          id: '2',
-          senderId: currentUserId,
-          senderName: 'You',
-          content: 'Great! Claude just provided some amazing insights.',
-          timestamp: '8 minutes ago',
-          isRead: true,
-          type: 'text',
-        },
-        {
-          id: '3',
-          senderId: 'sarah-chen',
-          senderName: 'Sarah Chen',
-          content: 'Did you see Claude\'s analysis on the marketing strategy?',
-          timestamp: '2 minutes ago',
-          isRead: false,
-          type: 'text',
-        },
-      ],
-    },
-    {
-      id: '2',
-      participantId: 'marcus-rodriguez',
-      participantName: 'Marcus Rodriguez',
-      participantAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      isOnline: false,
-      unreadCount: 0,
-      isTyping: false,
-      lastMessage: {
-        id: '1',
-        senderId: currentUserId,
-        senderName: 'You',
-        content: 'Thanks for the GPT-4 collaboration tips!',
-        timestamp: '1 hour ago',
-        isRead: true,
-        type: 'text',
-      },
-      messages: [
-        {
-          id: '1',
-          senderId: 'marcus-rodriguez',
-          senderName: 'Marcus Rodriguez',
-          content: 'Want to collaborate on the AI research project?',
-          timestamp: '2 hours ago',
-          isRead: true,
-          type: 'text',
-        },
-        {
-          id: '2',
-          senderId: currentUserId,
-          senderName: 'You',
-          content: 'Absolutely! I\'ve been working with GPT-4 on similar analysis.',
-          timestamp: '1.5 hours ago',
-          isRead: true,
-          type: 'text',
-        },
-        {
-          id: '3',
-          senderId: currentUserId,
-          senderName: 'You',
-          content: 'Thanks for the GPT-4 collaboration tips!',
-          timestamp: '1 hour ago',
-          isRead: true,
-          type: 'text',
-        },
-      ],
-    },
-    {
-      id: '3',
-      participantId: 'emily-watson',
-      participantName: 'Emily Watson',
-      participantAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
-      isOnline: true,
-      unreadCount: 1,
-      isTyping: true,
-      lastMessage: {
-        id: '1',
-        senderId: 'emily-watson',
-        senderName: 'Emily Watson',
-        content: 'The Claude + Gemini combination is working perfectly!',
-        timestamp: '5 minutes ago',
-        isRead: false,
-        type: 'text',
-      },
-      messages: [
-        {
-          id: '1',
-          senderId: 'emily-watson',
-          senderName: 'Emily Watson',
-          content: 'The Claude + Gemini combination is working perfectly!',
-          timestamp: '5 minutes ago',
-          isRead: false,
-          type: 'text',
-        },
-      ],
-    },
-  ];
+      lastMessage: undefined, // No messages initially
+      messages: [], // Empty messages array
+    }));
+  };
 
   useEffect(() => {
-    setConversations(mockConversations);
-    if (initialConversationId) {
-      setActiveConversationId(initialConversationId);
-    } else if (mockConversations.length > 0) {
-      setActiveConversationId(mockConversations[0].id);
+    if (connections.length > 0) {
+      const realConversations = createConversationsFromConnections(connections);
+      setConversations(realConversations);
+      
+      if (initialConversationId) {
+        setActiveConversationId(initialConversationId);
+      } else if (realConversations.length > 0) {
+        setActiveConversationId(realConversations[0].id);
+      }
+    } else {
+      // Fallback to empty conversations if no connections
+      setConversations([]);
+      setActiveConversationId(null);
     }
-  }, [initialConversationId]);
+  }, [connections, initialConversationId]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [activeConversationId, conversations]);
+  }, [activeConversationId, messages]);
+
+  // Subscribe to real conversations from Firebase
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const unsubscribe = messageService.subscribeToConversations(
+      currentUserId,
+      (firebaseConversations) => {
+        // Convert Firebase conversations to local conversation format
+        const convertedConversations: Conversation[] = firebaseConversations.map(conv => {
+          const otherParticipantId = conv.participants.find(p => p !== currentUserId) || '';
+          const otherParticipantName = conv.participantNames[otherParticipantId] || 'Unknown User';
+          const otherParticipantAvatar = conv.participantAvatars[otherParticipantId];
+          
+          return {
+            id: conv.id,
+            participantId: otherParticipantId,
+            participantName: otherParticipantName,
+            participantAvatar: otherParticipantAvatar,
+            isOnline: Math.random() > 0.5, // Random for now
+            unreadCount: conv.unreadCounts[currentUserId] || 0,
+            isTyping: false,
+            lastMessage: conv.lastMessage ? {
+              id: conv.lastMessage.id || 'temp',
+              senderId: conv.lastMessage.senderId,
+              senderName: conv.lastMessage.senderName,
+              content: conv.lastMessage.content,
+              timestamp: conv.lastMessage.timestamp instanceof Date 
+                ? conv.lastMessage.timestamp.toLocaleString()
+                : 'Recently',
+              isRead: conv.lastMessage.isRead,
+              type: conv.lastMessage.type
+            } : undefined,
+            messages: [] // Will be loaded separately
+          };
+        });
+        
+        setConversations(convertedConversations);
+        
+        // Set active conversation if none selected
+        if (!activeConversationId && convertedConversations.length > 0) {
+          setActiveConversationId(convertedConversations[0].id);
+        }
+      }
+    );
+
+    return unsubscribe;
+  }, [currentUserId, activeConversationId]);
+
+  // Subscribe to messages for active conversation
+  useEffect(() => {
+    if (!activeConversationId) {
+      setMessages([]);
+      return;
+    }
+
+    const unsubscribe = messageService.subscribeToMessages(
+      activeConversationId,
+      (firebaseMessages) => {
+        setMessages(firebaseMessages);
+        
+        // Mark messages as read when viewing conversation
+        if (currentUserId) {
+          messageService.markMessagesAsRead(activeConversationId, currentUserId);
+        }
+      }
+    );
+
+    return unsubscribe;
+  }, [activeConversationId, currentUserId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = () => {
-    if (!messageInput.trim() || !activeConversationId) return;
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !activeConversationId || !currentUserId) return;
 
-    const newMessage: DirectMessage = {
-      id: Date.now().toString(),
-      senderId: currentUserId,
-      senderName: 'You',
-      content: messageInput.trim(),
-      timestamp: 'Just now',
-      isRead: true,
-      type: 'text',
-    };
+    setIsLoading(true);
+    try {
+      await messageService.sendMessage(
+        activeConversationId,
+        currentUserId,
+        currentUserName,
+        messageInput.trim(),
+        currentUserAvatar
+      );
+      setMessageInput('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Could add error notification here
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    setConversations(prev => prev.map(conv => 
-      conv.id === activeConversationId
-        ? {
-            ...conv,
-            messages: [...conv.messages, newMessage],
-            lastMessage: newMessage,
-          }
-        : conv
-    ));
+  // Handle starting a conversation with a connection
+  const handleStartConversation = async (connection: any) => {
+    if (!currentUserId) return;
 
-    setMessageInput('');
+    setIsLoading(true);
+    try {
+      const conversationId = await messageService.getOrCreateConversation(
+        currentUserId,
+        connection.userId || connection.id,
+        currentUserName,
+        connection.displayName || connection.name || 'Unknown User',
+        currentUserAvatar,
+        connection.photoURL || connection.avatar
+      );
+      
+      setActiveConversationId(conversationId);
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -263,8 +257,18 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   const activeConversation = conversations.find(c => c.id === activeConversationId);
   const totalUnreadCount = conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
 
-  const renderMessage = (message: DirectMessage) => {
+  const renderMessage = (message: ChatMessage) => {
     const isOwnMessage = message.senderId === currentUserId;
+    
+    // Format timestamp
+    let formattedTime = 'Recently';
+    if (message.timestamp) {
+      if (message.timestamp instanceof Date) {
+        formattedTime = message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (message.timestamp.toDate) {
+        formattedTime = message.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+    }
     
     return (
       <Box
@@ -296,7 +300,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
               fontSize: '0.7rem',
             }}
           >
-            {message.timestamp}
+            {formattedTime}
           </Typography>
         </Paper>
       </Box>
@@ -498,8 +502,16 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
                   backgroundColor: 'grey.50',
                 }}
               >
-                {activeConversation.messages.map(renderMessage)}
-                {activeConversation.isTyping && (
+                {messages.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No messages yet. Start the conversation!
+                    </Typography>
+                  </Box>
+                ) : (
+                  messages.map(renderMessage)
+                )}
+                {activeConversation?.isTyping && (
                   <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1 }}>
                     <Paper
                       sx={{
