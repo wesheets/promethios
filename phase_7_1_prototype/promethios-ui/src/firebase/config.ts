@@ -9,8 +9,8 @@ import { getStorage } from "firebase/storage";
 const firebaseConfig = {
   apiKey: "AIzaSyAIht4KXfXZScxjDNUsYXRX4MVg6zbDYbk",
   authDomain: "promethios.firebaseapp.com",
-  projectId: "promethios-oregon",
-  storageBucket: "promethios-oregon.appspot.com",
+  projectId: "promethios",
+  storageBucket: "promethios.appspot.com",
   messagingSenderId: "132426045839",
   appId: "1:132426045839:web:913688771a94698e4d53fa",
   measurementId: "G-WZ11Y40L70"
@@ -79,10 +79,10 @@ export const firestoreUtils = {
 };
 
 const storage = getStorage(app);
-console.log('🔧 Firestore initialized with promethios-oregon database (us-west1 region)');
+console.log('🔧 Firestore initialized with promethios project (default database)');
 console.log('🔧 Firebase Storage initialized');
 console.log('🔧 Firestore connection stability improvements enabled');
-console.log('🎯 Restored to original database with all user data and sessions!');
+console.log('🎯 Connected to Promethios project with Spark domain authorization!');
 
 export { auth, googleProvider, firebaseConfig, db, storage };
 export default app;
