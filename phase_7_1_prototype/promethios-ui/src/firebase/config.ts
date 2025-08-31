@@ -8,7 +8,7 @@ import { getStorage } from "firebase/storage";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAIht4KXfXZScxjDNUsYXRX4MVg6zbDYbk",
-  authDomain: "spark.promethios.ai",
+  authDomain: "promethios.firebaseapp.com",
   projectId: "promethios-oregon",
   storageBucket: "promethios-oregon.appspot.com",
   messagingSenderId: "132426045839",
