@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { checkOnboardingStatus } from '../../firebase/userService';
+import { checkUserOnboardingStatus } from '../../firebase/userService';
 import ApprovalGateScreen from './ApprovalGateScreen';
 
 interface ProtectedRouteProps {
@@ -49,8 +49,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       // Check Firebase immediately for new users
       setTimeout(async () => {
         try {
-          console.log(`ProtectedRoute: Calling checkOnboardingStatus for user: ${currentUser.uid}`);
-          const completed = await checkOnboardingStatus(currentUser.uid);
+          console.log(`ProtectedRoute: Calling checkUserOnboardingStatus for user: ${currentUser.uid}`);
+          const completed = await checkUserOnboardingStatus(currentUser.uid);
           setOnboardingCompleted(completed);
           localStorage.setItem(`onboarding_${currentUser.uid}`, completed.toString());
           console.log(`ProtectedRoute: Firebase onboarding status for new user: ${completed}`);
