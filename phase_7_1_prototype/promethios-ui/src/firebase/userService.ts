@@ -116,6 +116,5 @@ export const checkOnboardingStatus = async (userId: string): Promise<boolean> =>
     return true;
   }
 };
-};
 
 
