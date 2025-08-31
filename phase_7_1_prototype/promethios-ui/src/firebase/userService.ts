@@ -80,15 +80,21 @@ export const checkOnboardingStatus = async (userId: string, db: any) => {
     });
     
     const checkPromise = (async () => {
-      const userRef = doc(db, 'users', userId);
-      console.log(`userService: Attempting to get user document for ${userId}`);
+      // Look in userProfiles collection where the actual user data is stored
+      const userRef = doc(db, 'userProfiles', userId);
+      console.log(`userService: Attempting to get user document for ${userId} from userProfiles`);
       const userDoc = await getDoc(userRef);
       console.log(`userService: getDoc result for ${userId}: exists=${userDoc.exists()}`);
       
       if (userDoc.exists()) {
         const userData = userDoc.data();
         console.log(`userService: User data for ${userId}:`, userData);
-        return userData.onboardingCompleted === true;
+        
+        // Check if user is approved (this acts as onboarding completion)
+        const isApproved = userData.approvalStatus === 'approved';
+        console.log(`userService: User approval status: ${userData.approvalStatus}, isApproved: ${isApproved}`);
+        
+        return isApproved || userData.onboardingCompleted === true;
       }
       
       return false;
