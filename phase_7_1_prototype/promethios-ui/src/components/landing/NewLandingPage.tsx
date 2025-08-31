@@ -438,17 +438,17 @@ const NewLandingPage: React.FC = () => {
         
         {/* Content Container */}
         <div className="relative z-10 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-8 hero-content">
-          {/* The OS of AI Safety Header - Full Width Spanning */}
+          {/* The Future of AI Collaboration Header - Full Width Spanning */}
           <div className="w-full mb-12">
             <div className="max-w-screen-xl mx-auto">
               <div className="flex items-center gap-4 text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-white justify-start w-full">
-                <span>The</span>
+                <span>The Future of</span>
                 <img 
-                  src="/oslogo.png" 
-                  alt="Spark OS" 
-                  className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 xl:h-40 xl:w-40 object-contain"
+                  src="/sparklogowpromethios.jpg" 
+                  alt="Spark" 
+                  className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 xl:h-40 xl:w-40 object-contain rounded-lg"
                 />
-                <span>of AI Safety</span>
+                <span>AI Collaboration</span>
               </div>
               <div className="w-full h-1 bg-white/30 mt-6"></div>
             </div>
@@ -461,14 +461,14 @@ const NewLandingPage: React.FC = () => {
               <div className="lg:w-7/12">
                 {/* Main Headline - Large and Bold */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 text-white leading-tight">
-                  Turn Any LLM Into a<br />
-                  Governed Agent.
+                  Multi-Agent Chats<br />
+                  Where Humans & AI Collaborate.
                 </h1>
 
                 {/* Value Proposition */}
                 <p className="text-xl sm:text-2xl mb-8 text-gray-200 leading-relaxed">
-                  Govern decisions. Prevent hallucinations. Prove compliance.<br />
-                  All at Runtime.
+                  Model Agnostic Platform. Bring Your Own Agents.<br />
+                  Full Transparency & Ethical Governance.
                 </p>
 
                 {/* CTA Buttons */}
@@ -477,24 +477,24 @@ const NewLandingPage: React.FC = () => {
                     to="/login" 
                     className="bg-green-500 hover:bg-green-600 text-black font-bold py-4 px-8 rounded-lg transition-all duration-200 text-center"
                   >
-                    Request an Invitation to Governance
+                    Join Spark Beta
                   </Link>
                   <Link 
                     to="/login" 
                     className="bg-transparent border-2 border-blue-500 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 font-bold py-4 px-8 rounded-lg transition-all duration-200 text-center"
                   >
-                    Govern Your AI
+                    Start Collaborating
                   </Link>
                 </div>
 
                 {/* Compatibility Line */}
                 <p className="text-sm text-gray-300 font-medium mb-4">
-                  Compatible with 12 commercial LLM models including OpenAI, Anthropic, Gemini, or your custom model
+                  Compatible with OpenAI, Claude, Gemini, and any LLM - bring your own agents or use ours
                 </p>
 
                 {/* Trust Note */}
                 <p className="text-sm text-gray-400 mb-4">
-                  Trust is not public. Access requires accountability.
+                  Contextual Memory. Cryptographic Audit Trails. Revolutionary AI Collaboration.
                 </p>
 
                 {/* Compatibility Line */}
