@@ -8,9 +8,9 @@ import { getStorage } from "firebase/storage";
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAIht4KXfXZScxjDNUsYXRX4MVg6zbDYbk",
-  authDomain: "promethios.firebaseapp.com",
-  projectId: "promethios",
-  storageBucket: "promethios.firebasestorage.app",
+  authDomain: "promethios-oregon.firebaseapp.com",
+  projectId: "promethios-oregon",
+  storageBucket: "promethios-oregon.appspot.com",
   messagingSenderId: "132426045839",
   appId: "1:132426045839:web:913688771a94698e4d53fa",
   measurementId: "G-WZ11Y40L70"
@@ -28,7 +28,7 @@ googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-const db = getFirestore(app, 'promethios-oregon');
+const db = getFirestore(app);
 
 // Enable offline persistence for better connection stability
 try {
