@@ -100,7 +100,7 @@ const PrometheusStackShowcase: React.FC = () => {
             <span className="text-cyan-400 font-semibold">System Architecture</span>
           </div>
           <h2 className="text-5xl font-bold mb-6 text-white">
-            🏗️ The <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Promethios Stack</span>
+            🏗️ The <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Spark Stack</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
             Three core systems working together to provide comprehensive AI governance.
@@ -256,7 +256,7 @@ const PrometheusStackShowcase: React.FC = () => {
         <div className="mt-16 text-center">
           <div className="bg-gray-800 rounded-xl border border-gray-700 p-8 max-w-2xl mx-auto">
             <h3 className="text-xl font-semibold text-white mb-4">
-              Ready to implement the full Promethios Stack?
+              Ready to implement the full Spark Stack?
             </h3>
             <p className="text-gray-400 mb-6">
               Get started with our comprehensive governance platform. 

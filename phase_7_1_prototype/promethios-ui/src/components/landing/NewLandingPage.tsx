@@ -445,7 +445,7 @@ const NewLandingPage: React.FC = () => {
                 <span>The</span>
                 <img 
                   src="/oslogo.png" 
-                  alt="Promethios OS" 
+                  alt="Spark OS" 
                   className="h-20 w-20 sm:h-24 sm:w-24 lg:h-32 lg:w-32 xl:h-40 xl:w-40 object-contain"
                 />
                 <span>of AI Safety</span>
@@ -674,7 +674,7 @@ const NewLandingPage: React.FC = () => {
           {/* Section Header */}
           <div className="text-center mb-20">
             <h2 className="text-6xl md:text-7xl font-bold mb-8 text-white">
-              The Solution: Promethios
+              The Solution: Spark
             </h2>
             <p className="text-2xl text-gray-200 leading-relaxed max-w-4xl mx-auto">
               Transform any LLM into a governed agent with three simple steps
@@ -695,14 +695,14 @@ const NewLandingPage: React.FC = () => {
                 
                 <h4 className="text-xl font-bold text-white mb-4">Wrap Any Agent, Any Model</h4>
                 <p className="text-gray-300 mb-6 leading-relaxed">
-                  Inject Promethios into any LLM or agent framework. OpenAI, Claude, LLaMA, AutoGen, LangChain — we work with all of them.
+                  Inject Spark into any LLM or agent framework. OpenAI, Claude, LLaMA, AutoGen, LangChain — we work with all of them.
                 </p>
                 
                 {/* Code Example */}
                 <div className="bg-gray-900/80 rounded-lg p-4 text-green-400 font-mono text-sm mb-4">
                   <div className="text-gray-500"># Wrap any agent in 3 lines</div>
                   <div className="mt-2">
-                    <span className="text-blue-400">from</span> promethios <span className="text-blue-400">import</span> govern<br />
+                    <span className="text-blue-400">from</span> spark <span className="text-blue-400">import</span> govern<br />
                     <span className="text-blue-400">agent</span> = govern(your_agent)<br />
                     <span className="text-gray-500"># That's it. Now it's governed.</span>
                   </div>
@@ -764,7 +764,7 @@ const NewLandingPage: React.FC = () => {
                 
                 <h4 className="text-xl font-bold text-white mb-4">Deploy with Oversight</h4>
                 <p className="text-gray-300 mb-6 leading-relaxed">
-                  Ship agents into apps, APIs, or vertical SaaS — and keep tabs on them. Promethios watches behavior in real-time, from anywhere.
+                  Ship agents into apps, APIs, or vertical SaaS — and keep tabs on them. Spark watches behavior in real-time, from anywhere.
                 </p>
                 
                 {/* Live Monitoring */}
@@ -798,7 +798,7 @@ const NewLandingPage: React.FC = () => {
             <div className="bg-black/60 backdrop-blur-sm border border-orange-500/30 rounded-2xl p-12">
               <h3 className="text-4xl font-bold text-white mb-6">Continuous AI Accountability</h3>
               <p className="text-xl text-gray-200 mb-8 leading-relaxed">
-                Agents learn. So does Promethios.<br />
+                Agents learn. So does Spark.<br />
                 Track drift, log reflection failures, catch blind spots — and evolve with them.
               </p>
               
@@ -833,7 +833,7 @@ const NewLandingPage: React.FC = () => {
           </h2>
           <div className="space-y-6 text-xl text-gray-300 leading-relaxed">
             <p>LLMs are reaching production. But the safety net isn't.</p>
-            <p>Promethios is the missing governance layer.</p>
+            <p>Spark is the missing governance layer.</p>
             <p className="text-2xl font-bold text-red-400">Without it, you're flying blind.</p>
           </div>
         </div>

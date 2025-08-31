@@ -32,7 +32,7 @@ const BenchmarkPreview: React.FC = () => {
         <div className="lg:text-center">
           <h2 className="text-base text-blue-600 font-semibold tracking-wide uppercase">CMU Benchmark</h2>
           <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-            See the difference Promethios makes
+            See the difference Spark makes
           </p>
           <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
             Our CMU benchmark results show dramatic improvements in trust, compliance, and error reduction with minimal performance impact.
@@ -62,7 +62,7 @@ const BenchmarkPreview: React.FC = () => {
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="ungoverned" name="Ungoverned Agent" fill="#9CA3AF" />
-                <Bar dataKey="governed" name="Promethios Governed" fill="#3B82F6" />
+                <Bar dataKey="governed" name="Spark Governed" fill="#3B82F6" />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -84,7 +84,7 @@ const NewLandingPage: React.FC = () => {
 
                 {/* Subtitle */}
                 <p className="text-xl mb-8 text-gray-200 max-w-2xl">
-                  Promethios wraps any LLM or agent with real-time policy enforcement, 
+                  Spark wraps any LLM or agent with real-time policy enforcement, 
                   trust scoring, and hallucination prevention — no retraining required.
                 </p>
 
@@ -265,7 +265,7 @@ const NewLandingPage: React.FC = () => {
                 >
                   <span className="flex items-center space-x-2">
                     <span>🛡️</span>
-                    <span>The Promethios Layer</span>
+                    <span>The Spark Layer</span>
                   </span>
                 </button>
               </div>
@@ -307,7 +307,7 @@ const NewLandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Solution View - Promethios Layer */}
+                {/* Solution View - Spark Layer */}
                 <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
@@ -338,7 +338,7 @@ const NewLandingPage: React.FC = () => {
                 <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                     <div className="flex items-center space-x-2 mb-2">
                       <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
+                      <span className="text-green-300 font-semibold text-sm">Spark Solution</span>
                     </div>
                     <p className="text-gray-300 text-sm">
                       <strong>Agent Integrity Reports</strong> + <strong>Real-Time Monitoring</strong><br/>
@@ -384,7 +384,7 @@ const NewLandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Solution View - Promethios Compliance */}
+                {/* Solution View - Spark Compliance */}
                 <div className="w-full lg:w-80 h-40 bg-gray-900/80 rounded-lg border border-green-500/50 flex-shrink-0 p-4 solution-view">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-green-400 text-xs font-semibold">GOVERNED</span>
@@ -418,7 +418,7 @@ const NewLandingPage: React.FC = () => {
                 <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span className="text-blue-300 font-semibold text-sm">Promethios Solution</span>
+                    <span className="text-blue-300 font-semibold text-sm">Spark Solution</span>
                   </div>
                   <p className="text-gray-300 text-sm">
                     <strong>Governance Wrapping</strong> + <strong>Policy Enforcement</strong><br/>
@@ -493,7 +493,7 @@ const NewLandingPage: React.FC = () => {
                 <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
+                    <span className="text-green-300 font-semibold text-sm">Spark Solution</span>
                   </div>
                   <p className="text-gray-300 text-sm">
                     <strong>Trust Score Engine</strong> + <strong>Benchmark Insights</strong><br/>
@@ -573,7 +573,7 @@ const NewLandingPage: React.FC = () => {
                 <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span className="text-blue-300 font-semibold text-sm">Promethios Solution</span>
+                    <span className="text-blue-300 font-semibold text-sm">Spark Solution</span>
                   </div>
                   <p className="text-gray-300 text-sm">
                       <strong>Multi-Agent Coordination</strong> + <strong>Unified Governance</strong><br/>
@@ -597,7 +597,7 @@ const NewLandingPage: React.FC = () => {
                   <p className="text-orange-400 font-bold text-lg mb-2">"Auditors won't accept 'It was the model's fault.'"</p>
                 </div>
                 <div>
-                  <p className="text-green-400 font-bold text-lg mb-2">"Trust is earned. Promethios proves it."</p>
+                  <p className="text-green-400 font-bold text-lg mb-2">"Trust is earned. Spark proves it."</p>
                 </div>
               </div>
             </div>
@@ -699,7 +699,7 @@ const NewLandingPage: React.FC = () => {
       {/* Interactive Demos Section */}
       <InteractiveDemos />
 
-      {/* Promethios Stack Showcase */}
+      {/* Spark Stack Showcase */}
       <PrometheusStackShowcase />
 
       {/* Template Library Preview */}
@@ -712,7 +712,7 @@ const NewLandingPage: React.FC = () => {
             AI should be governed — not left to guess.
           </h2>
           <p className="text-xl mb-8 text-gray-300 max-w-3xl mx-auto">
-            Get Promethios and build better AI you can trust.
+            Get Spark and build better AI you can trust.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link 

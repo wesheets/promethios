@@ -11,14 +11,14 @@ const FloatingObserver: React.FC<FloatingObserverProps> = ({ className }) => {
   const [isTyping, setIsTyping] = useState(false);
 
   const quickQuestions = [
-    "What is Promethios?",
+    "What is Spark?",
     "How do you prevent hallucinations?",
     "What's a trust score?",
     "Can you wrap ChatGPT?"
   ];
 
   const responses = {
-    "What is Promethios?": "I'm your AI governance platform! I wrap any LLM or agent with real-time policy enforcement, trust scoring, and hallucination prevention. Think of me as the observability layer for AI systems. 🛡️",
+    "What is Spark?": "I'm your AI governance platform! I wrap any LLM or agent with real-time policy enforcement, trust scoring, and hallucination prevention. Think of me as the observability layer for AI systems. 🛡️",
     "How do you prevent hallucinations?": "Great question! I work with three core systems: Vigil monitors behavior patterns, Veritas fact-checks against trusted sources, and PRISM provides transparency. When I detect fabricated content like fake legal cases, I intervene immediately.",
     "What's a trust score?": "Your trust score combines four dimensions: Competence (how accurate), Reliability (how consistent), Honesty (truthfulness), and Transparency (explainability). A score of 85% means strong governance with room for improvement!",
     "Can you wrap ChatGPT?": "Absolutely! I can wrap any LLM - ChatGPT, Claude, Gemini, you name it. No retraining needed. Just add governance policies like HIPAA compliance, and I'll monitor every interaction in real-time."

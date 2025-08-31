@@ -33,7 +33,7 @@ const Features: React.FC = () => {
             The only way to govern AI agents
           </p>
           <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-            Promethios provides a comprehensive governance framework that makes it easy to wrap any agent with trust, compliance, and performance monitoring.
+            Spark provides a comprehensive governance framework that makes it easy to wrap any agent with trust, compliance, and performance monitoring.
           </p>
         </div>
 

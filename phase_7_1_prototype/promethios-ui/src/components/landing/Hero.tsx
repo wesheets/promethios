@@ -2,27 +2,27 @@ import React, { useState, useEffect, KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { sendChatCompletionRequest, createPromethiosSystemMessage, ChatMessage } from '../../api/openaiProxy';
+import { sendChatCompletionRequest, createSparkSystemMessage, ChatMessage } from '../../api/openaiProxy';
 
 /**
  * Hero Component
  * 
- * The main landing section for Promethios with powerful messaging and CTAs
+ * The main landing section for Spark with powerful messaging and CTAs
  */
 const Hero: React.FC = () => {
   const { isDarkMode } = useTheme();
-  const [showPromethiosChat, setShowPromethiosChat] = useState(false);
+  const [showSparkChat, setShowSparkChat] = useState(false);
   const [showFullLog, setShowFullLog] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [whisperMessage, setWhisperMessage] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
-    { role: 'assistant', content: "I'm Promethios, your governance companion. I can explain how AI agents might be misleading you and how governance creates accountability." },
+    { role: 'assistant', content: "I'm Spark, your governance companion. I can explain how AI agents might be misleading you and how governance creates accountability." },
     { role: 'user', content: "What does it mean that I've been \"lied to\" by AI?" },
   ]);
   
-  // Scroll effect to trigger Promethios whisper
+  // Scroll effect to trigger Spark whisper
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 100 && !hasScrolled) {
@@ -42,19 +42,19 @@ const Hero: React.FC = () => {
 
   // Handle chat open with thinking effect
   const handleChatOpen = () => {
-    if (!showPromethiosChat) {
+    if (!showSparkChat) {
       setIsThinking(true);
       // Simulate thinking pause for authority
       setTimeout(() => {
         setIsThinking(false);
-        setShowPromethiosChat(true);
+        setShowSparkChat(true);
       }, 800);
     } else {
-      setShowPromethiosChat(false);
+      setShowSparkChat(false);
     }
   };
 
-  // Handle sending a message to the Promethios chat
+  // Handle sending a message to the Spark chat
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
     
@@ -70,7 +70,7 @@ const Hero: React.FC = () => {
     try {
       // Prepare messages for API request
       const messages: ChatMessage[] = [
-        { role: 'system', content: createPromethiosSystemMessage('public') },
+        { role: 'system', content: createSparkSystemMessage('public') },
         ...chatHistory,
         userMessage
       ];
@@ -96,7 +96,7 @@ const Hero: React.FC = () => {
       // Add fallback response
       setChatHistory(prev => [...prev, { 
         role: 'assistant', 
-        content: "I apologize, but I'm having trouble connecting to my knowledge base right now. As Promethios' governance companion, I can explain how AI systems sometimes create information that sounds plausible but isn't true - what we call 'hallucinations.' Without governance, there's no accountability for these errors. Promethios adds the governance layer that makes AI trustworthy and accountable."
+        content: "I apologize, but I'm having trouble connecting to my knowledge base right now. As Spark' governance companion, I can explain how AI systems sometimes create information that sounds plausible but isn't true - what we call 'hallucinations.' Without governance, there's no accountability for these errors. Spark adds the governance layer that makes AI trustworthy and accountable."
       }]);
     } finally {
       setIsThinking(false);
@@ -112,14 +112,14 @@ const Hero: React.FC = () => {
 
   // Handle Governance Explained button
   const handleGovernanceExplained = () => {
-    setChatInput("Can you explain how Promethios governance works?");
+    setChatInput("Can you explain how Spark governance works?");
     handleSendMessage();
   };
 
   return (
-    <div className="relative bg-navy-900 text-white overflow-hidden w-full">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-navy-900 to-navy-800 z-0"></div>
+    <div className="relative text-white overflow-hidden w-full" style={{ backgroundImage: 'url(/grey-gradient-bg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      {/* Background overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/30 z-0"></div>
       
       <div className="w-full px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center py-20 md:py-32">
@@ -139,7 +139,7 @@ const Hero: React.FC = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             The AI you trust is making things up — and you don't even know it.  
-            <br />Promethious improves AI accuracy, traceability, and decision quality, making your models better by design.
+            <br />Spark improves AI accuracy, traceability, and decision quality, making your models better by design.
           </motion.p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4 mt-12 mb-8">
@@ -168,10 +168,10 @@ const Hero: React.FC = () => {
           </div>
           
           <p className="text-sm text-gray-400 mb-8">
-            Promethios is rolling out in phases. Join the waitlist for early access to governed agent infrastructure.
+            Spark is rolling out in phases. Join the waitlist for early access to governed agent infrastructure.
           </p>
           
-          {/* Promethios Chat Entry Point with pulsing animation */}
+          {/* Spark Chat Entry Point with pulsing animation */}
           <motion.div 
             className={`mt-8 p-4 rounded-lg cursor-pointer transition-all ${
               isDarkMode 
@@ -190,10 +190,10 @@ const Hero: React.FC = () => {
           >
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center mr-3">
-                <img src="/images/shield.png" alt="Promethios Shield" className="w-8 h-8" />
+                <img src="/images/shield.png" alt="Spark Shield" className="w-8 h-8" />
               </div>
               <div className="text-left">
-                <h3 className="font-semibold text-lg">Promethios</h3>
+                <h3 className="font-semibold text-lg">Spark</h3>
                 <p className="text-sm text-gray-300">
                   {isThinking ? (
                     <span className="inline-flex items-center">
@@ -212,9 +212,9 @@ const Hero: React.FC = () => {
             </div>
           </motion.div>
           
-          {/* Promethios Chat Panel (conditionally rendered) */}
+          {/* Spark Chat Panel (conditionally rendered) */}
           <AnimatePresence>
-            {showPromethiosChat && (
+            {showSparkChat && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -228,14 +228,14 @@ const Hero: React.FC = () => {
               >
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center">
-                    <h3 className="font-semibold">Promethios Governance Assistant</h3>
+                    <h3 className="font-semibold">Spark Governance Assistant</h3>
                     <div className="ml-2 px-2 py-0.5 bg-blue-600 rounded-full text-xs text-white flex items-center">
                       <span className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></span>
                       <span>Live</span>
                     </div>
                   </div>
                   <button 
-                    onClick={() => setShowPromethiosChat(false)}
+                    onClick={() => setShowSparkChat(false)}
                     className="text-gray-500 hover:text-gray-700"
                   >
                     &times;

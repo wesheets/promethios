@@ -55,7 +55,7 @@ const CleanRiskSurfaceSection = () => {
               >
                 <span className="flex items-center space-x-2">
                   <span>🛡️</span>
-                  <span>The Promethios Layer</span>
+                  <span>The Spark Layer</span>
                 </span>
               </button>
             </div>
@@ -115,7 +115,7 @@ const CleanRiskSurfaceSection = () => {
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
+                  <span className="text-green-300 font-semibold text-sm">Spark Solution</span>
                 </div>
                 <p className="text-gray-300 text-sm">
                   <strong>Agent Integrity Reports</strong> + <strong>Real-Time Monitoring</strong><br/>
@@ -175,7 +175,7 @@ const CleanRiskSurfaceSection = () => {
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
+                  <span className="text-green-300 font-semibold text-sm">Spark Solution</span>
                 </div>
                 <p className="text-gray-300 text-sm">
                   <strong>Governance Wrapping</strong> + <strong>Policy Enforcement</strong><br/>
@@ -235,7 +235,7 @@ const CleanRiskSurfaceSection = () => {
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
+                  <span className="text-green-300 font-semibold text-sm">Spark Solution</span>
                 </div>
                 <p className="text-gray-300 text-sm">
                   <strong>Trust Score Engine</strong> + <strong>Benchmark Insights</strong><br/>
@@ -295,7 +295,7 @@ const CleanRiskSurfaceSection = () => {
               <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-green-300 font-semibold text-sm">Promethios Solution</span>
+                  <span className="text-green-300 font-semibold text-sm">Spark Solution</span>
                 </div>
                 <p className="text-gray-300 text-sm">
                   <strong>Multi-Agent Coordination</strong> + <strong>Unified Governance</strong><br/>
@@ -318,7 +318,7 @@ const CleanRiskSurfaceSection = () => {
                 <p className="text-orange-400 font-bold text-lg mb-2">"Auditors won't accept 'It was the model's fault.'"</p>
               </div>
               <div>
-                <p className="text-green-400 font-bold text-lg mb-2">"Trust is earned. Promethios proves it."</p>
+                <p className="text-green-400 font-bold text-lg mb-2">"Trust is earned. Spark proves it."</p>
               </div>
             </div>
           </div>

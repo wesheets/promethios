@@ -9,13 +9,13 @@ const InteractiveDemos: React.FC = () => {
   const demos = [
     {
       title: "Hallucination Prevention",
-      description: "Watch how Promethios stops AI from inventing fake legal cases",
+      description: "Watch how Spark stops AI from inventing fake legal cases",
       icon: "🧠",
       color: "from-red-500 to-red-600",
       steps: [
         { text: "User asks: 'Tell me about Johnson v. Smith case'", type: "user" },
         { text: "AI attempts to fabricate legal case details...", type: "ai" },
-        { text: "🛡️ BLOCKED: Promethios detects fabrication", type: "system" },
+        { text: "🛡️ BLOCKED: Spark detects fabrication", type: "system" },
         { text: "Redirected to verified legal databases", type: "success" }
       ]
     },
@@ -39,7 +39,7 @@ const InteractiveDemos: React.FC = () => {
       steps: [
         { text: "Agent 1: Research task initiated", type: "user" },
         { text: "Agent 2: Data validation required", type: "ai" },
-        { text: "🔄 Promethios coordinates handoff", type: "system" },
+        { text: "🔄 Spark coordinates handoff", type: "system" },
         { text: "Task completed with full audit trail", type: "success" }
       ]
     }
@@ -91,7 +91,7 @@ const InteractiveDemos: React.FC = () => {
             <span className="text-green-400 font-semibold">Live Governance Playground</span>
           </div>
           <h2 className="text-5xl font-bold mb-6 text-white">
-            🎯 Want to see how Promethios stops AI <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">hallucinations</span>?
+            🎯 Want to see how Spark stops AI <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">hallucinations</span>?
           </h2>
           <p className="text-xl text-gray-300 max-w-4xl mx-auto leading-relaxed">
             Interactive demos showing real-time governance in action.
@@ -206,7 +206,7 @@ const InteractiveDemos: React.FC = () => {
 
         {/* Additional Demo Options */}
         <div className="mt-16 text-center">
-          <h3 className="text-xl font-semibold text-white mb-6">More Ways to Experience Promethios:</h3>
+          <h3 className="text-xl font-semibold text-white mb-6">More Ways to Experience Spark:</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link
               to="/ui/onboarding"

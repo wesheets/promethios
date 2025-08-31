@@ -59,7 +59,7 @@ const Footer: React.FC = () => {
             🔥 Ready to govern your first agent?
           </h3>
           <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-            Join thousands of engineers building safe AI systems with Promethios governance.
+            Join thousands of engineers building safe AI systems with Spark governance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
           {/* Logo and Newsletter */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center mb-4">
-              <img src="/promethioslogonewest.png" alt="Promethios Logo" className="h-40" />
+              <img src="/spark-logo.jpg" alt="Spark Logo" className="h-40" />
             </Link>
             <p className="text-gray-400 mb-6 max-w-sm">
               The observability and compliance layer for multi-agent AI systems. 
@@ -148,7 +148,7 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <a href="mailto:hello@promethios.ai" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <a href="mailto:hello@spark.promethios.ai" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Contact
                 </a>
               </li>
@@ -186,7 +186,7 @@ const Footer: React.FC = () => {
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
             <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} Promethios. All rights reserved.
+              © {new Date().getFullYear()} Spark. All rights reserved.
             </p>
             <p className="text-gray-500 text-xs mt-1">
               v1.7.3 | Last updated {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
@@ -247,7 +247,7 @@ const Footer: React.FC = () => {
         {/* Global Stats Banner */}
         <div className="mt-8 text-center p-4 bg-gray-800/50 rounded-lg border border-gray-700">
           <p className="text-gray-300 text-sm">
-            🌍 Promethios is protecting <span className="text-green-400 font-semibold">4,319 active agents</span> across <span className="text-blue-400 font-semibold">42 countries</span>
+            🌍 Spark is protecting <span className="text-green-400 font-semibold">4,319 active agents</span> across <span className="text-blue-400 font-semibold">42 countries</span>
           </p>
         </div>
       </div>

@@ -28,8 +28,8 @@ const Header: React.FC = () => {
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
               <img 
-                src="/images/promethioslogonew.png" 
-                alt="Promethios Logo" 
+                src="/spark-logo.jpg" 
+                alt="Spark Logo" 
                 className="h-8" 
               />
             </Link>
