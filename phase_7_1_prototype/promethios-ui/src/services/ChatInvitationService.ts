@@ -121,15 +121,16 @@ class AICollaborationInvitationService {
       );
 
       // Create notification for the recipient
-      const notification: AICollaborationInvitationNotification = {
+      const notification: AppNotification = {
         id: invitationId,
         type: 'info',
         title: 'AI Collaboration Invitation',
-        message: `${invitation.fromUserName} invited you to join AI conversation "${invitation.conversationName}"${invitation.agentName ? ` with ${invitation.agentName}` : ''}`,
+        message: `${invitation.fromUserName} invited you to join AI conversation "${invitation.conversationName}" with ${invitation.agentName}`,
         timestamp: new Date().toISOString(),
         read: false,
         priority: 'medium',
         category: 'collaboration',
+        userId: invitation.toUserId, // Send to the recipient, not the sender
         actions: [
           {
             label: 'Join Conversation',

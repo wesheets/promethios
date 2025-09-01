@@ -21,6 +21,7 @@ export interface AppNotification {
   metadata?: Record<string, any>;
   expiresAt?: string;
   source?: string;
+  userId?: string; // Target user ID for multi-user notifications
 }
 
 export interface NotificationProvider {
