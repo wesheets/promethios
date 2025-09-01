@@ -10,6 +10,17 @@
 const BACKEND_API_BASE = 'https://promethios-phase-7-1-api.onrender.com'; // Deployed Promethios API server (same as modern chat)
 const CHAT_ENDPOINT = '/api/chat'; // Backend API endpoint
 
+// 🚨 DEBUG: Log the constants at module load time
+console.log(`🚨 [DEBUG] UniversalGovernanceAdapter module loaded`);
+console.log(`🚨 [DEBUG] BACKEND_API_BASE: ${BACKEND_API_BASE}`);
+console.log(`🚨 [DEBUG] CHAT_ENDPOINT: ${CHAT_ENDPOINT}`);
+console.log(`🚨 [DEBUG] Full chat URL will be: ${BACKEND_API_BASE}${CHAT_ENDPOINT}`);
+console.log(`🚨 [DEBUG] Current timestamp: ${new Date().toISOString()}`);
+console.log(`🚨 [DEBUG] User agent: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}`);
+console.log(`🚨 [DEBUG] Window location: ${typeof window !== 'undefined' ? window.location.href : 'N/A'}`);
+console.log(`🚨 [DEBUG] Fetch available: ${typeof fetch !== 'undefined'}`);
+console.log(`🚨 [DEBUG] ========================================`);
+
 // Import shared types for compatibility
 import {
   GovernanceContext,
@@ -404,9 +415,20 @@ export class UniversalGovernanceAdapter {
     const maxRetries = 3;
     const baseDelay = 1000; // 1 second
     
+    // 🚨 COMPREHENSIVE DEBUG: Pre-request analysis
+    console.log(`🚨 [DEBUG] ========== BACKEND API CALL DEBUG START ==========`);
+    console.log(`🚨 [DEBUG] Endpoint: ${endpoint}`);
+    console.log(`🚨 [DEBUG] BACKEND_API_BASE: ${BACKEND_API_BASE}`);
+    console.log(`🚨 [DEBUG] Current origin: ${window.location.origin}`);
+    console.log(`🚨 [DEBUG] Current hostname: ${window.location.hostname}`);
+    console.log(`🚨 [DEBUG] User agent: ${navigator.userAgent}`);
+    console.log(`🚨 [DEBUG] Data payload:`, JSON.stringify(data, null, 2));
+    console.log(`🚨 [DEBUG] UserId: ${userId || 'anonymous-user'}`);
+    
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const url = `${BACKEND_API_BASE}${endpoint}`;
+        console.log(`🚨 [DEBUG] ========== ATTEMPT ${attempt + 1}/${maxRetries + 1} ==========`);
         console.log(`🌐 [Universal] Calling backend API (attempt ${attempt + 1}/${maxRetries + 1}): ${url}`);
         console.log(`📤 [Universal] Request data:`, {
           agent_id: data.agent_id,
@@ -418,10 +440,29 @@ export class UniversalGovernanceAdapter {
           userId: userId || 'anonymous-user'
         });
         
+        // 🚨 DEBUG: Pre-fetch analysis
+        console.log(`🚨 [DEBUG] About to make fetch request...`);
+        console.log(`🚨 [DEBUG] URL: ${url}`);
+        console.log(`🚨 [DEBUG] Method: POST`);
+        console.log(`🚨 [DEBUG] Headers:`, {
+          'Content-Type': 'application/json',
+          'x-user-id': userId || 'anonymous-user',
+        });
+        console.log(`🚨 [DEBUG] Body (stringified):`, JSON.stringify(data));
+        
         if (attempt > 0) {
           console.log(`🔄 [Universal] Retry attempt ${attempt} after backend overload`);
         }
 
+        // 🚨 DEBUG: Check if fetch is available
+        if (typeof fetch === 'undefined') {
+          console.error(`🚨 [DEBUG] CRITICAL: fetch is not available!`);
+          throw new Error('fetch is not available');
+        }
+
+        console.log(`🚨 [DEBUG] Starting fetch request...`);
+        const fetchStartTime = Date.now();
+        
         const response = await fetch(url, {
           method: 'POST',
           headers: {
@@ -431,10 +472,22 @@ export class UniversalGovernanceAdapter {
           body: JSON.stringify(data),
         });
 
+        const fetchEndTime = Date.now();
+        console.log(`🚨 [DEBUG] Fetch completed in ${fetchEndTime - fetchStartTime}ms`);
+        console.log(`🚨 [DEBUG] Response object:`, response);
+        console.log(`🚨 [DEBUG] Response status: ${response.status}`);
+        console.log(`🚨 [DEBUG] Response statusText: ${response.statusText}`);
+        console.log(`🚨 [DEBUG] Response headers:`, Object.fromEntries(response.headers.entries()));
+        console.log(`🚨 [DEBUG] Response ok: ${response.ok}`);
+        console.log(`🚨 [DEBUG] Response type: ${response.type}`);
+        console.log(`🚨 [DEBUG] Response url: ${response.url}`);
+
         console.log(`📥 [Universal] Response status: ${response.status} ${response.statusText}`);
 
         if (!response.ok) {
+          console.log(`🚨 [DEBUG] Response not ok, reading error text...`);
           const errorText = await response.text();
+          console.log(`🚨 [DEBUG] Error text: ${errorText}`);
           console.error(`❌ [Universal] Backend API error (attempt ${attempt + 1}):`, {
             status: response.status,
             statusText: response.statusText,
@@ -457,7 +510,9 @@ export class UniversalGovernanceAdapter {
           throw new Error(`Backend API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
+        console.log(`🚨 [DEBUG] Response ok, reading JSON...`);
         const result = await response.json();
+        console.log(`🚨 [DEBUG] JSON parsed successfully:`, result);
         console.log(`✅ [Universal] Backend API success (attempt ${attempt + 1}):`, {
           session_id: result.session_id,
           response_length: result.response?.length,
@@ -465,13 +520,26 @@ export class UniversalGovernanceAdapter {
           trust_score: result.governance_metrics?.trust_score
         });
 
+        console.log(`🚨 [DEBUG] ========== BACKEND API CALL DEBUG END (SUCCESS) ==========`);
         return result;
         
       } catch (error) {
+        console.log(`🚨 [DEBUG] ========== CATCH BLOCK TRIGGERED ==========`);
+        console.log(`🚨 [DEBUG] Error type: ${error.constructor.name}`);
+        console.log(`🚨 [DEBUG] Error message: ${error.message}`);
+        console.log(`🚨 [DEBUG] Error stack:`, error.stack);
+        console.log(`🚨 [DEBUG] Error object:`, error);
+        
+        // Check if it's a network error
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          console.log(`🚨 [DEBUG] This is a "Failed to fetch" error - likely CORS or network issue`);
+        }
+        
         console.error(`❌ [Universal] Backend API call failed (attempt ${attempt + 1}):`, error);
         
         // If this is the last attempt, throw the error
         if (attempt === maxRetries) {
+          console.log(`🚨 [DEBUG] ========== BACKEND API CALL DEBUG END (FINAL FAILURE) ==========`);
           throw error;
         }
         
@@ -2033,15 +2101,21 @@ You operate with governance oversight that monitors your interactions for safety
     model?: string;
   }): Promise<EnhancedResponse> {
     try {
+      console.log(`🚨 [DEBUG] ========== SEND MESSAGE DEBUG START ==========`);
+      console.log(`🚨 [DEBUG] Request object:`, JSON.stringify(request, null, 2));
       console.log(`💬 [Universal] Processing message for agent ${request.agentId} with governance`);
       
       // Ensure initialization
       if (!this.initialized) {
+        console.log(`🚨 [DEBUG] Not initialized, calling initializeBackendIntegration...`);
         await this.initializeBackendIntegration();
+        console.log(`🚨 [DEBUG] Initialization complete`);
       }
 
       // Load complete agent configuration
+      console.log(`🚨 [DEBUG] Loading agent configuration for ${request.agentId}...`);
       const agentConfig = await this.loadCompleteAgentConfiguration(request.agentId, request.userId);
+      console.log(`🚨 [DEBUG] Agent config loaded:`, agentConfig);
       
       // Create governance context for this interaction
       const interactionContext = {
@@ -2052,9 +2126,12 @@ You operate with governance oversight that monitors your interactions for safety
         messageLength: request.message.length,
         timestamp: new Date().toISOString()
       };
+      console.log(`🚨 [DEBUG] Interaction context:`, interactionContext);
 
       // Pre-interaction governance validation
+      console.log(`🚨 [DEBUG] Validating interaction...`);
       const governanceValidation = await this.validateInteraction(interactionContext);
+      console.log(`🚨 [DEBUG] Governance validation result:`, governanceValidation);
       if (!governanceValidation.approved) {
         throw new Error(`Governance validation failed: ${governanceValidation.reason}`);
       }
@@ -2084,6 +2161,7 @@ You operate with governance oversight that monitors your interactions for safety
         }
       };
 
+      console.log(`🚨 [DEBUG] Backend request prepared:`, JSON.stringify(backendRequest, null, 2));
       console.log(`🛡️ [Universal] Sending governance-validated request to backend`);
       console.log(`📎 [Universal] Attachments: ${request.attachments?.length || 0} files`);
       
@@ -2098,12 +2176,21 @@ You operate with governance oversight that monitors your interactions for safety
       });
       
       // Call backend API with full governance integration
+      console.log(`🚨 [DEBUG] About to call backend API with endpoint: ${CHAT_ENDPOINT}`);
+      console.log(`🚨 [DEBUG] CHAT_ENDPOINT value: ${CHAT_ENDPOINT}`);
+      console.log(`🚨 [DEBUG] Calling callBackendAPI now...`);
+      
       const result = await this.callBackendAPI(CHAT_ENDPOINT, backendRequest, request.userId);
+      
+      console.log(`🚨 [DEBUG] Backend API call completed successfully`);
+      console.log(`🚨 [DEBUG] Result:`, result);
 
       // Post-interaction governance processing
+      console.log(`🚨 [DEBUG] Processing governance response...`);
       await this.processGovernanceResponse(request.agentId, result, interactionContext);
 
       // Create comprehensive audit entry
+      console.log(`🚨 [DEBUG] Creating audit entry...`);
       await this.createAuditEntry({
         agentId: request.agentId,
         action: 'governance_chat_interaction',
@@ -2122,6 +2209,7 @@ You operate with governance oversight that monitors your interactions for safety
       });
 
       console.log(`✅ [Universal] Message processed successfully with governance`);
+      console.log(`🚨 [DEBUG] ========== SEND MESSAGE DEBUG END (SUCCESS) ==========`);
       
       // Return enhanced response with governance metadata
       return {
@@ -2138,9 +2226,17 @@ You operate with governance oversight that monitors your interactions for safety
       };
 
     } catch (error) {
+      console.log(`🚨 [DEBUG] ========== SEND MESSAGE CATCH BLOCK ==========`);
+      console.log(`🚨 [DEBUG] Error caught in sendMessage:`, error);
+      console.log(`🚨 [DEBUG] Error type: ${error.constructor.name}`);
+      console.log(`🚨 [DEBUG] Error message: ${error.message}`);
+      console.log(`🚨 [DEBUG] Error stack:`, error.stack);
+      console.log(`🚨 [DEBUG] Full error object:`, error);
+      
       console.error('❌ [Universal] Failed to process message with governance:', error);
       
       // Create audit entry for failed interaction
+      console.log(`🚨 [DEBUG] Creating audit entry for failed interaction...`);
       await this.createAuditEntry({
         agentId: request.agentId,
         action: 'governance_chat_failure',
@@ -2153,6 +2249,7 @@ You operate with governance oversight that monitors your interactions for safety
         timestamp: new Date()
       });
 
+      console.log(`🚨 [DEBUG] ========== SEND MESSAGE DEBUG END (ERROR) ==========`);
       throw error;
     }
   }
