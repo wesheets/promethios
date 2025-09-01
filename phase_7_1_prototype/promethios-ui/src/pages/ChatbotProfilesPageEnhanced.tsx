@@ -26,6 +26,7 @@ import UserDiscoveryDialog, { PromethiosUser } from '../components/collaboration
 import InAppNotificationPopup, { ConversationInvitationNotification } from '../components/collaboration/InAppNotificationPopup';
 import ConversationNotificationService from '../services/ConversationNotificationService';
 import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../services/ChatInvitationService';
+import { useConnections } from '../hooks/useConnections';
 // Removed MultiAgentResponseIndicator - intrusive orange popup
 // Real-time collaboration imports
 import RealTimeConversationSync from '../services/RealTimeConversationSync';
@@ -322,6 +323,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser: user, loading: authLoading } = useAuth();
+  const { connections, loading: connectionsLoading } = useConnections();
   
   // Debug counter to track re-renders
   const renderCountRef = useRef(0);
@@ -1942,39 +1944,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }));
   };
 
-  // Get team members for guest selector - using real connections instead of stubbed data
+  // Get team members for guest selector - using connected users from Firebase
   const getTeamMembers = () => {
-    console.log('🔍 [Team Members] Current teamMembers array:', teamMembers);
-    console.log('🔍 [Team Members] teamMembers length:', teamMembers.length);
+    console.log('🔍 [Team Members] Using connected users from Firebase');
+    console.log('🔍 [Team Members] Connections array:', connections);
+    console.log('🔍 [Team Members] Connections length:', connections.length);
     
-    // Use real team members from HumanChatService (same as TeamPanel)
-    // Filter for humans, but be flexible about the type field
-    const realTeamMembers = teamMembers
-      .filter(member => {
-        // Accept if type is explicitly 'human' OR if type is undefined (assume human)
-        const isHuman = member.type === 'human' || !member.type || member.type === undefined;
-        console.log('🔍 [Team Members] Member:', member.name, 'Type:', member.type, 'IsHuman:', isHuman);
-        return isHuman;
-      })
-      .map(member => ({
-        id: member.id,
-        name: member.name,
-        type: 'human' as const,
-        role: member.role || 'Team Member',
-        status: member.status || 'online' as const, // Default to online for better UX
-        avatar: member.avatar || member.name.charAt(0)
-      }));
+    // Convert connections to team member format for the popup
+    const connectedUsers = connections.map(connection => ({
+      id: connection.userId,
+      name: connection.displayName || connection.email || 'Connected User',
+      type: 'human' as const,
+      role: connection.role || 'Team Member',
+      status: connection.isOnline ? 'online' as const : 'offline' as const,
+      avatar: connection.photoURL || connection.displayName?.charAt(0) || 'U'
+    }));
 
-    console.log('🔍 [Team Members] Filtered real team members:', realTeamMembers);
-
-    // Always return the team members, even if empty - let the UI handle empty state
-    if (realTeamMembers.length === 0) {
-      console.log('🔍 [Team Members] No real team members found, but returning empty array for UI to handle');
-    } else {
-      console.log('✅ [Team Members] Using', realTeamMembers.length, 'real team members');
-    }
+    console.log('🔍 [Team Members] Converted connected users:', connectedUsers);
+    console.log('✅ [Team Members] Returning', connectedUsers.length, 'connected users');
     
-    return realTeamMembers;
+    return connectedUsers;
   };
 
   // Get AI agents for guest selector
@@ -7037,7 +7026,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 }));
                 
                 // Send invitations through the notification system
-                await aiCollaborationInvitationService.sendCollaborationInvitations(invitationRequests);
+                const userIds = invitationRequests.map(req => req.toUserId);
+                await aiCollaborationInvitationService.sendInvitationToMultipleUsers(
+                  user?.uid || '',
+                  user?.displayName || user?.email || 'User',
+                  userIds,
+                  conversationId,
+                  conversationName,
+                  selectedChatbot?.identity?.name,
+                  `Join me in collaborating with ${selectedChatbot?.identity?.name || 'AI'}`
+                );
                 
                 console.log(`✅ Successfully sent ${invitationRequests.length} collaboration invitations`);
                 
