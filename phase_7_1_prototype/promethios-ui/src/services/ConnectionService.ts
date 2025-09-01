@@ -213,6 +213,8 @@ export class ConnectionService {
         return [];
       }
 
+      console.log(`🔍 [Connection] Getting connections for user: ${userId}`);
+
       const q1 = query(
         collection(db, 'connections'),
         where('userId1', '==', userId)
@@ -228,24 +230,36 @@ export class ConnectionService {
         getDocs(q2)
       ]);
 
+      console.log(`🔍 [Connection] getUserConnections query results:`, {
+        userId: userId,
+        query1Results: snapshot1.size,
+        query2Results: snapshot2.size,
+        totalConnections: snapshot1.size + snapshot2.size
+      });
+
       const connections: Connection[] = [];
       
       snapshot1.docs.forEach(doc => {
+        const data = doc.data();
+        console.log(`🔍 [Connection] Found connection (as userId1):`, data);
         connections.push({
           id: doc.id,
-          ...doc.data(),
-          connectedAt: doc.data().connectedAt?.toDate() || new Date()
+          ...data,
+          connectedAt: data.connectedAt?.toDate() || new Date()
         } as Connection);
       });
 
       snapshot2.docs.forEach(doc => {
+        const data = doc.data();
+        console.log(`🔍 [Connection] Found connection (as userId2):`, data);
         connections.push({
           id: doc.id,
-          ...doc.data(),
-          connectedAt: doc.data().connectedAt?.toDate() || new Date()
+          ...data,
+          connectedAt: data.connectedAt?.toDate() || new Date()
         } as Connection);
       });
 
+      console.log(`✅ [Connection] Returning ${connections.length} connections for user ${userId}`);
       return connections;
     } catch (error) {
       console.error('❌ [Connection] Error fetching connections:', error);
@@ -265,6 +279,15 @@ export class ConnectionService {
         return false;
       }
 
+      console.log(`🔍 [Connection] Checking connection between users:`, {
+        userId1: userId1,
+        userId2: userId2,
+        userId1Type: typeof userId1,
+        userId2Type: typeof userId2,
+        userId1Length: userId1.length,
+        userId2Length: userId2.length
+      });
+
       const q1 = query(
         collection(db, 'connections'),
         where('userId1', '==', userId1),
@@ -277,12 +300,31 @@ export class ConnectionService {
         where('userId2', '==', userId1)
       );
 
+      console.log(`🔍 [Connection] Executing Firebase queries...`);
       const [snapshot1, snapshot2] = await Promise.all([
         getDocs(q1),
         getDocs(q2)
       ]);
 
-      return !snapshot1.empty || !snapshot2.empty;
+      console.log(`🔍 [Connection] Query results:`, {
+        query1Results: snapshot1.size,
+        query2Results: snapshot2.size,
+        query1Empty: snapshot1.empty,
+        query2Empty: snapshot2.empty
+      });
+
+      // Log some sample connection data for debugging
+      if (snapshot1.size > 0) {
+        console.log(`🔍 [Connection] Found connection in query1:`, snapshot1.docs[0].data());
+      }
+      if (snapshot2.size > 0) {
+        console.log(`🔍 [Connection] Found connection in query2:`, snapshot2.docs[0].data());
+      }
+
+      const isConnected = !snapshot1.empty || !snapshot2.empty;
+      console.log(`🔍 [Connection] Final result: ${isConnected}`);
+      
+      return isConnected;
     } catch (error) {
       console.error('❌ [Connection] Error checking connection:', error);
       return false;
