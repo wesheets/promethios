@@ -7018,8 +7018,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 // Get current conversation info
                 const currentConversationId = selectedChatbot?.id || 'default-conversation';
                 const currentConversationName = selectedChatbot?.identity?.name || 'AI Conversation';
-                const currentUserId = 'current-user-id'; // TODO: Get from auth context
-                const currentUserName = 'Current User'; // TODO: Get from auth context
+                const currentUserId = user?.uid || 'unknown-user'; // Use real authenticated user ID
+                const currentUserName = user?.displayName || user?.email || 'Current User'; // Use real user name
                 
                 // Create invitation requests for each pending human
                 const invitationRequests: AICollaborationInvitationRequest[] = pendingHumanInvites.map(human => ({
