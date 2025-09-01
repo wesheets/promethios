@@ -102,62 +102,70 @@ def log_request_size():
         except Exception as e:
             print(f"🚨 [REQUEST-DEBUG] Could not get data size: {e}")
 
-# 🚨 CORS FIX: Comprehensive CORS configuration with explicit header handling
-# The issue was missing Access-Control-Allow-Origin header in responses
+# 🚨 MINIMAL BULLETPROOF CORS CONFIGURATION
+# Removing flask-cors dependency and using manual CORS headers only
 
-# Get allowed origins from environment or default to allow all
-allowed_origins = os.environ.get('CORS_ORIGIN', '*')
-if allowed_origins != '*':
-    allowed_origins = [origin.strip() for origin in allowed_origins.split(',')]
-
-print(f"🚨 [CORS-DEBUG] Configuring CORS with origins: {allowed_origins}")
-print(f"🚨 [CORS-DEBUG] CORS_ORIGIN env var: {os.environ.get('CORS_ORIGIN', 'NOT SET')}")
-
-# Configure CORS with explicit settings
-if allowed_origins == '*':
-    print("🚨 [CORS-DEBUG] Using wildcard origins (development mode)")
-    # Allow all origins without credentials (for development/testing)
-    CORS(app, 
-         origins="*", 
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With", "Accept", "Origin", "x-agent-id", "x-user-id"],
-         supports_credentials=False,  # Must be False when origins="*"
-         max_age=86400,
-         send_wildcard=True,
-         automatic_options=True)
+# Get allowed origins from environment
+cors_origin_env = os.environ.get('CORS_ORIGIN', '*')
+if cors_origin_env != '*':
+    allowed_origins_list = [origin.strip() for origin in cors_origin_env.split(',')]
 else:
-    print(f"🚨 [CORS-DEBUG] Using specific origins: {allowed_origins}")
-    # Allow specific origins with credentials (for production)
-    CORS(app, 
-         origins=allowed_origins, 
-         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-         allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With", "Accept", "Origin", "x-agent-id", "x-user-id"],
-         supports_credentials=True,
-         max_age=86400,
-         automatic_options=True)
+    allowed_origins_list = ['*']
 
-# Add explicit CORS headers as a fallback
+print(f"🚨 [CORS-DEBUG] CORS_ORIGIN env var: {cors_origin_env}")
+print(f"🚨 [CORS-DEBUG] Allowed origins list: {allowed_origins_list}")
+
+# Manual CORS handler - this should definitely work
 @app.after_request
 def after_request(response):
     origin = request.headers.get('Origin')
+    print(f"🚨 [CORS-DEBUG] Processing request from origin: {origin}")
+    
+    # Always add CORS headers
     if origin:
-        if allowed_origins == '*':
+        if '*' in allowed_origins_list:
             response.headers['Access-Control-Allow-Origin'] = '*'
             response.headers['Access-Control-Allow-Credentials'] = 'false'
-        elif isinstance(allowed_origins, list) and origin in allowed_origins:
+            print(f"🚨 [CORS-DEBUG] Set wildcard CORS headers")
+        elif origin in allowed_origins_list:
             response.headers['Access-Control-Allow-Origin'] = origin
             response.headers['Access-Control-Allow-Credentials'] = 'true'
+            print(f"🚨 [CORS-DEBUG] Set specific origin CORS headers for: {origin}")
+        else:
+            print(f"🚨 [CORS-DEBUG] Origin {origin} not in allowed list: {allowed_origins_list}")
+    
+    # Always add these headers
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-api-key, X-Requested-With, Accept, Origin, x-agent-id, x-user-id'
+    response.headers['Access-Control-Max-Age'] = '86400'
+    
+    print(f"🚨 [CORS-DEBUG] Final Access-Control-Allow-Origin header: {response.headers.get('Access-Control-Allow-Origin', 'NOT SET')}")
+    return response
+
+# Manual OPTIONS handler for preflight requests
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        print(f"🚨 [CORS-DEBUG] Handling OPTIONS preflight request from: {request.headers.get('Origin')}")
+        response = make_response()
+        origin = request.headers.get('Origin')
+        
+        if origin:
+            if '*' in allowed_origins_list:
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Allow-Credentials'] = 'false'
+            elif origin in allowed_origins_list:
+                response.headers['Access-Control-Allow-Origin'] = origin
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
         
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-api-key, X-Requested-With, Accept, Origin, x-agent-id, x-user-id'
         response.headers['Access-Control-Max-Age'] = '86400'
         
-        print(f"🚨 [CORS-DEBUG] Added CORS headers for origin: {origin}")
-        print(f"🚨 [CORS-DEBUG] Access-Control-Allow-Origin: {response.headers.get('Access-Control-Allow-Origin')}")
-    
-    return response
+        print(f"🚨 [CORS-DEBUG] OPTIONS response Access-Control-Allow-Origin: {response.headers.get('Access-Control-Allow-Origin', 'NOT SET')}")
+        return response
 
-print("🚨 [CORS-DEBUG] CORS configuration completed successfully")
+print("🚨 [CORS-DEBUG] Minimal CORS configuration completed successfully")
 
 # Register blueprints
 print("🚨 [STARTUP-DEBUG] Starting blueprint registration...")
