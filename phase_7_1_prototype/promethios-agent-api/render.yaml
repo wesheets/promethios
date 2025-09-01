@@ -12,4 +12,6 @@ services:
         value: "5004"
       - key: FLASK_ENV
         value: "production"
+      - key: CORS_ORIGIN
+        value: "https://www.spark.promethios.ai,https://spark.promethios.ai"
 
