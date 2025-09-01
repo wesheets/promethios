@@ -1357,7 +1357,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       // Load team members - wait a bit for service to initialize like TeamPanel does
       await new Promise(resolve => setTimeout(resolve, 500)); // Wait for services to initialize
+      console.log('🔍 [Team] About to call humanChatService.getTeamMembers()');
       const members = humanChatService.getTeamMembers(); // This is synchronous, not async
+      console.log('🔍 [Team] humanChatService.getTeamMembers() returned:', members);
+      console.log('🔍 [Team] Members length:', members.length);
+      console.log('🔍 [Team] Members array:', members);
       setTeamMembers(members);
       console.log('✅ [Team] Loaded team members:', members.length);
       

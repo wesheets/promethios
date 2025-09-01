@@ -44,6 +44,14 @@ export class NotificationService {
    * Add a notification
    */
   addNotification(notification: AppNotification): void {
+    // If notification has a userId and it's not for the current user, ignore it
+    // This allows the notification system to be used for multi-user scenarios
+    // where notifications are sent to specific users
+    if (notification.userId && notification.userId !== this.getCurrentUserId()) {
+      console.log('🔕 [Notification] Ignoring notification for different user:', notification.userId);
+      return;
+    }
+
     // Check if notification already exists
     const existingIndex = this.notifications.findIndex(n => n.id === notification.id);
     
@@ -269,6 +277,32 @@ export class NotificationService {
       return permission === 'granted';
     }
     return false;
+  }
+
+  /**
+   * Get current user ID for notification filtering
+   */
+  private getCurrentUserId(): string | null {
+    // Try to get user ID from auth context or localStorage
+    try {
+      // Check if we have access to Firebase auth
+      const auth = (window as any).firebase?.auth?.();
+      if (auth?.currentUser?.uid) {
+        return auth.currentUser.uid;
+      }
+      
+      // Fallback to localStorage if available
+      const userData = localStorage.getItem('spark_user_data');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        return parsed.uid || parsed.id || null;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to get current user ID:', error);
+      return null;
+    }
   }
 }
 
