@@ -127,6 +127,8 @@ def handle_request_and_cors():
 # 🚨 MINIMAL BULLETPROOF CORS CONFIGURATION
 # Removing flask-cors dependency and using manual CORS headers only
 
+print("🚨🚨🚨 [CORS-STARTUP] CORS CONFIGURATION LOADING - THIS MESSAGE SHOULD APPEAR IN LOGS! 🚨🚨🚨")
+
 # Get allowed origins from environment
 cors_origin_env = os.environ.get('CORS_ORIGIN', '*')
 if cors_origin_env != '*':
@@ -136,6 +138,7 @@ else:
 
 print(f"🚨 [CORS-DEBUG] CORS_ORIGIN env var: {cors_origin_env}")
 print(f"🚨 [CORS-DEBUG] Allowed origins list: {allowed_origins_list}")
+print("🚨🚨🚨 [CORS-STARTUP] CORS ENVIRONMENT VARIABLES LOADED SUCCESSFULLY! 🚨🚨🚨")
 
 # Manual CORS handler - this should definitely work
 @app.after_request
