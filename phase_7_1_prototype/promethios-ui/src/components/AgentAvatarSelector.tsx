@@ -77,6 +77,15 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const allAgents = [hostAgent, ...guestAgents];
 
+  // Debug logging to see what props are received
+  console.log('🔍 [AgentAvatarSelector] Props received:');
+  console.log('🔍 [AgentAvatarSelector] teamMembers:', teamMembers);
+  console.log('🔍 [AgentAvatarSelector] teamMembers.length:', teamMembers.length);
+  console.log('🔍 [AgentAvatarSelector] aiAgents:', aiAgents);
+  console.log('🔍 [AgentAvatarSelector] aiAgents.length:', aiAgents.length);
+  console.log('🔍 [AgentAvatarSelector] onAddGuests provided:', !!onAddGuests);
+  console.log('🔍 [AgentAvatarSelector] onAddAgent provided:', !!onAddAgent);
+
   // Handle target selection (for messaging)
   const handleTargetClick = (targetId: string, event: React.MouseEvent) => {
     event.preventDefault();
