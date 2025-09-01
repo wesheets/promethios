@@ -7031,8 +7031,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   user?.uid || '',
                   user?.displayName || user?.email || 'User',
                   userIds,
-                  conversationId,
-                  conversationName,
+                  currentConversationId,
+                  currentConversationName,
                   selectedChatbot?.identity?.name,
                   `Join me in collaborating with ${selectedChatbot?.identity?.name || 'AI'}`
                 );
