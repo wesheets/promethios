@@ -9,8 +9,9 @@ import {
 import {
   Chat as ChatIcon,
 } from '@mui/icons-material';
-import ResponsiveMessageInterface from './ResponsiveMessageInterface';
+import SimpleContactList from './SimpleContactList';
 import { ConnectionService } from '../../services/ConnectionService';
+import { useChatIntegration } from './ChatIntegrationProvider';
 
 interface ChatButtonProps {
   collapsed: boolean;
@@ -20,6 +21,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [connections, setConnections] = useState<any[]>([]);
+  const { openDirectMessage } = useChatIntegration();
 
   // Load connections when panel opens
   useEffect(() => {
@@ -55,10 +57,9 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
   };
 
   const handleOpenFloatingChat = (userId: string, userName: string) => {
-    // This will integrate with the ChatWindowManager to open floating chat
-    console.log('Opening floating chat with:', userName, '(ID:', userId, ')');
-    // TODO: Integrate with ChatWindowManager
-    // For now, we'll close the panel when a chat is opened
+    // Use the ChatIntegrationProvider to open floating chat
+    openDirectMessage(userId, userName);
+    // Close the contact list panel
     setIsPanelOpen(false);
   };
 
@@ -84,11 +85,10 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
           </IconButton>
         </Tooltip>
         
-        <ResponsiveMessageInterface
+        <SimpleContactList
           isOpen={isPanelOpen}
           onClose={handleClosePanel}
           onOpenFloatingChat={handleOpenFloatingChat}
-          connections={connections}
         />
       </>
     );
@@ -129,7 +129,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
         </Box>
       </Tooltip>
       
-      <ResponsiveMessageInterface
+      <SimpleContactList
         isOpen={isPanelOpen}
         onClose={handleClosePanel}
         onOpenFloatingChat={handleOpenFloatingChat}

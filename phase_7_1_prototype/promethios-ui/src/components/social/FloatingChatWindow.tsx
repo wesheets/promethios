@@ -199,11 +199,11 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
           flexDirection: 'column',
           borderRadius: 2,
           overflow: 'hidden',
-          backgroundColor: 'background.paper',
+          backgroundColor: '#0f172a', // Dark background to match Direct Messages
           border: isPinned ? '2px solid' : '1px solid',
-          borderColor: isPinned ? 'primary.main' : 'divider',
+          borderColor: isPinned ? '#3b82f6' : '#1e293b', // Dark border colors
           cursor: isResizing ? 'nw-resize' : 'default',
-          boxShadow: isPinned ? (theme) => theme.shadows[16] : (theme) => theme.shadows[8],
+          boxShadow: isPinned ? '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2)' : '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1)',
         }}
       >
         {/* Header */}
@@ -213,11 +213,11 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
             display: 'flex',
             alignItems: 'center',
             p: 1.5,
-            backgroundColor: isPinned ? 'secondary.main' : 'primary.main',
-            color: 'primary.contrastText',
+            backgroundColor: isPinned ? '#1e293b' : '#0f172a', // Dark header to match Direct Messages
+            color: 'white',
             cursor: isPinned ? 'default' : 'move',
             userSelect: 'none',
-            borderBottom: isPinned ? '1px solid rgba(255,255,255,0.2)' : 'none',
+            borderBottom: '1px solid #1e293b', // Dark border
           }}
         >
           <Avatar
@@ -288,7 +288,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
             flex: 1,
             p: 1,
             overflowY: 'auto',
-            backgroundColor: 'background.default',
+            backgroundColor: '#0f172a', // Dark background to match Direct Messages
             display: 'flex',
             flexDirection: 'column',
             gap: 1,
@@ -303,8 +303,8 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
               flexDirection: 'column',
               gap: 2
             }}>
-              <CircularProgress size={24} />
-              <Typography variant="body2" color="text.secondary">
+              <CircularProgress size={24} sx={{ color: '#3b82f6' }} />
+              <Typography variant="body2" sx={{ color: '#94a3b8' }}>
                 Loading messages...
               </Typography>
             </Box>
@@ -314,7 +314,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
               alignItems: 'center', 
               justifyContent: 'center', 
               height: '100%',
-              color: 'text.secondary'
+              color: '#94a3b8'
             }}>
               <Typography variant="body2">
                 Start a conversation with {participantName}
@@ -335,12 +335,13 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
                     sx={{
                       p: 1.5,
                       backgroundColor: message.senderId === user?.uid 
-                        ? 'primary.main' 
-                        : 'grey.100',
-                      color: message.senderId === user?.uid 
-                        ? 'primary.contrastText' 
-                        : 'text.primary',
+                        ? '#3b82f6' // Blue for sent messages
+                        : '#1e293b', // Dark grey for received messages
+                      color: 'white', // White text for both
                       borderRadius: 2,
+                      border: message.senderId === user?.uid 
+                        ? 'none'
+                        : '1px solid #334155',
                     }}
                   >
                     <Typography variant="body2">
@@ -369,43 +370,68 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
         </Box>
 
         {/* Input Area */}
-        <Box sx={{ p: 1.5, backgroundColor: 'background.paper' }}>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-            <TextField
-              fullWidth
-              multiline
-              maxRows={3}
-              placeholder={`Message ${participantName}...`}
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={isSending}
-              variant="outlined"
-              size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
+        <Box
+          sx={{
+            p: 1.5,
+            backgroundColor: '#1e293b', // Dark input area background
+            borderTop: '1px solid #334155',
+            display: 'flex',
+            gap: 1,
+            alignItems: 'flex-end',
+          }}
+        >
+          <TextField
+            fullWidth
+            multiline
+            maxRows={3}
+            placeholder={`Message ${participantName}...`}
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={isSending}
+            variant="outlined"
+            size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                backgroundColor: '#0f172a', // Dark input background
+                color: 'white',
+                '& fieldset': {
+                  borderColor: '#334155',
                 },
-              }}
-            />
-            <IconButton
-              onClick={handleSendMessage}
-              disabled={!messageInput.trim() || isSending}
-              color="primary"
-              sx={{
-                backgroundColor: 'primary.main',
-                color: 'primary.contrastText',
-                '&:hover': {
-                  backgroundColor: 'primary.dark',
+                '&:hover fieldset': {
+                  borderColor: '#3b82f6',
                 },
-                '&:disabled': {
-                  backgroundColor: 'grey.300',
+                '&.Mui-focused fieldset': {
+                  borderColor: '#3b82f6',
                 },
-              }}
-            >
-              {isSending ? <CircularProgress size={20} /> : <Send />}
-            </IconButton>
-          </Box>
+              },
+              '& .MuiInputBase-input': {
+                color: 'white',
+                '&::placeholder': {
+                  color: '#94a3b8',
+                  opacity: 1,
+                },
+              },
+            }}
+          />
+          <IconButton
+            onClick={handleSendMessage}
+            disabled={!messageInput.trim() || isSending}
+            sx={{
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#2563eb',
+              },
+              '&:disabled': {
+                backgroundColor: '#374151',
+                color: '#6b7280',
+              },
+            }}
+          >
+            {isSending ? <CircularProgress size={20} sx={{ color: 'white' }} /> : <Send />}
+          </IconButton>
         </Box>
 
         {/* Resize Handle */}
@@ -418,7 +444,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
             width: 20,
             height: 20,
             cursor: 'nw-resize',
-            backgroundColor: 'primary.main',
+            backgroundColor: '#374151',
             opacity: 0.3,
             '&:hover': { opacity: 0.6 },
             display: 'flex',

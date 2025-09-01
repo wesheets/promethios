@@ -23,7 +23,8 @@ import {
   Button,
   DialogActions,
   InputAdornment,
-  Badge
+  Badge,
+  CircularProgress
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -62,6 +63,8 @@ interface GuestSelectorPopupProps {
   conversationId?: string;
   conversationName?: string;
   agentName?: string;
+  // Loading state for connections
+  connectionsLoading?: boolean;
 }
 
 const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
@@ -76,7 +79,8 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   currentUserName,
   conversationId,
   conversationName,
-  agentName
+  agentName,
+  connectionsLoading = false
 }) => {
   // Use unified notification system for sending invitations
   const { sendInteraction } = useUserInteractions();
@@ -116,8 +120,28 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   // Debug logging
   console.log('🔍 [GuestSelectorPopup] teamMembers prop:', teamMembers);
   console.log('🔍 [GuestSelectorPopup] teamMembers length:', teamMembers?.length || 0);
+  console.log('🔍 [GuestSelectorPopup] aiAgents prop:', aiAgents);
+  console.log('🔍 [GuestSelectorPopup] aiAgents length:', aiAgents?.length || 0);
+  console.log('🔍 [GuestSelectorPopup] currentParticipants:', currentParticipants);
+  console.log('🔍 [GuestSelectorPopup] searchQuery:', searchQuery);
   console.log('🔍 [GuestSelectorPopup] filteredHumans:', filteredHumans);
   console.log('🔍 [GuestSelectorPopup] filteredHumans length:', filteredHumans.length);
+  console.log('🔍 [GuestSelectorPopup] filteredAIAgents:', filteredAIAgents);
+  console.log('🔍 [GuestSelectorPopup] filteredAIAgents length:', filteredAIAgents.length);
+  
+  // Debug each team member filtering
+  if (teamMembers && teamMembers.length > 0) {
+    console.log('🔍 [GuestSelectorPopup] Debugging team member filtering:');
+    teamMembers.forEach((member, index) => {
+      const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           member.role?.toLowerCase().includes(searchQuery.toLowerCase());
+      const notCurrentParticipant = !currentParticipants.includes(member.id);
+      console.log(`  Member ${index}: ${member.name} (${member.id})`);
+      console.log(`    - matchesSearch: ${matchesSearch}`);
+      console.log(`    - notCurrentParticipant: ${notCurrentParticipant}`);
+      console.log(`    - included in filtered: ${matchesSearch && notCurrentParticipant}`);
+    });
+  }
 
   const handleToggleSelection = (memberId: string) => {
     const newSelection = new Set(selectedGuests);
@@ -424,12 +448,21 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
           </Box>
         )}
 
-        {/* No Results */}
+        {/* No Results or Loading */}
         {filteredHumans.length === 0 && filteredAIAgents.length === 0 && (
           <Box textAlign="center" py={4}>
-            <Typography variant="body1" color="#64748b">
-              {searchQuery ? 'No team members found matching your search.' : 'All team members are already in this conversation.'}
-            </Typography>
+            {connectionsLoading ? (
+              <>
+                <CircularProgress size={32} sx={{ color: '#3b82f6', mb: 2 }} />
+                <Typography variant="body1" color="#64748b">
+                  Loading team members...
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="body1" color="#64748b">
+                {searchQuery ? 'No team members found matching your search.' : 'All team members are already in this conversation.'}
+              </Typography>
+            )}
           </Box>
         )}
       </DialogContent>

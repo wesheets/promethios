@@ -54,6 +54,8 @@ export interface AgentAvatarSelectorProps {
   currentUserName?: string;
   conversationId?: string;
   conversationName?: string;
+  // Loading state to handle async data loading
+  connectionsLoading?: boolean;
 }
 
 export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
@@ -72,7 +74,8 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   currentUserId,
   currentUserName,
   conversationId,
-  conversationName
+  conversationName,
+  connectionsLoading = false
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const allAgents = [hostAgent, ...guestAgents];
@@ -83,8 +86,19 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   console.log('🔍 [AgentAvatarSelector] teamMembers.length:', teamMembers.length);
   console.log('🔍 [AgentAvatarSelector] aiAgents:', aiAgents);
   console.log('🔍 [AgentAvatarSelector] aiAgents.length:', aiAgents.length);
+  console.log('🔍 [AgentAvatarSelector] connectionsLoading:', connectionsLoading);
   console.log('🔍 [AgentAvatarSelector] onAddGuests provided:', !!onAddGuests);
   console.log('🔍 [AgentAvatarSelector] onAddAgent provided:', !!onAddAgent);
+  
+  // Check if button should be clickable
+  const shouldBeClickable = teamMembers.length > 0 || aiAgents.length > 0 || connectionsLoading;
+  console.log('🔍 [AgentAvatarSelector] Button should be clickable:', shouldBeClickable);
+  console.log('🔍 [AgentAvatarSelector] Reason:', 
+    teamMembers.length > 0 ? 'Has team members' :
+    aiAgents.length > 0 ? 'Has AI agents' :
+    connectionsLoading ? 'Still loading connections' :
+    'No team members or AI agents available'
+  );
 
   // Handle target selection (for messaging)
   const handleTargetClick = (targetId: string, event: React.MouseEvent) => {
@@ -121,10 +135,21 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
 
   // Handle guest selector
   const handleAddGuestClick = () => {
-    if (teamMembers.length > 0 || aiAgents.length > 0) {
+    console.log('🔘 [AgentAvatarSelector] Plus button clicked!');
+    console.log('🔘 [AgentAvatarSelector] teamMembers.length:', teamMembers.length);
+    console.log('🔘 [AgentAvatarSelector] aiAgents.length:', aiAgents.length);
+    console.log('🔘 [AgentAvatarSelector] connectionsLoading:', connectionsLoading);
+    
+    // Show the guest selector if:
+    // 1. There are team members available, OR
+    // 2. There are AI agents available, OR  
+    // 3. Connections are still loading (so we don't know yet if there are team members)
+    if (teamMembers.length > 0 || aiAgents.length > 0 || connectionsLoading) {
+      console.log('🔘 [AgentAvatarSelector] Opening GuestSelectorPopup');
       setGuestSelectorOpen(true);
     } else {
-      // Fallback to original onAddAgent if no team data
+      console.log('🔘 [AgentAvatarSelector] Falling back to onAddAgent');
+      // Fallback to original onAddAgent if no team data and not loading
       onAddAgent?.();
     }
   };
@@ -432,6 +457,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         conversationId={conversationId}
         conversationName={conversationName}
         agentName={hostAgent.name}
+        connectionsLoading={connectionsLoading}
       />
     </Box>
   );

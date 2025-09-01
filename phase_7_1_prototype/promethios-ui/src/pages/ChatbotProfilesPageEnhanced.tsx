@@ -4567,6 +4567,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       onSelectionChange={handleAgentSelectionChange}
                                       teamMembers={getTeamMembers()}
                                       aiAgents={getAIAgents()}
+                                      connectionsLoading={connectionsLoading}
                                       onAddGuests={handleAddGuests}
                                       humanParticipants={humanParticipants.map(h => ({
                                         id: h.userId,
@@ -4583,6 +4584,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       currentUserName={user?.displayName || 'User'}
                                       conversationId={`conv_${selectedChatbot?.id || 'default'}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
+                                      connectionsLoading={connectionsLoading}
                                     />
                                     
                                     {/* Behavioral Orchestration Hover Triggers */}
