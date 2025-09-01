@@ -17,6 +17,7 @@ print("🚨 [ULTRA-EARLY-DEBUG] ✅ Flask imported")
 
 # Removed flask_cors import since we're using manual CORS headers only
 print("🚨 [ULTRA-EARLY-DEBUG] ✅ Using manual CORS configuration")
+print("🚨🚨🚨 [EXECUTION-TEST] THIS IS THE LATEST VERSION WITH CORS FIXES - COMMIT 1da8de4f 🚨🚨🚨")
 
 print("🚨 [ULTRA-EARLY-DEBUG] Starting model imports...")
 from src.models.user import db
