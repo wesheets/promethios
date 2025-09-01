@@ -331,50 +331,6 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
     return count;
   };
 
-  const handleLike = async (postId: string) => {
-    try {
-      await socialFeedService.likePost(postId);
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? { 
-              ...post, 
-              isLiked: !post.isLiked,
-              metrics: {
-                ...post.metrics,
-                likes: post.isLiked ? post.metrics.likes - 1 : post.metrics.likes + 1
-              }
-            }
-          : post
-      ));
-    } catch (err) {
-      console.error('Error liking post:', err);
-    }
-  };
-
-  const handleComment = async (postId: string) => {
-    // This would open a comment dialog or navigate to post detail
-    console.log('Comment on post:', postId);
-  };
-
-  const handleShare = async (postId: string) => {
-    try {
-      await socialFeedService.sharePost(postId);
-      setPosts(prev => prev.map(post => 
-        post.id === postId 
-          ? { 
-              ...post, 
-              metrics: {
-                ...post.metrics,
-                shares: post.metrics.shares + 1
-              }
-            }
-          : post
-      ));
-    } catch (err) {
-      console.error('Error sharing post:', err);
-    }
-  };
-
   return (
     <Box>
       {/* Header */}
