@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../context/AuthContext';
 import SharedConversationService, { SharedConversation } from '../services/SharedConversationService';
 
 interface SharedConversationContextType {
