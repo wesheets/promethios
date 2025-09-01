@@ -15,8 +15,8 @@ print("🚨 [ULTRA-EARLY-DEBUG] Starting Flask imports...")
 from flask import Flask, send_from_directory, make_response, request
 print("🚨 [ULTRA-EARLY-DEBUG] ✅ Flask imported")
 
-from flask_cors import CORS
-print("🚨 [ULTRA-EARLY-DEBUG] ✅ CORS imported")
+# Removed flask_cors import since we're using manual CORS headers only
+print("🚨 [ULTRA-EARLY-DEBUG] ✅ Using manual CORS configuration")
 
 print("🚨 [ULTRA-EARLY-DEBUG] Starting model imports...")
 from src.models.user import db
