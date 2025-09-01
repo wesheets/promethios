@@ -11,6 +11,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
   origin: [
     'https://promethios.ai',
+    'https://www.spark.promethios.ai',  // ✅ NEW SPARK DOMAIN
+    'https://spark.promethios.ai',      // ✅ NEW SPARK DOMAIN  
     'https://promethios-phase-7-1-ui.onrender.com',
     'http://localhost:3000',
     'http://localhost:5173'
