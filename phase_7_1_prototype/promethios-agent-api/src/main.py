@@ -81,6 +81,19 @@ print("🚨 [STARTUP-DEBUG] All imports completed successfully!")
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 
+# 🚨 DEPLOYMENT TEST ENDPOINT - THIS SHOULD DEFINITELY WORK IF OUR CODE IS RUNNING
+@app.route('/api/test-deployment', methods=['GET'])
+def test_deployment():
+    return {
+        'status': 'success',
+        'message': 'CORS fix deployment test endpoint',
+        'commit': 'd992f63b',
+        'timestamp': '2025-09-01T13:20:00Z',
+        'version': 'CORS-FIX-WITH-ERROR-HANDLING'
+    }
+
+print("🚨🚨🚨 [DEPLOYMENT-TEST] TEST ENDPOINT REGISTERED: /api/test-deployment 🚨🚨🚨")
+
 # Configure Flask for larger file uploads and payloads
 app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max file size (increased from 50MB)
 app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
