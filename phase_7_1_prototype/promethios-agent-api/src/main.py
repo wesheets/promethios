@@ -130,43 +130,51 @@ def handle_request_and_cors():
 
 print("🚨🚨🚨 [CORS-STARTUP] CORS CONFIGURATION LOADING - THIS MESSAGE SHOULD APPEAR IN LOGS! 🚨🚨🚨")
 
-# Get allowed origins from environment
-cors_origin_env = os.environ.get('CORS_ORIGIN', '*')
-if cors_origin_env != '*':
-    allowed_origins_list = [origin.strip() for origin in cors_origin_env.split(',')]
-else:
-    allowed_origins_list = ['*']
+try:
+    # Get allowed origins from environment
+    cors_origin_env = os.environ.get('CORS_ORIGIN', '*')
+    if cors_origin_env != '*':
+        allowed_origins_list = [origin.strip() for origin in cors_origin_env.split(',')]
+    else:
+        allowed_origins_list = ['*']
 
-print(f"🚨 [CORS-DEBUG] CORS_ORIGIN env var: {cors_origin_env}")
-print(f"🚨 [CORS-DEBUG] Allowed origins list: {allowed_origins_list}")
-print("🚨🚨🚨 [CORS-STARTUP] CORS ENVIRONMENT VARIABLES LOADED SUCCESSFULLY! 🚨🚨🚨")
+    print(f"🚨 [CORS-DEBUG] CORS_ORIGIN env var: {cors_origin_env}")
+    print(f"🚨 [CORS-DEBUG] Allowed origins list: {allowed_origins_list}")
+    print("🚨🚨🚨 [CORS-STARTUP] CORS ENVIRONMENT VARIABLES LOADED SUCCESSFULLY! 🚨🚨🚨")
 
-# Manual CORS handler - this should definitely work
-@app.after_request
-def after_request(response):
-    origin = request.headers.get('Origin')
-    print(f"🚨 [CORS-DEBUG] Processing request from origin: {origin}")
-    
-    # Always add CORS headers
-    if origin:
-        if '*' in allowed_origins_list:
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            response.headers['Access-Control-Allow-Credentials'] = 'false'
-            print(f"🚨 [CORS-DEBUG] Set wildcard CORS headers")
-        elif origin in allowed_origins_list:
-            response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-            print(f"🚨 [CORS-DEBUG] Set specific origin CORS headers for: {origin}")
-        else:
-            print(f"🚨 [CORS-DEBUG] Origin {origin} not in allowed list: {allowed_origins_list}")
-    
-    # Always add these headers
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-api-key, X-Requested-With, Accept, Origin, x-agent-id, x-user-id'
-    response.headers['Access-Control-Max-Age'] = '86400'
-    
-    print(f"🚨 [CORS-DEBUG] Final Access-Control-Allow-Origin header: {response.headers.get('Access-Control-Allow-Origin', 'NOT SET')}")
-    return response
+    # Manual CORS handler - this should definitely work
+    @app.after_request
+    def after_request(response):
+        origin = request.headers.get('Origin')
+        print(f"🚨 [CORS-DEBUG] Processing request from origin: {origin}")
+        
+        # Always add CORS headers
+        if origin:
+            if '*' in allowed_origins_list:
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Allow-Credentials'] = 'false'
+                print(f"🚨 [CORS-DEBUG] Set wildcard CORS headers")
+            elif origin in allowed_origins_list:
+                response.headers['Access-Control-Allow-Origin'] = origin
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
+                print(f"🚨 [CORS-DEBUG] Set specific origin CORS headers for: {origin}")
+            else:
+                print(f"🚨 [CORS-DEBUG] Origin {origin} not in allowed list: {allowed_origins_list}")
+        
+        # Always add these headers
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-api-key, X-Requested-With, Accept, Origin, x-agent-id, x-user-id'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        
+        print(f"🚨 [CORS-DEBUG] Final Access-Control-Allow-Origin header: {response.headers.get('Access-Control-Allow-Origin', 'NOT SET')}")
+        return response
+
+    print("🚨🚨🚨 [CORS-STARTUP] CORS HANDLERS REGISTERED SUCCESSFULLY! 🚨🚨🚨")
+
+except Exception as e:
+    print(f"🚨🚨🚨 [CORS-ERROR] CORS CONFIGURATION FAILED: {e} 🚨🚨🚨")
+    import traceback
+    print(f"🚨🚨🚨 [CORS-ERROR] TRACEBACK: {traceback.format_exc()} 🚨🚨🚨")
 
 print("🚨 [CORS-DEBUG] Minimal CORS configuration completed successfully")
 
