@@ -37,7 +37,10 @@ import {
   Clear,
 } from '@mui/icons-material';
 import SocialFeedPost, { FeedPost } from './SocialFeedPost';
+import CreatePostDialog from './CreatePostDialog';
 import { socialFeedService } from '../../services/SocialFeedService';
+import { useUserInteractions } from '../../hooks/useUserInteractions';
+import { useAuth } from '../../context/AuthContext';
 
 interface FeedFilters {
   postTypes: string[];
@@ -64,12 +67,19 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   onStartCollaboration,
   onViewConversation,
 }) => {
+  // Hooks
+  const { currentUser } = useAuth();
+  const { sendInteraction } = useUserInteractions();
+  
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  
+  // Create post dialog
+  const [showCreatePostDialog, setShowCreatePostDialog] = useState(false);
   
   // Filters
   const [filters, setFilters] = useState<FeedFilters>({
@@ -81,16 +91,6 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   });
   const [showFilters, setShowFilters] = useState(false);
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
-  
-  // Create post dialog
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [newPost, setNewPost] = useState({
-    type: 'collaboration_highlight',
-    title: '',
-    content: '',
-    tags: [] as string[],
-    visibility: 'public',
-  });
 
   const tabs = [
     { label: 'For You', value: 'for_you', icon: <AutoAwesome /> },
@@ -190,6 +190,120 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
     loadPosts(true);
   };
 
+  // Unified notification system handlers
+  const handleLike = async (postId: string) => {
+    try {
+      console.log('👍 [SocialFeed] Handling like via unified system');
+      
+      // Find the post to get author info
+      const post = posts.find(p => p.id === postId);
+      if (!post || !currentUser?.uid) return;
+
+      // Don't send notification to self
+      if (post.author.id === currentUser.uid) return;
+
+      // Send like notification via unified system
+      await sendInteraction('post_like', post.author.id, {
+        postId: postId,
+        postTitle: post.title,
+        message: `${currentUser.displayName || 'Someone'} liked your post: "${post.title}"`,
+        priority: 'low'
+      });
+
+      // Update local state
+      setPosts(prevPosts => 
+        prevPosts.map(p => 
+          p.id === postId 
+            ? { 
+                ...p, 
+                isLiked: !p.isLiked,
+                metrics: {
+                  ...p.metrics,
+                  likes: p.isLiked ? p.metrics.likes - 1 : p.metrics.likes + 1
+                }
+              }
+            : p
+        )
+      );
+
+    } catch (error) {
+      console.error('❌ [SocialFeed] Error handling like:', error);
+    }
+  };
+
+  const handleComment = async (postId: string) => {
+    try {
+      console.log('💬 [SocialFeed] Handling comment via unified system');
+      
+      // Find the post to get author info
+      const post = posts.find(p => p.id === postId);
+      if (!post || !currentUser?.uid) return;
+
+      // Don't send notification to self
+      if (post.author.id === currentUser.uid) return;
+
+      // Send comment notification via unified system
+      await sendInteraction('post_comment', post.author.id, {
+        postId: postId,
+        postTitle: post.title,
+        message: `${currentUser.displayName || 'Someone'} commented on your post: "${post.title}"`,
+        priority: 'medium'
+      });
+
+      // Update local state
+      setPosts(prevPosts => 
+        prevPosts.map(p => 
+          p.id === postId 
+            ? { 
+                ...p, 
+                metrics: {
+                  ...p.metrics,
+                  comments: p.metrics.comments + 1
+                }
+              }
+            : p
+        )
+      );
+
+    } catch (error) {
+      console.error('❌ [SocialFeed] Error handling comment:', error);
+    }
+  };
+
+  const handleShare = async (postId: string) => {
+    try {
+      console.log('🔄 [SocialFeed] Handling share');
+      
+      // Update local state
+      setPosts(prevPosts => 
+        prevPosts.map(p => 
+          p.id === postId 
+            ? { 
+                ...p, 
+                metrics: {
+                  ...p.metrics,
+                  shares: p.metrics.shares + 1
+                }
+              }
+            : p
+        )
+      );
+
+    } catch (error) {
+      console.error('❌ [SocialFeed] Error handling share:', error);
+    }
+  };
+
+  const handlePostCreated = (newPost: FeedPost) => {
+    console.log('📝 [SocialFeed] New post created:', newPost);
+    
+    // Add new post to the top of the feed
+    setPosts(prevPosts => [newPost, ...prevPosts]);
+    
+    // Close dialog
+    setShowCreatePostDialog(false);
+  };
+
   const handleFilterChange = (key: keyof FeedFilters, value: any) => {
     setFilters(prev => ({
       ...prev,
@@ -258,23 +372,6 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
       ));
     } catch (err) {
       console.error('Error sharing post:', err);
-    }
-  };
-
-  const handleCreatePost = async () => {
-    try {
-      const createdPost = await socialFeedService.createPost(newPost);
-      setPosts(prev => [createdPost, ...prev]);
-      setShowCreatePost(false);
-      setNewPost({
-        type: 'collaboration_highlight',
-        title: '',
-        content: '',
-        tags: [],
-        visibility: 'public',
-      });
-    } catch (err) {
-      console.error('Error creating post:', err);
     }
   };
 
@@ -439,7 +536,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Be the first to share your AI collaboration experience!
             </Typography>
-            <Button variant="contained" startIcon={<Add />} onClick={() => setShowCreatePost(true)}>
+            <Button variant="contained" startIcon={<Add />} onClick={() => setShowCreatePostDialog(true)}>
               Create Post
             </Button>
           </Paper>
@@ -451,7 +548,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
         <Fab
           color="primary"
           sx={{ position: 'fixed', bottom: 24, right: 24 }}
-          onClick={() => setShowCreatePost(true)}
+          onClick={() => setShowCreatePostDialog(true)}
         >
           <Add />
         </Fab>
@@ -562,98 +659,11 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
       </Menu>
       
       {/* Create Post Dialog */}
-      <Dialog open={showCreatePost} onClose={() => setShowCreatePost(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Share Your AI Collaboration</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <FormControl fullWidth>
-              <InputLabel>Post Type</InputLabel>
-              <Select
-                value={newPost.type}
-                onChange={(e) => setNewPost(prev => ({ ...prev, type: e.target.value }))}
-                label="Post Type"
-              >
-                {postTypes.map(type => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            
-            <TextField
-              fullWidth
-              label="Title"
-              value={newPost.title}
-              onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="What did you accomplish with AI?"
-            />
-            
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Content"
-              value={newPost.content}
-              onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
-              placeholder="Share details about your AI collaboration experience..."
-            />
-            
-            <Autocomplete
-              multiple
-              freeSolo
-              options={['AI', 'Collaboration', 'Productivity', 'Innovation', 'Strategy']}
-              value={newPost.tags}
-              onChange={(_, value) => setNewPost(prev => ({ ...prev, tags: value }))}
-              renderInput={(params) => (
-                <TextField {...params} label="Tags" placeholder="Add tags..." />
-              )}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip
-                    variant="outlined"
-                    label={option}
-                    {...getTagProps({ index })}
-                    key={option}
-                  />
-                ))
-              }
-            />
-            
-            <FormControl fullWidth>
-              <InputLabel>Visibility</InputLabel>
-              <Select
-                value={newPost.visibility}
-                onChange={(e) => setNewPost(prev => ({ ...prev, visibility: e.target.value }))}
-                label="Visibility"
-              >
-                <MenuItem value="public">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Public fontSize="small" />
-                    Public
-                  </Box>
-                </MenuItem>
-                <MenuItem value="connections">
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <People fontSize="small" />
-                    Connections Only
-                  </Box>
-                </MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowCreatePost(false)}>Cancel</Button>
-          <Button
-            onClick={handleCreatePost}
-            variant="contained"
-            disabled={!newPost.title.trim() || !newPost.content.trim()}
-          >
-            Share Post
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <CreatePostDialog
+        open={showCreatePostDialog}
+        onClose={() => setShowCreatePostDialog(false)}
+        onPostCreated={handlePostCreated}
+      />
     </Box>
   );
 };

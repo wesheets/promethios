@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import AgentConfigurationPopup from './collaboration/AgentConfigurationPopup';
 import { temporaryRoleService, TemporaryRoleAssignment } from '../services/TemporaryRoleService';
-import aiCollaborationInvitationService from '../services/ChatInvitationService';
+import { useUserInteractions } from '../hooks/useUserInteractions';
 
 interface TeamMember {
   id: string;
@@ -78,6 +78,9 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   conversationName,
   agentName
 }) => {
+  // Use unified notification system for sending invitations
+  const { sendInteraction } = useUserInteractions();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<Set<string>>(new Set());
   const [showConfigPopup, setShowConfigPopup] = useState(false);
@@ -186,15 +189,16 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
     }
 
     try {
+      console.log('🤖 [GuestSelectorPopup] Sending collaboration invitations via unified system');
+      
       for (const human of selectedHumansForInvitation) {
-        await aiCollaborationInvitationService.sendCollaborationInvitation({
-          fromUserId: currentUserId,
-          fromUserName: currentUserName,
-          toUserId: human.id,
-          toUserName: human.name,
+        await sendInteraction('collaboration_invitation', human.id, {
           conversationId: conversationId || `conv_${Date.now()}`,
           conversationName: conversationName || 'AI Collaboration',
-          agentName: agentName
+          agentName: agentName,
+          message: `Join me in an AI collaboration session with ${agentName || 'AI Assistant'}`,
+          sessionType: 'ai_collaboration',
+          priority: 'medium'
         });
       }
       

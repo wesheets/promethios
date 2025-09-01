@@ -1,13 +1,12 @@
 /**
- * AI Collaboration Invitation Service
+ * AI Collaboration Invitation Service (Unified)
  * 
- * Handles sending invitations to connected users to join AI collaboration conversations.
- * Integrates with Firebase connections and the existing notification infrastructure.
+ * Now uses the UserInteractionRegistry for consistent experience
+ * Acts as a wrapper around the unified notification system
  */
 
+import { userInteractionRegistry, InteractionMetadata } from './UserInteractionRegistry';
 import { ConnectionService } from './ConnectionService';
-import { notificationService } from './NotificationService';
-import { AppNotification } from '../types/notification';
 import SharedConversationService from './SharedConversationService';
 
 export interface AICollaborationInvitationRequest {
@@ -21,268 +20,350 @@ export interface AICollaborationInvitationRequest {
   message?: string;
 }
 
-export interface AICollaborationInvitationNotification extends AppNotification {
-  metadata: {
-    invitationType: 'ai_collaboration_invitation';
-    fromUserId: string;
-    fromUserName: string;
-    conversationId: string;
-    conversationName: string;
-    agentName?: string;
-    invitationId: string;
-  };
+export interface CollaborationInvitation {
+  id: string;
+  fromUserId: string;
+  fromUserName: string;
+  fromUserPhoto?: string;
+  toUserId: string;
+  toUserName: string;
+  toUserPhoto?: string;
+  conversationId: string;
+  conversationName: string;
+  agentName?: string;
+  message?: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: any;
+  updatedAt: any;
 }
 
-class AICollaborationInvitationService {
-  private static instance: AICollaborationInvitationService;
+class ChatInvitationService {
+  private static instance: ChatInvitationService;
   private connectionService: ConnectionService;
   private sharedConversationService: SharedConversationService;
 
-  private constructor() {
+  constructor() {
     this.connectionService = ConnectionService.getInstance();
     this.sharedConversationService = SharedConversationService.getInstance();
   }
 
-  static getInstance(): AICollaborationInvitationService {
-    if (!AICollaborationInvitationService.instance) {
-      AICollaborationInvitationService.instance = new AICollaborationInvitationService();
+  static getInstance(): ChatInvitationService {
+    if (!ChatInvitationService.instance) {
+      ChatInvitationService.instance = new ChatInvitationService();
     }
-    return AICollaborationInvitationService.instance;
+    return ChatInvitationService.instance;
   }
 
   /**
-   * Send an AI collaboration invitation to a connected user
+   * Send collaboration invitation using unified registry
    */
-  async sendCollaborationInvitation(invitation: AICollaborationInvitationRequest): Promise<void> {
+  async sendCollaborationInvitation(request: AICollaborationInvitationRequest): Promise<{
+    success: boolean;
+    invitationId?: string;
+    error?: string;
+  }> {
     try {
-      console.log(`🤖 [AICollaboration] Sending invitation from ${invitation.fromUserName} to ${invitation.toUserName}`);
-      console.log(`🤖 [AICollaboration] User IDs: from=${invitation.fromUserId}, to=${invitation.toUserId}`);
+      console.log('🤖 [ChatInvitationService] Sending collaboration invitation via unified registry');
 
-      // Verify users are connected (with debug logging)
-      console.log(`🔍 [AICollaboration] Checking if users are connected...`);
-      const areConnected = await this.connectionService.areUsersConnected(
-        invitation.fromUserId, 
-        invitation.toUserId
-      );
-      console.log(`🔍 [AICollaboration] Connection check result: ${areConnected}`);
-
-      if (!areConnected) {
-        // Log additional debug info
-        console.warn(`❌ [AICollaboration] Users not connected in database:`, {
-          fromUserId: invitation.fromUserId,
-          toUserId: invitation.toUserId,
-          fromUserName: invitation.fromUserName,
-          toUserName: invitation.toUserName
-        });
-        
-        // For now, let's allow invitations even if connection check fails
-        // This might be due to demo data or timing issues
-        console.log(`⚠️ [AICollaboration] Proceeding with invitation despite connection check failure`);
-      }
-
-      // Create unique invitation ID
-      const invitationId = `ai_collab_invite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Create or get the shared conversation
-      let conversationId = invitation.conversationId;
-      try {
-        // Try to get existing conversation
-        const conversations = this.sharedConversationService.getUserSharedConversations(invitation.fromUserId);
-        const existingConv = conversations.find(c => c.id === conversationId);
-        
-        if (!existingConv) {
-          // Create new shared conversation if it doesn't exist
-          const newConv = await this.sharedConversationService.createSharedConversation(
-            invitation.fromUserId,
-            invitation.fromUserName,
-            invitation.conversationName,
-            [] // No initial participants, we'll add them as pending
-          );
-          conversationId = newConv.id;
-        }
-      } catch (error) {
-        console.log('Creating new conversation for invitation');
-        const newConv = await this.sharedConversationService.createSharedConversation(
-          invitation.fromUserId,
-          invitation.fromUserName,
-          invitation.conversationName,
-          []
-        );
-        conversationId = newConv.id;
-      }
-
-      // Add the invited user as a pending participant
-      await this.sharedConversationService.addPendingParticipant(
-        conversationId,
-        invitation.toUserId,
-        invitation.toUserName,
-        invitation.fromUserId,
-        invitationId
+      // Validate connection between users
+      const isConnected = await this.connectionService.areUsersConnected(
+        request.fromUserId, 
+        request.toUserId
       );
 
-      // Create notification for the recipient
-      const notification: AppNotification = {
-        id: invitationId,
-        type: 'info',
-        title: 'AI Collaboration Invitation',
-        message: `${invitation.fromUserName} invited you to join AI conversation "${invitation.conversationName}" with ${invitation.agentName}`,
-        timestamp: new Date().toISOString(),
-        read: false,
-        priority: 'medium',
-        category: 'collaboration',
-        userId: invitation.toUserId, // Send to the recipient, not the sender
-        actions: [
-          {
-            label: 'Join Conversation',
-            handler: () => this.handleAcceptInvitation(invitationId),
-            style: 'primary'
-          },
-          {
-            label: 'Decline',
-            handler: () => this.declineInvitation(invitationId),
-            style: 'secondary'
-          }
-        ],
-        metadata: {
-          invitationType: 'ai_collaboration_invitation',
-          fromUserId: invitation.fromUserId,
-          fromUserName: invitation.fromUserName,
-          conversationId: conversationId,
-          conversationName: invitation.conversationName,
-          agentName: invitation.agentName,
-          invitationId: invitationId
-        }
+      if (!isConnected) {
+        return {
+          success: false,
+          error: 'Users must be connected to send collaboration invitations'
+        };
+      }
+
+      // Prepare metadata for the unified registry
+      const metadata: InteractionMetadata = {
+        conversationId: request.conversationId,
+        conversationName: request.conversationName,
+        agentName: request.agentName,
+        message: request.message,
+        sessionType: 'ai_collaboration',
+        priority: 'medium'
       };
 
-      // Send notification through the notification service
-      notificationService.addNotification(notification);
-
-      console.log(`✅ [AICollaboration] Invitation sent successfully with ID: ${invitationId}`);
-
-    } catch (error) {
-      console.error('❌ [AICollaboration] Error sending invitation:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Send AI collaboration invitations to multiple connected users
-   */
-  async sendCollaborationInvitations(invitations: AICollaborationInvitationRequest[]): Promise<void> {
-    console.log(`🤖 [AICollaboration] Sending ${invitations.length} collaboration invitations`);
-
-    const results = await Promise.allSettled(
-      invitations.map(invitation => this.sendCollaborationInvitation(invitation))
-    );
-
-    const successful = results.filter(result => result.status === 'fulfilled').length;
-    const failed = results.filter(result => result.status === 'rejected').length;
-
-    console.log(`✅ [AICollaboration] Sent ${successful} invitations successfully, ${failed} failed`);
-
-    if (failed > 0) {
-      const errors = results
-        .filter(result => result.status === 'rejected')
-        .map(result => (result as PromiseRejectedResult).reason);
-      
-      console.error('❌ [AICollaboration] Failed invitations:', errors);
-    }
-  }
-
-  /**
-   * Decline an AI collaboration invitation
-   */
-  async declineInvitation(invitationId: string): Promise<void> {
-    try {
-      console.log(`❌ [AICollaboration] Declining invitation: ${invitationId}`);
-
-      // Mark the notification as read and remove it
-      await notificationService.markAsRead(invitationId);
-      await notificationService.deleteNotification(invitationId);
-
-      // TODO: In a real implementation, we would also:
-      // 1. Notify the sender that the invitation was declined
-      // 2. Update the invitation status in Firebase
-
-      console.log(`✅ [AICollaboration] Invitation declined successfully`);
-    } catch (error) {
-      console.error('❌ [AICollaboration] Error declining invitation:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get all pending AI collaboration invitations for a user
-   */
-  getPendingInvitations(): AICollaborationInvitationNotification[] {
-    const notifications = notificationService.getNotifications({
-      category: ['collaboration'],
-      unreadOnly: true
-    });
-
-    return notifications.filter(notification => 
-      notification.metadata?.invitationType === 'ai_collaboration_invitation'
-    ) as AICollaborationInvitationNotification[];
-  }
-
-  /**
-   * Handle accepting invitation from notification action
-   */
-  private async handleAcceptInvitation(invitationId: string): Promise<void> {
-    try {
-      // TODO: Get current user info from auth context
-      const currentUserId = 'current-user-id'; // This should come from auth
-      const currentUserName = 'Current User'; // This should come from auth
-      
-      const conversationId = await this.acceptInvitation(invitationId, currentUserId, currentUserName);
-      
-      // Trigger global refresh and navigation to the shared conversation
-      window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
-        detail: { conversationId }
-      }));
-      
-    } catch (error) {
-      console.error('❌ [AICollaboration] Error handling invitation acceptance:', error);
-    }
-  }
-
-  /**
-   * Accept an AI collaboration invitation
-   */
-  async acceptInvitation(invitationId: string, currentUserId: string, currentUserName: string): Promise<string> {
-    try {
-      console.log(`✅ [AICollaboration] Accepting invitation: ${invitationId}`);
-
-      const notifications = notificationService.getNotifications();
-      const invitation = notifications.find(n => n.id === invitationId) as AICollaborationInvitationNotification;
-
-      if (!invitation) {
-        throw new Error('Invitation not found');
-      }
-
-      // Mark as read and remove the notification
-      await notificationService.markAsRead(invitationId);
-      await notificationService.deleteNotification(invitationId);
-
-      // Get conversation details from invitation
-      const conversationId = invitation.metadata.conversationId;
-
-      // Activate the pending participant
-      await this.sharedConversationService.activatePendingParticipant(
-        conversationId,
-        currentUserId
+      // Send invitation through unified registry
+      const result = await userInteractionRegistry.sendInteraction(
+        'collaboration_invitation',
+        request.fromUserId,
+        request.toUserId,
+        metadata
       );
 
-      console.log(`✅ [AICollaboration] Invitation accepted and participant activated`);
-      return conversationId;
+      if (result.success) {
+        console.log('✅ [ChatInvitationService] Collaboration invitation sent successfully');
+        
+        // Add user to shared conversation (prepare for acceptance)
+        await this.sharedConversationService.addUserToConversation(
+          request.conversationId,
+          request.toUserId,
+          'invited'
+        );
+
+        return {
+          success: true,
+          invitationId: result.interactionId
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to send invitation'
+        };
+      }
 
     } catch (error) {
-      console.error('❌ [AICollaboration] Error accepting invitation:', error);
-      throw error;
+      console.error('❌ [ChatInvitationService] Error sending invitation:', error);
+      return {
+        success: false,
+        error: 'Failed to send collaboration invitation'
+      };
     }
+  }
+
+  /**
+   * Accept collaboration invitation using unified registry
+   */
+  async acceptInvitation(invitationId: string, userId: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      console.log('🤖 [ChatInvitationService] Accepting invitation via unified registry');
+
+      const result = await userInteractionRegistry.respondToInteraction(
+        invitationId,
+        userId,
+        'accepted'
+      );
+
+      if (result.success) {
+        console.log('✅ [ChatInvitationService] Invitation accepted successfully');
+        
+        // Get the interaction to access conversation details
+        const interaction = await userInteractionRegistry.getInteraction(invitationId);
+        if (interaction?.metadata.conversationId) {
+          // Update user status in shared conversation
+          await this.sharedConversationService.addUserToConversation(
+            interaction.metadata.conversationId,
+            userId,
+            'active'
+          );
+        }
+
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to accept invitation'
+        };
+      }
+
+    } catch (error) {
+      console.error('❌ [ChatInvitationService] Error accepting invitation:', error);
+      return {
+        success: false,
+        error: 'Failed to accept invitation'
+      };
+    }
+  }
+
+  /**
+   * Decline collaboration invitation using unified registry
+   */
+  async declineInvitation(invitationId: string, userId: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      console.log('🤖 [ChatInvitationService] Declining invitation via unified registry');
+
+      const result = await userInteractionRegistry.respondToInteraction(
+        invitationId,
+        userId,
+        'declined'
+      );
+
+      if (result.success) {
+        console.log('✅ [ChatInvitationService] Invitation declined successfully');
+        
+        // Get the interaction to access conversation details
+        const interaction = await userInteractionRegistry.getInteraction(invitationId);
+        if (interaction?.metadata.conversationId) {
+          // Remove user from shared conversation
+          await this.sharedConversationService.removeUserFromConversation(
+            interaction.metadata.conversationId,
+            userId
+          );
+        }
+
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to decline invitation'
+        };
+      }
+
+    } catch (error) {
+      console.error('❌ [ChatInvitationService] Error declining invitation:', error);
+      return {
+        success: false,
+        error: 'Failed to decline invitation'
+      };
+    }
+  }
+
+  /**
+   * Get pending invitations for a user (legacy compatibility)
+   * Now uses unified registry
+   */
+  async getPendingInvitations(userId: string): Promise<CollaborationInvitation[]> {
+    try {
+      console.log('🤖 [ChatInvitationService] Getting pending invitations via unified registry');
+
+      const interactions = await userInteractionRegistry.getPendingInteractions(userId);
+      
+      // Filter for collaboration invitations and convert to legacy format
+      const collaborationInvitations = interactions
+        .filter(interaction => interaction.type === 'collaboration_invitation')
+        .map(interaction => ({
+          id: interaction.id,
+          fromUserId: interaction.fromUserId,
+          fromUserName: interaction.fromUserName,
+          fromUserPhoto: interaction.fromUserPhoto,
+          toUserId: interaction.toUserId,
+          toUserName: interaction.toUserName,
+          toUserPhoto: interaction.toUserPhoto,
+          conversationId: interaction.metadata.conversationId || '',
+          conversationName: interaction.metadata.conversationName || '',
+          agentName: interaction.metadata.agentName,
+          message: interaction.metadata.message,
+          status: interaction.status as 'pending' | 'accepted' | 'declined',
+          createdAt: interaction.createdAt,
+          updatedAt: interaction.updatedAt
+        }));
+
+      console.log(`🤖 [ChatInvitationService] Found ${collaborationInvitations.length} pending invitations`);
+      return collaborationInvitations;
+
+    } catch (error) {
+      console.error('❌ [ChatInvitationService] Error getting pending invitations:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Subscribe to invitation changes (legacy compatibility)
+   * Now uses unified registry
+   */
+  subscribeToInvitations(
+    userId: string,
+    callback: (invitations: CollaborationInvitation[]) => void
+  ): () => void {
+    console.log('🤖 [ChatInvitationService] Setting up invitation subscription via unified registry');
+
+    return userInteractionRegistry.subscribeToInteractions(userId, (interactions) => {
+      // Filter for collaboration invitations and convert to legacy format
+      const collaborationInvitations = interactions
+        .filter(interaction => interaction.type === 'collaboration_invitation')
+        .map(interaction => ({
+          id: interaction.id,
+          fromUserId: interaction.fromUserId,
+          fromUserName: interaction.fromUserName,
+          fromUserPhoto: interaction.fromUserPhoto,
+          toUserId: interaction.toUserId,
+          toUserName: interaction.toUserName,
+          toUserPhoto: interaction.toUserPhoto,
+          conversationId: interaction.metadata.conversationId || '',
+          conversationName: interaction.metadata.conversationName || '',
+          agentName: interaction.metadata.agentName,
+          message: interaction.metadata.message,
+          status: interaction.status as 'pending' | 'accepted' | 'declined',
+          createdAt: interaction.createdAt,
+          updatedAt: interaction.updatedAt
+        }));
+
+      callback(collaborationInvitations);
+    });
+  }
+
+  /**
+   * Send invitation to multiple users
+   */
+  async sendInvitationToMultipleUsers(
+    fromUserId: string,
+    fromUserName: string,
+    userIds: string[],
+    conversationId: string,
+    conversationName: string,
+    agentName?: string,
+    message?: string
+  ): Promise<{
+    success: boolean;
+    successfulInvitations: string[];
+    failedInvitations: { userId: string; error: string }[];
+  }> {
+    console.log(`🤖 [ChatInvitationService] Sending invitations to ${userIds.length} users`);
+
+    const successfulInvitations: string[] = [];
+    const failedInvitations: { userId: string; error: string }[] = [];
+
+    for (const toUserId of userIds) {
+      try {
+        // Get user info for the invitation
+        const userInfo = await userInteractionRegistry.getUserInfo(toUserId);
+        
+        if (!userInfo) {
+          failedInvitations.push({
+            userId: toUserId,
+            error: 'User not found'
+          });
+          continue;
+        }
+
+        const result = await this.sendCollaborationInvitation({
+          fromUserId,
+          fromUserName,
+          toUserId,
+          toUserName: userInfo.displayName || userInfo.email || 'Unknown User',
+          conversationId,
+          conversationName,
+          agentName,
+          message
+        });
+
+        if (result.success) {
+          successfulInvitations.push(toUserId);
+        } else {
+          failedInvitations.push({
+            userId: toUserId,
+            error: result.error || 'Unknown error'
+          });
+        }
+
+      } catch (error) {
+        failedInvitations.push({
+          userId: toUserId,
+          error: 'Failed to send invitation'
+        });
+      }
+    }
+
+    return {
+      success: successfulInvitations.length > 0,
+      successfulInvitations,
+      failedInvitations
+    };
   }
 }
 
-export const aiCollaborationInvitationService = AICollaborationInvitationService.getInstance();
-export default aiCollaborationInvitationService;
+// Export singleton instance
+export const chatInvitationService = ChatInvitationService.getInstance();
+export default chatInvitationService;
 

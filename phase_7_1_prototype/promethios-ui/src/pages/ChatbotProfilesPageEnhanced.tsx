@@ -1338,7 +1338,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Set up real-time listeners
       setupTeamCollaborationListeners();
       
-      console.log('✅ [Team] Team collaboration services initialized');
+      console.log('✅ [Team] Team collaboration initialized successfully');
     } catch (error) {
       console.error('❌ [Team] Failed to initialize team collaboration:', error);
     }
@@ -1346,8 +1346,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   const loadTeamCollaborationData = async () => {
     try {
-      // Load collaboration state
-      const collabState = await collaborationService.getCollaborationState();
+      // Initialize collaboration service and get team data
+      console.log('🔍 [Team] Loading team collaboration data...');
+      const collabState = await collaborationService.initializeUserCollaboration(user?.uid || '', user?.displayName || user?.email || 'User');
+      console.log('✅ [Team] TeamCollaborationIntegrationService initialized');
+      console.log('🔍 [Team] Collaboration state team members:', collabState.teamMembers.length);
+      
       setCollaborationState(collabState);
       setUnreadTeamCount(collabState.unreadMessages);
       
@@ -1355,15 +1359,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const notifs = await collaborationService.getNotifications();
       setNotifications(notifs);
       
-      // Load team members - wait a bit for service to initialize like TeamPanel does
-      await new Promise(resolve => setTimeout(resolve, 500)); // Wait for services to initialize
-      console.log('🔍 [Team] About to call humanChatService.getTeamMembers()');
-      const members = humanChatService.getTeamMembers(); // This is synchronous, not async
-      console.log('🔍 [Team] humanChatService.getTeamMembers() returned:', members);
-      console.log('🔍 [Team] Members length:', members.length);
-      console.log('🔍 [Team] Members array:', members);
-      setTeamMembers(members);
-      console.log('✅ [Team] Loaded team members:', members.length);
+      // Use team members from collaboration state instead of humanChatService
+      console.log('🔍 [Team] Using team members from collaboration state:', collabState.teamMembers);
+      setTeamMembers(collabState.teamMembers);
+      console.log('✅ [Team] Loaded team members from collaboration state:', collabState.teamMembers.length);
       
       // Load organizations
       const orgs = await orgService.getUserOrganizations(user?.uid || '');

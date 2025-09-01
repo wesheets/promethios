@@ -73,7 +73,8 @@ import {
 
 import { HumanChatService, HumanChat, HumanMessage } from '../../services/HumanChatService';
 import { GuestAgentService, GuestSession, GuestMessage } from '../../services/GuestAgentService';
-import { OrganizationManagementService, TeamMember } from '../../services/OrganizationManagementService';
+import { TeamCollaborationIntegrationService, TeamCollaborationState } from '../../services/TeamCollaborationIntegrationService';
+import { TeamMember } from '../../services/OrganizationManagementService';
 import { ChatHistoryService } from '../../services/ChatHistoryService';
 
 interface EnhancedChatInterfaceProps {
@@ -122,7 +123,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   // Services
   const [humanChatService] = useState(() => HumanChatService.getInstance());
   const [guestService] = useState(() => GuestAgentService.getInstance());
-  const [orgService] = useState(() => OrganizationManagementService.getInstance());
+  const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
   const [chatHistoryService] = useState(() => ChatHistoryService.getInstance());
 
   // State
@@ -142,6 +143,7 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   // Team data
+  const [collaborationState, setCollaborationState] = useState<TeamCollaborationState | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [humanChats, setHumanChats] = useState<HumanChat[]>([]);
   const [guestSessions, setGuestSessions] = useState<GuestSession[]>([]);
@@ -198,25 +200,24 @@ const EnhancedChatInterface: React.FC<EnhancedChatInterfaceProps> = ({
 
   const loadTeamData = async () => {
     try {
-      // Get user's organizations and team members
-      const userOrgs = await orgService.getUserOrganizations(userId);
+      console.log('🔍 [EnhancedChat] Loading team data using TeamCollaborationIntegrationService...');
       
-      if (userOrgs.length > 0) {
-        const orgId = userOrgs[0].orgId;
-        const members = await orgService.getOrganizationMembers(orgId);
-        setTeamMembers(members.filter(m => m.userId !== userId));
+      // Initialize collaboration service and get team data
+      const collabState = await collaborationService.initializeUserCollaboration(userId, userName);
+      setCollaborationState(collabState);
+      
+      // Set team members from collaboration state
+      setTeamMembers(collabState.teamMembers);
+      console.log('✅ [EnhancedChat] Team members loaded:', collabState.teamMembers.length);
 
-        // Load human chats
-        const chats = await humanChatService.getUserChats(userId);
-        setHumanChats(chats);
+      // Load human chats from collaboration state
+      setHumanChats(collabState.humanChats);
 
-        // Load guest sessions
-        const sessions = await guestService.getUserGuestSessions(userId);
-        setGuestSessions(sessions);
-      }
+      // Load guest sessions from collaboration state
+      setGuestSessions(collabState.guestSessions);
 
     } catch (err) {
-      console.error('Error loading team data:', err);
+      console.error('❌ [EnhancedChat] Error loading team data:', err);
     }
   };
 

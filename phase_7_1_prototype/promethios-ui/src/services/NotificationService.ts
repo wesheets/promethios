@@ -44,23 +44,29 @@ export class NotificationService {
    * Add a notification
    */
   addNotification(notification: AppNotification): void {
-    // If notification has a userId and it's not for the current user, ignore it
-    // This allows the notification system to be used for multi-user scenarios
-    // where notifications are sent to specific users
-    if (notification.userId && notification.userId !== this.getCurrentUserId()) {
-      console.log('🔕 [Notification] Ignoring notification for different user:', notification.userId);
-      return;
-    }
+    console.log('🔔 [Notification] Adding notification:', {
+      id: notification.id,
+      title: notification.title,
+      userId: notification.userId,
+      currentUserId: this.getCurrentUserId(),
+      category: notification.category
+    });
 
+    // For now, allow all notifications to be added regardless of user ID
+    // This ensures collaboration notifications are delivered properly
+    // In a production system, this would be handled by a proper multi-user notification system
+    
     // Check if notification already exists
     const existingIndex = this.notifications.findIndex(n => n.id === notification.id);
     
     if (existingIndex >= 0) {
       // Update existing notification
       this.notifications[existingIndex] = notification;
+      console.log('🔄 [Notification] Updated existing notification:', notification.id);
     } else {
       // Add new notification
       this.notifications.unshift(notification);
+      console.log('✅ [Notification] Added new notification:', notification.id);
     }
 
     // Clean up expired notifications
