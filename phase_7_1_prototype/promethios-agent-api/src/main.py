@@ -534,21 +534,21 @@ def cors_test():
     import os
     from datetime import datetime
     
+    cors_origin_env = os.environ.get('CORS_ORIGIN', 'NOT SET')
+    
     cors_info = {
         'status': 'CORS test endpoint',
         'timestamp': datetime.utcnow().isoformat(),
         'method': request.method,
         'origin': request.headers.get('Origin', 'No Origin header'),
-        'cors_origin_env': os.environ.get('CORS_ORIGIN', 'NOT SET'),
-        'allowed_origins': allowed_origins,
+        'cors_origin_env': cors_origin_env,
         'cors_headers_should_be_present': True,
-        'deployment_version': 'cb23ba38-comprehensive-cors-fix'
+        'deployment_version': 'eef2f21a-cors-test-endpoint'
     }
     
     print(f"🚨 [CORS-TEST] Request from origin: {request.headers.get('Origin')}")
     print(f"🚨 [CORS-TEST] Method: {request.method}")
-    print(f"🚨 [CORS-TEST] CORS_ORIGIN env: {os.environ.get('CORS_ORIGIN', 'NOT SET')}")
-    print(f"🚨 [CORS-TEST] Allowed origins: {allowed_origins}")
+    print(f"🚨 [CORS-TEST] CORS_ORIGIN env: {cors_origin_env}")
     
     return cors_info, 200
 
