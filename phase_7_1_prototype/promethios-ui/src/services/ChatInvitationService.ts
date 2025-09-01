@@ -8,6 +8,7 @@
 import { ConnectionService } from './ConnectionService';
 import { notificationService } from './NotificationService';
 import { AppNotification } from '../types/notification';
+import SharedConversationService from './SharedConversationService';
 
 export interface AICollaborationInvitationRequest {
   fromUserId: string;
@@ -35,9 +36,11 @@ export interface AICollaborationInvitationNotification extends AppNotification {
 class AICollaborationInvitationService {
   private static instance: AICollaborationInvitationService;
   private connectionService: ConnectionService;
+  private sharedConversationService: SharedConversationService;
 
   private constructor() {
     this.connectionService = ConnectionService.getInstance();
+    this.sharedConversationService = SharedConversationService.getInstance();
   }
 
   static getInstance(): AICollaborationInvitationService {
@@ -67,6 +70,43 @@ class AICollaborationInvitationService {
       // Create unique invitation ID
       const invitationId = `ai_collab_invite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      // Create or get the shared conversation
+      let conversationId = invitation.conversationId;
+      try {
+        // Try to get existing conversation
+        const conversations = this.sharedConversationService.getUserSharedConversations(invitation.fromUserId);
+        const existingConv = conversations.find(c => c.id === conversationId);
+        
+        if (!existingConv) {
+          // Create new shared conversation if it doesn't exist
+          const newConv = await this.sharedConversationService.createSharedConversation(
+            invitation.fromUserId,
+            invitation.fromUserName,
+            invitation.conversationName,
+            [] // No initial participants, we'll add them as pending
+          );
+          conversationId = newConv.id;
+        }
+      } catch (error) {
+        console.log('Creating new conversation for invitation');
+        const newConv = await this.sharedConversationService.createSharedConversation(
+          invitation.fromUserId,
+          invitation.fromUserName,
+          invitation.conversationName,
+          []
+        );
+        conversationId = newConv.id;
+      }
+
+      // Add the invited user as a pending participant
+      await this.sharedConversationService.addPendingParticipant(
+        conversationId,
+        invitation.toUserId,
+        invitation.toUserName,
+        invitation.fromUserId,
+        invitationId
+      );
+
       // Create notification for the recipient
       const notification: AICollaborationInvitationNotification = {
         id: invitationId,
@@ -80,7 +120,7 @@ class AICollaborationInvitationService {
         actions: [
           {
             label: 'Join Conversation',
-            url: `/chat?conversation=${invitation.conversationId}`,
+            handler: () => this.handleAcceptInvitation(invitationId),
             style: 'primary'
           },
           {
@@ -93,7 +133,7 @@ class AICollaborationInvitationService {
           invitationType: 'ai_collaboration_invitation',
           fromUserId: invitation.fromUserId,
           fromUserName: invitation.fromUserName,
-          conversationId: invitation.conversationId,
+          conversationId: conversationId,
           conversationName: invitation.conversationName,
           agentName: invitation.agentName,
           invitationId: invitationId
@@ -104,11 +144,6 @@ class AICollaborationInvitationService {
       notificationService.addNotification(notification);
 
       console.log(`✅ [AICollaboration] Invitation sent successfully with ID: ${invitationId}`);
-
-      // TODO: In a real implementation, we would also:
-      // 1. Store the invitation in Firebase for persistence
-      // 2. Send real-time updates to the recipient if they're online
-      // 3. Handle invitation expiration
 
     } catch (error) {
       console.error('❌ [AICollaboration] Error sending invitation:', error);
@@ -177,9 +212,30 @@ class AICollaborationInvitationService {
   }
 
   /**
+   * Handle accepting invitation from notification action
+   */
+  private async handleAcceptInvitation(invitationId: string): Promise<void> {
+    try {
+      // TODO: Get current user info from auth context
+      const currentUserId = 'current-user-id'; // This should come from auth
+      const currentUserName = 'Current User'; // This should come from auth
+      
+      const conversationId = await this.acceptInvitation(invitationId, currentUserId, currentUserName);
+      
+      // Trigger global refresh and navigation to the shared conversation
+      window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
+        detail: { conversationId }
+      }));
+      
+    } catch (error) {
+      console.error('❌ [AICollaboration] Error handling invitation acceptance:', error);
+    }
+  }
+
+  /**
    * Accept an AI collaboration invitation
    */
-  async acceptInvitation(invitationId: string): Promise<void> {
+  async acceptInvitation(invitationId: string, currentUserId: string, currentUserName: string): Promise<string> {
     try {
       console.log(`✅ [AICollaboration] Accepting invitation: ${invitationId}`);
 
@@ -194,16 +250,18 @@ class AICollaborationInvitationService {
       await notificationService.markAsRead(invitationId);
       await notificationService.deleteNotification(invitationId);
 
-      // Navigate to the AI conversation (this would be handled by the UI component)
-      const conversationUrl = `/chat?conversation=${invitation.metadata.conversationId}`;
-      console.log(`🔗 [AICollaboration] Redirecting to conversation: ${conversationUrl}`);
+      // Get conversation details from invitation
+      const conversationId = invitation.metadata.conversationId;
 
-      // TODO: In a real implementation, we would also:
-      // 1. Add the user to the conversation participants
-      // 2. Notify other participants that the user joined
-      // 3. Update the conversation membership in Firebase
+      // Activate the pending participant
+      await this.sharedConversationService.activatePendingParticipant(
+        conversationId,
+        currentUserId
+      );
 
-      console.log(`✅ [AICollaboration] Invitation accepted successfully`);
+      console.log(`✅ [AICollaboration] Invitation accepted and participant activated`);
+      return conversationId;
+
     } catch (error) {
       console.error('❌ [AICollaboration] Error accepting invitation:', error);
       throw error;

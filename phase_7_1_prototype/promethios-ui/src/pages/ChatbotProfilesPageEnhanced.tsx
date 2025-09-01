@@ -19,6 +19,7 @@ import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestio
 // Shared conversation imports
 import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
 import SharedConversationService from '../services/SharedConversationService';
+import { useSharedConversations } from '../contexts/SharedConversationContext';
 // Notification and invitation imports
 import ConversationInvitationDialog, { InvitationFormData } from '../components/collaboration/ConversationInvitationDialog';
 import UserDiscoveryDialog, { PromethiosUser } from '../components/collaboration/UserDiscoveryDialog';
@@ -399,10 +400,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [selectedTarget, setSelectedTarget] = useState<string>(''); // Current messaging target (human or agent ID)
   const humanParticipantService = HumanParticipantService.getInstance();
   
-  // Shared conversation state
-  const [sharedConversations, setSharedConversations] = useState<SharedConversation[]>([]);
-  const [activeSharedConversation, setActiveSharedConversation] = useState<string | null>(null);
-  const [isInSharedMode, setIsInSharedMode] = useState(false);
+  // Shared conversation state (now global)
+  const {
+    sharedConversations,
+    activeSharedConversation,
+    isInSharedMode,
+    handleSharedConversationSelect,
+    handleSharedConversationClose,
+    handlePrivacyToggle,
+    refreshSharedConversations
+  } = useSharedConversations();
   const sharedConversationService = SharedConversationService.getInstance();
   
   // Notification and invitation state
@@ -1532,23 +1539,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   }, [humanParticipants.length]);
 
-  // Load shared conversations for the current user
-  useEffect(() => {
-    const loadSharedConversations = async () => {
-      try {
-        if (user?.uid) {
-          console.log('💬 [Shared Conversations] Loading conversations for user:', user.uid);
-          const conversations = sharedConversationService.getUserSharedConversations(user.uid);
-          setSharedConversations(conversations);
-          console.log('💬 [Shared Conversations] Loaded', conversations.length, 'conversations');
-        }
-      } catch (error) {
-        console.error('💬 [Shared Conversations] Error loading conversations:', error);
-      }
-    };
-
-    loadSharedConversations();
-  }, [user?.uid]);
+  // Shared conversations are now loaded globally via SharedConversationContext
 
   // Subscribe to conversation notifications
   useEffect(() => {
@@ -2080,39 +2071,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🎯 Messaging target changed to:', targetId);
   };
 
-  // Shared conversation handlers
-  const handleSharedConversationSelect = (conversationId: string) => {
-    setActiveSharedConversation(conversationId);
-    setIsInSharedMode(true);
-    console.log('🔄 Switched to shared conversation:', conversationId);
-  };
-
-  const handleSharedConversationClose = (conversationId: string) => {
-    if (activeSharedConversation === conversationId) {
-      setActiveSharedConversation(null);
-      setIsInSharedMode(false);
-    }
-    // Remove from user's conversation list
-    setSharedConversations(prev => prev.filter(conv => conv.id !== conversationId));
-    console.log('❌ Closed shared conversation:', conversationId);
-  };
-
-  const handlePrivacyToggle = async (conversationId: string, isPrivate: boolean) => {
-    try {
-      await sharedConversationService.togglePrivacyMode(conversationId, isPrivate);
-      
-      // Update local state
-      setSharedConversations(prev => prev.map(conv => 
-        conv.id === conversationId 
-          ? { ...conv, isPrivateMode: isPrivate }
-          : conv
-      ));
-      
-      console.log(`🔒 Privacy mode ${isPrivate ? 'enabled' : 'disabled'} for conversation:`, conversationId);
-    } catch (error) {
-      console.error('❌ Failed to toggle privacy mode:', error);
-    }
-  };
+  // Shared conversation handlers are now provided by global context
 
   const handleCreateSharedConversation = async (name: string, participants: string[] = []) => {
     try {
@@ -2191,8 +2150,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
 
       // Refresh shared conversations
-      const updatedConversations = sharedConversationService.getUserSharedConversations(user.uid);
-      setSharedConversations(updatedConversations);
+      await refreshSharedConversations();
 
       console.log('✅ Added Promethios users to conversation successfully');
     } catch (error) {
@@ -2212,8 +2170,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       );
 
       // Refresh shared conversations
-      const updatedConversations = sharedConversationService.getUserSharedConversations(user.uid);
-      setSharedConversations(updatedConversations);
+      await refreshSharedConversations();
 
       console.log('✅ Accepted invitation successfully');
     } catch (error) {
@@ -4630,6 +4587,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       selectedTarget={selectedTarget}
                                       onTargetChange={handleTargetChange}
                                       onBehaviorPrompt={handleBehaviorPrompt}
+                                      currentUserId={user?.uid}
+                                      currentUserName={user?.displayName || 'User'}
+                                      conversationId={`conv_${selectedChatbot?.id || 'default'}`}
+                                      conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
                                     />
                                     
                                     {/* Behavioral Orchestration Hover Triggers */}

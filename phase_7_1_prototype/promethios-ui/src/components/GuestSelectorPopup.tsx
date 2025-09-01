@@ -34,6 +34,7 @@ import {
 } from '@mui/icons-material';
 import AgentConfigurationPopup from './collaboration/AgentConfigurationPopup';
 import { temporaryRoleService, TemporaryRoleAssignment } from '../services/TemporaryRoleService';
+import aiCollaborationInvitationService from '../services/ChatInvitationService';
 
 interface TeamMember {
   id: string;
@@ -55,6 +56,12 @@ interface GuestSelectorPopupProps {
   aiAgents: TeamMember[];
   // New prop to handle humans being added to conversations
   onAddHumans?: (humans: TeamMember[]) => void;
+  // Props needed for AI collaboration invitations
+  currentUserId?: string;
+  currentUserName?: string;
+  conversationId?: string;
+  conversationName?: string;
+  agentName?: string;
 }
 
 const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
@@ -64,12 +71,19 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   currentParticipants,
   teamMembers,
   aiAgents,
-  onAddHumans
+  onAddHumans,
+  currentUserId,
+  currentUserName,
+  conversationId,
+  conversationName,
+  agentName
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<Set<string>>(new Set());
   const [showConfigPopup, setShowConfigPopup] = useState(false);
   const [selectedAIAgents, setSelectedAIAgents] = useState<TeamMember[]>([]);
+  const [showInvitationDialog, setShowInvitationDialog] = useState(false);
+  const [selectedHumansForInvitation, setSelectedHumansForInvitation] = useState<TeamMember[]>([]);
 
   // Reset selection when popup opens
   useEffect(() => {
@@ -78,6 +92,8 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       setSearchQuery('');
       setShowConfigPopup(false);
       setSelectedAIAgents([]);
+      setShowInvitationDialog(false);
+      setSelectedHumansForInvitation([]);
     }
   }, [open]);
 
@@ -104,7 +120,7 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
     setSelectedGuests(newSelection);
   };
 
-  const handleAddSelected = () => {
+  const handleAddSelected = async () => {
     const allMembers = [...teamMembers, ...aiAgents];
     const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
     
@@ -116,12 +132,12 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       // If AI agents are selected, show configuration popup
       setSelectedAIAgents(selectedAIAgents);
       setShowConfigPopup(true);
+    } else if (selectedHumans.length > 0) {
+      // Show invitation dialog for humans
+      setSelectedHumansForInvitation(selectedHumans);
+      setShowInvitationDialog(true);
     } else {
-      // Only humans selected, add them directly
-      if (selectedHumans.length > 0 && onAddHumans) {
-        onAddHumans(selectedHumans);
-      }
-      onAddGuests(selectedMembers);
+      // No selections, just close
       onClose();
     }
   };
@@ -160,6 +176,42 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       onAddGuests(selectedMembers);
       setShowConfigPopup(false);
       onClose();
+    }
+  };
+
+  const handleSendInvitations = async () => {
+    if (!currentUserId || !currentUserName) {
+      console.error('❌ Missing user information for sending invitations');
+      return;
+    }
+
+    try {
+      for (const human of selectedHumansForInvitation) {
+        await aiCollaborationInvitationService.sendCollaborationInvitation({
+          fromUserId: currentUserId,
+          fromUserName: currentUserName,
+          toUserId: human.id,
+          toUserName: human.name,
+          conversationId: conversationId || `conv_${Date.now()}`,
+          conversationName: conversationName || 'AI Collaboration',
+          agentName: agentName
+        });
+      }
+      
+      console.log(`✅ Sent AI collaboration invitations to ${selectedHumansForInvitation.length} humans`);
+      
+      // Add humans to conversation (they'll appear as pending)
+      if (onAddHumans) {
+        onAddHumans(selectedHumansForInvitation);
+      }
+      onAddGuests(selectedHumansForInvitation);
+      
+      // Close all dialogs
+      setShowInvitationDialog(false);
+      onClose();
+      
+    } catch (error) {
+      console.error('❌ Failed to send collaboration invitations:', error);
     }
   };
 
@@ -406,6 +458,81 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       }))}
       onConfigureAgents={handleConfigureAgents}
     />
+
+    {/* Human Invitation Dialog */}
+    <Dialog
+      open={showInvitationDialog}
+      onClose={() => setShowInvitationDialog(false)}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          backgroundColor: '#1e293b',
+          border: '1px solid #334155',
+          borderRadius: 2
+        }
+      }}
+    >
+      <DialogTitle sx={{ color: 'white', pb: 1 }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <PersonIcon sx={{ color: '#3b82f6' }} />
+          <Typography variant="h6" fontWeight="600">
+            Send Chat Invitation?
+          </Typography>
+        </Box>
+      </DialogTitle>
+
+      <DialogContent sx={{ pt: 1 }}>
+        <Typography variant="body1" color="white" mb={2}>
+          You're about to invite {selectedHumansForInvitation.length} team member{selectedHumansForInvitation.length !== 1 ? 's' : ''} to join this conversation:
+        </Typography>
+        
+        {selectedHumansForInvitation.map((human) => (
+          <Box key={human.id} display="flex" alignItems="center" gap={2} mb={1}>
+            <Avatar
+              sx={{
+                bgcolor: '#3b82f6',
+                width: 32,
+                height: 32
+              }}
+            >
+              <PersonIcon sx={{ fontSize: 16 }} />
+            </Avatar>
+            <Box>
+              <Typography variant="body1" color="white" fontWeight="500">
+                {human.name}
+              </Typography>
+              <Typography variant="caption" color="#94a3b8">
+                {human.role || 'Team Member'}
+              </Typography>
+            </Box>
+          </Box>
+        ))}
+
+        <Typography variant="body2" color="#94a3b8" mt={2}>
+          They will receive a notification and can choose to accept or decline the invitation.
+        </Typography>
+      </DialogContent>
+
+      <DialogActions sx={{ p: 3, pt: 1 }}>
+        <Button
+          onClick={() => setShowInvitationDialog(false)}
+          sx={{ color: '#94a3b8' }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSendInvitations}
+          variant="contained"
+          sx={{
+            backgroundColor: '#3b82f6',
+            '&:hover': { backgroundColor: '#2563eb' }
+          }}
+        >
+          Send Invitation{selectedHumansForInvitation.length !== 1 ? 's' : ''}
+        </Button>
+      </DialogActions>
+    </Dialog>
     </>
   );
 };

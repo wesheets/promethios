@@ -49,6 +49,11 @@ export interface AgentAvatarSelectorProps {
   onTargetChange?: (targetId: string) => void;
   // Behavior prompts callback
   onBehaviorPrompt?: (agentId: string, agentName: string, behavior: string) => void;
+  // Props needed for AI collaboration invitations
+  currentUserId?: string;
+  currentUserName?: string;
+  conversationId?: string;
+  conversationName?: string;
 }
 
 export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
@@ -63,7 +68,11 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   humanParticipants = [],
   selectedTarget,
   onTargetChange,
-  onBehaviorPrompt
+  onBehaviorPrompt,
+  currentUserId,
+  currentUserName,
+  conversationId,
+  conversationName
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const allAgents = [hostAgent, ...guestAgents];
@@ -409,6 +418,11 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
           onAddGuests?.(humans);
           setGuestSelectorOpen(false);
         }}
+        currentUserId={currentUserId}
+        currentUserName={currentUserName}
+        conversationId={conversationId}
+        conversationName={conversationName}
+        agentName={hostAgent.name}
       />
     </Box>
   );

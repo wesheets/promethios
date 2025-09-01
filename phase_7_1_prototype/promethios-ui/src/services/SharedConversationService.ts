@@ -11,9 +11,12 @@ export interface SharedConversationParticipant {
   type: 'human' | 'ai_agent';
   avatar?: string;
   isOnline?: boolean;
+  status: 'active' | 'pending' | 'declined'; // Track invitation status
   role: 'creator' | 'participant';
   addedBy?: string; // ID of human who added this participant
   joinedAt: Date;
+  invitedAt?: Date; // When invitation was sent
+  invitationId?: string; // Reference to invitation
   permissions: string[];
 }
 
@@ -172,6 +175,7 @@ class SharedConversationService {
       id: participantId,
       name: participantName || `User ${participantId}`,
       type: 'human',
+      status: 'active', // Default to active when directly added
       role: 'participant',
       addedBy,
       joinedAt: new Date(),
@@ -185,6 +189,81 @@ class SharedConversationService {
     this.addConversationToUser(participantId, conversationId);
     
     console.log('✅ Added participant to conversation:', participantId, conversationId);
+  }
+
+  /**
+   * Add pending participant (invitation sent but not accepted)
+   */
+  async addPendingParticipant(
+    conversationId: string,
+    participantId: string,
+    participantName: string,
+    addedBy: string,
+    invitationId: string
+  ): Promise<void> {
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) {
+      throw new Error('Conversation not found');
+    }
+
+    // Check if user is already a participant
+    const existingParticipant = conversation.participants.find(p => p.id === participantId);
+    if (existingParticipant) {
+      console.log('User already in conversation:', participantId);
+      return;
+    }
+
+    // Add pending participant
+    const participant: SharedConversationParticipant = {
+      id: participantId,
+      name: participantName,
+      type: 'human',
+      status: 'pending',
+      role: 'participant',
+      addedBy,
+      joinedAt: new Date(), // Will be updated when they actually join
+      invitedAt: new Date(),
+      invitationId,
+      permissions: ['read', 'write'],
+      isOnline: false
+    };
+
+    conversation.participants.push(participant);
+    conversation.lastActivity = new Date();
+    
+    console.log('✅ Added pending participant to conversation:', participantId, conversationId);
+  }
+
+  /**
+   * Accept invitation and activate pending participant
+   */
+  async activatePendingParticipant(
+    conversationId: string,
+    participantId: string
+  ): Promise<void> {
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) {
+      throw new Error('Conversation not found');
+    }
+
+    const participant = conversation.participants.find(p => p.id === participantId);
+    if (!participant) {
+      throw new Error('Participant not found');
+    }
+
+    if (participant.status !== 'pending') {
+      console.log('Participant is not pending:', participantId);
+      return;
+    }
+
+    // Activate the participant
+    participant.status = 'active';
+    participant.joinedAt = new Date();
+    conversation.lastActivity = new Date();
+    
+    this.addConversationToUser(participantId, conversationId);
+    
+    console.log('✅ Activated pending participant:', participantId, conversationId);
   }
 
   /**
