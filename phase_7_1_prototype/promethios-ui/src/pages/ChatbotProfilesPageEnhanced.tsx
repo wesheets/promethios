@@ -1328,7 +1328,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log('🤝 [Team] Initializing team collaboration services...');
       
       // Initialize all services
-      await collaborationService.initialize(user?.uid || '');
+      await collaborationService.initializeUserCollaboration(user?.uid || '', user?.displayName || user?.email || 'User');
       await orgService.initialize(user?.uid || '');
       await humanChatService.initialize(user?.uid || '');
       
