@@ -24,6 +24,7 @@ import ConversationInvitationDialog, { InvitationFormData } from '../components/
 import UserDiscoveryDialog, { PromethiosUser } from '../components/collaboration/UserDiscoveryDialog';
 import InAppNotificationPopup, { ConversationInvitationNotification } from '../components/collaboration/InAppNotificationPopup';
 import ConversationNotificationService from '../services/ConversationNotificationService';
+import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../services/ChatInvitationService';
 // Removed MultiAgentResponseIndicator - intrusive orange popup
 // Real-time collaboration imports
 import RealTimeConversationSync from '../services/RealTimeConversationSync';
@@ -7052,13 +7053,37 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             onClick={async () => {
               console.log('📨 Sending invitations to:', pendingHumanInvites);
               
-              // Send invitations (this would integrate with your notification system)
-              for (const human of pendingHumanInvites) {
-                // TODO: Implement actual notification sending
-                console.log(`📨 Sending invitation to ${human.name} (${human.id})`);
+              try {
+                // Get current conversation info
+                const currentConversationId = selectedChatbot?.id || 'default-conversation';
+                const currentConversationName = selectedChatbot?.identity?.name || 'AI Conversation';
+                const currentUserId = 'current-user-id'; // TODO: Get from auth context
+                const currentUserName = 'Current User'; // TODO: Get from auth context
                 
-                // For now, add them directly (in real implementation, wait for acceptance)
-                await handleAddHumans([human]);
+                // Create invitation requests for each pending human
+                const invitationRequests: AICollaborationInvitationRequest[] = pendingHumanInvites.map(human => ({
+                  fromUserId: currentUserId,
+                  fromUserName: currentUserName,
+                  toUserId: human.id,
+                  toUserName: human.name,
+                  conversationId: currentConversationId,
+                  conversationName: currentConversationName,
+                  agentName: selectedChatbot?.identity?.name,
+                  message: `Join me in collaborating with ${selectedChatbot?.identity?.name || 'AI'}`
+                }));
+                
+                // Send invitations through the notification system
+                await aiCollaborationInvitationService.sendCollaborationInvitations(invitationRequests);
+                
+                console.log(`✅ Successfully sent ${invitationRequests.length} collaboration invitations`);
+                
+                // For now, also add them directly (in real implementation, wait for acceptance)
+                await handleAddHumans(pendingHumanInvites);
+                
+              } catch (error) {
+                console.error('❌ Error sending invitations:', error);
+                // Still add them directly as fallback
+                await handleAddHumans(pendingHumanInvites);
               }
               
               setShowHumanInviteConfirmDialog(false);
