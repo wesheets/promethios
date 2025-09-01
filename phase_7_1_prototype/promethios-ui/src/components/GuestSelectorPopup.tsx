@@ -113,6 +113,12 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   const filteredHumans = filterMembers(teamMembers);
   const filteredAIAgents = filterMembers(aiAgents);
 
+  // Debug logging
+  console.log('🔍 [GuestSelectorPopup] teamMembers prop:', teamMembers);
+  console.log('🔍 [GuestSelectorPopup] teamMembers length:', teamMembers?.length || 0);
+  console.log('🔍 [GuestSelectorPopup] filteredHumans:', filteredHumans);
+  console.log('🔍 [GuestSelectorPopup] filteredHumans length:', filteredHumans.length);
+
   const handleToggleSelection = (memberId: string) => {
     const newSelection = new Set(selectedGuests);
     if (newSelection.has(memberId)) {
