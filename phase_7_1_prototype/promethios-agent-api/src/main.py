@@ -102,33 +102,37 @@ def log_request_size():
         except Exception as e:
             print(f"🚨 [REQUEST-DEBUG] Could not get data size: {e}")
 
-# Enable CORS for all routes to allow frontend communication
-# Include x-api-key header for tools integration API access
-CORS(app, 
-     origins="*", 
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With", "Accept", "Origin"],
-     supports_credentials=True,
-     max_age=86400)  # Cache preflight for 24 hours
+# 🚨 CORS FIX: Simplified and corrected CORS configuration
+# The issue was supports_credentials=True with origins="*" which is invalid
+# Also removed conflicting manual CORS handlers
 
-# Add comprehensive OPTIONS handler for preflight requests
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,x-api-key,X-Requested-With,Accept,Origin")
-        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
-        response.headers.add('Access-Control-Max-Age', "86400")
-        return response
+# Get allowed origins from environment or default to allow all
+allowed_origins = os.environ.get('CORS_ORIGIN', '*')
+if allowed_origins != '*':
+    allowed_origins = [origin.strip() for origin in allowed_origins.split(',')]
 
-# Add CORS headers to all responses
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-api-key,X-Requested-With,Accept,Origin')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+print(f"🚨 [CORS-DEBUG] Configuring CORS with origins: {allowed_origins}")
+
+# Configure CORS properly - either allow all origins without credentials, 
+# or specific origins with credentials
+if allowed_origins == '*':
+    # Allow all origins without credentials (for development/testing)
+    CORS(app, 
+         origins="*", 
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With", "Accept", "Origin"],
+         supports_credentials=False,  # Must be False when origins="*"
+         max_age=86400)
+else:
+    # Allow specific origins with credentials (for production)
+    CORS(app, 
+         origins=allowed_origins, 
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization", "x-api-key", "X-Requested-With", "Accept", "Origin"],
+         supports_credentials=True,
+         max_age=86400)
+
+print("🚨 [CORS-DEBUG] CORS configuration completed successfully")
 
 # Register blueprints
 print("🚨 [STARTUP-DEBUG] Starting blueprint registration...")
