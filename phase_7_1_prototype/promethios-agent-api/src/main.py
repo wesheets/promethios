@@ -85,9 +85,10 @@ app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200MB max file size (inc
 app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
 app.config['JSON_AS_ASCII'] = False
 
-# 🚨 EMERGENCY: Add request size debugging BEFORE body parsing
+# 🚨 COMBINED: Request logging and CORS preflight handling
 @app.before_request
-def log_request_size():
+def handle_request_and_cors():
+    # Request size logging (original functionality)
     if request.method in ['POST', 'PUT', 'PATCH']:
         content_length = request.headers.get('Content-Length', 0)
         print(f"🚨 [REQUEST-DEBUG] {request.method} {request.path} - Content-Length: {content_length} bytes")
@@ -101,6 +102,27 @@ def log_request_size():
                 print(f"🚨 [REQUEST-DEBUG] Actual data size: {data_size} bytes")
         except Exception as e:
             print(f"🚨 [REQUEST-DEBUG] Could not get data size: {e}")
+    
+    # CORS preflight handling
+    if request.method == "OPTIONS":
+        print(f"🚨 [CORS-DEBUG] Handling OPTIONS preflight request from: {request.headers.get('Origin')}")
+        response = make_response()
+        origin = request.headers.get('Origin')
+        
+        if origin:
+            if '*' in allowed_origins_list:
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Allow-Credentials'] = 'false'
+            elif origin in allowed_origins_list:
+                response.headers['Access-Control-Allow-Origin'] = origin
+                response.headers['Access-Control-Allow-Credentials'] = 'true'
+        
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-api-key, X-Requested-With, Accept, Origin, x-agent-id, x-user-id'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        
+        print(f"🚨 [CORS-DEBUG] OPTIONS response Access-Control-Allow-Origin: {response.headers.get('Access-Control-Allow-Origin', 'NOT SET')}")
+        return response
 
 # 🚨 MINIMAL BULLETPROOF CORS CONFIGURATION
 # Removing flask-cors dependency and using manual CORS headers only
@@ -141,29 +163,6 @@ def after_request(response):
     
     print(f"🚨 [CORS-DEBUG] Final Access-Control-Allow-Origin header: {response.headers.get('Access-Control-Allow-Origin', 'NOT SET')}")
     return response
-
-# Manual OPTIONS handler for preflight requests
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        print(f"🚨 [CORS-DEBUG] Handling OPTIONS preflight request from: {request.headers.get('Origin')}")
-        response = make_response()
-        origin = request.headers.get('Origin')
-        
-        if origin:
-            if '*' in allowed_origins_list:
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                response.headers['Access-Control-Allow-Credentials'] = 'false'
-            elif origin in allowed_origins_list:
-                response.headers['Access-Control-Allow-Origin'] = origin
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
-        
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, x-api-key, X-Requested-With, Accept, Origin, x-agent-id, x-user-id'
-        response.headers['Access-Control-Max-Age'] = '86400'
-        
-        print(f"🚨 [CORS-DEBUG] OPTIONS response Access-Control-Allow-Origin: {response.headers.get('Access-Control-Allow-Origin', 'NOT SET')}")
-        return response
 
 print("🚨 [CORS-DEBUG] Minimal CORS configuration completed successfully")
 
