@@ -92,7 +92,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState('');
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true); // Start minimized by default
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -409,7 +409,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
 
   return (
     <Drawer
-      anchor="right"
+      anchor="left"
       open={isOpen}
       onClose={onClose}
       variant="persistent"
@@ -419,6 +419,9 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
           height: isMinimized ? 60 : '100vh',
           transition: 'all 0.3s ease',
           zIndex: 1300,
+          left: 240, // Position right after the left sidebar (assuming 240px width)
+          top: 64, // Align with Messages button (typical header height)
+          position: 'fixed',
         },
       }}
     >
