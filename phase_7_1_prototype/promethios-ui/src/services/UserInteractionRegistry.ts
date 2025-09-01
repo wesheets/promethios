@@ -40,9 +40,9 @@ export interface UserInteraction {
   fromUserId: string;
   toUserId: string;
   fromUserName: string;
-  fromUserPhoto?: string;
+  fromUserPhoto?: string | null; // Allow null values
   toUserName: string;
-  toUserPhoto?: string;
+  toUserPhoto?: string | null; // Allow null values
   status: InteractionStatus;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -270,9 +270,9 @@ class UserInteractionRegistry {
         fromUserId,
         toUserId,
         fromUserName: fromUser.displayName || fromUser.email,
-        fromUserPhoto: fromUser.photoURL,
+        fromUserPhoto: fromUser.photoURL || null, // Provide null instead of undefined
         toUserName: toUser.displayName || toUser.email,
-        toUserPhoto: toUser.photoURL,
+        toUserPhoto: toUser.photoURL || null, // Provide null instead of undefined
         status: 'pending',
         createdAt: serverTimestamp() as Timestamp,
         updatedAt: serverTimestamp() as Timestamp,
