@@ -236,11 +236,23 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
   ]);
 
   const handleAccept = async (interactionId: string) => {
-    await acceptInteraction(interactionId);
+    console.log('🎯 [UnifiedNotificationCenter] Accept button clicked for interaction:', interactionId);
+    try {
+      const result = await acceptInteraction(interactionId);
+      console.log('✅ [UnifiedNotificationCenter] Accept result:', result);
+    } catch (error) {
+      console.error('❌ [UnifiedNotificationCenter] Accept error:', error);
+    }
   };
 
   const handleDecline = async (interactionId: string) => {
-    await declineInteraction(interactionId);
+    console.log('🎯 [UnifiedNotificationCenter] Decline button clicked for interaction:', interactionId);
+    try {
+      const result = await declineInteraction(interactionId);
+      console.log('✅ [UnifiedNotificationCenter] Decline result:', result);
+    } catch (error) {
+      console.error('❌ [UnifiedNotificationCenter] Decline error:', error);
+    }
   };
 
   const handleCollaborationInvitationClick = (interaction: UserInteraction) => {
@@ -463,45 +475,60 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
                   
                   <ListItemSecondaryAction>
                     <Stack direction="row" spacing={1}>
-                      {(interaction.type === 'collaboration_request' || interaction.type === 'collaboration_invitation') ? (
-                        // Special handling for collaboration invitations - show "View Invitation" button
-                        <Tooltip title="View Invitation">
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="primary"
-                            onClick={() => handleCollaborationInvitationClick(interaction)}
-                            disabled={respondingToInteraction}
-                            startIcon={<AutoAwesome />}
-                          >
-                            View Invitation
-                          </Button>
-                        </Tooltip>
-                      ) : (
-                        // Default accept/decline buttons for other notification types
-                        <>
-                          <Tooltip title="Accept">
-                            <IconButton
+                      {(() => {
+                        console.log('🔍 [UnifiedNotificationCenter] Rendering interaction:', {
+                          id: interaction.id,
+                          type: interaction.type,
+                          fromUser: interaction.fromUserName,
+                          isCollaboration: interaction.type === 'collaboration_request' || interaction.type === 'collaboration_invitation'
+                        });
+                        
+                        return (interaction.type === 'collaboration_request' || interaction.type === 'collaboration_invitation') ? (
+                          // Special handling for collaboration invitations - show "View Invitation" button
+                          <Tooltip title="View Invitation">
+                            <Button
                               size="small"
-                              color="success"
-                              onClick={() => handleAccept(interaction.id)}
+                              variant="contained"
+                              color="primary"
+                              onClick={() => handleCollaborationInvitationClick(interaction)}
                               disabled={respondingToInteraction}
+                              startIcon={<AutoAwesome />}
                             >
-                              <Check />
-                            </IconButton>
+                              View Invitation
+                            </Button>
                           </Tooltip>
-                          <Tooltip title="Decline">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleDecline(interaction.id)}
-                              disabled={respondingToInteraction}
-                            >
-                              <Close />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      )}
+                        ) : (
+                          // Default accept/decline buttons for other notification types
+                          <>
+                            <Tooltip title="Accept">
+                              <IconButton
+                                size="small"
+                                color="success"
+                                onClick={() => {
+                                  console.log('🎯 [UnifiedNotificationCenter] Accept button clicked!');
+                                  handleAccept(interaction.id);
+                                }}
+                                disabled={respondingToInteraction}
+                              >
+                                <Check />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Decline">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                  console.log('🎯 [UnifiedNotificationCenter] Decline button clicked!');
+                                  handleDecline(interaction.id);
+                                }}
+                                disabled={respondingToInteraction}
+                              >
+                                <Close />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        );
+                      })()}
                       <Tooltip title="View Details">
                         <IconButton size="small">
                           <Visibility />
