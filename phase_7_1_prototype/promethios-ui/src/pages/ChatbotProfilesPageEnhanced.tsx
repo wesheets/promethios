@@ -1377,19 +1377,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   const setupTeamCollaborationListeners = () => {
-    // Listen for new notifications
-    collaborationService.onNotification((notification) => {
-      setNotifications(prev => [notification, ...prev]);
-      if (!notification.read) {
-        setUnreadTeamCount(prev => prev + 1);
-      }
-    });
-
-    // Listen for team updates
-    collaborationService.onTeamUpdate(() => {
-      loadTeamCollaborationData();
-    });
-
+    console.log('🔧 [Team] Setting up collaboration listeners (methods available)');
+    
+    // Note: TeamCollaborationIntegrationService doesn't have onNotification/onTeamUpdate methods
+    // Notifications are handled by UnifiedNotificationService instead
+    // Team updates are handled through periodic polling in loadTeamCollaborationData
+    
     // Listen for new human messages
     humanChatService.onMessage((message) => {
       // Update unread count for human chats
