@@ -246,6 +246,7 @@ class UserInteractionRegistry {
   ): Promise<{ success: boolean; interactionId?: string; error?: string }> {
     try {
       console.log(`🔗 [UserRegistry] Sending ${type} from ${fromUserId} to ${toUserId}`);
+      console.log(`🔗 [UserRegistry] Metadata:`, metadata);
 
       // Get user information
       const [fromUser, toUser] = await Promise.all([
@@ -254,12 +255,19 @@ class UserInteractionRegistry {
       ]);
 
       if (!fromUser || !toUser) {
+        console.error('❌ [UserRegistry] User information not found:', { fromUser: !!fromUser, toUser: !!toUser });
         return { success: false, error: 'User information not found' };
       }
+
+      console.log('✅ [UserRegistry] User information retrieved:', {
+        fromUser: fromUser.displayName || fromUser.email,
+        toUser: toUser.displayName || toUser.email
+      });
 
       // Check for existing pending interaction of same type
       const existingInteraction = await this.getPendingInteraction(fromUserId, toUserId, type);
       if (existingInteraction) {
+        console.log('⚠️ [UserRegistry] Existing pending interaction found:', existingInteraction.id);
         return { success: false, error: `${type} already sent` };
       }
 
@@ -283,29 +291,53 @@ class UserInteractionRegistry {
         }
       };
 
+      console.log('🔗 [UserRegistry] Interaction object created:', {
+        id: interactionId,
+        type: interaction.type,
+        fromUser: interaction.fromUserName,
+        toUser: interaction.toUserName,
+        status: interaction.status
+      });
+
       // Save interaction
+      console.log('🔗 [UserRegistry] Saving interaction to Firebase...');
       await setDoc(doc(db, this.INTERACTIONS_COLLECTION, interactionId), interaction);
+      console.log('✅ [UserRegistry] Interaction saved to Firebase');
 
       // Create notification for recipient
-      await this.createNotification({
+      console.log('🔗 [UserRegistry] Creating notification for recipient...');
+      const notificationData = {
         userId: toUserId,
         interactionId,
         type,
         title: this.getNotificationTitle(type),
         message: this.getNotificationMessage(type, fromUser.displayName || fromUser.email, metadata),
         actionUrl: this.getActionUrl(type, interactionId, metadata)
-      });
+      };
+      
+      console.log('🔗 [UserRegistry] Notification data prepared:', notificationData);
+      
+      await this.createNotification(notificationData);
+      console.log('✅ [UserRegistry] Notification created');
 
       // Update user stats
+      console.log('🔗 [UserRegistry] Updating user stats...');
       await this.updateUserStats(fromUserId, { sentRequests: increment(1) });
       await this.updateUserStats(toUserId, { pendingRequests: increment(1) });
+      console.log('✅ [UserRegistry] User stats updated');
 
       console.log(`✅ [UserRegistry] ${type} sent successfully: ${interactionId}`);
       return { success: true, interactionId };
 
     } catch (error) {
       console.error(`❌ [UserRegistry] Error sending ${type}:`, error);
-      return { success: false, error: `Failed to send ${type}` };
+      console.error(`❌ [UserRegistry] Error details:`, {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      return { success: false, error: `Failed to send ${type}: ${error.message}` };
     }
   }
 
@@ -589,18 +621,73 @@ class UserInteractionRegistry {
         userId: notification.userId,
         type: notification.type,
         title: notification.title,
-        message: notification.message
+        message: notification.message,
+        interactionId: notification.interactionId,
+        actionUrl: notification.actionUrl
       });
       
-      await setDoc(doc(db, this.NOTIFICATIONS_COLLECTION, notificationId), {
+      // Check if Firebase is available
+      if (!db) {
+        console.error('❌ [UserRegistry] Firebase db is not available');
+        throw new Error('Firebase database not initialized');
+      }
+      
+      // Check Firebase auth state
+      const { auth } = await import('../firebase/config');
+      const currentUser = auth.currentUser;
+      console.log('🔔 [UserRegistry] Firebase auth state:', {
+        isAuthenticated: !!currentUser,
+        uid: currentUser?.uid,
+        email: currentUser?.email,
+        displayName: currentUser?.displayName
+      });
+      
+      if (!currentUser) {
+        console.error('❌ [UserRegistry] No authenticated user - this is the root cause!');
+        console.error('❌ [UserRegistry] Firebase requires authentication to write to Firestore');
+        throw new Error('User must be authenticated to create notifications');
+      }
+      
+      // Prepare notification data
+      const notificationData = {
         ...notification,
         read: false,
         createdAt: serverTimestamp()
-      });
+      };
+      
+      console.log('🔔 [UserRegistry] Notification data to write:', notificationData);
+      console.log('🔔 [UserRegistry] Writing to collection:', this.NOTIFICATIONS_COLLECTION);
+      console.log('🔔 [UserRegistry] Document ID:', notificationId);
+      
+      // Attempt to write to Firebase
+      const docRef = doc(db, this.NOTIFICATIONS_COLLECTION, notificationId);
+      console.log('🔔 [UserRegistry] Document reference created:', docRef.path);
+      
+      await setDoc(docRef, notificationData);
       
       console.log('✅ [UserRegistry] Notification created successfully in Firebase:', notificationId);
+      
+      // Verify the write by reading it back
+      try {
+        const verifyDoc = await getDoc(docRef);
+        if (verifyDoc.exists()) {
+          console.log('✅ [UserRegistry] Notification verified in Firebase:', verifyDoc.data());
+        } else {
+          console.error('❌ [UserRegistry] Notification not found after write - possible write failure');
+        }
+      } catch (verifyError) {
+        console.error('❌ [UserRegistry] Error verifying notification write:', verifyError);
+      }
+      
     } catch (error) {
       console.error('❌ [UserRegistry] Error creating notification:', error);
+      console.error('❌ [UserRegistry] Error details:', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      throw error; // Re-throw to propagate the error
     }
   }
 

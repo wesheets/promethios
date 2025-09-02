@@ -41,6 +41,10 @@ import PublicProfileHandler from './components/profile/PublicProfileHandler';
 import ChatWindowManager from './components/social/ChatWindowManager';
 import ChatIntegrationProvider from './components/social/SimpleChatIntegrationProvider';
 import NotificationTestButton from './components/debug/NotificationTestButton';
+import MockAuthProvider from './components/debug/MockAuthProvider';
+import MockAuthButton from './components/debug/MockAuthButton';
+import MockNotificationTestButton from './components/debug/MockNotificationTestButton';
+import RealNotificationTestButton from './components/debug/RealNotificationTestButton';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -164,8 +168,17 @@ const AppContent: React.FC = () => {
         {!isUIRoute && <Footer />}
         {/* <FeedbackWidget /> */}
         
+        {/* Debug: Mock Auth Control */}
+        <MockAuthButton />
+        
         {/* Debug: Notification Test Button */}
         <NotificationTestButton />
+        
+        {/* Debug: Mock Notification Test (No Auth Required) */}
+        <MockNotificationTestButton />
+        
+        {/* Debug: Real Notification Test (Auth Required) */}
+        <RealNotificationTestButton />
       </div>
     </ChatWindowManager>
   );
@@ -177,9 +190,11 @@ const App: React.FC = () => {
     <AnalyticsProvider>
       <ThemeProvider>
         <Router>
-          <ChatIntegrationProvider>
-            <AppContent />
-          </ChatIntegrationProvider>
+          <MockAuthProvider>
+            <ChatIntegrationProvider>
+              <AppContent />
+            </ChatIntegrationProvider>
+          </MockAuthProvider>
         </Router>
       </ThemeProvider>
     </AnalyticsProvider>

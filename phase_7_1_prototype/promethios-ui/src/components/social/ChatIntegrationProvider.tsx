@@ -1,27 +1,24 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import ChatWindowManager from './ChatWindowManager';
-import LightweightFloatingChat from './LightweightFloatingChat';
+import FixedBottomChat from './FixedBottomChat';
 import FloatingChatDebugOverlay from '../debug/FloatingChatDebugOverlay';
 
-interface FloatingChatWindow {
+interface BottomChatWindow {
   id: string;
   conversationId: string;
   participantId: string;
   participantName: string;
   participantAvatar?: string;
-  position: { x: number; y: number };
-  isMinimized: boolean;
 }
 
 interface ChatIntegrationContextType {
   isDirectMessageOpen: boolean;
   activeConversationId: string | null;
-  floatingChats: FloatingChatWindow[];
+  bottomChats: BottomChatWindow[];
   openDirectMessage: (userId: string, userName: string) => void;
   closeDirectMessage: () => void;
-  openLightweightChat: (userId: string, userName: string, userAvatar?: string) => void;
-  closeLightweightChat: (chatId: string) => void;
-  minimizeLightweightChat: (chatId: string) => void;
+  openBottomChat: (userId: string, userName: string, userAvatar?: string) => void;
+  closeBottomChat: (chatId: string) => void;
   startVideoCall: (userId: string) => void;
   startVoiceCall: (userId: string) => void;
 }
@@ -47,7 +44,7 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
 }) => {
   const [isDirectMessageOpen, setIsDirectMessageOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [floatingChats, setFloatingChats] = useState<FloatingChatWindow[]>([]);
+  const [bottomChats, setBottomChats] = useState<BottomChatWindow[]>([]);
   const [pendingConversation, setPendingConversation] = useState<{
     userId: string;
     userName: string;

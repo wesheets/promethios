@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@mui/material';
 import { notificationService } from '../../services/NotificationService';
 import { userInteractionRegistry } from '../../services/UserInteractionRegistry';
-import { useAuth } from '../../context/AuthContext';
+import { useMockAuth } from './MockAuthProvider';
 import { createMockUser, deleteMockUser, MockUser } from '../../utils/testUtils';
 
 /**
@@ -10,7 +10,7 @@ import { createMockUser, deleteMockUser, MockUser } from '../../utils/testUtils'
  * This creates a test notification for the current user to verify the system works
  */
 const NotificationTestButton: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { currentUser } = useMockAuth();
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [createdMockUsers, setCreatedMockUsers] = useState<MockUser[]>([]);
 
