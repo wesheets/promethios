@@ -211,7 +211,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
           flexDirection: 'column',
           borderRadius: 2,
           overflow: 'hidden',
-          backgroundColor: '#0f172a', // Dark background to match Direct Messages
+          backgroundColor: '#ff0000', // BRIGHT RED for debugging visibility
           border: isPinned ? '2px solid' : '1px solid',
           borderColor: isPinned ? '#3b82f6' : '#1e293b', // Dark border colors
           cursor: isResizing ? 'nw-resize' : 'default',

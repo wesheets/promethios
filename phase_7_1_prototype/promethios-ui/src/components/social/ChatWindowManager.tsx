@@ -64,11 +64,11 @@ const ChatWindowManager: React.FC<ChatWindowManagerProps> = ({ children }) => {
           isMinimized: false,
           isPinned: false, // Default to unpinned
           position: { 
-            x: 300 + (windowCount * 50), // Move further right to avoid navigation
-            y: 100 + (windowCount * 50) 
+            x: 400, // Center of typical screen
+            y: 200  // Center of typical screen
           },
           size: { width: 350, height: 500 },
-          zIndex: 2000 + nextZIndex, // Higher z-index to ensure visibility
+          zIndex: 9999, // Very high z-index to ensure visibility
           unreadCount: 0,
         });
       }
