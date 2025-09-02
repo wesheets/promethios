@@ -214,10 +214,12 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
       {children}
       
       {/* Debug Overlay - Shows floating chat state in real-time */}
-      <FloatingChatDebugOverlay 
-        floatingChats={floatingChats}
-        enabled={process.env.NODE_ENV === 'development' || window.location.search.includes('debug=true')}
-      />
+      {(import.meta.env.DEV || import.meta.env.VITE_SHOW_DEBUG === 'true' || window.location.search.includes('debug=true')) && (
+        <FloatingChatDebugOverlay 
+          floatingChats={floatingChats}
+          enabled={true}
+        />
+      )}
       
       {/* Floating Chat Window Manager */}
       <ChatWindowManager />

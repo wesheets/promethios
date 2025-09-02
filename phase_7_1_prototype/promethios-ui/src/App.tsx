@@ -169,20 +169,25 @@ const AppContent: React.FC = () => {
         {!isUIRoute && <Footer />}
         {/* <FeedbackWidget /> */}
         
-        {/* Debug: Mock Auth Control */}
-        <MockAuthButton />
-        
-        {/* Debug: Notification Test Button */}
-        <NotificationTestButton />
-        
-        {/* Debug: Mock Notification Test (No Auth Required) */}
-        <MockNotificationTestButton />
-        
-        {/* Debug: Real Notification Test (Auth Required) */}
-        <RealNotificationTestButton />
-        
-        {/* Debug: Connection & Chat Test */}
-        <ConnectionTestButton />
+        {/* Debug Components - Only show in development or when debug mode is enabled */}
+        {(import.meta.env.DEV || import.meta.env.VITE_SHOW_DEBUG === 'true' || window.location.search.includes('debug=true')) && (
+          <>
+            {/* Debug: Mock Auth Control */}
+            <MockAuthButton />
+            
+            {/* Debug: Notification Test Button */}
+            <NotificationTestButton />
+            
+            {/* Debug: Mock Notification Test (No Auth Required) */}
+            <MockNotificationTestButton />
+            
+            {/* Debug: Real Notification Test (Auth Required) */}
+            <RealNotificationTestButton />
+            
+            {/* Debug: Connection & Chat Test */}
+            <ConnectionTestButton />
+          </>
+        )}
       </div>
     </ChatWindowManager>
   );

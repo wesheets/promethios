@@ -217,19 +217,37 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
       const storageKey = `tab_preferences_${userId}`;
       const savedPreferences = localStorage.getItem(storageKey);
       
+      // Check if debug mode is enabled
+      const isDebugMode = import.meta.env.DEV || 
+                         import.meta.env.VITE_SHOW_DEBUG === 'true' || 
+                         window.location.search.includes('debug=true');
+      
       if (savedPreferences) {
         const parsedPreferences = JSON.parse(savedPreferences);
-        setVisibleTabs(parsedPreferences);
+        // Filter out debug tabs in production
+        const filteredPreferences = isDebugMode 
+          ? parsedPreferences 
+          : parsedPreferences.filter((tabId: string) => tabId !== 'debug');
+        setVisibleTabs(filteredPreferences);
       } else {
-        // Default: show all tabs
+        // Default: show all tabs except debug in production
         const allTabIds = getAllTabConfigs().map(tab => tab.id);
-        setVisibleTabs(allTabIds);
+        const filteredTabIds = isDebugMode 
+          ? allTabIds 
+          : allTabIds.filter(tabId => tabId !== 'debug');
+        setVisibleTabs(filteredTabIds);
       }
     } catch (err) {
       console.error('Error loading tab preferences:', err);
-      // Fallback: show all tabs
+      // Fallback: show all tabs except debug in production
       const allTabIds = getAllTabConfigs().map(tab => tab.id);
-      setVisibleTabs(allTabIds);
+      const isDebugMode = import.meta.env.DEV || 
+                         import.meta.env.VITE_SHOW_DEBUG === 'true' || 
+                         window.location.search.includes('debug=true');
+      const filteredTabIds = isDebugMode 
+        ? allTabIds 
+        : allTabIds.filter(tabId => tabId !== 'debug');
+      setVisibleTabs(filteredTabIds);
     }
   };
 

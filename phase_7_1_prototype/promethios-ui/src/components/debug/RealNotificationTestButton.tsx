@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserInteractionRegistry } from '../../services/UserInteractionRegistry';
+import { userInteractionRegistry } from '../../services/UserInteractionRegistry';
 import { auth } from '../../firebase/config';
 
 const RealNotificationTestButton: React.FC = () => {
@@ -27,8 +27,8 @@ const RealNotificationTestButton: React.FC = () => {
         return;
       }
       
-      // Initialize the real UserInteractionRegistry
-      const userRegistry = UserInteractionRegistry.getInstance();
+      // Use the imported userInteractionRegistry instance
+      const userRegistry = userInteractionRegistry;
       
       // Test with real user IDs from your Firebase console
       // Use the currently logged in user as sender, and another real user as recipient
