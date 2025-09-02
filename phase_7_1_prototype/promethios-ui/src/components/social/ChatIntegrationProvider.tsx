@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import ChatWindowManager from './ChatWindowManager';
 import LightweightFloatingChat from './LightweightFloatingChat';
+import FloatingChatDebugOverlay from '../debug/FloatingChatDebugOverlay';
 
 interface FloatingChatWindow {
   id: string;
@@ -91,7 +92,26 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
     const existingChat = floatingChats.find(chat => chat.participantId === userId);
     if (existingChat) {
       console.log('💬 [ChatIntegrationProvider] Chat already exists, bringing to front');
-      // TODO: Bring existing chat to front
+      
+      // If chat is minimized, restore it
+      if (existingChat.isMinimized) {
+        console.log('💬 [ChatIntegrationProvider] Restoring minimized chat');
+        setFloatingChats(prev => 
+          prev.map(chat => 
+            chat.id === existingChat.id ? { ...chat, isMinimized: false } : chat
+          )
+        );
+      }
+      
+      // Move chat to a visible position (in case it's off-screen)
+      const newPosition = getNextPosition();
+      console.log('💬 [ChatIntegrationProvider] Moving existing chat to visible position:', newPosition);
+      setFloatingChats(prev => 
+        prev.map(chat => 
+          chat.id === existingChat.id ? { ...chat, position: newPosition } : chat
+        )
+      );
+      
       return;
     }
 
@@ -194,6 +214,12 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
   return (
     <ChatIntegrationContext.Provider value={contextValue}>
       {children}
+      
+      {/* Debug Overlay - Shows floating chat state in real-time */}
+      <FloatingChatDebugOverlay 
+        floatingChats={floatingChats}
+        enabled={process.env.NODE_ENV === 'development' || window.location.search.includes('debug=true')}
+      />
       
       {/* Floating Chat Window Manager */}
       <ChatWindowManager />
