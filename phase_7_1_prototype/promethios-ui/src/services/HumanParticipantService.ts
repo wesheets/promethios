@@ -121,7 +121,7 @@ export class HumanParticipantService {
       const currentUser = await userProfileService.getCurrentUserProfile();
       if (currentUser) {
         this.onlineUsers.set(currentUser.id, new Date());
-        await this.storageService.setItem(`presence_${currentUser.id}`, {
+        await this.storageService.set('user_presence', `presence_${currentUser.id}`, {
           userId: currentUser.id,
           lastSeen: new Date(),
           isOnline: true
@@ -247,7 +247,7 @@ export class HumanParticipantService {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
       };
 
-      await this.storageService.setItem(`invitation_${invitation.id}`, invitation);
+      await this.storageService.set('invitations', invitation.id, invitation);
       
       // TODO: Send email notification
       console.log('📧 Invitation sent:', invitation);
@@ -264,7 +264,7 @@ export class HumanParticipantService {
    */
   public async acceptInvitation(invitationId: string): Promise<boolean> {
     try {
-      const invitation = await this.storageService.getItem<ConversationInvitation>(`invitation_${invitationId}`);
+      const invitation = await this.storageService.get<ConversationInvitation>('invitations', invitationId);
       if (!invitation || invitation.status !== 'pending') {
         return false;
       }
@@ -284,7 +284,7 @@ export class HumanParticipantService {
         invitation.status = 'accepted';
         invitation.toUserId = currentUser.id;
         invitation.acceptedAt = new Date();
-        await this.storageService.setItem(`invitation_${invitationId}`, invitation);
+        await this.storageService.set('invitations', invitationId, invitation);
         return true;
       }
 
@@ -300,7 +300,7 @@ export class HumanParticipantService {
    */
   public async getConversationContext(conversationId: string): Promise<HumanConversationContext | null> {
     try {
-      return await this.storageService.getItem<HumanConversationContext>(`conversation_${conversationId}`);
+      return await this.storageService.get<HumanConversationContext>('conversations', conversationId);
     } catch (error) {
       console.error('Failed to get conversation context:', error);
       return null;
@@ -312,7 +312,7 @@ export class HumanParticipantService {
    */
   public async saveConversationContext(context: HumanConversationContext): Promise<void> {
     try {
-      await this.storageService.setItem(`conversation_${context.conversationId}`, context);
+      await this.storageService.set('conversations', context.conversationId, context);
     } catch (error) {
       console.error('Failed to save conversation context:', error);
     }
@@ -395,7 +395,7 @@ export class HumanParticipantService {
    */
   public async getUserPresence(userId: string): Promise<{ isOnline: boolean; lastSeen: Date } | null> {
     try {
-      const presence = await this.storageService.getItem<{ userId: string; lastSeen: Date; isOnline: boolean }>(`presence_${userId}`);
+      const presence = await this.storageService.get<{ userId: string; lastSeen: Date; isOnline: boolean }>('user_presence', `presence_${userId}`);
       if (presence) {
         return {
           isOnline: this.isUserOnline(userId),

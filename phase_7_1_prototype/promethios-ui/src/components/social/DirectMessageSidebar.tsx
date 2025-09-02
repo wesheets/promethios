@@ -47,6 +47,7 @@ import {
 import { MessageService, ChatMessage, ChatConversation } from '../../services/MessageService';
 import { ConnectionService } from '../../services/ConnectionService';
 import { useAuth } from '../../context/AuthContext';
+import { useChatIntegration } from './ChatIntegrationProvider';
 
 interface DirectMessage {
   id: string;
@@ -104,6 +105,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { currentUser } = useAuth();
+  const { openDirectMessage } = useChatIntegration();
   
   const messageService = MessageService.getInstance();
   const currentUserId = messageService.getCurrentUserId() || propCurrentUserId;
@@ -275,20 +277,13 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
         connection.photoURL || connection.avatar
       );
       
-      // Open floating chat window instead of setting active conversation in sidebar
-      const openFloatingChat = (window as any).openFloatingChat;
-      if (openFloatingChat) {
-        openFloatingChat({
-          participantId: connection.userId || connection.id,
-          participantName: connection.displayName || connection.name || connection.userName || 'Unknown User',
-          participantAvatar: connection.photoURL || connection.avatar,
-          conversationId: conversationId
-        });
-        console.log('✅ [DirectMessages] Opened floating chat for:', connection.displayName || connection.name);
-      } else {
-        console.warn('⚠️ [DirectMessages] openFloatingChat not available, falling back to sidebar');
-        setActiveConversationId(conversationId);
-      }
+      // Open floating chat window using ChatIntegrationProvider
+      openDirectMessage(
+        connection.userId || connection.id,
+        connection.displayName || connection.name || connection.userName || 'Unknown User',
+        connection.photoURL || connection.avatar
+      );
+      console.log('✅ [DirectMessages] Opened floating chat for:', connection.displayName || connection.name);
     } catch (error) {
       console.error('❌ [DirectMessages] Failed to start conversation:', error);
     } finally {

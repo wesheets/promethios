@@ -22,7 +22,7 @@ interface ChatWindowManagerProps {
 
 const ChatWindowManager: React.FC<ChatWindowManagerProps> = ({ children }) => {
   const [chatWindows, setChatWindows] = useState<Map<string, ChatWindow>>(new Map());
-  const [nextZIndex, setNextZIndex] = useState(1000);
+  const [nextZIndex, setNextZIndex] = useState(2000);
 
   // Calculate positions for minimized bubbles
   const getMinimizedPosition = (index: number) => ({
@@ -50,7 +50,7 @@ const ChatWindowManager: React.FC<ChatWindowManagerProps> = ({ children }) => {
         newWindows.set(windowId, {
           ...existingWindow,
           isMinimized: false,
-          zIndex: nextZIndex,
+          zIndex: 2000 + nextZIndex, // Higher z-index to ensure visibility
         });
       } else {
         // Create new window
@@ -64,11 +64,11 @@ const ChatWindowManager: React.FC<ChatWindowManagerProps> = ({ children }) => {
           isMinimized: false,
           isPinned: false, // Default to unpinned
           position: { 
-            x: 100 + (windowCount * 50), // Cascade new windows
+            x: 300 + (windowCount * 50), // Move further right to avoid navigation
             y: 100 + (windowCount * 50) 
           },
           size: { width: 350, height: 500 },
-          zIndex: nextZIndex,
+          zIndex: 2000 + nextZIndex, // Higher z-index to ensure visibility
           unreadCount: 0,
         });
       }
