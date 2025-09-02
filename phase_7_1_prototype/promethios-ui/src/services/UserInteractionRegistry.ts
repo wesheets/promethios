@@ -16,6 +16,7 @@ import {
   orderBy, 
   limit, 
   getDocs,
+  onSnapshot,
   serverTimestamp,
   Timestamp 
 } from 'firebase/firestore';
@@ -352,6 +353,126 @@ class UserInteractionRegistry {
         return `/profile/${metadata}`;
       default:
         return `/interactions/${interactionId}`;
+    }
+  }
+
+  /**
+   * Subscribe to real-time interactions for a user
+   */
+  subscribeToInteractions(
+    userId: string,
+    callback: (interactions: UserInteraction[]) => void
+  ): () => void {
+    console.log(`🔗 [UserRegistry] Setting up real-time subscription for interactions: ${userId}`);
+
+    const q = query(
+      collection(db, this.INTERACTIONS_COLLECTION),
+      where('toUserId', '==', userId),
+      where('status', '==', 'pending'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const interactions: UserInteraction[] = [];
+      querySnapshot.forEach((doc) => {
+        interactions.push({ id: doc.id, ...doc.data() } as UserInteraction);
+      });
+      
+      console.log(`🔗 [UserRegistry] Real-time update: ${interactions.length} pending interactions`);
+      callback(interactions);
+    }, (error) => {
+      console.error('❌ [UserRegistry] Error in interactions subscription:', error);
+      callback([]); // Return empty array on error
+    });
+
+    return unsubscribe;
+  }
+
+  /**
+   * Subscribe to real-time relationships for a user
+   */
+  subscribeToRelationships(
+    userId: string,
+    callback: (relationships: UserRelationship[]) => void
+  ): () => void {
+    console.log(`🔗 [UserRegistry] Setting up real-time subscription for relationships: ${userId}`);
+
+    const q = query(
+      collection(db, this.RELATIONSHIPS_COLLECTION),
+      where('participants', 'array-contains', userId),
+      where('status', '==', 'active')
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const relationships: UserRelationship[] = [];
+      querySnapshot.forEach((doc) => {
+        relationships.push({ id: doc.id, ...doc.data() } as UserRelationship);
+      });
+      
+      console.log(`🔗 [UserRegistry] Real-time update: ${relationships.length} active relationships`);
+      callback(relationships);
+    }, (error) => {
+      console.error('❌ [UserRegistry] Error in relationships subscription:', error);
+      callback([]); // Return empty array on error
+    });
+
+    return unsubscribe;
+  }
+
+  /**
+   * Get pending interactions for a user
+   */
+  async getPendingInteractions(userId: string): Promise<UserInteraction[]> {
+    try {
+      console.log(`📥 [UserRegistry] Getting pending interactions for: ${userId}`);
+
+      const q = query(
+        collection(db, this.INTERACTIONS_COLLECTION),
+        where('toUserId', '==', userId),
+        where('status', '==', 'pending'),
+        orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const interactions: UserInteraction[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        interactions.push({ id: doc.id, ...doc.data() } as UserInteraction);
+      });
+
+      console.log(`📥 [UserRegistry] Found ${interactions.length} pending interactions`);
+      return interactions;
+    } catch (error) {
+      console.error('❌ [UserRegistry] Error getting pending interactions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get relationships for a user
+   */
+  async getRelationships(userId: string): Promise<UserRelationship[]> {
+    try {
+      console.log(`🤝 [UserRegistry] Getting relationships for: ${userId}`);
+
+      const q = query(
+        collection(db, this.RELATIONSHIPS_COLLECTION),
+        where('participants', 'array-contains', userId),
+        where('status', '==', 'active')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const relationships: UserRelationship[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        relationships.push({ id: doc.id, ...doc.data() } as UserRelationship);
+      });
+
+      console.log(`🤝 [UserRegistry] Found ${relationships.length} active relationships`);
+      return relationships;
+    } catch (error) {
+      console.error('❌ [UserRegistry] Error getting relationships:', error);
+      return [];
     }
   }
 }
