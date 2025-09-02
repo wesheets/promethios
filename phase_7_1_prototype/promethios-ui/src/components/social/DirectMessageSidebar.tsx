@@ -27,6 +27,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  InputAdornment,
 } from '@mui/material';
 import {
   Close,
@@ -34,13 +35,10 @@ import {
   MoreVert,
   AttachFile,
   EmojiEmotions,
-  VideoCall,
-  Call,
-  Info,
-  Minimize,
-  Maximize,
-  Circle,
   Add,
+  Remove,
+  Minimize,
+  Search,
 } from '@mui/icons-material';
 import { MessageService, ChatMessage, ChatConversation } from '../../services/MessageService';
 import { ConnectionService } from '../../services/ConnectionService';
@@ -98,6 +96,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
   const [userConnections, setUserConnections] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState(''); // Search functionality
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { currentUser } = useAuth();
@@ -257,7 +256,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
     }
   };
 
-  // Handle starting a conversation with a connection
+  // Handle starting a conversation with a connection - opens floating chat window
   const handleStartConversation = async (connection: any) => {
     if (!currentUserId) return;
 
@@ -267,14 +266,27 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
         currentUserId,
         connection.userId || connection.id,
         currentUserName,
-        connection.displayName || connection.name || 'Unknown User',
+        connection.displayName || connection.name || connection.userName || 'Unknown User',
         currentUserAvatar,
         connection.photoURL || connection.avatar
       );
       
-      setActiveConversationId(conversationId);
+      // Open floating chat window instead of setting active conversation in sidebar
+      const openFloatingChat = (window as any).openFloatingChat;
+      if (openFloatingChat) {
+        openFloatingChat({
+          participantId: connection.userId || connection.id,
+          participantName: connection.displayName || connection.name || connection.userName || 'Unknown User',
+          participantAvatar: connection.photoURL || connection.avatar,
+          conversationId: conversationId
+        });
+        console.log('✅ [DirectMessages] Opened floating chat for:', connection.displayName || connection.name);
+      } else {
+        console.warn('⚠️ [DirectMessages] openFloatingChat not available, falling back to sidebar');
+        setActiveConversationId(conversationId);
+      }
     } catch (error) {
-      console.error('Failed to start conversation:', error);
+      console.error('❌ [DirectMessages] Failed to start conversation:', error);
     } finally {
       setIsLoading(false);
     }
@@ -420,7 +432,7 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
           transition: 'all 0.3s ease',
           zIndex: 1300,
           left: 240, // Position right after the left sidebar (assuming 240px width)
-          top: 64, // Align with Messages button (typical header height)
+          top: 0, // Flush with top of screen, right next to Messages tab
           position: 'fixed',
         },
       }}
@@ -668,13 +680,36 @@ const DirectMessageSidebar: React.FC<DirectMessageSidebarProps> = ({
             Select a connection to start chatting with:
           </Typography>
           
+          {/* Search Bar */}
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search connections..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ mb: 2 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+          />
+          
           {userConnections.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
               No connections available. Connect with other users first!
             </Typography>
           ) : (
             <Grid container spacing={2}>
-              {userConnections.map((connection) => {
+              {userConnections
+                .filter((connection) => {
+                  const isUser1 = connection.userId1 === currentUserId;
+                  const otherUserName = isUser1 ? connection.user2Name : connection.user1Name;
+                  return otherUserName?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+                })
+                .map((connection) => {
                 // Determine which user is the "other" user (not current user)
                 const isUser1 = connection.userId1 === currentUserId;
                 const otherUserId = isUser1 ? connection.userId2 : connection.userId1;
