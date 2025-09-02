@@ -91,6 +91,7 @@ class UserInteractionRegistry {
   private readonly INTERACTIONS_COLLECTION = 'userInteractions';
   private readonly NOTIFICATIONS_COLLECTION = 'interactionNotifications';
   private readonly USERS_COLLECTION = 'userProfiles';
+  private readonly RELATIONSHIPS_COLLECTION = 'userRelationships';
   private readonly COOLDOWN_MINUTES = 5; // Minimum time between same invitations
 
   static getInstance(): UserInteractionRegistry {
