@@ -96,7 +96,7 @@ export const useUserInteractions = (): UseUserInteractionsReturn => {
 
   // Category-based notification getters (computed from pendingInteractions)
   const socialNotifications = pendingInteractions.filter(interaction => 
-    ['friend_request', 'follow_request', 'post_like', 'post_comment', 'post_share', 'group_invitation', 'event_invitation'].includes(interaction.type)
+    ['friend_request', 'follow_request', 'connection_request', 'post_like', 'post_comment', 'post_share', 'group_invitation', 'event_invitation'].includes(interaction.type)
   );
 
   const professionalNotifications = pendingInteractions.filter(interaction => 
@@ -108,7 +108,7 @@ export const useUserInteractions = (): UseUserInteractionsReturn => {
   );
 
   const collaborationNotifications = pendingInteractions.filter(interaction => 
-    ['collaboration_invitation', 'collaboration_request', 'connection_request', 'team_invitation', 'project_invitation'].includes(interaction.type)
+    ['collaboration_invitation', 'collaboration_request', 'team_invitation', 'project_invitation'].includes(interaction.type)
   );
 
   const chatNotifications = pendingInteractions.filter(interaction => 
