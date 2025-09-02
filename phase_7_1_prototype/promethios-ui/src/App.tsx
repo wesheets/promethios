@@ -45,6 +45,7 @@ import MockAuthProvider from './components/debug/MockAuthProvider';
 import MockAuthButton from './components/debug/MockAuthButton';
 import MockNotificationTestButton from './components/debug/MockNotificationTestButton';
 import RealNotificationTestButton from './components/debug/RealNotificationTestButton';
+import ConnectionTestButton from './components/debug/ConnectionTestButton';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -179,6 +180,9 @@ const AppContent: React.FC = () => {
         
         {/* Debug: Real Notification Test (Auth Required) */}
         <RealNotificationTestButton />
+        
+        {/* Debug: Connection & Chat Test */}
+        <ConnectionTestButton />
       </div>
     </ChatWindowManager>
   );
