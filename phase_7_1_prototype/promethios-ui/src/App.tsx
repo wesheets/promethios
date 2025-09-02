@@ -39,6 +39,7 @@ import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
 import UIIntegration from './UIIntegration';
 import PublicProfileHandler from './components/profile/PublicProfileHandler';
 import ChatWindowManager from './components/social/ChatWindowManager';
+import NotificationTestButton from './components/debug/NotificationTestButton';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -161,6 +162,9 @@ const AppContent: React.FC = () => {
         {/* Only show Footer for non-UI routes */}
         {!isUIRoute && <Footer />}
         {/* <FeedbackWidget /> */}
+        
+        {/* Debug: Notification Test Button */}
+        <NotificationTestButton />
       </div>
     </ChatWindowManager>
   );

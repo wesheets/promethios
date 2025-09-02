@@ -478,10 +478,13 @@ class UserInteractionRegistry {
   // Private helper methods
   private async getUserInfo(userId: string): Promise<any> {
     try {
+      console.log('👤 [UserRegistry] Looking up user info for ID:', userId);
       const userDoc = await getDoc(doc(db, this.USERS_COLLECTION, userId));
-      return userDoc.exists() ? userDoc.data() : null;
+      const userData = userDoc.exists() ? userDoc.data() : null;
+      console.log('👤 [UserRegistry] User data found:', userData ? `${userData.displayName || userData.email} (${userId})` : 'null');
+      return userData;
     } catch (error) {
-      console.error('Error getting user info:', error);
+      console.error('❌ [UserRegistry] Error getting user info for', userId, ':', error);
       return null;
     }
   }
@@ -581,13 +584,23 @@ class UserInteractionRegistry {
   private async createNotification(notification: Omit<InteractionNotification, 'id' | 'read' | 'createdAt'>): Promise<void> {
     try {
       const notificationId = `${notification.userId}_${Date.now()}`;
+      console.log('🔔 [UserRegistry] Creating notification:', {
+        id: notificationId,
+        userId: notification.userId,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message
+      });
+      
       await setDoc(doc(db, this.NOTIFICATIONS_COLLECTION, notificationId), {
         ...notification,
         read: false,
         createdAt: serverTimestamp()
       });
+      
+      console.log('✅ [UserRegistry] Notification created successfully in Firebase:', notificationId);
     } catch (error) {
-      console.error('Error creating notification:', error);
+      console.error('❌ [UserRegistry] Error creating notification:', error);
     }
   }
 

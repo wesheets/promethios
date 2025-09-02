@@ -50,24 +50,32 @@ export class FirebaseNotificationProvider implements NotificationProvider {
   }
 
   /**
-   * Set the current user ID and start listening for notifications
+   * Set the user ID and start listening for notifications
    */
   setUserId(userId: string): void {
     console.log('🔔 [FirebaseNotificationProvider] Setting user ID:', userId);
     
-    // Clean up existing subscription
+    if (this.currentUserId === userId) {
+      console.log('🔔 [FirebaseNotificationProvider] User ID unchanged, skipping setup');
+      return;
+    }
+
+    // Clean up existing listener
     if (this.unsubscribe) {
+      console.log('🔔 [FirebaseNotificationProvider] Cleaning up existing listener');
       this.unsubscribe();
     }
 
     this.currentUserId = userId;
-    this.startListening();
+    
+    // Set up real-time listener for new notifications
+    this.setupRealtimeListener();
   }
 
   /**
-   * Start listening for real-time notification updates
+   * Set up real-time listener for notifications
    */
-  private startListening(): void {
+  private setupRealtimeListener(): void {
     if (!this.currentUserId) return;
 
     console.log('🔔 [FirebaseNotificationProvider] Starting real-time listener for user:', this.currentUserId);
