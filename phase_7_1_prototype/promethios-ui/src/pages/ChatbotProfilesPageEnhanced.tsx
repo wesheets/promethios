@@ -4602,7 +4602,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       currentUserName={user?.displayName || 'User'}
                                       conversationId={`conv_${selectedChatbot?.id || 'default'}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
-                                      connectionsLoading={connectionsLoading}
                                     />
                                     
                                     {/* Behavioral Orchestration Hover Triggers */}
