@@ -54,9 +54,10 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
 
   // Generate next position for new floating chat windows
   const getNextPosition = () => {
-    const baseX = 300;
-    const baseY = 200;
+    const baseX = 400; // Moved further right to avoid navigation
+    const baseY = 150; // Moved up to be more visible
     const offset = floatingChats.length * 30;
+    console.log('📍 [ChatIntegrationProvider] Calculating position:', { x: baseX + offset, y: baseY + offset });
     return { x: baseX + offset, y: baseY + offset };
   };
 

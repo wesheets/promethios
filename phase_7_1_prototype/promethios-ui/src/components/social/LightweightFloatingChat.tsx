@@ -127,6 +127,13 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
     }
   };
 
+  console.log('🎯 [LightweightFloatingChat] RENDERING with props:', {
+    participantId,
+    participantName,
+    position,
+    isMinimized
+  });
+
   return (
     <Draggable
       handle=".lightweight-chat-header"
@@ -141,13 +148,14 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
           position: 'fixed',
           width: 320,
           height: 400,
-          zIndex: 2000,
+          zIndex: 9999, // Increased z-index to ensure visibility
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 2,
           overflow: 'hidden',
           backgroundColor: '#1e293b',
-          border: '1px solid #334155',
+          border: '2px solid #22d3ee', // Bright cyan border for debugging
+          boxShadow: '0 0 20px rgba(34, 211, 238, 0.5)', // Glowing effect for debugging
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
         }}
       >
