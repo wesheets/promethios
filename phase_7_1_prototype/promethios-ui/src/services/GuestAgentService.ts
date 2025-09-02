@@ -755,15 +755,17 @@ export class GuestAgentService {
   private async loadActiveSessions(): Promise<void> {
     // Load active sessions from storage
     try {
-      const sessionKeys = await this.storageService.listKeys('guest_session_');
+      // Use keys() method instead of listKeys() - get all keys from guest_sessions namespace
+      const sessionKeys = await this.storageService.keys('guest_sessions');
       
       for (const key of sessionKeys) {
-        const session = await this.storageService.retrieve<GuestSession>(key);
+        // Keys from UnifiedStorageService don't include namespace prefix
+        const session = await this.storageService.get<GuestSession>('guest_sessions', key);
         if (session && ['pending', 'active'].includes(session.status)) {
           this.activeSessions.set(session.id, session);
           
-          // Load messages
-          const messages = await this.storageService.retrieve<GuestMessage[]>(`guest_messages_${session.id}`);
+          // Load messages - use get() method instead of retrieve()
+          const messages = await this.storageService.get<GuestMessage[]>('guest_messages', session.id);
           if (messages) {
             this.sessionMessages.set(session.id, messages);
           }
