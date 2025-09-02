@@ -223,7 +223,7 @@ class UserInteractionRegistry {
   private readonly INTERACTIONS_COLLECTION = 'userInteractions';
   private readonly NOTIFICATIONS_COLLECTION = 'interactionNotifications';
   private readonly RELATIONSHIPS_COLLECTION = 'userRelationships';
-  private readonly USERS_COLLECTION = 'users';
+  private readonly USERS_COLLECTION = 'userProfiles';
   
   // Real-time listeners
   private listeners: Map<string, Unsubscribe> = new Map();

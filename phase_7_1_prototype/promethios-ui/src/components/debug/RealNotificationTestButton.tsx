@@ -31,18 +31,20 @@ const RealNotificationTestButton: React.FC = () => {
       const userRegistry = UserInteractionRegistry.getInstance();
       
       // Test with real user IDs from your Firebase console
-      const testUsers = [
-        'HSf4ShwCdRzAFPuFXfFdCsGWZ', // wesheets@gmail.com
-        'XWZEZOUKPIGtEWKBdqUJRBo783' // ted@crownerellc.com
-      ];
+      // Use the currently logged in user as sender, and another real user as recipient
+      const currentUserId = currentUser.uid; // HSf4SIwCcRRzAFPuFXlFE9CsQ6W2 (wesheets@gmail.com)
+      const recipientUserId = 'XWZEZOUKPIGtEWKBdqUJRBo783'; // ted@crownerellc.com
       
-      console.log('🧪 [RealNotificationTest] Testing with real user IDs:', testUsers);
+      console.log('🧪 [RealNotificationTest] Testing with real user IDs:', {
+        sender: currentUserId,
+        recipient: recipientUserId
+      });
       
       // Try to send a collaboration invitation between real users
       const result = await userRegistry.sendInteraction(
         'collaboration_invitation',
-        testUsers[0], // From wesheets@gmail.com
-        testUsers[1], // To ted@crownerellc.com
+        currentUserId, // From current logged in user
+        recipientUserId, // To ted@crownerellc.com
         {
           conversationName: 'Test AI Collaboration Session',
           agentName: 'Claude Assistant',
