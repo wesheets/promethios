@@ -54,19 +54,32 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
 
   // Generate next position for new floating chat windows
   const getNextPosition = () => {
-    // Position in upper-right area, away from main chat interface
-    const baseX = window.innerWidth - 350; // 350px from right edge (chat width is 320px)
-    const baseY = 100; // 100px from top, above the main interface
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const chatWidth = 320;
+    const chatHeight = 400;
+    
+    // Position in upper-right area, but ensure it's visible
+    const baseX = Math.max(50, viewportWidth - chatWidth - 50); // 50px margin from right edge
+    const baseY = 100; // 100px from top
     const offset = floatingChats.length * 30; // Cascade multiple chats
     
+    // Calculate final position with bounds checking
+    let finalX = baseX - offset;
+    let finalY = baseY + offset;
+    
     // Ensure chat stays within viewport bounds
-    const finalX = Math.max(50, baseX - offset); // Don't go too far left
-    const finalY = Math.max(50, baseY + offset); // Don't go above viewport
+    finalX = Math.max(10, Math.min(finalX, viewportWidth - chatWidth - 10));
+    finalY = Math.max(10, Math.min(finalY, viewportHeight - chatHeight - 10));
     
     console.log('📍 [ChatIntegrationProvider] Calculating position:', { 
       x: finalX, 
       y: finalY,
-      viewport: { width: window.innerWidth, height: window.innerHeight }
+      viewport: { width: viewportWidth, height: viewportHeight },
+      chatDimensions: { width: chatWidth, height: chatHeight },
+      offset: offset,
+      basePosition: { x: baseX, y: baseY }
     });
     return { x: finalX, y: finalY };
   };
@@ -186,12 +199,28 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
       <ChatWindowManager />
       
       {/* Debug: Log floating chats state */}
-      {console.log('🔍 [ChatIntegrationProvider] Rendering floating chats:', floatingChats)}
+      {console.log('🔍 [ChatIntegrationProvider] Rendering floating chats:', floatingChats.length, 'total chats')}
+      {floatingChats.forEach((chat, index) => {
+        console.log(`🔍 [ChatIntegrationProvider] Chat ${index}:`, {
+          id: chat.id,
+          participantName: chat.participantName,
+          isMinimized: chat.isMinimized,
+          position: chat.position,
+          shouldRender: !chat.isMinimized
+        });
+      })}
       
       {/* Lightweight Floating Chats */}
       {floatingChats.map((chat) => {
-        console.log('🎯 [ChatIntegrationProvider] Rendering chat:', chat.id, 'isMinimized:', chat.isMinimized, 'position:', chat.position);
-        return !chat.isMinimized && (
+        const shouldRender = !chat.isMinimized;
+        console.log('🎯 [ChatIntegrationProvider] Rendering chat:', chat.id, 'shouldRender:', shouldRender, 'position:', chat.position);
+        
+        if (!shouldRender) {
+          console.log('🎯 [ChatIntegrationProvider] Skipping minimized chat:', chat.id);
+          return null;
+        }
+        
+        return (
           <LightweightFloatingChat
             key={chat.id}
             conversationId={chat.conversationId}

@@ -244,8 +244,10 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
   };
 
   const handleCollaborationInvitationClick = (interaction: UserInteraction) => {
+    console.log('🎯 [UnifiedNotificationCenter] Collaboration invitation clicked:', interaction);
     setSelectedCollaborationInvitation(interaction);
     setCollaborationModalOpen(true);
+    console.log('🎯 [UnifiedNotificationCenter] Modal state set - open:', true, 'invitation:', interaction);
   };
 
   const handleCloseCollaborationModal = () => {
@@ -461,7 +463,7 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
                   
                   <ListItemSecondaryAction>
                     <Stack direction="row" spacing={1}>
-                      {interaction.type === 'collaboration_request' ? (
+                      {(interaction.type === 'collaboration_request' || interaction.type === 'collaboration_invitation') ? (
                         // Special handling for collaboration invitations - show "View Invitation" button
                         <Tooltip title="View Invitation">
                           <Button
@@ -539,6 +541,7 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
     </Paper>
 
     {/* Collaboration Invitation Modal */}
+    {console.log('🎯 [UnifiedNotificationCenter] Rendering modal - open:', collaborationModalOpen, 'invitation:', selectedCollaborationInvitation)}
     <CollaborationInvitationModal
       open={collaborationModalOpen}
       onClose={handleCloseCollaborationModal}

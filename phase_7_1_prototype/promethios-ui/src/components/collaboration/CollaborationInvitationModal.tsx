@@ -49,11 +49,31 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
 
-  if (!invitation) return null;
+  console.log('🎯 [CollaborationInvitationModal] Rendering modal:', {
+    open,
+    invitation: invitation ? {
+      id: invitation.id,
+      type: invitation.type,
+      fromUserName: invitation.fromUserName,
+      metadata: invitation.metadata
+    } : null
+  });
+
+  if (!invitation) {
+    console.log('🎯 [CollaborationInvitationModal] No invitation provided, not rendering');
+    return null;
+  }
 
   const { fromUserName, fromUserPhoto, metadata } = invitation;
   const conversationName = metadata?.conversationName || 'AI Conversation';
   const agentName = metadata?.agentName || 'AI Assistant';
+
+  console.log('🎯 [CollaborationInvitationModal] Modal should be visible:', {
+    open,
+    conversationName,
+    agentName,
+    fromUserName
+  });
 
   const handleAccept = async () => {
     setResponding(true);
@@ -125,10 +145,18 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      sx={{
+        zIndex: 10000, // Ensure modal appears above everything
+        '& .MuiBackdrop-root': {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)' // Darker backdrop for better visibility
+        }
+      }}
       PaperProps={{
         sx: {
           borderRadius: 2,
-          bgcolor: '#1e293b'
+          bgcolor: '#1e293b',
+          border: '2px solid #22d3ee', // Bright border for debugging
+          boxShadow: '0 0 30px rgba(34, 211, 238, 0.5)' // Glowing effect for debugging
         }
       }}
     >

@@ -151,7 +151,7 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
   return (
     <Draggable
       handle=".lightweight-chat-header"
-      position={position}
+      defaultPosition={position}
       onStop={(e, data) => {
         onPositionChange?.({ x: data.x, y: data.y });
       }}
@@ -169,8 +169,7 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
           overflow: 'hidden',
           backgroundColor: '#1e293b',
           border: '2px solid #22d3ee', // Bright cyan border for debugging
-          boxShadow: '0 0 20px rgba(34, 211, 238, 0.5)', // Glowing effect for debugging
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
+          boxShadow: '0 0 20px rgba(34, 211, 238, 0.5), 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2)', // Combined shadows
           // Ensure the chat appears above everything
           pointerEvents: 'auto',
         }}
