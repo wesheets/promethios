@@ -17,7 +17,7 @@ import {
 import {
   PersonAdd,
   Message,
-  TestTube
+  Science
 } from '@mui/icons-material';
 import UserConnectionHandler from '../social/UserConnectionHandler';
 
@@ -100,7 +100,7 @@ const ConnectionTestButton: React.FC = () => {
           <Card sx={{ maxWidth: 500, m: 2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <TestTube sx={{ mr: 1, color: 'primary.main' }} />
+                <Science sx={{ mr: 1, color: 'primary.main' }} />
                 <Typography variant="h6">
                   Connection & Chat Test
                 </Typography>
