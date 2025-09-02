@@ -1944,26 +1944,65 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }));
   };
 
-  // Get team members for guest selector - using teamMembers state (same as right panel)
+  // Get team members for guest selector - merging collaboration service and Firebase connections
   const getTeamMembers = () => {
-    console.log('🔍 [Team Members] Using teamMembers state (same as right panel)');
+    console.log('🔍 [Team Members] Merging collaboration service and Firebase connections data');
     console.log('🔍 [Team Members] teamMembers array:', teamMembers);
     console.log('🔍 [Team Members] teamMembers length:', teamMembers.length);
+    console.log('🔍 [Team Members] connections array:', connections);
+    console.log('🔍 [Team Members] connections length:', connections.length);
     
-    // Convert teamMembers to the format expected by GuestSelectorPopup
-    const convertedMembers = teamMembers.map(member => ({
+    // Convert teamMembers from collaboration service
+    const collaborationMembers = teamMembers.map(member => ({
       id: member.id,
       name: member.name,
       type: 'human' as const,
       role: member.role || 'Team Member',
       status: member.isOnline ? 'online' as const : 'offline' as const,
-      avatar: member.avatar || member.name?.charAt(0) || 'U'
+      avatar: member.avatar || member.name?.charAt(0) || 'U',
+      source: 'collaboration'
     }));
 
-    console.log('🔍 [Team Members] Converted team members:', convertedMembers);
-    console.log('✅ [Team Members] Returning', convertedMembers.length, 'team members');
+    // Convert Firebase connections to team member format
+    const connectionMembers = connections.map(connection => {
+      // Determine which user is the connection (not the current user)
+      const isUser1 = connection.userId1 === user?.uid;
+      const connectionUserId = isUser1 ? connection.userId2 : connection.userId1;
+      const connectionUserName = isUser1 ? connection.user2Name : connection.user1Name;
+      const connectionUserAvatar = isUser1 ? connection.user2Avatar : connection.user1Avatar;
+      
+      return {
+        id: connectionUserId,
+        name: connectionUserName || 'Unknown User',
+        type: 'human' as const,
+        role: 'Connection',
+        status: 'online' as const, // Default to online for connections
+        avatar: connectionUserAvatar || connectionUserName?.charAt(0) || 'U',
+        source: 'firebase'
+      };
+    });
+
+    // Merge and deduplicate by ID (collaboration service takes precedence)
+    const allMembers = [...collaborationMembers];
+    const existingIds = new Set(collaborationMembers.map(m => m.id));
     
-    return convertedMembers;
+    connectionMembers.forEach(connMember => {
+      if (!existingIds.has(connMember.id)) {
+        allMembers.push(connMember);
+        existingIds.add(connMember.id);
+      }
+    });
+
+    // Remove source property for final output
+    const finalMembers = allMembers.map(({ source, ...member }) => member);
+
+    console.log('🔍 [Team Members] Collaboration members:', collaborationMembers.length);
+    console.log('🔍 [Team Members] Connection members:', connectionMembers.length);
+    console.log('🔍 [Team Members] Final merged members:', finalMembers.length);
+    console.log('🔍 [Team Members] Final merged data:', finalMembers);
+    console.log('✅ [Team Members] Returning', finalMembers.length, 'team members (merged from both sources)');
+    
+    return finalMembers;
   };
 
   // Get AI agents for guest selector

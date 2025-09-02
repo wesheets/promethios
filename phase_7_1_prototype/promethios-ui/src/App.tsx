@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import NewHeader from './components/navigation/NewHeader';
