@@ -66,6 +66,7 @@ import {
 
 import { useUserInteractions } from '../../hooks/useUserInteractions';
 import { UserInteraction, InteractionType } from '../../services/UserInteractionRegistry';
+import CollaborationInvitationModal from '../collaboration/CollaborationInvitationModal';
 
 // Category configuration
 interface NotificationCategory {
@@ -166,6 +167,8 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
 }) => {
   const theme = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<NotificationCategory['id']>('all');
+  const [collaborationModalOpen, setCollaborationModalOpen] = useState(false);
+  const [selectedCollaborationInvitation, setSelectedCollaborationInvitation] = useState<UserInteraction | null>(null);
   
   const {
     // Category-based notifications
@@ -238,6 +241,16 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
 
   const handleDecline = async (interactionId: string) => {
     await declineInteraction(interactionId);
+  };
+
+  const handleCollaborationInvitationClick = (interaction: UserInteraction) => {
+    setSelectedCollaborationInvitation(interaction);
+    setCollaborationModalOpen(true);
+  };
+
+  const handleCloseCollaborationModal = () => {
+    setCollaborationModalOpen(false);
+    setSelectedCollaborationInvitation(null);
   };
 
   const getInteractionMessage = (interaction: UserInteraction): string => {
