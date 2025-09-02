@@ -946,6 +946,7 @@ class UserInteractionRegistry {
   }
 }
 
+export { UserInteractionRegistry };
 export const userInteractionRegistry = UserInteractionRegistry.getInstance();
 export default userInteractionRegistry;
 
