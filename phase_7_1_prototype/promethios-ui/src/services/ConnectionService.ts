@@ -12,7 +12,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { notificationService } from './NotificationService';
+import { unifiedNotificationService } from './UnifiedNotificationService';
 
 export interface ConnectionRequest {
   id: string;
@@ -382,64 +382,84 @@ export class ConnectionService {
    * Send connection request notification
    */
   private async sendConnectionNotification(requestId: string, request: any): Promise<void> {
-    notificationService.addNotification({
-      id: `connection-request-${requestId}`,
-      type: 'info',
-      title: 'New Connection Request',
-      message: `${request.fromUserName} wants to connect with you`,
-      timestamp: new Date().toISOString(),
-      read: false,
-      priority: 'medium',
-      category: 'social',
-      metadata: {
-        requestId,
-        fromUserId: request.fromUserId,
-        fromUserName: request.fromUserName,
-        fromUserAvatar: request.fromUserAvatar,
-        notificationType: 'connection_request'
+    try {
+      console.log(`🔔 [Connection] Sending notification to recipient: ${request.toUserId}`);
+      
+      // Use UnifiedNotificationService for standardized notification handling
+      const result = await unifiedNotificationService.sendConnectionRequest(
+        request.fromUserId, // Sender
+        request.toUserId,   // Recipient (this is who should get the notification)
+        request.message || `Hi! I'd like to connect and explore collaboration opportunities.`
+      );
+      
+      if (result.success) {
+        console.log(`✅ [Connection] Notification sent successfully via UnifiedNotificationService`);
+      } else {
+        console.error(`❌ [Connection] Failed to send notification: ${result.error}`);
       }
-    });
+    } catch (error) {
+      console.error(`❌ [Connection] Error sending notification:`, error);
+    }
   }
 
   /**
    * Send acceptance notification
    */
   private async sendAcceptanceNotification(request: ConnectionRequest): Promise<void> {
-    notificationService.addNotification({
-      id: `connection-accepted-${request.id}`,
-      type: 'success',
-      title: 'Connection Accepted',
-      message: `${request.toUserName} accepted your connection request`,
-      timestamp: new Date().toISOString(),
-      read: false,
-      priority: 'medium',
-      category: 'social',
-      metadata: {
-        connectionUserId: request.toUserId,
-        connectionUserName: request.toUserName,
-        connectionUserAvatar: request.toUserAvatar
+    try {
+      console.log(`🔔 [Connection] Sending acceptance notification to sender: ${request.fromUserId}`);
+      
+      // Use UnifiedNotificationService for standardized notification handling
+      const result = await unifiedNotificationService.sendNotification({
+        type: 'connection_request',
+        fromUserId: request.toUserId,   // The person who accepted
+        toUserId: request.fromUserId,   // The original sender
+        message: `${request.toUserName} accepted your connection request!`,
+        priority: 'medium',
+        metadata: {
+          originalRequestId: request.id,
+          notificationType: 'connection_accepted'
+        }
+      });
+      
+      if (result.success) {
+        console.log(`✅ [Connection] Acceptance notification sent successfully`);
+      } else {
+        console.error(`❌ [Connection] Failed to send acceptance notification: ${result.error}`);
       }
-    });
+    } catch (error) {
+      console.error(`❌ [Connection] Error sending acceptance notification:`, error);
+    }
   }
 
   /**
    * Send rejection notification
    */
   private async sendRejectionNotification(request: ConnectionRequest): Promise<void> {
-    notificationService.addNotification({
-      id: `connection-rejected-${request.id}`,
-      type: 'warning',
-      title: 'Connection Request Declined',
-      message: `${request.toUserName} declined your connection request`,
-      timestamp: new Date().toISOString(),
-      read: false,
-      priority: 'low',
-      category: 'social',
-      metadata: {
-        userId: request.toUserId,
-        userName: request.toUserName
+    try {
+      console.log(`🔔 [Connection] Sending rejection notification to sender: ${request.fromUserId}`);
+      
+      // Use UnifiedNotificationService for standardized notification handling
+      const result = await unifiedNotificationService.sendNotification({
+        type: 'connection_request',
+        fromUserId: request.toUserId,   // The person who rejected
+        toUserId: request.fromUserId,   // The original sender
+        message: `${request.toUserName} declined your connection request.`,
+        priority: 'low',
+        metadata: {
+          originalRequestId: request.id,
+          notificationType: 'connection_declined'
+        }
+      });
+      
+      if (result.success) {
+        console.log(`✅ [Connection] Rejection notification sent successfully`);
+      } else {
+        console.error(`❌ [Connection] Failed to send rejection notification: ${result.error}`);
       }
-    });
+    } catch (error) {
+      console.error(`❌ [Connection] Error sending rejection notification:`, error);
+    }
   }
 
   /**
