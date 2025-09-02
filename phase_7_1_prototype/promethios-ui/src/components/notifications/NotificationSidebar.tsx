@@ -35,6 +35,7 @@ import { useConnections } from '../../hooks/useConnections';
 import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import ConnectionRequestModal from '../social/ConnectionRequestModal';
+import CollaborationInvitationModal from '../collaboration/CollaborationInvitationModal';
 
 interface NotificationSidebarProps {
   open: boolean;
@@ -60,6 +61,8 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
   const [tabValue, setTabValue] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedConnectionRequest, setSelectedConnectionRequest] = useState<any>(null);
+  const [collaborationModalOpen, setCollaborationModalOpen] = useState(false);
+  const [selectedCollaborationInvitation, setSelectedCollaborationInvitation] = useState<any>(null);
   const navigate = useNavigate();
   
   // Get notifications from the notification system
@@ -203,7 +206,40 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
       return;
     }
     
-    console.log('ℹ️ [NotificationSidebar] Not a connection request - checking for actionUrl');
+    // Check if this is an AI collaboration invitation
+    if (notification.title === 'AI Collaboration Invitation' || 
+        notification.metadata?.notificationType === 'collaboration_invitation' ||
+        (notification.message && notification.message.toLowerCase().includes('invited you to join'))) {
+      
+      console.log('✅ [NotificationSidebar] Detected AI collaboration invitation - opening modal');
+      
+      // Convert notification to UserInteraction format for the modal
+      const collaborationInvitation = {
+        id: notification.id,
+        type: 'collaboration_invitation',
+        fromUserId: notification.metadata?.fromUserId || notification.fromUserId || notification.userId || '',
+        fromUserName: notification.metadata?.fromUserName || notification.fromUserName || 'Unknown User',
+        fromUserPhoto: notification.metadata?.fromUserAvatar || notification.fromUserAvatar || notification.avatar || '',
+        toUserId: notification.userId || '',
+        metadata: {
+          conversationName: notification.metadata?.conversationName || 'AI Collaboration',
+          agentName: notification.metadata?.agentName || 'AI Assistant',
+          notificationType: 'collaboration_invitation',
+          ...notification.metadata
+        },
+        status: 'pending',
+        createdAt: notification.createdAt || new Date(),
+        updatedAt: notification.updatedAt || new Date()
+      };
+      
+      console.log('🔧 [NotificationSidebar] Setting collaboration invitation data:', collaborationInvitation);
+      
+      setSelectedCollaborationInvitation(collaborationInvitation);
+      setCollaborationModalOpen(true);
+      return;
+    }
+    
+    console.log('ℹ️ [NotificationSidebar] Not a connection request or collaboration invitation - checking for actionUrl');
     
     // Navigate to the appropriate page based on notification type
     if (notification.actionUrl) {
@@ -250,6 +286,12 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
     if (onConnectionUpdate) {
       onConnectionUpdate();
     }
+  };
+
+  // Handle collaboration modal close
+  const handleCollaborationModalClose = () => {
+    setCollaborationModalOpen(false);
+    setSelectedCollaborationInvitation(null);
   };
 
   // Helper function to identify connection request notifications (both old and new formats)
@@ -594,6 +636,22 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
             fromUserAvatar={selectedConnectionRequest.fromUserAvatar}
             onAccept={handleModalAccept}
             onReject={handleModalReject}
+          />
+        );
+      })()}
+
+      {/* Collaboration Invitation Modal */}
+      {(() => {
+        console.log('🔍 [NotificationSidebar] Collaboration modal render check:', {
+          selectedCollaborationInvitation: selectedCollaborationInvitation,
+          collaborationModalOpen: collaborationModalOpen,
+          shouldRenderModal: !!selectedCollaborationInvitation
+        });
+        return selectedCollaborationInvitation && (
+          <CollaborationInvitationModal
+            open={collaborationModalOpen}
+            onClose={handleCollaborationModalClose}
+            invitation={selectedCollaborationInvitation}
           />
         );
       })()}
