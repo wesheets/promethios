@@ -1944,26 +1944,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }));
   };
 
-  // Get team members for guest selector - using connected users from Firebase
+  // Get team members for guest selector - using teamMembers state (same as right panel)
   const getTeamMembers = () => {
-    console.log('🔍 [Team Members] Using connected users from Firebase');
-    console.log('🔍 [Team Members] Connections array:', connections);
-    console.log('🔍 [Team Members] Connections length:', connections.length);
+    console.log('🔍 [Team Members] Using teamMembers state (same as right panel)');
+    console.log('🔍 [Team Members] teamMembers array:', teamMembers);
+    console.log('🔍 [Team Members] teamMembers length:', teamMembers.length);
     
-    // Convert connections to team member format for the popup
-    const connectedUsers = connections.map(connection => ({
-      id: connection.userId,
-      name: connection.displayName || connection.email || 'Connected User',
+    // Convert teamMembers to the format expected by GuestSelectorPopup
+    const convertedMembers = teamMembers.map(member => ({
+      id: member.id,
+      name: member.name,
       type: 'human' as const,
-      role: connection.role || 'Team Member',
-      status: connection.isOnline ? 'online' as const : 'offline' as const,
-      avatar: connection.photoURL || connection.displayName?.charAt(0) || 'U'
+      role: member.role || 'Team Member',
+      status: member.isOnline ? 'online' as const : 'offline' as const,
+      avatar: member.avatar || member.name?.charAt(0) || 'U'
     }));
 
-    console.log('🔍 [Team Members] Converted connected users:', connectedUsers);
-    console.log('✅ [Team Members] Returning', connectedUsers.length, 'connected users');
+    console.log('🔍 [Team Members] Converted team members:', convertedMembers);
+    console.log('✅ [Team Members] Returning', convertedMembers.length, 'team members');
     
-    return connectedUsers;
+    return convertedMembers;
   };
 
   // Get AI agents for guest selector
