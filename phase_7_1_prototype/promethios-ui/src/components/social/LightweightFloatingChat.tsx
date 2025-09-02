@@ -53,6 +53,7 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   console.log('🎯 [LightweightFloatingChat] Rendering with:', {
@@ -127,6 +128,17 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
     }
   };
 
+  const handleMinimize = () => {
+    setIsMinimized(true);
+    onMinimize();
+  };
+
+  const handleRestore = () => {
+    if (isMinimized) {
+      setIsMinimized(false);
+    }
+  };
+
   console.log('🎯 [LightweightFloatingChat] RENDERING with props:', {
     participantId,
     participantName,
@@ -147,7 +159,7 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
         sx={{
           position: 'fixed',
           width: 320,
-          height: 400,
+          height: isMinimized ? 'auto' : 400,
           zIndex: 9999, // Increased z-index to ensure visibility
           display: 'flex',
           flexDirection: 'column',
@@ -162,13 +174,14 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
         {/* Header */}
         <Box
           className="lightweight-chat-header"
+          onClick={handleRestore}
           sx={{
             display: 'flex',
             alignItems: 'center',
             p: 1.5,
             backgroundColor: '#0f172a',
             color: 'white',
-            cursor: 'move',
+            cursor: isMinimized ? 'pointer' : 'move',
             userSelect: 'none',
             borderBottom: '1px solid #334155',
           }}
@@ -195,7 +208,7 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
           {/* Header Actions */}
           <Box sx={{ display: 'flex', gap: 0.5 }}>
             <Tooltip title="Minimize">
-              <IconButton size="small" sx={{ color: 'white' }} onClick={onMinimize}>
+              <IconButton size="small" sx={{ color: 'white' }} onClick={handleMinimize}>
                 <Minimize fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -208,18 +221,19 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
           </Box>
         </Box>
 
-        {/* Messages Area */}
-        <Box
-          sx={{
-            flex: 1,
-            p: 1,
-            overflowY: 'auto',
-            backgroundColor: '#0f172a',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1,
-          }}
-        >
+        {/* Messages Area - Hidden when minimized */}
+        {!isMinimized && (
+          <Box
+            sx={{
+              flex: 1,
+              p: 1,
+              overflowY: 'auto',
+              backgroundColor: '#0f172a',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+            }}
+          >
           {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
               <CircularProgress size={20} sx={{ color: '#3b82f6' }} />
@@ -272,19 +286,23 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
           )}
           <div ref={messagesEndRef} />
         </Box>
+        )}
 
-        <Divider sx={{ borderColor: '#334155' }} />
+        {/* Divider and Input Area - Hidden when minimized */}
+        {!isMinimized && (
+          <>
+            <Divider sx={{ borderColor: '#334155' }} />
 
-        {/* Input Area */}
-        <Box
-          sx={{
-            p: 1,
-            display: 'flex',
-            gap: 1,
-            alignItems: 'flex-end',
-            backgroundColor: '#0f172a',
-          }}
-        >
+            {/* Input Area */}
+            <Box
+              sx={{
+                p: 1,
+                display: 'flex',
+                gap: 1,
+                alignItems: 'flex-end',
+                backgroundColor: '#0f172a',
+              }}
+            >
           <TextField
             multiline
             maxRows={2}
@@ -340,6 +358,8 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
             {isSending ? <CircularProgress size={16} sx={{ color: 'white' }} /> : <Send fontSize="small" />}
           </IconButton>
         </Box>
+          </>
+        )}
 
         {/* Resize Handle */}
         <Box
