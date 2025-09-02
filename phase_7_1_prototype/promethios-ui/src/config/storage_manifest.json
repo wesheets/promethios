@@ -317,6 +317,17 @@
     "retention": "7y",
     "compliance": ["GDPR", "HIPAA", "SOX"],
     "description": "Compliance audit events, policy violations, and regulatory audit trails"
+  },
+  "user_presence": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 300000,
+    "encrypt": false,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "5m",
+    "compliance": [],
+    "description": "User presence status, online/offline tracking, and real-time activity indicators"
   }
 }
 
