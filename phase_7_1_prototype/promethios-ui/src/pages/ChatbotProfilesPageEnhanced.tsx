@@ -1358,8 +1358,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setUnreadTeamCount(collabState.unreadMessages);
       
       // Load notifications
-      const notifs = await collaborationService.getNotifications();
-      setNotifications(notifs);
+      // Note: collaborationService.getNotifications() doesn't exist
+      // Notifications are handled by UnifiedNotificationService instead
+      console.log('🔍 [Team] Notifications handled by UnifiedNotificationService');
       
       // Use team members from collaboration state instead of humanChatService
       console.log('🔍 [Team] Using team members from collaboration state:', collabState.teamMembers);
@@ -1383,24 +1384,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Notifications are handled by UnifiedNotificationService instead
     // Team updates are handled through periodic polling in loadTeamCollaborationData
     
-    // Listen for new human messages
-    humanChatService.onMessage((message) => {
-      // Update unread count for human chats
-      setMultiChatState(prev => ({
-        ...prev,
-        contexts: prev.contexts.map(context => {
-          if (context.type === 'human_chat' && context.id === message.senderId) {
-            return {
-              ...context,
-              unreadCount: context.isActive ? 0 : context.unreadCount + 1,
-              lastMessage: message.content,
-              lastMessageTime: message.timestamp
-            };
-          }
-          return context;
-        })
-      }));
-    });
+    // Note: humanChatService.onMessage() doesn't exist
+    // Message listening is handled by SharedConversationService and real-time Firebase listeners
+    console.log('🔍 [Team] Message listening handled by SharedConversationService');
   };
 
    // URL restoration effect - restore state from URL parameters
