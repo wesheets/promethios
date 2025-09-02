@@ -38,6 +38,7 @@ import {
   Add,
   Remove,
   Minimize,
+  Maximize,
   Search,
 } from '@mui/icons-material';
 import { MessageService, ChatMessage, ChatConversation } from '../../services/MessageService';
