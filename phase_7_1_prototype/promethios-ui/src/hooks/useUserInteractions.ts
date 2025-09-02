@@ -108,7 +108,7 @@ export const useUserInteractions = (): UseUserInteractionsReturn => {
   );
 
   const collaborationNotifications = pendingInteractions.filter(interaction => 
-    ['collaboration_invitation', 'team_invitation', 'project_invitation'].includes(interaction.type)
+    ['collaboration_invitation', 'collaboration_request', 'connection_request', 'team_invitation', 'project_invitation'].includes(interaction.type)
   );
 
   const chatNotifications = pendingInteractions.filter(interaction => 
