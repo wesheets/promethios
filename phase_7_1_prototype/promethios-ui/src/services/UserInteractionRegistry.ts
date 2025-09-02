@@ -511,10 +511,28 @@ class UserInteractionRegistry {
   private async getUserInfo(userId: string): Promise<any> {
     try {
       console.log('👤 [UserRegistry] Looking up user info for ID:', userId);
-      const userDoc = await getDoc(doc(db, this.USERS_COLLECTION, userId));
-      const userData = userDoc.exists() ? userDoc.data() : null;
-      console.log('👤 [UserRegistry] User data found:', userData ? `${userData.displayName || userData.email} (${userId})` : 'null');
-      return userData;
+      console.log('👤 [UserRegistry] Using collection:', this.USERS_COLLECTION);
+      
+      const userDocRef = doc(db, this.USERS_COLLECTION, userId);
+      console.log('👤 [UserRegistry] Document reference created for:', userDocRef.path);
+      
+      const userDoc = await getDoc(userDocRef);
+      console.log('👤 [UserRegistry] Document exists:', userDoc.exists());
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        console.log('👤 [UserRegistry] User data found:', {
+          displayName: userData?.displayName,
+          email: userData?.email,
+          firstName: userData?.firstName,
+          lastName: userData?.lastName,
+          id: userId
+        });
+        return userData;
+      } else {
+        console.log('❌ [UserRegistry] No document found for user ID:', userId);
+        return null;
+      }
     } catch (error) {
       console.error('❌ [UserRegistry] Error getting user info for', userId, ':', error);
       return null;
