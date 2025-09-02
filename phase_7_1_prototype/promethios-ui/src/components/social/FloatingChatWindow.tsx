@@ -64,6 +64,15 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
   onSizeChange,
   zIndex = 1000,
 }) => {
+  console.log('🎯 [FloatingChatWindow] RENDERING with props:', {
+    conversationId,
+    participantId,
+    participantName,
+    position,
+    size,
+    zIndex,
+    isMinimized
+  });
   const [messageInput, setMessageInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isResizing, setIsResizing] = useState(false);
@@ -173,8 +182,11 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({
   };
 
   if (isMinimized) {
+    console.log('🔍 [FloatingChatWindow] Component is minimized, returning null');
     return null; // Minimized state handled by ChatWindowManager
   }
+
+  console.log('🎯 [FloatingChatWindow] About to render Draggable component');
 
   return (
     <Draggable

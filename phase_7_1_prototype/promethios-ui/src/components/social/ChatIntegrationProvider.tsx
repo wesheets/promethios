@@ -48,6 +48,18 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
     // Set active conversation (you might want to find existing conversation or create new one)
     // For now, we'll use the userId as conversation ID
     setActiveConversationId(userId);
+    
+    // Open floating chat window via ChatWindowManager
+    if ((window as any).openFloatingChat) {
+      console.log('🎯 [ChatIntegrationProvider] Calling openFloatingChat for:', userName);
+      (window as any).openFloatingChat({
+        participantId: userId,
+        participantName: userName,
+        conversationId: `conv-${userId}-${Date.now()}`
+      });
+    } else {
+      console.error('❌ [ChatIntegrationProvider] openFloatingChat not available on window');
+    }
   }, []);
 
   const closeDirectMessage = useCallback(() => {
