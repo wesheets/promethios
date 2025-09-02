@@ -454,6 +454,79 @@ class SharedConversationService {
   }
 
   /**
+   * Create shared conversation from collaboration invitation
+   * Integrates with the notification system for seamless collaboration
+   */
+  async createSharedConversationFromInvitation(params: {
+    invitationId: string;
+    conversationName: string;
+    agentName: string;
+    fromUserId: string;
+    fromUserName: string;
+    fromUserPhoto?: string;
+    toUserId: string;
+    includeHistory: boolean;
+  }): Promise<SharedConversation> {
+    const {
+      invitationId,
+      conversationName,
+      agentName,
+      fromUserId,
+      fromUserName,
+      fromUserPhoto,
+      toUserId,
+      includeHistory
+    } = params;
+
+    console.log('🤝 [SharedConversation] Creating conversation from collaboration invitation:', invitationId);
+
+    // Create the shared conversation
+    const conversationId = await this.createSharedConversation(
+      fromUserId,
+      conversationName,
+      {
+        allowParticipantInvites: true,
+        allowAIAgents: true,
+        allowReceiptSharing: true,
+        maxParticipants: 10
+      }
+    );
+
+    // Get the created conversation
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) {
+      throw new Error('Failed to create shared conversation');
+    }
+
+    // Add the AI agent as a participant
+    await this.addParticipant(conversationId, `ai-${agentName.toLowerCase().replace(/\s+/g, '-')}`, fromUserId, agentName, 'ai_agent');
+
+    // Add the invited user as a participant
+    await this.addParticipant(conversationId, toUserId, fromUserId, 'Invited User', 'human');
+
+    // Set history visibility if requested
+    if (includeHistory) {
+      conversation.hasHistory = true;
+      conversation.historyVisibleFrom = new Date();
+    }
+
+    // Store reference to the original invitation
+    const invitedParticipant = conversation.participants.find(p => p.id === toUserId);
+    if (invitedParticipant) {
+      invitedParticipant.invitationId = invitationId;
+      invitedParticipant.status = 'active'; // They accepted the invitation
+    }
+
+    console.log('✅ [SharedConversation] Created conversation from invitation:', {
+      conversationId,
+      participants: conversation.participants.length,
+      name: conversationName
+    });
+
+    return conversation;
+  }
+
+  /**
    * Private helper methods
    */
   private addConversationToUser(userId: string, conversationId: string): void {

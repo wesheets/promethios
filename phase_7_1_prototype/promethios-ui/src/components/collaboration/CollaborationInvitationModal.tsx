@@ -28,7 +28,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { UserInteraction } from '../../services/UserInteractionRegistry';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
-import { useGlobalCollaborations } from '../../hooks/useGlobalCollaborations';
+import { useSharedConversations } from '../../contexts/SharedConversationContext';
+import SharedConversationService from '../../services/SharedConversationService';
 
 interface CollaborationInvitationModalProps {
   open: boolean;
@@ -43,9 +44,10 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
 }) => {
   const navigate = useNavigate();
   const { acceptInteraction, declineInteraction } = useUserInteractions();
-  const { addCollaborationFromInvitation } = useGlobalCollaborations();
+  const { refreshSharedConversations } = useSharedConversations();
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sharedConversationService = SharedConversationService.getInstance();
 
   if (!invitation) return null;
 
@@ -61,17 +63,29 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
       const success = await acceptInteraction(invitation.id);
       
       if (success) {
-        console.log('✅ [CollaborationModal] Invitation accepted, adding to global collaborations');
+        console.log('✅ [CollaborationModal] Invitation accepted, creating shared conversation');
         
-        // Add to global collaboration state (will be available across ALL command centers)
-        const collaboration = addCollaborationFromInvitation(invitation);
+        // Create a shared conversation from the collaboration invitation
+        // This will automatically appear as a tab across ALL command centers
+        const sharedConversation = await sharedConversationService.createSharedConversationFromInvitation({
+          invitationId: invitation.id,
+          conversationName: metadata?.conversationName || 'AI Collaboration',
+          agentName: metadata?.agentName || 'AI Assistant',
+          fromUserId: invitation.fromUserId,
+          fromUserName: invitation.fromUserName,
+          fromUserPhoto: invitation.fromUserPhoto,
+          toUserId: invitation.toUserId,
+          includeHistory: true
+        });
         
-        // Route to command center with global collaboration context
-        // The collaboration will be available across ALL command centers for users with multiple agents
-        // Users without agents will get a limited command center with collaboration features
-        const collaborationUrl = `/ui/chat/chatbots?panel=team&collaboration=${collaboration.id}&tab=invitation-chat&global=true`;
+        // Refresh shared conversations to show the new tab
+        await refreshSharedConversations();
         
-        navigate(collaborationUrl);
+        // Route to command center - the shared conversation tab will be visible
+        // Works for users with/without agents - limited command center for those without
+        const commandCenterUrl = `/ui/chat/chatbots?panel=team&shared=${sharedConversation.id}`;
+        
+        navigate(commandCenterUrl);
         onClose();
       } else {
         setError('Failed to accept invitation. Please try again.');

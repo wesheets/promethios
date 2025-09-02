@@ -259,6 +259,8 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
     switch (type) {
       case 'connection_request':
         return `${fromUserName} wants to connect with you`;
+      case 'collaboration_request':
+        return `${fromUserName} invited you to join AI conversation "${metadata?.conversationName || 'AI Collaboration'}" with ${metadata?.agentName || 'AI Assistant'}`;
       case 'collaboration_invitation':
         return `${fromUserName} invited you to join AI conversation "${metadata.conversationName}" with ${metadata.agentName}`;
       case 'chat_invitation':
@@ -314,11 +316,12 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
   if (!open) return null;
 
   return (
-    <Paper
-      elevation={8}
-      sx={{
-        width: '100%',
-        maxWidth: 480,
+    <>
+      <Paper
+        elevation={8}
+        sx={{
+          width: '100%',
+          maxWidth: 480,
         maxHeight,
         display: 'flex',
         flexDirection: 'column',
@@ -458,26 +461,45 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
                   
                   <ListItemSecondaryAction>
                     <Stack direction="row" spacing={1}>
-                      <Tooltip title="Accept">
-                        <IconButton
-                          size="small"
-                          color="success"
-                          onClick={() => handleAccept(interaction.id)}
-                          disabled={respondingToInteraction}
-                        >
-                          <Check />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Decline">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDecline(interaction.id)}
-                          disabled={respondingToInteraction}
-                        >
-                          <Close />
-                        </IconButton>
-                      </Tooltip>
+                      {interaction.type === 'collaboration_request' ? (
+                        // Special handling for collaboration invitations - show "View Invitation" button
+                        <Tooltip title="View Invitation">
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                            onClick={() => handleCollaborationInvitationClick(interaction)}
+                            disabled={respondingToInteraction}
+                            startIcon={<AutoAwesome />}
+                          >
+                            View Invitation
+                          </Button>
+                        </Tooltip>
+                      ) : (
+                        // Default accept/decline buttons for other notification types
+                        <>
+                          <Tooltip title="Accept">
+                            <IconButton
+                              size="small"
+                              color="success"
+                              onClick={() => handleAccept(interaction.id)}
+                              disabled={respondingToInteraction}
+                            >
+                              <Check />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Decline">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDecline(interaction.id)}
+                              disabled={respondingToInteraction}
+                            >
+                              <Close />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
                       <Tooltip title="View Details">
                         <IconButton size="small">
                           <Visibility />
@@ -515,6 +537,14 @@ export const UnifiedNotificationCenter: React.FC<UnifiedNotificationCenterProps>
         </Box>
       )}
     </Paper>
+
+    {/* Collaboration Invitation Modal */}
+    <CollaborationInvitationModal
+      open={collaborationModalOpen}
+      onClose={handleCloseCollaborationModal}
+      invitation={selectedCollaborationInvitation}
+    />
+    </>
   );
 };
 
