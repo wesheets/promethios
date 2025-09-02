@@ -40,6 +40,9 @@ import {
   Minimize,
   Maximize,
   Search,
+  Info,
+  Call,
+  VideoCall,
 } from '@mui/icons-material';
 import { MessageService, ChatMessage, ChatConversation } from '../../services/MessageService';
 import { ConnectionService } from '../../services/ConnectionService';
