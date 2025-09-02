@@ -213,20 +213,25 @@ class UserInteractionRegistry {
       const cutoffTime = new Date(Date.now() - (this.COOLDOWN_MINUTES * 60 * 1000));
       const cutoffTimestamp = Timestamp.fromDate(cutoffTime);
 
+      // Simplified query to avoid index requirements
+      // Check for any recent interaction of this type between these users
       const q = query(
         collection(db, this.INTERACTIONS_COLLECTION),
         where('type', '==', type),
         where('fromUserId', '==', fromUserId),
         where('toUserId', '==', toUserId),
-        where('createdAt', '>', cutoffTimestamp),
-        orderBy('createdAt', 'desc'),
-        limit(1)
+        limit(10) // Get recent interactions and filter in memory
       );
 
       const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        return { id: doc.id, ...doc.data() } as UserInteraction;
+      
+      // Filter results in memory to check for recent interactions
+      for (const docSnapshot of querySnapshot.docs) {
+        const interaction = { id: docSnapshot.id, ...docSnapshot.data() } as UserInteraction;
+        if (interaction.createdAt && interaction.createdAt.toDate() > cutoffTime) {
+          console.log(`⏰ [UserRegistry] Found recent interaction within cooldown period`);
+          return interaction;
+        }
       }
 
       return null;

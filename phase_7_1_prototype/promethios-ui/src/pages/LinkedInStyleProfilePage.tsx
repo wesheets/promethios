@@ -101,6 +101,8 @@ const LinkedInStyleProfilePage: React.FC = () => {
   // Connections state
   const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
   const [connectionCount, setConnectionCount] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState<'none' | 'pending' | 'connected'>('none');
+  const [sendingRequest, setSendingRequest] = useState(false);
 
   // Form state for dialogs
   const [experienceForm, setExperienceForm] = useState({
@@ -280,6 +282,76 @@ const LinkedInStyleProfilePage: React.FC = () => {
 
     loadConnectionCount();
   }, [currentUser]);
+
+  // Check connection status between current user and profile user
+  useEffect(() => {
+    const checkConnectionStatus = async () => {
+      if (!currentUser || !profile.userId || currentUser.uid === profile.userId) {
+        setConnectionStatus('none');
+        return;
+      }
+      
+      try {
+        console.log('🔍 Checking connection status between:', currentUser.uid, 'and', profile.userId);
+        const connectionService = ConnectionService.getInstance();
+        
+        // Check if already connected
+        const connections = await connectionService.getUserConnections(currentUser.uid);
+        const isConnected = connections.some(conn => 
+          conn.userId1 === profile.userId || conn.userId2 === profile.userId
+        );
+        
+        if (isConnected) {
+          console.log('✅ Users are already connected');
+          setConnectionStatus('connected');
+          return;
+        }
+        
+        // Check for pending request (either direction)
+        const hasPendingRequest = await connectionService.hasPendingRequest(currentUser.uid, profile.userId);
+        
+        if (hasPendingRequest) {
+          console.log('⏳ Connection request is pending');
+          setConnectionStatus('pending');
+        } else {
+          console.log('🔗 No connection exists');
+          setConnectionStatus('none');
+        }
+        
+      } catch (error) {
+        console.error('❌ Failed to check connection status:', error);
+        setConnectionStatus('none');
+      }
+    };
+
+    checkConnectionStatus();
+  }, [currentUser, profile.userId]);
+
+  // Handle connection request
+  const handleConnect = async () => {
+    if (!currentUser || !profile.userId || sendingRequest) return;
+    
+    setSendingRequest(true);
+    try {
+      console.log('📤 Sending connection request to:', profile.userId);
+      const connectionService = ConnectionService.getInstance();
+      
+      await connectionService.sendConnectionRequest(
+        currentUser.uid,
+        profile.userId,
+        `Hi ${profile.displayName || profile.firstName}, I'd like to connect with you on Promethios.`
+      );
+      
+      console.log('✅ Connection request sent successfully');
+      setConnectionStatus('pending');
+      
+    } catch (error) {
+      console.error('❌ Failed to send connection request:', error);
+      // Don't change status on error - let user try again
+    } finally {
+      setSendingRequest(false);
+    }
+  };
 
   // Load people also viewed from Firebase
   useEffect(() => {
@@ -647,13 +719,23 @@ const LinkedInStyleProfilePage: React.FC = () => {
                         </Button>
                         <Button 
                           variant="outlined" 
+                          onClick={handleConnect}
+                          disabled={connectionStatus === 'connected' || connectionStatus === 'pending' || sendingRequest}
                           sx={{ 
                             borderRadius: 20,
-                            borderColor: 'action.hover',
-                            '&:hover': { borderColor: 'primary.main' }
+                            borderColor: connectionStatus === 'connected' ? 'success.main' : 
+                                       connectionStatus === 'pending' ? 'warning.main' : 'action.hover',
+                            color: connectionStatus === 'connected' ? 'success.main' : 
+                                   connectionStatus === 'pending' ? 'warning.main' : 'inherit',
+                            '&:hover': { 
+                              borderColor: connectionStatus === 'connected' ? 'success.main' : 
+                                         connectionStatus === 'pending' ? 'warning.main' : 'primary.main' 
+                            }
                           }}
                         >
-                          Connect
+                          {sendingRequest ? 'Sending...' :
+                           connectionStatus === 'connected' ? 'Connected' :
+                           connectionStatus === 'pending' ? 'Pending' : 'Connect'}
                         </Button>
                       </>
                     )}

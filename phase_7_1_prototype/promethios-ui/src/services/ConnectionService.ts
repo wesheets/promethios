@@ -332,6 +332,50 @@ export class ConnectionService {
   }
 
   /**
+   * Check if there's a pending connection request between users (either direction)
+   */
+  async hasPendingRequest(userId1: string, userId2: string): Promise<boolean> {
+    try {
+      // Validate userIds
+      if (!userId1 || !userId2 || typeof userId1 !== 'string' || typeof userId2 !== 'string' || 
+          userId1.trim() === '' || userId2.trim() === '') {
+        console.warn('❌ [Connection] Invalid userIds provided to hasPendingRequest:', { userId1, userId2 });
+        return false;
+      }
+
+      console.log(`🔍 [Connection] Checking pending requests between users:`, { userId1, userId2 });
+
+      // Check both directions for pending requests
+      const q1 = query(
+        collection(db, 'connectionRequests'),
+        where('fromUserId', '==', userId1),
+        where('toUserId', '==', userId2),
+        where('status', '==', 'pending')
+      );
+
+      const q2 = query(
+        collection(db, 'connectionRequests'),
+        where('fromUserId', '==', userId2),
+        where('toUserId', '==', userId1),
+        where('status', '==', 'pending')
+      );
+
+      const [snapshot1, snapshot2] = await Promise.all([
+        getDocs(q1),
+        getDocs(q2)
+      ]);
+
+      const hasPending = !snapshot1.empty || !snapshot2.empty;
+      console.log(`🔍 [Connection] Pending request check result: ${hasPending}`);
+      
+      return hasPending;
+    } catch (error) {
+      console.error('❌ [Connection] Error checking pending requests:', error);
+      return false;
+    }
+  }
+
+  /**
    * Get connection request between users
    */
   private async getConnectionRequest(fromUserId: string, toUserId: string): Promise<ConnectionRequest | null> {
