@@ -185,9 +185,13 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
       {/* Floating Chat Window Manager */}
       <ChatWindowManager />
       
+      {/* Debug: Log floating chats state */}
+      {console.log('🔍 [ChatIntegrationProvider] Rendering floating chats:', floatingChats)}
+      
       {/* Lightweight Floating Chats */}
-      {floatingChats.map((chat) => (
-        !chat.isMinimized && (
+      {floatingChats.map((chat) => {
+        console.log('🎯 [ChatIntegrationProvider] Rendering chat:', chat.id, 'isMinimized:', chat.isMinimized, 'position:', chat.position);
+        return !chat.isMinimized && (
           <LightweightFloatingChat
             key={chat.id}
             conversationId={chat.conversationId}
@@ -199,8 +203,8 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
             onMinimize={() => minimizeLightweightChat(chat.id)}
             onPositionChange={(position) => updateChatPosition(chat.id, position)}
           />
-        )
-      ))}
+        );
+      })}
     </ChatIntegrationContext.Provider>
   );
 };
