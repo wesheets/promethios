@@ -1,4 +1,5 @@
 import { AppNotification, NotificationProvider, NotificationFilter } from '../types/notification';
+import { firebaseNotificationProvider } from './providers/FirebaseNotificationProvider';
 
 /**
  * Notification Service
@@ -12,6 +13,35 @@ export class NotificationService {
 
   constructor() {
     this.loadNotifications();
+    
+    // Register Firebase notification provider
+    this.registerProvider(firebaseNotificationProvider);
+  }
+
+  /**
+   * Set the current user ID for Firebase notifications
+   */
+  async setUserId(userId: string): Promise<void> {
+    console.log('🔔 [NotificationService] Setting user ID:', userId);
+    firebaseNotificationProvider.setUserId(userId);
+    
+    // Load existing notifications from Firebase
+    try {
+      const firebaseNotifications = await firebaseNotificationProvider.getNotifications();
+      console.log('🔔 [NotificationService] Loaded', firebaseNotifications.length, 'notifications from Firebase');
+      
+      // Merge with existing local notifications (avoid duplicates)
+      const existingIds = new Set(this.notifications.map(n => n.id));
+      const newNotifications = firebaseNotifications.filter(n => !existingIds.has(n.id));
+      
+      if (newNotifications.length > 0) {
+        this.notifications.unshift(...newNotifications);
+        this.saveNotifications();
+        this.notifyListeners();
+      }
+    } catch (error) {
+      console.error('🔔 [NotificationService] Error loading Firebase notifications:', error);
+    }
   }
 
   /**

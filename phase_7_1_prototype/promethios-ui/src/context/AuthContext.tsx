@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase/config';
+import { notificationService } from '../services/NotificationService';
 
 // Simplified user profile interface
 interface UserProfile {
@@ -102,6 +103,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUserProfile(profile);
         setIsApproved(true);
         setApprovalStatus('approved');
+        
+        // Initialize notification service with user ID
+        notificationService.setUserId(user.uid);
         
         console.log("AuthContext: User auto-approved:", user.email);
       } else {
