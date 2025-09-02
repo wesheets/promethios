@@ -54,11 +54,21 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
 
   // Generate next position for new floating chat windows
   const getNextPosition = () => {
-    const baseX = 400; // Moved further right to avoid navigation
-    const baseY = 150; // Moved up to be more visible
-    const offset = floatingChats.length * 30;
-    console.log('📍 [ChatIntegrationProvider] Calculating position:', { x: baseX + offset, y: baseY + offset });
-    return { x: baseX + offset, y: baseY + offset };
+    // Position in upper-right area, away from main chat interface
+    const baseX = window.innerWidth - 350; // 350px from right edge (chat width is 320px)
+    const baseY = 100; // 100px from top, above the main interface
+    const offset = floatingChats.length * 30; // Cascade multiple chats
+    
+    // Ensure chat stays within viewport bounds
+    const finalX = Math.max(50, baseX - offset); // Don't go too far left
+    const finalY = Math.max(50, baseY + offset); // Don't go above viewport
+    
+    console.log('📍 [ChatIntegrationProvider] Calculating position:', { 
+      x: finalX, 
+      y: finalY,
+      viewport: { width: window.innerWidth, height: window.innerHeight }
+    });
+    return { x: finalX, y: finalY };
   };
 
   const openLightweightChat = useCallback((userId: string, userName: string, userAvatar?: string) => {

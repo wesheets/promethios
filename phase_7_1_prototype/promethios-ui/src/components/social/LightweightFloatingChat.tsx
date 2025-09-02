@@ -159,10 +159,10 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
       <Paper
         elevation={12}
         sx={{
-          position: 'absolute', // Changed from 'fixed' to 'absolute' for Draggable compatibility
+          position: 'fixed', // Fixed positioning for true floating behavior
           width: 320,
           height: isMinimized ? 'auto' : 400,
-          zIndex: 9999, // Increased z-index to ensure visibility
+          zIndex: 9999, // High z-index to ensure visibility above all other elements
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 2,
@@ -171,6 +171,8 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
           border: '2px solid #22d3ee', // Bright cyan border for debugging
           boxShadow: '0 0 20px rgba(34, 211, 238, 0.5)', // Glowing effect for debugging
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
+          // Ensure the chat appears above everything
+          pointerEvents: 'auto',
         }}
       >
         {/* Header */}
@@ -202,13 +204,19 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Circle sx={{ fontSize: 8, color: '#10b981' }} />
               <Typography variant="caption" sx={{ opacity: 0.8, fontSize: '0.75rem' }}>
-                Online
+                Online • Drag to move
               </Typography>
             </Box>
           </Box>
 
           {/* Header Actions */}
           <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title="Drag to move chat window">
+              <IconButton size="small" sx={{ color: 'white', cursor: 'move' }}>
+                <DragIndicator fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            
             <Tooltip title="Minimize">
               <IconButton size="small" sx={{ color: 'white' }} onClick={handleMinimize}>
                 <Minimize fontSize="small" />
