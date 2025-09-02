@@ -132,11 +132,21 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
 
   // Handle notification click
   const handleNotificationClick = (notification: any) => {
+    console.log('🎯 [NotificationSidebar] Notification clicked:', {
+      id: notification.id,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      metadata: notification.metadata,
+      notificationType: notification.metadata?.notificationType
+    });
+    
     // Mark as read
     handleMarkAsRead(notification.id);
     
     // Check if this is a connection request notification (new format)
     if (notification.metadata?.notificationType === 'connection_request') {
+      console.log('✅ [NotificationSidebar] Detected connection request (new format) - opening modal');
       // Open the connection request modal
       setSelectedConnectionRequest({
         requestId: notification.metadata.requestId,
@@ -152,6 +162,8 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
     // Look for notifications with type 'connection_request' or message containing connection request keywords
     if (notification.type === 'connection_request' || 
         (notification.message && notification.message.toLowerCase().includes('wants to connect'))) {
+      
+      console.log('✅ [NotificationSidebar] Detected connection request (old format) - opening modal');
       
       // Extract information from the notification for old format
       const fromUserName = notification.metadata?.fromUserName || 
@@ -174,6 +186,13 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
                        notification.requestId || 
                        notification.id;
       
+      console.log('🔧 [NotificationSidebar] Setting connection request data:', {
+        requestId,
+        fromUserId,
+        fromUserName,
+        fromUserAvatar
+      });
+      
       setSelectedConnectionRequest({
         requestId: requestId,
         fromUserId: fromUserId,
@@ -184,10 +203,15 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
       return;
     }
     
+    console.log('ℹ️ [NotificationSidebar] Not a connection request - checking for actionUrl');
+    
     // Navigate to the appropriate page based on notification type
     if (notification.actionUrl) {
+      console.log('🔗 [NotificationSidebar] Navigating to:', notification.actionUrl);
       navigate(notification.actionUrl);
       onClose();
+    } else {
+      console.log('⚠️ [NotificationSidebar] No actionUrl found for notification');
     }
   };
 
@@ -554,18 +578,25 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
       </Box>
 
       {/* Connection Request Modal */}
-      {selectedConnectionRequest && (
-        <ConnectionRequestModal
-          open={modalOpen}
-          onClose={handleModalClose}
-          requestId={selectedConnectionRequest.requestId}
-          fromUserId={selectedConnectionRequest.fromUserId}
-          fromUserName={selectedConnectionRequest.fromUserName}
-          fromUserAvatar={selectedConnectionRequest.fromUserAvatar}
-          onAccept={handleModalAccept}
-          onReject={handleModalReject}
-        />
-      )}
+      {(() => {
+        console.log('🔍 [NotificationSidebar] Modal render check:', {
+          selectedConnectionRequest: selectedConnectionRequest,
+          modalOpen: modalOpen,
+          shouldRenderModal: !!selectedConnectionRequest
+        });
+        return selectedConnectionRequest && (
+          <ConnectionRequestModal
+            open={modalOpen}
+            onClose={handleModalClose}
+            requestId={selectedConnectionRequest.requestId}
+            fromUserId={selectedConnectionRequest.fromUserId}
+            fromUserName={selectedConnectionRequest.fromUserName}
+            fromUserAvatar={selectedConnectionRequest.fromUserAvatar}
+            onAccept={handleModalAccept}
+            onReject={handleModalReject}
+          />
+        );
+      })()}
     </Drawer>
   );
 };
