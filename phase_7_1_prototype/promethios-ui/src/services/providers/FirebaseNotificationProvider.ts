@@ -144,6 +144,7 @@ export class FirebaseNotificationProvider implements NotificationProvider {
       case 'connection_request':
       case 'chat_invitation':
       case 'collaboration_request':
+      case 'collaboration_invitation':
         return 'info';
       case 'connection_accepted':
       case 'collaboration_accepted':
@@ -162,6 +163,7 @@ export class FirebaseNotificationProvider implements NotificationProvider {
       case 'chat_invitation':
         return 'medium';
       case 'collaboration_request':
+      case 'collaboration_invitation':
         return 'high';
       default:
         return 'low';
