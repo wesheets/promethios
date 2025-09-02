@@ -476,6 +476,33 @@ class UserInteractionRegistry {
       return [];
     }
   }
+
+  /**
+   * Get user information for invitations
+   */
+  async getUserInfo(userId: string): Promise<{ displayName?: string; email?: string; photoURL?: string } | null> {
+    try {
+      console.log(`👤 [UserRegistry] Getting user info for: ${userId}`);
+
+      const userDoc = await getDoc(doc(db, this.USERS_COLLECTION, userId));
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        console.log(`✅ [UserRegistry] Found user info for: ${userId}`);
+        return {
+          displayName: userData.displayName || userData.name || userData.firstName + ' ' + userData.lastName,
+          email: userData.email,
+          photoURL: userData.photoURL || userData.avatar
+        };
+      } else {
+        console.log(`❌ [UserRegistry] User not found: ${userId}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ [UserRegistry] Error getting user info:', error);
+      return null;
+    }
+  }
 }
 
 export const userInteractionRegistry = UserInteractionRegistry.getInstance();
