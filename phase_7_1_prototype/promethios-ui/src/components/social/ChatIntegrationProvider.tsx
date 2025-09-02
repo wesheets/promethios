@@ -45,6 +45,7 @@ const ChatIntegrationProvider: React.FC<ChatIntegrationProviderProps> = ({
   const [isDirectMessageOpen, setIsDirectMessageOpen] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [bottomChats, setBottomChats] = useState<BottomChatWindow[]>([]);
+  const [floatingChats, setFloatingChats] = useState<any[]>([]);
   const [pendingConversation, setPendingConversation] = useState<{
     userId: string;
     userName: string;
