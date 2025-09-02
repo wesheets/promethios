@@ -146,6 +146,8 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
     isMinimized
   });
 
+  console.log('🎯 [LightweightFloatingChat] Component is rendering! Position:', position);
+
   return (
     <Draggable
       handle=".lightweight-chat-header"
@@ -157,7 +159,7 @@ const LightweightFloatingChat: React.FC<LightweightFloatingChatProps> = ({
       <Paper
         elevation={12}
         sx={{
-          position: 'fixed',
+          position: 'absolute', // Changed from 'fixed' to 'absolute' for Draggable compatibility
           width: 320,
           height: isMinimized ? 'auto' : 400,
           zIndex: 9999, // Increased z-index to ensure visibility
