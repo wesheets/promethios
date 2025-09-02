@@ -39,7 +39,7 @@ import CMUBenchmarkPage from './pages/CMUBenchmarkPage';
 import UIIntegration from './UIIntegration';
 import PublicProfileHandler from './components/profile/PublicProfileHandler';
 import ChatWindowManager from './components/social/ChatWindowManager';
-import ChatIntegrationProvider from './components/social/ChatIntegrationProvider';
+import ChatIntegrationProvider from './components/social/SimpleChatIntegrationProvider';
 import NotificationTestButton from './components/debug/NotificationTestButton';
 
 // Create a wrapper component to use the useLocation hook

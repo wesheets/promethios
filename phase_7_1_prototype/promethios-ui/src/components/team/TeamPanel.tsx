@@ -49,7 +49,7 @@ import { TeamCollaborationIntegrationService, TeamCollaborationState, Collaborat
 import { OrganizationManagementService } from '../../services/OrganizationManagementService';
 import { ChatbotStorageService, ChatbotProfile } from '../../services/ChatbotStorageService';
 import { useAuth } from '../../context/AuthContext';
-import { useChatIntegration } from '../social/ChatIntegrationProvider';
+import { useChatIntegration } from '../social/SimpleChatIntegrationProvider';
 import AgentConfigurationPopup from '../collaboration/AgentConfigurationPopup';
 
 interface TeamPanelProps {
@@ -72,7 +72,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   const currentUserId = user?.uid || 'anonymous';
   
   // Get chat integration context
-  const { openLightweightChat } = useChatIntegration();
+  const { openBottomChat } = useChatIntegration();
   
   // Enhanced service instances
   const [humanChatService] = useState(() => HumanChatService.getInstance());
@@ -514,7 +514,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   // New handler for opening floating chat
   const handleOpenFloatingChat = (member: TeamMember) => {
     console.log(`💬 [Floating Chat] Opening floating chat with: ${member.name} (${member.id})`);
-    openLightweightChat(member.id, member.name, member.avatar);
+    openBottomChat(member.id, member.name, member.avatar);
   };
 
   const handleConfigureAgents = (configurations: Array<{
