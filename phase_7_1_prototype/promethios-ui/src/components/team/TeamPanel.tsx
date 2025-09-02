@@ -41,13 +41,15 @@ import {
   Star,
   StarBorder,
   SmartToy,
-  Launch
+  Launch,
+  Chat as ChatIcon
 } from '@mui/icons-material';
 import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../../services/HumanChatService';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../../services/TeamCollaborationIntegrationService';
 import { OrganizationManagementService } from '../../services/OrganizationManagementService';
 import { ChatbotStorageService, ChatbotProfile } from '../../services/ChatbotStorageService';
 import { useAuth } from '../../context/AuthContext';
+import { useChatIntegration } from '../social/ChatIntegrationProvider';
 import AgentConfigurationPopup from '../collaboration/AgentConfigurationPopup';
 
 interface TeamPanelProps {
@@ -68,6 +70,10 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
   // Get real user from auth context
   const { currentUser: user, loading: authLoading } = useAuth();
   const currentUserId = user?.uid || 'anonymous';
+  
+  // Get chat integration context
+  const { openLightweightChat } = useChatIntegration();
+  
   // Enhanced service instances
   const [humanChatService] = useState(() => HumanChatService.getInstance());
   const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
@@ -505,6 +511,12 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
     console.log(`👤 [Human] Navigating to user profile: ${userId}`);
   };
 
+  // New handler for opening floating chat
+  const handleOpenFloatingChat = (member: TeamMember) => {
+    console.log(`💬 [Floating Chat] Opening floating chat with: ${member.name} (${member.id})`);
+    openLightweightChat(member.id, member.name, member.avatar);
+  };
+
   const handleConfigureAgents = (configurations: Array<{
     agentId: string;
     careerRole: string;
@@ -931,6 +943,18 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
               />
               {/* Human team member tools - same as agents */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                <Tooltip title="Quick Chat">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenFloatingChat(member);
+                    }}
+                    sx={{ color: '#3b82f6', '&:hover': { color: '#2563eb' } }}
+                  >
+                    <ChatIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                </Tooltip>
                 <Tooltip title={favoriteAgents.has(member.id) ? 'Remove from favorites' : 'Add to favorites'}>
                   <IconButton
                     size="small"
