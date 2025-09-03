@@ -711,6 +711,58 @@ class SharedConversationService {
   }
 
   /**
+   * Get a shared conversation by ID
+   */
+  async getSharedConversation(conversationId: string): Promise<SharedConversation | null> {
+    try {
+      console.log('🔍 [SharedConversation] Getting shared conversation:', conversationId);
+      
+      // First check in-memory cache
+      if (this.conversations.has(conversationId)) {
+        const conversation = this.conversations.get(conversationId)!;
+        console.log('✅ [SharedConversation] Found conversation in cache:', conversation.name);
+        return conversation;
+      }
+
+      // Load from Firebase
+      const docRef = doc(db, this.CONVERSATIONS_COLLECTION, conversationId);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const conversation: SharedConversation = {
+          id: conversationId,
+          name: data.name,
+          description: data.description,
+          createdBy: data.createdBy,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          lastActivity: data.lastActivity?.toDate() || new Date(),
+          participants: data.participants || [],
+          participantIds: data.participantIds || [],
+          isPrivateMode: data.isPrivateMode || false,
+          allowParticipantInvites: data.allowParticipantInvites || true,
+          allowAIAgents: data.allowAIAgents || true,
+          allowReceiptSharing: data.allowReceiptSharing || true,
+          maxParticipants: data.maxParticipants || 10,
+          conversationId: data.conversationId || conversationId,
+          hostChatSessionId: data.hostChatSessionId || data.conversationId
+        };
+        
+        // Cache it
+        this.conversations.set(conversationId, conversation);
+        console.log('✅ [SharedConversation] Loaded conversation from Firebase:', conversation.name);
+        return conversation;
+      } else {
+        console.warn('⚠️ [SharedConversation] Conversation not found in Firebase:', conversationId);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ [SharedConversation] Error getting shared conversation:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get the host's chat session ID from a shared conversation ID
    */
   async getHostChatSessionId(sharedConversationId: string): Promise<string | null> {
