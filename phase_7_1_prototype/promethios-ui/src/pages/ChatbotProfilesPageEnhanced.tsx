@@ -396,6 +396,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Human participants state
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [chatInvitationContext, setChatInvitationContext] = useState<{
+    chatSessionId: string;
+    chatName: string;
+    agentId: string;
+    agentName: string;
+  } | null>(null);
   const [showHumanInviteConfirmDialog, setShowHumanInviteConfirmDialog] = useState(false);
   const [humansToInvite, setHumansToInvite] = useState<any[]>([]);
   const [pendingHumanInvites, setPendingHumanInvites] = useState<any[]>([]);
@@ -1682,6 +1688,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     return unsubscribe;
   }, [activeSharedConversation]);
+
+  // Listen for chat-specific invitation events from ChatHistoryPanel
+  useEffect(() => {
+    const handleChatInvitation = (event: CustomEvent) => {
+      const { chatSession, chatSessionId, chatName, agentId, agentName } = event.detail;
+      console.log('🎯 [ChatInvitation] Received chat invitation event:', { chatName, chatSessionId });
+      
+      // Set the current chat session context for the invitation
+      setChatInvitationContext({
+        chatSessionId,
+        chatName,
+        agentId,
+        agentName
+      });
+      
+      // Open the invitation dialog
+      setShowInviteDialog(true);
+    };
+
+    window.addEventListener('openChatInvitation', handleChatInvitation as EventListener);
+    
+    return () => {
+      window.removeEventListener('openChatInvitation', handleChatInvitation as EventListener);
+    };
+  }, []);
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
@@ -3845,7 +3876,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               <Tooltip title="Invite human to conversation" placement="top" arrow>
                                 <IconButton
                                   size="small"
-                                  onClick={() => setShowInviteDialog(true)}
+                                  onClick={() => {
+                                    // Set current chat context for active chat invitation
+                                    const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+                                    if (currentBotState?.currentChatSession && selectedChatbot) {
+                                      setChatInvitationContext({
+                                        chatSessionId: currentBotState.currentChatSession.id,
+                                        chatName: currentBotState.currentChatSession.name || `Chat with ${selectedChatbot.identity?.name}`,
+                                        agentId: selectedChatbot.id,
+                                        agentName: selectedChatbot.identity?.name || 'Agent'
+                                      });
+                                    } else {
+                                      // No active chat session - clear context for general invitation
+                                      setChatInvitationContext(null);
+                                    }
+                                    setShowInviteDialog(true);
+                                  }}
                                   sx={{
                                     bgcolor: '#1e293b',
                                     color: '#64748b',
@@ -6956,12 +7002,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         <DialogTitle sx={{ color: '#e2e8f0', borderBottom: '1px solid #334155' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <PersonAdd sx={{ color: '#3b82f6' }} />
-            <Typography variant="h6">Invite Human to Conversation</Typography>
+            <Typography variant="h6">
+              {chatInvitationContext 
+                ? `Invite to "${chatInvitationContext.chatName}"` 
+                : 'Invite Human to Conversation'
+              }
+            </Typography>
           </Box>
         </DialogTitle>
         <DialogContent sx={{ mt: 2 }}>
           <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
-            Invite a human participant to join this AI conversation. They'll be able to interact with AI agents and receive behavioral responses.
+            {chatInvitationContext 
+              ? `Invite a team member to join the chat "${chatInvitationContext.chatName}" with ${chatInvitationContext.agentName}. They'll be able to see the conversation history and participate in the discussion.`
+              : 'Invite a human participant to join this AI conversation. They\'ll be able to interact with AI agents and receive behavioral responses.'
+            }
           </Typography>
           
           <TextField
@@ -7011,9 +7065,44 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           <Button
             variant="contained"
             onClick={async () => {
-              // TODO: Implement invitation sending
-              console.log('👥 [Human Invitation] Sending invitation...');
-              setShowInviteDialog(false);
+              if (!inviteEmail.trim()) return;
+              
+              try {
+                console.log('👥 [Human Invitation] Sending invitation...');
+                
+                if (chatInvitationContext) {
+                  // Chat-specific invitation
+                  console.log('🎯 [ChatInvitation] Creating chat-specific invitation:', {
+                    chatSessionId: chatInvitationContext.chatSessionId,
+                    chatName: chatInvitationContext.chatName,
+                    email: inviteEmail
+                  });
+                  
+                  await chatInvitationService.createInvitation({
+                    fromUserId: user?.uid || '',
+                    fromUserName: user?.displayName || user?.email || 'User',
+                    toEmail: inviteEmail,
+                    conversationId: chatInvitationContext.chatSessionId,
+                    conversationName: chatInvitationContext.chatName,
+                    agentName: chatInvitationContext.agentName,
+                    message: `Join me in my chat "${chatInvitationContext.chatName}" with ${chatInvitationContext.agentName}`,
+                    includeHistory: true
+                  });
+                  
+                  console.log('✅ [ChatInvitation] Chat-specific invitation sent successfully');
+                } else {
+                  // General conversation invitation (existing logic)
+                  console.log('👥 [Human Invitation] Creating general conversation invitation');
+                  // TODO: Implement general invitation logic
+                }
+                
+                setShowInviteDialog(false);
+                setInviteEmail('');
+                setChatInvitationContext(null);
+                
+              } catch (error) {
+                console.error('❌ [Human Invitation] Failed to send invitation:', error);
+              }
             }}
             sx={{
               bgcolor: '#3b82f6',

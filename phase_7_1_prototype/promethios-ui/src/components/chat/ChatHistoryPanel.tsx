@@ -47,6 +47,7 @@ import {
   ContentCopy,
   CheckCircle,
   Warning,
+  PersonAdd,
 } from '@mui/icons-material';
 import { ChatHistoryService, ChatSession, ChatHistoryFilter } from '../../services/ChatHistoryService';
 import { ChatSharingService } from '../../services/ChatSharingService';
@@ -284,6 +285,24 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     } finally {
       setShareLoading(null);
     }
+  };
+
+  // Invite team member to specific chat
+  const handleInviteToChat = async (session: ChatSession) => {
+    console.log('🎯 [ChatHistory] Inviting team member to chat:', session.name);
+    
+    // Create a custom event to trigger the invitation modal with chat session context
+    const inviteEvent = new CustomEvent('openChatInvitation', {
+      detail: {
+        chatSession: session,
+        chatSessionId: session.id,
+        chatName: session.name,
+        agentId: agentId,
+        agentName: agentName
+      }
+    });
+    
+    window.dispatchEvent(inviteEvent);
   };
 
   // Menu handlers
@@ -652,6 +671,26 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                   
                   <ListItemSecondaryAction>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {/* Chat Invite Button */}
+                      <Tooltip title="Invite team member to this chat">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleInviteToChat(session);
+                          }}
+                          sx={{ 
+                            color: '#64748b',
+                            '&:hover': { 
+                              color: '#3b82f6',
+                              bgcolor: 'rgba(59, 130, 246, 0.1)',
+                            },
+                          }}
+                        >
+                          <PersonAdd sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+
                       {/* Quick Share Button */}
                       <Tooltip title="Share with Agent - Send this chat as context">
                         <IconButton
