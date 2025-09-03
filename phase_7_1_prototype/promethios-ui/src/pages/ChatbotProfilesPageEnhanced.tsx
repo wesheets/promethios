@@ -3888,7 +3888,73 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
               {/* Chat Messages Area */}
               <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
-                {chatMessages.length === 0 && !currentBotState?.currentChatSession ? (
+                {activeSharedConversation ? (
+                  /* Shared Conversation Interface */
+                  <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    {/* Shared Conversation Header */}
+                    <Box sx={{ mb: 3, p: 2, bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155' }}>
+                      <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                        🤝 Shared Conversation
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                        You're now in a shared conversation. All participants can see and interact with this chat.
+                      </Typography>
+                    </Box>
+                    
+                    {/* Shared Conversation Messages */}
+                    <Box sx={{ flex: 1, mb: 3 }}>
+                      {/* TODO: Implement SharedConversationMessages component */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        height: '100%',
+                        bgcolor: '#0f172a',
+                        borderRadius: 2,
+                        border: '2px dashed #334155'
+                      }}>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="h6" sx={{ color: '#64748b', mb: 1 }}>
+                            Shared Conversation Active
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
+                            Conversation ID: {activeSharedConversation}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#475569', mt: 1 }}>
+                            Messages and participants will be displayed here
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    
+                    {/* Shared Conversation Input */}
+                    <Box sx={{ 
+                      p: 2, 
+                      bgcolor: '#1e293b', 
+                      borderRadius: 2, 
+                      border: '1px solid #334155' 
+                    }}>
+                      <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
+                        💬 Send message to shared conversation
+                      </Typography>
+                      {/* TODO: Implement shared conversation input */}
+                      <Box sx={{ 
+                        p: 2, 
+                        bgcolor: '#374151', 
+                        borderRadius: 1, 
+                        border: '1px dashed #64748b',
+                        textAlign: 'center'
+                      }}>
+                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          Shared conversation input will be implemented here
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                ) : (
+                  /* Individual Agent Conversation (existing logic) */
+                  <>
+                    {chatMessages.length === 0 && !currentBotState?.currentChatSession ? (
                   <Box 
                     sx={{ 
                       display: 'flex', 
@@ -5322,8 +5388,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         console.error('❌ [ShareChat] No selectedChatbotId or user found');
                       }
                     }}                />
+                  </>
                 )}
+              </Box>
 
+              {/* Right Side - Control Panels */}
+              <Box sx={{ flex: '0 0 40%', bgcolor: '#1e293b', borderLeft: '1px solid #334155' }}>
                 {rightPanelType === 'analytics' && selectedChatbot && (
                   <Box>
                     <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
