@@ -114,16 +114,27 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         // Works for users with/without agents - limited command center for those without
         
         // Get user's primary agent to navigate to their command center
-        // If no agent, go to basic command center
+        // First check if user is already on an agent page (most reliable)
         let userAgent = null;
-        try {
-          if (user?.uid) {
-            const chatbotProfiles = await chatbotService.getChatbots(user.uid);
-            userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
-            console.log('🎯 [CollaborationModal] Found', chatbotProfiles.length, 'chatbots for user');
+        const currentUrl = window.location.href;
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentAgent = urlParams.get('agent');
+        
+        if (currentAgent) {
+          // User is already on an agent page - use that agent
+          userAgent = currentAgent;
+          console.log('🎯 [CollaborationModal] Using current agent from URL:', userAgent);
+        } else {
+          // Fallback: try to load user's chatbots from storage
+          try {
+            if (user?.uid) {
+              const chatbotProfiles = await chatbotService.getChatbots(user.uid);
+              userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
+              console.log('🎯 [CollaborationModal] Found', chatbotProfiles?.length || 0, 'chatbots for user');
+            }
+          } catch (error) {
+            console.warn('⚠️ [CollaborationModal] Could not load user chatbots:', error);
           }
-        } catch (error) {
-          console.warn('⚠️ [CollaborationModal] Could not load user chatbots:', error);
         }
         
         let commandCenterUrl;
