@@ -665,3 +665,32 @@ export const userInteractionRegistry = UserInteractionRegistry.getInstance();
 export { UserInteractionRegistry };
 export default userInteractionRegistry;
 
+
+  /**
+   * Get sent interactions for a user (interactions they initiated)
+   */
+  async getSentInteractions(userId: string): Promise<UserInteraction[]> {
+    try {
+      console.log(`📤 [UserRegistry] Getting sent interactions for: ${userId}`);
+
+      const q = query(
+        collection(db, this.INTERACTIONS_COLLECTION),
+        where('fromUserId', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+
+      const querySnapshot = await getDocs(q);
+      const interactions: UserInteraction[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        interactions.push({ id: doc.id, ...doc.data() } as UserInteraction);
+      });
+
+      console.log(`📤 [UserRegistry] Found ${interactions.length} sent interactions`);
+      return interactions;
+    } catch (error) {
+      console.error('❌ [UserRegistry] Error getting sent interactions:', error);
+      return [];
+    }
+  }
+
