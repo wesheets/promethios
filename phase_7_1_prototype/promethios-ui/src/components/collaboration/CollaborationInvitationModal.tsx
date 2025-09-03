@@ -29,27 +29,31 @@ import { useNavigate } from 'react-router-dom';
 import { UserInteraction } from '../../services/UserInteractionRegistry';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
 import { useSharedConversations } from '../../contexts/SharedConversationContext';
-import { useChatbotProfiles } from '../../hooks/useChatbotProfiles';
+import { useAuth } from '../../context/AuthContext';
+import ChatbotStorageService from '../../services/ChatbotStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
 
 interface CollaborationInvitationModalProps {
   open: boolean;
   onClose: () => void;
   invitation: UserInteraction | null;
+  onNotificationPanelClose?: () => void; // Optional callback to close notification panel
 }
 
 const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> = ({
   open,
   onClose,
-  invitation
+  invitation,
+  onNotificationPanelClose
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { acceptInteraction, declineInteraction } = useUserInteractions();
   const { refreshSharedConversations } = useSharedConversations();
-  const { chatbotProfiles } = useChatbotProfiles();
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
+  const chatbotService = ChatbotStorageService.getInstance();
 
   console.log('🎯 [CollaborationInvitationModal] Rendering modal:', {
     open,
@@ -111,7 +115,16 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         
         // Get user's primary agent to navigate to their command center
         // If no agent, go to basic command center
-        const userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
+        let userAgent = null;
+        try {
+          if (user?.uid) {
+            const chatbotProfiles = await chatbotService.getChatbots(user.uid);
+            userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
+            console.log('🎯 [CollaborationModal] Found', chatbotProfiles.length, 'chatbots for user');
+          }
+        } catch (error) {
+          console.warn('⚠️ [CollaborationModal] Could not load user chatbots:', error);
+        }
         
         let commandCenterUrl;
         if (userAgent) {
@@ -137,6 +150,12 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         }
         
         onClose();
+        
+        // Close the notification panel after successful acceptance
+        if (onNotificationPanelClose) {
+          console.log('🔄 [CollaborationModal] Closing notification panel');
+          onNotificationPanelClose();
+        }
       } else {
         setError('Failed to accept invitation. Please try again.');
       }
