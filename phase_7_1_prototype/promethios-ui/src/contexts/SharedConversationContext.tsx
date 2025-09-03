@@ -44,12 +44,27 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
   useEffect(() => {
     const loadSharedConversations = async () => {
       try {
-        if (user?.uid) {
-          console.log('🌐 [SharedConversationContext] Loading conversations for user:', user.uid);
+        // Try multiple auth sources to ensure we get the correct user
+        let currentUser = user;
+        
+        // Fallback to Firebase auth directly if useAuth doesn't provide user
+        if (!currentUser) {
+          const { getAuth } = await import('firebase/auth');
+          const auth = getAuth();
+          currentUser = auth.currentUser;
+          console.log('🌐 [SharedConversationContext] Using Firebase auth fallback:', currentUser?.uid);
+        }
+        
+        console.log('🌐 [SharedConversationContext] Auth sources check:');
+        console.log('🌐 [SharedConversationContext] - useAuth user:', user?.uid);
+        console.log('🌐 [SharedConversationContext] - Final user for loading:', currentUser?.uid);
+        
+        if (currentUser?.uid) {
+          console.log('🌐 [SharedConversationContext] Loading conversations for user:', currentUser.uid);
           console.log('🌐 [SharedConversationContext] SharedConversationService instance:', sharedConversationService);
           console.log('🌐 [SharedConversationContext] About to call getUserSharedConversations...');
           
-          const conversations = await sharedConversationService.getUserSharedConversations(user.uid);
+          const conversations = await sharedConversationService.getUserSharedConversations(currentUser.uid);
           
           console.log('🌐 [SharedConversationContext] getUserSharedConversations returned:', conversations);
           console.log('🌐 [SharedConversationContext] Conversations count:', conversations?.length || 0);
@@ -70,6 +85,31 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
     };
 
     loadSharedConversations();
+  }, [user?.uid]);
+
+  // Also listen for Firebase auth state changes directly
+  useEffect(() => {
+    const setupFirebaseAuthListener = async () => {
+      const { getAuth, onAuthStateChanged } = await import('firebase/auth');
+      const auth = getAuth();
+      
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        console.log('🌐 [SharedConversationContext] Firebase auth state changed:', firebaseUser?.uid);
+        
+        // If Firebase user is different from useAuth user, reload conversations
+        if (firebaseUser?.uid && firebaseUser.uid !== user?.uid) {
+          console.log('🌐 [SharedConversationContext] Firebase user differs from useAuth user, reloading...');
+          sharedConversationService.getUserSharedConversations(firebaseUser.uid).then(conversations => {
+            console.log('🌐 [SharedConversationContext] Loaded conversations from Firebase auth:', conversations.length);
+            setSharedConversations(conversations);
+          });
+        }
+      });
+      
+      return unsubscribe;
+    };
+    
+    setupFirebaseAuthListener();
   }, [user?.uid]);
 
   // Listen for navigation events from invitation acceptance
@@ -94,9 +134,20 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
 
   const refreshSharedConversations = async () => {
     try {
-      if (user?.uid) {
-        console.log('🔄 [Global Shared Conversations] Refreshing conversations');
-        const conversations = await sharedConversationService.getUserSharedConversations(user.uid);
+      // Try multiple auth sources
+      let currentUser = user;
+      
+      if (!currentUser) {
+        const { getAuth } = await import('firebase/auth');
+        const auth = getAuth();
+        currentUser = auth.currentUser;
+        console.log('🔄 [SharedConversationContext] Using Firebase auth fallback for refresh:', currentUser?.uid);
+      }
+      
+      if (currentUser?.uid) {
+        console.log('🔄 [Global Shared Conversations] Refreshing conversations for user:', currentUser.uid);
+        const conversations = await sharedConversationService.getUserSharedConversations(currentUser.uid);
+        console.log('🔄 [Global Shared Conversations] Refresh loaded:', conversations.length, 'conversations');
         setSharedConversations(conversations);
       }
     } catch (error) {
