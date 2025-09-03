@@ -213,17 +213,65 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
       
       console.log('✅ [NotificationSidebar] Detected AI collaboration invitation - opening modal');
       
+      // Extract user name from various sources
+      let fromUserName = notification.metadata?.fromUserName || 
+                        notification.fromUserName || 
+                        'Unknown User';
+      
+      // Try to extract from message if not in metadata
+      if (fromUserName === 'Unknown User' && notification.message) {
+        const messageMatch = notification.message.match(/^(.+?)\s+invited you to join/);
+        if (messageMatch) {
+          fromUserName = messageMatch[1];
+        }
+      }
+      
+      // Extract conversation name from message or metadata
+      let conversationName = notification.metadata?.conversationName || 'AI Collaboration';
+      if (notification.message) {
+        const conversationMatch = notification.message.match(/conversation\s+['""]([^'""]+)['""]/) || 
+                                 notification.message.match(/conversation\s+['""]([^'""]+)['""]/) ||
+                                 notification.message.match(/AI conversation\s+['""]([^'""]+)['""]/) ||
+                                 notification.message.match(/conversation\s+"([^"]+)"/);
+        if (conversationMatch) {
+          conversationName = conversationMatch[1];
+        }
+      }
+      
+      // Extract agent name from message or metadata
+      let agentName = notification.metadata?.agentName || 'AI Assistant';
+      if (notification.message) {
+        const agentMatch = notification.message.match(/with\s+(.+?)\s*$/) ||
+                          notification.message.match(/with\s+(.+?)\s+Assistant/) ||
+                          notification.message.match(/with\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*$/);
+        if (agentMatch) {
+          agentName = agentMatch[1].trim();
+          // Ensure it ends with "Assistant" if it doesn't already
+          if (!agentName.toLowerCase().includes('assistant')) {
+            agentName += ' Assistant';
+          }
+        }
+      }
+      
+      console.log('🔧 [NotificationSidebar] Extracted data:', {
+        fromUserName,
+        conversationName,
+        agentName,
+        originalMessage: notification.message,
+        originalMetadata: notification.metadata
+      });
+      
       // Convert notification to UserInteraction format for the modal
       const collaborationInvitation = {
         id: notification.id,
         type: 'collaboration_invitation',
         fromUserId: notification.metadata?.fromUserId || notification.fromUserId || notification.userId || '',
-        fromUserName: notification.metadata?.fromUserName || notification.fromUserName || 'Unknown User',
+        fromUserName: fromUserName,
         fromUserPhoto: notification.metadata?.fromUserAvatar || notification.fromUserAvatar || notification.avatar || '',
         toUserId: notification.userId || '',
         metadata: {
-          conversationName: notification.metadata?.conversationName || 'AI Collaboration',
-          agentName: notification.metadata?.agentName || 'AI Assistant',
+          conversationName: conversationName,
+          agentName: agentName,
           notificationType: 'collaboration_invitation',
           ...notification.metadata
         },
