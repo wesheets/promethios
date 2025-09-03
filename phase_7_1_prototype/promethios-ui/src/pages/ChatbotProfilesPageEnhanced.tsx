@@ -19,6 +19,7 @@ import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestio
 // Shared conversation imports
 import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
 import SharedConversationService from '../services/SharedConversationService';
+import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
 import { useSharedConversations } from '../contexts/SharedConversationContext';
 // Notification and invitation imports
 import ConversationInvitationDialog, { InvitationFormData } from '../components/collaboration/ConversationInvitationDialog';
@@ -2194,16 +2195,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (!user?.uid) return;
 
     try {
-      await conversationNotificationService.acceptInvitation(
+      // Use the new method that sets up participation automatically
+      await sharedConversationService.acceptInvitationAndSetupParticipation(
         notificationId,
         user.uid,
-        user.displayName || 'User'
+        user.displayName || user.email || 'Anonymous User'
       );
 
       // Refresh shared conversations
       await refreshSharedConversations();
 
-      console.log('✅ Accepted invitation successfully');
+      console.log('✅ Accepted invitation and set up participation successfully');
     } catch (error) {
       console.error('❌ Failed to accept invitation:', error);
       throw error;
@@ -3903,52 +3905,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     
                     {/* Shared Conversation Messages */}
                     <Box sx={{ flex: 1, mb: 3 }}>
-                      {/* TODO: Implement SharedConversationMessages component */}
-                      <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        height: '100%',
-                        bgcolor: '#0f172a',
-                        borderRadius: 2,
-                        border: '2px dashed #334155'
-                      }}>
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Typography variant="h6" sx={{ color: '#64748b', mb: 1 }}>
-                            Shared Conversation Active
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#475569' }}>
-                            Conversation ID: {activeSharedConversation}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#475569', mt: 1 }}>
-                            Messages and participants will be displayed here
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Box>
-                    
-                    {/* Shared Conversation Input */}
-                    <Box sx={{ 
-                      p: 2, 
-                      bgcolor: '#1e293b', 
-                      borderRadius: 2, 
-                      border: '1px solid #334155' 
-                    }}>
-                      <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
-                        💬 Send message to shared conversation
-                      </Typography>
-                      {/* TODO: Implement shared conversation input */}
-                      <Box sx={{ 
-                        p: 2, 
-                        bgcolor: '#374151', 
-                        borderRadius: 1, 
-                        border: '1px dashed #64748b',
-                        textAlign: 'center'
-                      }}>
-                        <Typography variant="body2" sx={{ color: '#64748b' }}>
-                          Shared conversation input will be implemented here
-                        </Typography>
-                      </Box>
+                      <SharedConversationMessages
+                        conversationId={activeSharedConversation}
+                        currentUserId={user?.uid || 'anonymous'}
+                        onSendMessage={async (message: string) => {
+                          try {
+                            await sharedConversationService.sendMessageToSharedConversation(
+                              activeSharedConversation,
+                              user?.uid || 'anonymous',
+                              user?.displayName || user?.email || 'Anonymous User',
+                              message
+                            );
+                          } catch (error) {
+                            console.error('Failed to send message to shared conversation:', error);
+                          }
+                        }}
+                      />
                     </Box>
                   </Box>
                 ) : (

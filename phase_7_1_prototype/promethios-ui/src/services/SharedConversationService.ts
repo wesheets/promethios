@@ -709,6 +709,168 @@ class SharedConversationService {
     // In real implementation, this would use an email service
     // like SendGrid, AWS SES, or similar
   }
+
+  /**
+   * Add recipient to the actual chat session so they can participate
+   */
+  async addRecipientToChatSession(
+    conversationId: string,
+    recipientId: string,
+    recipientName: string
+  ): Promise<void> {
+    try {
+      console.log('🤝 [SharedConversation] Adding recipient to chat session:', {
+        conversationId,
+        recipientId,
+        recipientName
+      });
+
+      // Import ChatHistoryService dynamically to avoid circular dependencies
+      const { chatHistoryService } = await import('./ChatHistoryService');
+      
+      // Load the chat session
+      const chatSession = await chatHistoryService.getChatSessionById(conversationId);
+      
+      if (!chatSession) {
+        throw new Error(`Chat session not found: ${conversationId}`);
+      }
+
+      // Check if recipient is already a participant
+      const existingParticipant = chatSession.participants.guests.find(
+        guest => guest.id === recipientId
+      );
+
+      if (existingParticipant) {
+        console.log('🤝 [SharedConversation] Recipient already in chat session:', recipientId);
+        return;
+      }
+
+      // Add recipient as a guest participant
+      const newGuest = {
+        id: recipientId,
+        name: recipientName,
+        type: 'human' as const,
+        joinedAt: new Date(),
+        messageCount: 0,
+        lastActive: new Date(),
+        avatar: undefined
+      };
+
+      chatSession.participants.guests.push(newGuest);
+      chatSession.lastUpdated = new Date();
+      chatSession.metadata.lastActivity = new Date();
+
+      // Save the updated chat session
+      await chatHistoryService.updateChatSession(chatSession);
+
+      console.log('✅ [SharedConversation] Successfully added recipient to chat session');
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to add recipient to chat session:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send message to shared conversation
+   */
+  async sendMessageToSharedConversation(
+    conversationId: string,
+    senderId: string,
+    senderName: string,
+    content: string
+  ): Promise<void> {
+    try {
+      console.log('💬 [SharedConversation] Sending message to shared conversation:', {
+        conversationId,
+        senderId,
+        content: content.substring(0, 50) + '...'
+      });
+
+      // Import ChatHistoryService dynamically to avoid circular dependencies
+      const { chatHistoryService } = await import('./ChatHistoryService');
+      
+      // Load the chat session
+      const chatSession = await chatHistoryService.getChatSessionById(conversationId);
+      
+      if (!chatSession) {
+        throw new Error(`Chat session not found: ${conversationId}`);
+      }
+
+      // Create new message
+      const newMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        content,
+        sender: 'user',
+        timestamp: new Date().toISOString(),
+        attachments: [],
+        metadata: {
+          sharedConversationSender: {
+            id: senderId,
+            name: senderName
+          }
+        }
+      };
+
+      // Add message to chat session
+      chatSession.messages.push(newMessage);
+      chatSession.messageCount = chatSession.messages.length;
+      chatSession.lastUpdated = new Date();
+      chatSession.metadata.lastActivity = new Date();
+
+      // Update participant's message count and last active
+      const participant = chatSession.participants.guests.find(guest => guest.id === senderId);
+      if (participant) {
+        participant.messageCount++;
+        participant.lastActive = new Date();
+      }
+
+      // Save the updated chat session
+      await chatHistoryService.updateChatSession(chatSession);
+
+      console.log('✅ [SharedConversation] Successfully sent message to shared conversation');
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to send message to shared conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Accept invitation and set up recipient participation
+   */
+  async acceptInvitationAndSetupParticipation(
+    invitationId: string,
+    recipientId: string,
+    recipientName: string
+  ): Promise<void> {
+    try {
+      console.log('🎯 [SharedConversation] Setting up participation for accepted invitation:', {
+        invitationId,
+        recipientId,
+        recipientName
+      });
+
+      // Accept the invitation first
+      await this.acceptInvitation(invitationId, recipientId);
+
+      // Get the invitation to find the conversation ID
+      const invitation = await this.getInvitation(invitationId);
+      if (!invitation) {
+        throw new Error('Invitation not found');
+      }
+
+      // Add recipient to the actual chat session
+      await this.addRecipientToChatSession(
+        invitation.conversationId,
+        recipientId,
+        recipientName
+      );
+
+      console.log('✅ [SharedConversation] Successfully set up participation for recipient');
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to set up participation:', error);
+      throw error;
+    }
+  }
 }
 
 export default SharedConversationService;
