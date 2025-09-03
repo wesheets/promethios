@@ -258,12 +258,21 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
         conversationName,
         agentName,
         originalMessage: notification.message,
-        originalMetadata: notification.metadata
+        originalMetadata: notification.metadata,
+        notificationId: notification.id,
+        interactionId: notification.interactionId || notification.metadata?.interactionId
       });
+      
+      // Use the correct interaction ID - not the notification ID
+      const interactionId = notification.interactionId || 
+                           notification.metadata?.interactionId || 
+                           notification.id;
+      
+      console.log('🔍 [NotificationSidebar] Using interaction ID:', interactionId);
       
       // Convert notification to UserInteraction format for the modal
       const collaborationInvitation = {
-        id: notification.id,
+        id: interactionId,
         type: 'collaboration_invitation',
         fromUserId: notification.metadata?.fromUserId || notification.fromUserId || notification.userId || '',
         fromUserName: fromUserName,
