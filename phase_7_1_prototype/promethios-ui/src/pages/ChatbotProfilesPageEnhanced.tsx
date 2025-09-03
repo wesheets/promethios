@@ -4333,6 +4333,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     })}
                   </Stack>
                 )}
+                  </>
+                )}
               </Box>
               
               {/* Chat Input */}
@@ -5388,7 +5390,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         console.error('❌ [ShareChat] No selectedChatbotId or user found');
                       }
                     }}                />
-                  </>
                 )}
               </Box>
 
