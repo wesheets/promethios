@@ -101,8 +101,31 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         return;
       }
       
-      // Check if user is available
-      if (!user?.uid) {
+      // Check if user is available from useAuth hook
+      let currentUserId = user?.uid;
+      
+      // Fallback: try to get user from Firebase auth directly if useAuth fails
+      if (!currentUserId) {
+        console.log('🔍 [CollaborationModal] useAuth returned no user, trying Firebase auth directly...');
+        try {
+          // Import Firebase auth
+          const { getAuth } = await import('firebase/auth');
+          const auth = getAuth();
+          const firebaseUser = auth.currentUser;
+          
+          if (firebaseUser) {
+            currentUserId = firebaseUser.uid;
+            console.log('✅ [CollaborationModal] Found user via Firebase auth:', currentUserId);
+          } else {
+            console.log('❌ [CollaborationModal] No user in Firebase auth either');
+          }
+        } catch (error) {
+          console.error('❌ [CollaborationModal] Error accessing Firebase auth:', error);
+        }
+      }
+      
+      // Final check for user availability
+      if (!currentUserId) {
         console.error('❌ [CollaborationModal] No user available for invitation acceptance');
         console.error('❌ [CollaborationModal] Auth state:', { user, authLoading });
         setError('Unable to identify current user. Please try refreshing the page.');
@@ -110,7 +133,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         return;
       }
       
-      console.log('✅ [CollaborationModal] User authenticated:', user.uid);
+      console.log('✅ [CollaborationModal] User authenticated:', currentUserId);
       
       const success = await acceptInteraction(invitation.id);
       
@@ -156,12 +179,12 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         } else {
           // Fallback: try to load user's chatbots from storage (same as ChatbotProfilesPageEnhanced)
           try {
-            if (user?.uid) {
-              console.log('🔍 [CollaborationModal] Attempting to load chatbots for user:', user.uid);
+            if (currentUserId) {
+              console.log('🔍 [CollaborationModal] Attempting to load chatbots for user:', currentUserId);
               console.log('🔍 [CollaborationModal] ChatbotStorageService instance:', chatbotService);
               console.log('🔍 [CollaborationModal] About to call getChatbots method...');
               
-              const chatbotProfiles = await chatbotService.getChatbots(user.uid);
+              const chatbotProfiles = await chatbotService.getChatbots(currentUserId);
               
               console.log('🔍 [CollaborationModal] getChatbots returned:', chatbotProfiles?.length || 0, 'chatbots');
               console.log('🔍 [CollaborationModal] Raw chatbot response:', chatbotProfiles);
