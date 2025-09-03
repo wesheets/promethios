@@ -120,6 +120,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         const urlParams = new URLSearchParams(window.location.search);
         const currentAgent = urlParams.get('agent');
         
+        console.log('🔍 [CollaborationModal] Current URL:', currentUrl);
+        console.log('🔍 [CollaborationModal] URL params:', Object.fromEntries(urlParams.entries()));
+        
         if (currentAgent) {
           // User is already on an agent page - use that agent
           userAgent = currentAgent;
@@ -128,9 +131,17 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           // Fallback: try to load user's chatbots from storage
           try {
             if (user?.uid) {
+              console.log('🔍 [CollaborationModal] Attempting to load chatbots for user:', user.uid);
               const chatbotProfiles = await chatbotService.getChatbots(user.uid);
+              console.log('🔍 [CollaborationModal] Raw chatbot response:', chatbotProfiles);
               userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
               console.log('🎯 [CollaborationModal] Found', chatbotProfiles?.length || 0, 'chatbots for user');
+              
+              // Additional debugging - check if there are any agents in localStorage or other storage
+              const localStorageKeys = Object.keys(localStorage).filter(key => 
+                key.includes('chatbot') || key.includes('agent') || key.includes('claude')
+              );
+              console.log('🔍 [CollaborationModal] LocalStorage keys with agent/chatbot:', localStorageKeys);
             }
           } catch (error) {
             console.warn('⚠️ [CollaborationModal] Could not load user chatbots:', error);
@@ -140,6 +151,12 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         if (!userAgent) {
           // No agent found - show error instead of trying to navigate
           console.error('❌ [CollaborationModal] No agent found - cannot navigate to command center');
+          console.error('❌ [CollaborationModal] Debug info:', {
+            currentUrl,
+            urlParams: Object.fromEntries(urlParams.entries()),
+            userId: user?.uid,
+            userEmail: user?.email
+          });
           setError('Unable to find your AI agent. Please make sure you have an agent configured.');
           return;
         }
