@@ -98,14 +98,27 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           includeHistory: true
         });
         
+        console.log('🎯 [CollaborationModal] Created shared conversation:', sharedConversation);
+        
         // Refresh shared conversations to show the new tab
         await refreshSharedConversations();
+        console.log('🔄 [CollaborationModal] Refreshed shared conversations');
         
         // Route to command center - the shared conversation tab will be visible
         // Works for users with/without agents - limited command center for those without
         const commandCenterUrl = `/ui/chat/chatbots?panel=team&shared=${sharedConversation.id}`;
+        console.log('🚀 [CollaborationModal] Attempting navigation to:', commandCenterUrl);
         
-        navigate(commandCenterUrl);
+        try {
+          navigate(commandCenterUrl);
+          console.log('✅ [CollaborationModal] Navigation call completed');
+        } catch (navError) {
+          console.error('❌ [CollaborationModal] Navigation failed:', navError);
+          // Fallback: use window.location
+          console.log('🔄 [CollaborationModal] Trying window.location fallback');
+          window.location.href = commandCenterUrl;
+        }
+        
         onClose();
       } else {
         setError('Failed to accept invitation. Please try again.');
