@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserInteraction } from '../../services/UserInteractionRegistry';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
 import { useSharedConversations } from '../../contexts/SharedConversationContext';
+import { useChatbotProfiles } from '../../hooks/useChatbotProfiles';
 import SharedConversationService from '../../services/SharedConversationService';
 
 interface CollaborationInvitationModalProps {
@@ -45,6 +46,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const navigate = useNavigate();
   const { acceptInteraction, declineInteraction } = useUserInteractions();
   const { refreshSharedConversations } = useSharedConversations();
+  const { chatbotProfiles } = useChatbotProfiles();
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
@@ -106,7 +108,22 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         
         // Route to command center - the shared conversation tab will be visible
         // Works for users with/without agents - limited command center for those without
-        const commandCenterUrl = `/ui/chat/chatbots?panel=team&shared=${sharedConversation.id}`;
+        
+        // Get user's primary agent to navigate to their command center
+        // If no agent, go to basic command center
+        const userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
+        
+        let commandCenterUrl;
+        if (userAgent) {
+          // User has agents - go to their command center with shared conversation
+          commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sharedConversation.id}`;
+          console.log('🎯 [CollaborationModal] User has agent:', userAgent, '- navigating to command center');
+        } else {
+          // User has no agents - go to basic command center with shared conversation
+          commandCenterUrl = `/ui/chat/chatbots?shared=${sharedConversation.id}`;
+          console.log('🎯 [CollaborationModal] User has no agents - navigating to basic command center');
+        }
+        
         console.log('🚀 [CollaborationModal] Attempting navigation to:', commandCenterUrl);
         
         try {
