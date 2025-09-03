@@ -480,21 +480,29 @@ class SharedConversationService {
 
     console.log('🤝 [SharedConversation] Creating conversation from collaboration invitation:', invitationId);
 
-    // Create the shared conversation
-    const conversationId = await this.createSharedConversation(
+    // Create the shared conversation with correct parameters
+    const conversation = await this.createSharedConversation(
       fromUserId,
+      fromUserName,
       conversationName,
-      {
-        allowParticipantInvites: true,
-        allowAIAgents: true,
-        allowReceiptSharing: true,
-        maxParticipants: 10
-      }
+      [] // initialParticipants - we'll add them separately
     );
 
-    // Get the created conversation
-    const conversation = this.conversations.get(conversationId);
-    if (!conversation) {
+    const conversationId = conversation.id;
+    console.log('✅ [SharedConversation] Created conversation:', conversationId);
+
+    // Update conversation settings for collaboration
+    if (this.conversations.has(conversationId)) {
+      const conv = this.conversations.get(conversationId)!;
+      conv.allowParticipantInvites = true;
+      conv.allowAIAgents = true;
+      conv.allowReceiptSharing = true;
+      conv.maxParticipants = 10;
+    }
+
+    // Get the created conversation to verify it exists
+    const createdConversation = this.conversations.get(conversationId);
+    if (!createdConversation) {
       throw new Error('Failed to create shared conversation');
     }
 
@@ -506,12 +514,12 @@ class SharedConversationService {
 
     // Set history visibility if requested
     if (includeHistory) {
-      conversation.hasHistory = true;
-      conversation.historyVisibleFrom = new Date();
+      createdConversation.hasHistory = true;
+      createdConversation.historyVisibleFrom = new Date();
     }
 
     // Store reference to the original invitation
-    const invitedParticipant = conversation.participants.find(p => p.id === toUserId);
+    const invitedParticipant = createdConversation.participants.find(p => p.id === toUserId);
     if (invitedParticipant) {
       invitedParticipant.invitationId = invitationId;
       invitedParticipant.status = 'active'; // They accepted the invitation
@@ -519,11 +527,11 @@ class SharedConversationService {
 
     console.log('✅ [SharedConversation] Created conversation from invitation:', {
       conversationId,
-      participants: conversation.participants.length,
+      participants: createdConversation.participants.length,
       name: conversationName
     });
 
-    return conversation;
+    return createdConversation;
   }
 
   /**
