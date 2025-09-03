@@ -3264,11 +3264,38 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save to chat history
+      // Save to chat history - create session if none exists
       const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-      if (currentFreshBotState?.currentChatSession) {
+      let sessionToUse = currentFreshBotState?.currentChatSession;
+      
+      // Auto-create chat session if none exists
+      if (!sessionToUse && selectedChatbot && user?.uid) {
+        console.log('🔄 [AutoSession] No current session found, creating new session for message storage');
         try {
-          await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
+          const newSession = await chatHistoryService.createChatSession(
+            user.uid,
+            selectedChatbot.id,
+            selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
+            userMessage.content // Use first message content to generate title
+          );
+          
+          console.log('✅ [AutoSession] Created new session:', newSession.id);
+          
+          // Update bot state with new session
+          updateBotState(selectedChatbot.id, {
+            currentChatSession: newSession,
+            currentChatName: newSession.name
+          });
+          
+          sessionToUse = newSession;
+        } catch (error) {
+          console.error('❌ [AutoSession] Failed to create session:', error);
+        }
+      }
+      
+      if (sessionToUse) {
+        try {
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
             id: userMessage.id,
             content: userMessage.content,
             sender: userMessage.sender,
@@ -3277,7 +3304,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             agentName: selectedChatbot.name,
           });
           
-          await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
             id: agentResponse.id,
             content: agentResponse.content,
             sender: agentResponse.sender,
@@ -3288,7 +3315,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           });
           
           // Update bot state with new message count immediately
-          const updatedSession = await chatHistoryService.getChatSessionById(currentFreshBotState.currentChatSession.id);
+          const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
           if (updatedSession) {
             updateBotState(selectedChatbot.id, {
               currentChatSession: updatedSession,
@@ -3301,6 +3328,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         } catch (historyError) {
           console.warn('Failed to save receipt search to chat history:', historyError);
         }
+      } else {
+        console.warn('⚠️ [AutoSession] No session available for message storage');
       }
       
       // Clear input and attachments
@@ -3359,10 +3388,47 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           });
         }
         
-        // Save to chat history
-        if (currentBotState?.currentChatSession) {
+        // Save to chat history - create session if none exists
+        const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+        let sessionToUse = currentBotState?.currentChatSession;
+        
+        // Auto-create chat session if none exists
+        if (!sessionToUse && selectedChatbot && user?.uid) {
+          console.log('🔄 [AutoSession] No current session found, creating new session for chat reference storage');
           try {
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+            const newSession = await chatHistoryService.createChatSession(
+              user.uid,
+              selectedChatbot.id,
+              selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
+              messageInput.trim() // Use first message content to generate title
+            );
+            
+            console.log('✅ [AutoSession] Created new session:', newSession.id);
+            
+            // Update bot state with new session
+            updateBotState(selectedChatbot.id, {
+              currentChatSession: newSession,
+              currentChatName: newSession.name
+            });
+            
+            sessionToUse = newSession;
+          } catch (error) {
+            console.error('❌ [AutoSession] Failed to create session:', error);
+          }
+        }
+        
+        if (sessionToUse) {
+          try {
+            // Create user message object for saving
+            const userMessage: ChatMessage = {
+              id: `user_${Date.now()}`,
+              content: messageInput.trim(),
+              sender: 'user',
+              timestamp: new Date(),
+              attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+            };
+            
+            await chatHistoryService.addMessageToSession(sessionToUse.id, {
               id: userMessage.id,
               content: userMessage.content,
               sender: userMessage.sender,
@@ -3371,7 +3437,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentName: selectedChatbot.name,
             });
             
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(sessionToUse.id, {
               id: agentResponse.id,
               content: agentResponse.content,
               sender: agentResponse.sender,
@@ -3379,9 +3445,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentId: selectedChatbot.id,
               agentName: selectedChatbot.name,
             });
+            
+            // Update bot state with new message count immediately
+            const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
+            if (updatedSession) {
+              updateBotState(selectedChatbot.id, {
+                currentChatSession: updatedSession,
+                currentChatName: updatedSession.name
+              });
+            }
+            
+            // Trigger chat history panel refresh after adding messages
+            setChatHistoryRefreshTrigger(prev => prev + 1);
           } catch (historyError) {
             console.warn('Failed to save chat reference to chat history:', historyError);
           }
+        } else {
+          console.warn('⚠️ [AutoSession] No session available for chat reference storage');
         }
         
         // Clear input and attachments
@@ -3544,11 +3624,47 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save to chat history
+      // Save to chat history - create session if none exists
       const mainFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-      if (mainFreshBotState?.currentChatSession) {
+      let sessionToUse = mainFreshBotState?.currentChatSession;
+      
+      // Auto-create chat session if none exists
+      if (!sessionToUse && selectedChatbot && user?.uid) {
+        console.log('🔄 [AutoSession] No current session found, creating new session for regular message storage');
         try {
-          await chatHistoryService.addMessageToSession(mainFreshBotState.currentChatSession.id, {
+          const newSession = await chatHistoryService.createChatSession(
+            user.uid,
+            selectedChatbot.id,
+            selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
+            messageInput.trim() // Use first message content to generate title
+          );
+          
+          console.log('✅ [AutoSession] Created new session:', newSession.id);
+          
+          // Update bot state with new session
+          updateBotState(selectedChatbot.id, {
+            currentChatSession: newSession,
+            currentChatName: newSession.name
+          });
+          
+          sessionToUse = newSession;
+        } catch (error) {
+          console.error('❌ [AutoSession] Failed to create session:', error);
+        }
+      }
+      
+      if (sessionToUse) {
+        try {
+          // Create user message object for saving
+          const userMessage: ChatMessage = {
+            id: `user_${Date.now()}`,
+            content: messageInput.trim(),
+            sender: 'user',
+            timestamp: new Date(),
+            attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+          };
+          
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
             id: userMessage.id,
             content: userMessage.content,
             sender: userMessage.sender,
@@ -3557,7 +3673,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             agentName: selectedChatbot.name,
           });
           
-          await chatHistoryService.addMessageToSession(mainFreshBotState.currentChatSession.id, {
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
             id: response.id,
             content: response.content,
             sender: response.sender,
@@ -3569,7 +3685,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           });
           
           // Update bot state with new message count immediately
-          const updatedSession = await chatHistoryService.getChatSessionById(mainFreshBotState.currentChatSession.id);
+          const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
           if (updatedSession) {
             updateBotState(selectedChatbot.id, {
               currentChatSession: updatedSession,
@@ -3583,6 +3699,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           console.warn('Failed to save to chat history:', historyError);
           // Don't break the chat flow if history fails
         }
+      } else {
+        console.warn('⚠️ [AutoSession] No session available for regular message storage');
       }
       
       setMessageInput('');
