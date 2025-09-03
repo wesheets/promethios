@@ -260,15 +260,36 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
         originalMessage: notification.message,
         originalMetadata: notification.metadata,
         notificationId: notification.id,
-        interactionId: notification.interactionId || notification.metadata?.interactionId
+        interactionId: notification.interactionId || notification.metadata?.interactionId,
+        fullNotificationObject: notification
       });
       
       // Use the correct interaction ID - not the notification ID
-      const interactionId = notification.interactionId || 
-                           notification.metadata?.interactionId || 
-                           notification.id;
+      let interactionId = notification.interactionId || 
+                         notification.metadata?.interactionId;
       
-      console.log('🔍 [NotificationSidebar] Using interaction ID:', interactionId);
+      // If no explicit interaction ID, try to extract from notification ID
+      if (!interactionId) {
+        // Notification ID format might be: userId_timestamp
+        // Extract just the timestamp part as interaction ID
+        const idParts = notification.id.split('_');
+        if (idParts.length >= 2) {
+          // Try the last part (timestamp)
+          const timestampPart = idParts[idParts.length - 1];
+          if (timestampPart && /^\d+$/.test(timestampPart)) {
+            interactionId = timestampPart;
+            console.log('🔍 [NotificationSidebar] Extracted timestamp as interaction ID:', timestampPart);
+          }
+        }
+        
+        // If still no valid ID, fall back to full notification ID
+        if (!interactionId) {
+          interactionId = notification.id;
+          console.log('⚠️ [NotificationSidebar] Using full notification ID as fallback:', notification.id);
+        }
+      }
+      
+      console.log('🔍 [NotificationSidebar] Final interaction ID to use:', interactionId);
       
       // Convert notification to UserInteraction format for the modal
       const collaborationInvitation = {
