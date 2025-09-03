@@ -730,6 +730,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
             open={collaborationModalOpen}
             onClose={handleCollaborationModalClose}
             invitation={selectedCollaborationInvitation}
+            onNotificationPanelClose={onClose} // Pass the notification panel close function
           />
         );
       })()}
