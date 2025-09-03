@@ -86,6 +86,40 @@ export interface InteractionNotification {
   createdAt: Timestamp;
 }
 
+export type RelationshipType = 
+  | 'connection'
+  | 'collaboration'
+  | 'mentorship'
+  | 'partnership';
+
+export interface RelationshipMetadata {
+  connectionType?: 'professional' | 'personal' | 'academic';
+  establishedAt?: Date;
+  source?: string;
+  notes?: string;
+  [key: string]: any;
+}
+
+export interface UserRelationship {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  type: RelationshipType;
+  status: 'active' | 'inactive' | 'blocked';
+  metadata: RelationshipMetadata;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface UserInteractionStats {
+  totalSent: number;
+  totalReceived: number;
+  totalAccepted: number;
+  totalDeclined: number;
+  connectionCount: number;
+  collaborationCount: number;
+}
+
 class UserInteractionRegistry {
   private static instance: UserInteractionRegistry;
   private readonly INTERACTIONS_COLLECTION = 'userInteractions';
@@ -506,6 +540,123 @@ class UserInteractionRegistry {
     } catch (error) {
       console.error('❌ [UserRegistry] Error getting user info:', error);
       return null;
+    }
+  }
+
+  /**
+   * Respond to an interaction (accept or decline)
+   */
+  async respondToInteraction(
+    interactionId: string,
+    userId: string,
+    response: 'accepted' | 'declined'
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`🔗 [UserRegistry] Responding to interaction ${interactionId} with ${response}`);
+
+      // Get the interaction first
+      const interactionRef = doc(db, this.INTERACTIONS_COLLECTION, interactionId);
+      const interactionDoc = await getDoc(interactionRef);
+
+      if (!interactionDoc.exists()) {
+        console.error(`❌ [UserRegistry] Interaction not found: ${interactionId}`);
+        return { success: false, error: 'Interaction not found' };
+      }
+
+      const interaction = { id: interactionDoc.id, ...interactionDoc.data() } as UserInteraction;
+
+      // Verify the user is authorized to respond (must be the recipient)
+      if (interaction.toUserId !== userId) {
+        console.error(`❌ [UserRegistry] User ${userId} not authorized to respond to interaction ${interactionId}`);
+        return { success: false, error: 'Not authorized to respond to this interaction' };
+      }
+
+      // Update the interaction status
+      const newStatus = response === 'accepted' ? 'accepted' : 'declined';
+      const updateResult = await this.updateInteractionStatus(interactionId, newStatus);
+
+      if (!updateResult.success) {
+        return updateResult;
+      }
+
+      console.log(`✅ [UserRegistry] Successfully ${response} interaction ${interactionId}`);
+
+      // If accepted, create relationship or perform other actions based on interaction type
+      if (response === 'accepted') {
+        await this.handleAcceptedInteraction(interaction);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error(`❌ [UserRegistry] Error responding to interaction:`, error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Handle actions when an interaction is accepted
+   */
+  private async handleAcceptedInteraction(interaction: UserInteraction): Promise<void> {
+    try {
+      console.log(`🎯 [UserRegistry] Handling accepted interaction of type: ${interaction.type}`);
+
+      switch (interaction.type) {
+        case 'connection_request':
+          // Create a relationship between the users
+          await this.createRelationship(
+            interaction.fromUserId,
+            interaction.toUserId,
+            'connection',
+            {
+              connectionType: 'professional',
+              establishedAt: new Date(),
+              source: 'connection_request'
+            }
+          );
+          console.log(`✅ [UserRegistry] Created connection relationship`);
+          break;
+
+        case 'collaboration_invitation':
+          // For collaboration invitations, the relationship creation
+          // is handled by the SharedConversationService
+          console.log(`ℹ️ [UserRegistry] Collaboration invitation accepted - handled by SharedConversationService`);
+          break;
+
+        default:
+          console.log(`ℹ️ [UserRegistry] No special handling needed for interaction type: ${interaction.type}`);
+      }
+    } catch (error) {
+      console.error(`❌ [UserRegistry] Error handling accepted interaction:`, error);
+      // Don't throw here - the interaction was already accepted successfully
+    }
+  }
+
+  /**
+   * Create a relationship between users
+   */
+  private async createRelationship(
+    fromUserId: string,
+    toUserId: string,
+    type: RelationshipType,
+    metadata: RelationshipMetadata
+  ): Promise<void> {
+    try {
+      const relationshipId = `${fromUserId}_${toUserId}_${type}`;
+      const relationship: Omit<UserRelationship, 'id'> = {
+        fromUserId,
+        toUserId,
+        type,
+        status: 'active',
+        metadata,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      };
+
+      await setDoc(doc(db, this.RELATIONSHIPS_COLLECTION, relationshipId), relationship);
+      console.log(`✅ [UserRegistry] Created relationship: ${relationshipId}`);
+    } catch (error) {
+      console.error(`❌ [UserRegistry] Error creating relationship:`, error);
+      throw error;
     }
   }
 }
