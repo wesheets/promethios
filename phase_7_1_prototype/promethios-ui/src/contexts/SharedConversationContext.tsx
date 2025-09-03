@@ -45,17 +45,27 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
     const loadSharedConversations = async () => {
       try {
         if (user?.uid) {
-          console.log('🌐 [Global Shared Conversations] Loading conversations for user:', user.uid);
+          console.log('🌐 [SharedConversationContext] Loading conversations for user:', user.uid);
+          console.log('🌐 [SharedConversationContext] SharedConversationService instance:', sharedConversationService);
+          console.log('🌐 [SharedConversationContext] About to call getUserSharedConversations...');
+          
           const conversations = await sharedConversationService.getUserSharedConversations(user.uid);
+          
+          console.log('🌐 [SharedConversationContext] getUserSharedConversations returned:', conversations);
+          console.log('🌐 [SharedConversationContext] Conversations count:', conversations?.length || 0);
+          console.log('🌐 [SharedConversationContext] Conversations details:', conversations);
+          
           setSharedConversations(conversations);
-          console.log('🌐 [Global Shared Conversations] Loaded', conversations.length, 'conversations');
+          console.log('🌐 [SharedConversationContext] setSharedConversations called with', conversations.length, 'conversations');
         } else {
+          console.log('🌐 [SharedConversationContext] No user available, clearing conversations');
           setSharedConversations([]);
           setActiveSharedConversation(null);
           setIsInSharedMode(false);
         }
       } catch (error) {
-        console.error('🌐 [Global Shared Conversations] Error loading conversations:', error);
+        console.error('🌐 [SharedConversationContext] Error loading conversations:', error);
+        console.error('🌐 [SharedConversationContext] Error details:', error);
       }
     };
 
