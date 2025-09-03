@@ -149,15 +149,23 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           fromUserId: invitation.fromUserId,
           fromUserName: invitation.fromUserName,
           fromUserPhoto: invitation.fromUserPhoto,
-          toUserId: invitation.toUserId,
+          toUserId: currentUserId, // Use the current user's ID instead of invitation.toUserId
           includeHistory: true
         });
         
         console.log('🎯 [CollaborationModal] Created shared conversation:', sharedConversation);
         
+        // Wait a moment for Firebase to persist the data
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Refresh shared conversations to show the new tab
         await refreshSharedConversations();
         console.log('🔄 [CollaborationModal] Refreshed shared conversations');
+        
+        // Trigger a custom event to notify the context
+        window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
+          detail: { conversationId: sharedConversation.id }
+        }));
         
         // Route to command center - the shared conversation tab will be visible
         // Works for users with/without agents - limited command center for those without

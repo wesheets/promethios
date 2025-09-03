@@ -186,11 +186,19 @@ class SharedConversationService {
         orderBy('lastActivity', 'desc')
       );
       
+      console.log('🔍 [SharedConversation] Executing Firebase query...');
       const querySnapshot = await getDocs(conversationsQuery);
+      console.log('🔍 [SharedConversation] Query returned', querySnapshot.size, 'documents');
+      
       const conversations: SharedConversation[] = [];
       
       querySnapshot.forEach((doc) => {
+        console.log('🔍 [SharedConversation] Processing document:', doc.id);
         const data = doc.data();
+        console.log('🔍 [SharedConversation] Document data:', data);
+        console.log('🔍 [SharedConversation] ParticipantIds:', data.participantIds);
+        console.log('🔍 [SharedConversation] Participants:', data.participants);
+        
         const conversation: SharedConversation = {
           ...data,
           id: doc.id,
@@ -202,15 +210,29 @@ class SharedConversationService {
         
         // Cache in memory for quick access
         this.conversations.set(doc.id, conversation);
+        console.log('✅ [SharedConversation] Cached conversation:', doc.id);
       });
       
       console.log('🔍 [SharedConversation] Loaded', conversations.length, 'conversations from Firebase');
+      console.log('🔍 [SharedConversation] Conversation details:', conversations.map(c => ({
+        id: c.id,
+        name: c.name,
+        participantCount: c.participants?.length || 0,
+        participantIds: c.participants?.map(p => p.id) || []
+      })));
+      
       return conversations;
     } catch (error) {
       console.error('❌ [SharedConversation] Error loading conversations:', error);
+      console.error('❌ [SharedConversation] Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       
       // Fallback to in-memory cache
       const conversationIds = this.userConversations.get(userId) || [];
+      console.log('🔄 [SharedConversation] Falling back to in-memory cache:', conversationIds);
       return conversationIds
         .map(id => this.conversations.get(id))
         .filter(conv => conv !== undefined) as SharedConversation[];
@@ -229,6 +251,12 @@ class SharedConversationService {
     const conversation = this.conversations.get(conversationId);
     if (!conversation) {
       throw new Error('Conversation not found');
+    }
+
+    // Validate participant ID - should not be a name with spaces or single characters
+    if (!participantId || participantId.length < 2 || participantId.includes(' ')) {
+      console.warn('❌ [SharedConversation] Invalid participant ID, skipping:', participantId);
+      return;
     }
 
     // Check if user is already a participant
@@ -255,6 +283,19 @@ class SharedConversationService {
     conversation.lastActivity = new Date();
     
     this.addConversationToUser(participantId, conversationId);
+    
+    // Update Firebase with new participant
+    try {
+      const participantIds = conversation.participants.map(p => p.id);
+      await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), {
+        participants: conversation.participants,
+        participantIds, // Update the flat array for querying
+        lastActivity: Timestamp.fromDate(conversation.lastActivity)
+      });
+      console.log('✅ [SharedConversation] Updated Firebase with new participant:', participantId);
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to update Firebase:', error);
+    }
     
     console.log('✅ Added participant to conversation:', participantId, conversationId);
   }
@@ -380,10 +421,18 @@ class SharedConversationService {
       throw new Error('Conversation not found');
     }
 
+    // Check if agent is already a participant
+    const existingAgent = conversation.participants.find(p => p.id === agentId);
+    if (existingAgent) {
+      console.log('AI agent already in conversation:', agentId);
+      return;
+    }
+
     const aiAgent: SharedConversationParticipant = {
       id: agentId,
       name: agentName,
       type: 'ai_agent',
+      status: 'active',
       role: 'participant',
       addedBy,
       joinedAt: new Date(),
@@ -393,6 +442,19 @@ class SharedConversationService {
 
     conversation.participants.push(aiAgent);
     conversation.lastActivity = new Date();
+    
+    // Update Firebase with new AI agent
+    try {
+      const participantIds = conversation.participants.map(p => p.id);
+      await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), {
+        participants: conversation.participants,
+        participantIds, // Update the flat array for querying
+        lastActivity: Timestamp.fromDate(conversation.lastActivity)
+      });
+      console.log('✅ [SharedConversation] Updated Firebase with new AI agent:', agentId);
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to update Firebase:', error);
+    }
     
     console.log('✅ Added AI agent to conversation:', agentId, conversationId);
   }
@@ -547,12 +609,30 @@ class SharedConversationService {
     } = params;
 
     console.log('🤝 [SharedConversation] Creating conversation from collaboration invitation:', invitationId);
+    console.log('🔍 [SharedConversation] Parameters:', {
+      conversationName,
+      agentName,
+      fromUserId,
+      fromUserName,
+      toUserId,
+      includeHistory
+    });
+
+    // Validate user IDs before proceeding
+    if (!fromUserId || fromUserId.includes(' ') || fromUserId.length < 2) {
+      console.error('❌ [SharedConversation] Invalid fromUserId:', fromUserId);
+      throw new Error(`Invalid fromUserId: ${fromUserId}`);
+    }
+    
+    if (!toUserId || toUserId.includes(' ') || toUserId.length < 2) {
+      console.error('❌ [SharedConversation] Invalid toUserId:', toUserId);
+      throw new Error(`Invalid toUserId: ${toUserId}`);
+    }
 
     // Create the shared conversation with correct parameters
     const conversation = await this.createSharedConversation(
-      fromUserId,
-      fromUserName,
       conversationName,
+      fromUserId,
       [] // initialParticipants - we'll add them separately
     );
 
@@ -575,10 +655,10 @@ class SharedConversationService {
     }
 
     // Add the AI agent as a participant
-    await this.addParticipant(conversationId, `ai-${agentName.toLowerCase().replace(/\s+/g, '-')}`, fromUserId, agentName, 'ai_agent');
+    await this.addAIAgent(conversationId, `ai-${agentName.toLowerCase().replace(/\s+/g, '-')}`, agentName, fromUserId);
 
     // Add the invited user as a participant
-    await this.addParticipant(conversationId, toUserId, fromUserId, 'Invited User', 'human');
+    await this.addParticipant(conversationId, toUserId, fromUserId, 'Invited User');
 
     // Set history visibility if requested
     if (includeHistory) {
@@ -596,7 +676,8 @@ class SharedConversationService {
     console.log('✅ [SharedConversation] Created conversation from invitation:', {
       conversationId,
       participants: createdConversation.participants.length,
-      name: conversationName
+      name: conversationName,
+      participantIds: createdConversation.participants.map(p => p.id)
     });
 
     return createdConversation;

@@ -3608,11 +3608,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 {sharedConversations.length > 0 && (
                   <SharedChatTabs
                     sharedConversations={sharedConversations}
-                    activeConversation={activeSharedConversation}
+                    activeConversationId={activeSharedConversation}
                     onConversationSelect={handleSharedConversationSelect}
                     onConversationClose={handleSharedConversationClose}
                     onPrivacyToggle={handlePrivacyToggle}
-                    isInPrivacyMode={observationState?.isPrivateMode || false}
+                    currentUserId={user?.uid || ''}
                   />
                 )}
 
