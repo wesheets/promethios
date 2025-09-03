@@ -139,6 +139,10 @@ class SharedConversationService {
       }
     };
 
+    // Store in memory cache FIRST so addParticipant can find it
+    this.conversations.set(conversationId, conversation);
+    this.addConversationToUser(creatorId, conversationId);
+
     // Add creator as first participant
     await this.addParticipant(conversationId, creatorId, creatorId);
     
@@ -146,10 +150,6 @@ class SharedConversationService {
     for (const participantId of initialParticipants) {
       await this.addParticipant(conversationId, participantId, creatorId);
     }
-
-    // Store in memory cache
-    this.conversations.set(conversationId, conversation);
-    this.addConversationToUser(creatorId, conversationId);
 
     try {
       // Persist to Firebase
