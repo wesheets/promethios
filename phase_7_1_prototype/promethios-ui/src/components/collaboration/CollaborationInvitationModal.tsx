@@ -128,23 +128,36 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           userAgent = currentAgent;
           console.log('🎯 [CollaborationModal] Using current agent from URL:', userAgent);
         } else {
-          // Fallback: try to load user's chatbots from storage
+          // Fallback: try to load user's chatbots from storage (same as ChatbotProfilesPageEnhanced)
           try {
             if (user?.uid) {
               console.log('🔍 [CollaborationModal] Attempting to load chatbots for user:', user.uid);
+              console.log('🔍 [CollaborationModal] ChatbotStorageService instance:', chatbotService);
+              console.log('🔍 [CollaborationModal] About to call getChatbots method...');
+              
               const chatbotProfiles = await chatbotService.getChatbots(user.uid);
+              
+              console.log('🔍 [CollaborationModal] getChatbots returned:', chatbotProfiles?.length || 0, 'chatbots');
               console.log('🔍 [CollaborationModal] Raw chatbot response:', chatbotProfiles);
+              console.log('🔍 [CollaborationModal] Chatbot data details:', chatbotProfiles);
+              
               userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
-              console.log('🎯 [CollaborationModal] Found', chatbotProfiles?.length || 0, 'chatbots for user');
+              console.log('🎯 [CollaborationModal] Selected agent ID:', userAgent);
               
               // Additional debugging - check if there are any agents in localStorage or other storage
               const localStorageKeys = Object.keys(localStorage).filter(key => 
                 key.includes('chatbot') || key.includes('agent') || key.includes('claude')
               );
               console.log('🔍 [CollaborationModal] LocalStorage keys with agent/chatbot:', localStorageKeys);
+              
+              // Check if the main page has chatbot data in memory
+              if (window && (window as any).chatbotProfiles) {
+                console.log('🔍 [CollaborationModal] Found chatbotProfiles in window:', (window as any).chatbotProfiles);
+              }
             }
           } catch (error) {
             console.warn('⚠️ [CollaborationModal] Could not load user chatbots:', error);
+            console.error('⚠️ [CollaborationModal] Full error details:', error);
           }
         }
         
