@@ -4,6 +4,23 @@
  */
 
 import { HumanParticipantService, HumanParticipant } from './HumanParticipantService';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
+  onSnapshot,
+  arrayUnion,
+  arrayRemove,
+  Timestamp 
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 export interface SharedConversationParticipant {
   id: string;
@@ -76,9 +93,15 @@ class SharedConversationService {
   private conversations: Map<string, SharedConversation> = new Map();
   private userConversations: Map<string, string[]> = new Map(); // userId -> conversationIds
   private invitations: Map<string, ConversationInvitation[]> = new Map(); // userId -> invitations
+  
+  // Firebase collections
+  private readonly CONVERSATIONS_COLLECTION = 'shared_conversations';
+  private readonly USER_CONVERSATIONS_COLLECTION = 'user_shared_conversations';
+  private readonly INVITATIONS_COLLECTION = 'conversation_invitations';
 
   private constructor() {
     this.humanParticipantService = HumanParticipantService.getInstance();
+    console.log('🤝 [SharedConversation] Service initialized with Firebase persistence');
   }
 
   public static getInstance(): SharedConversationService {
@@ -89,12 +112,11 @@ class SharedConversationService {
   }
 
   /**
-   * Create a new shared conversation
+   * Create a new shared conversation (with Firebase persistence)
    */
   async createSharedConversation(
-    creatorId: string,
-    creatorName: string,
     name: string,
+    creatorId: string,
     initialParticipants: string[] = []
   ): Promise<SharedConversation> {
     const conversationId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -105,17 +127,7 @@ class SharedConversationService {
       createdBy: creatorId,
       createdAt: new Date(),
       lastActivity: new Date(),
-      participants: [
-        {
-          id: creatorId,
-          name: creatorName,
-          type: 'human',
-          role: 'creator',
-          joinedAt: new Date(),
-          permissions: ['read', 'write', 'invite', 'manage'],
-          isOnline: true
-        }
-      ],
+      participants: [],
       isPrivateMode: false,
       hasHistory: true,
       unreadCounts: {},
@@ -123,30 +135,86 @@ class SharedConversationService {
         allowParticipantInvites: true,
         allowAIAgents: true,
         allowReceiptSharing: true,
-        maxParticipants: 50
+        maxParticipants: 10
       }
     };
 
+    // Add creator as first participant
+    await this.addParticipant(conversationId, creatorId, creatorId);
+    
     // Add initial participants
     for (const participantId of initialParticipants) {
       await this.addParticipant(conversationId, participantId, creatorId);
     }
 
+    // Store in memory cache
     this.conversations.set(conversationId, conversation);
     this.addConversationToUser(creatorId, conversationId);
+
+    try {
+      // Persist to Firebase
+      const participantIds = conversation.participants.map(p => p.id);
+      const firestoreData = {
+        ...conversation,
+        participantIds, // Flat array for querying
+        createdAt: Timestamp.fromDate(conversation.createdAt),
+        lastActivity: Timestamp.fromDate(conversation.lastActivity)
+      };
+      
+      await setDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), firestoreData);
+      console.log('✅ [SharedConversation] Persisted to Firebase:', conversationId);
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to persist to Firebase:', error);
+      // Continue with in-memory version
+    }
 
     console.log('✅ Created shared conversation:', conversationId);
     return conversation;
   }
 
   /**
-   * Get shared conversations for a user
+   * Get shared conversations for a user (with Firebase persistence)
    */
-  getUserSharedConversations(userId: string): SharedConversation[] {
-    const conversationIds = this.userConversations.get(userId) || [];
-    return conversationIds
-      .map(id => this.conversations.get(id))
-      .filter(conv => conv !== undefined) as SharedConversation[];
+  async getUserSharedConversations(userId: string): Promise<SharedConversation[]> {
+    try {
+      console.log('🔍 [SharedConversation] Loading conversations for user:', userId);
+      
+      // Query conversations where user is a participant
+      const conversationsQuery = query(
+        collection(db, this.CONVERSATIONS_COLLECTION),
+        where('participantIds', 'array-contains', userId),
+        orderBy('lastActivity', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(conversationsQuery);
+      const conversations: SharedConversation[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const conversation: SharedConversation = {
+          ...data,
+          id: doc.id,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          lastActivity: data.lastActivity?.toDate() || new Date(),
+          participants: data.participants || []
+        } as SharedConversation;
+        conversations.push(conversation);
+        
+        // Cache in memory for quick access
+        this.conversations.set(doc.id, conversation);
+      });
+      
+      console.log('🔍 [SharedConversation] Loaded', conversations.length, 'conversations from Firebase');
+      return conversations;
+    } catch (error) {
+      console.error('❌ [SharedConversation] Error loading conversations:', error);
+      
+      // Fallback to in-memory cache
+      const conversationIds = this.userConversations.get(userId) || [];
+      return conversationIds
+        .map(id => this.conversations.get(id))
+        .filter(conv => conv !== undefined) as SharedConversation[];
+    }
   }
 
   /**

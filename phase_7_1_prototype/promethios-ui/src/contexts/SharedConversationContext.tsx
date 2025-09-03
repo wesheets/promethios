@@ -46,7 +46,7 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
       try {
         if (user?.uid) {
           console.log('🌐 [Global Shared Conversations] Loading conversations for user:', user.uid);
-          const conversations = sharedConversationService.getUserSharedConversations(user.uid);
+          const conversations = await sharedConversationService.getUserSharedConversations(user.uid);
           setSharedConversations(conversations);
           console.log('🌐 [Global Shared Conversations] Loaded', conversations.length, 'conversations');
         } else {
@@ -86,7 +86,7 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
     try {
       if (user?.uid) {
         console.log('🔄 [Global Shared Conversations] Refreshing conversations');
-        const conversations = sharedConversationService.getUserSharedConversations(user.uid);
+        const conversations = await sharedConversationService.getUserSharedConversations(user.uid);
         setSharedConversations(conversations);
       }
     } catch (error) {
