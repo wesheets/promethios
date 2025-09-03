@@ -47,26 +47,31 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   onNotificationPanelClose
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { acceptInteraction, declineInteraction } = useUserInteractions();
   const { refreshSharedConversations } = useSharedConversations();
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
   const chatbotService = ChatbotStorageService.getInstance();
-
   console.log('🎯 [CollaborationInvitationModal] Rendering modal:', {
     open,
     invitation: invitation ? {
       id: invitation.id,
       type: invitation.type,
+      fromUserId: invitation.fromUserId,
       fromUserName: invitation.fromUserName,
       metadata: invitation.metadata
-    } : null
+    } : null,
+    user: user ? {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName
+    } : 'undefined',
+    authLoading
   });
 
   if (!invitation) {
-    console.log('🎯 [CollaborationInvitationModal] No invitation provided, not rendering');
     return null;
   }
 
@@ -86,6 +91,27 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
     setError(null);
 
     try {
+      console.log('🔍 [CollaborationModal] Starting invitation acceptance...');
+      
+      // Wait for auth to complete if still loading
+      if (authLoading) {
+        console.log('🔍 [CollaborationModal] Auth still loading, waiting...');
+        setError('Loading user information...');
+        setResponding(false);
+        return;
+      }
+      
+      // Check if user is available
+      if (!user?.uid) {
+        console.error('❌ [CollaborationModal] No user available for invitation acceptance');
+        console.error('❌ [CollaborationModal] Auth state:', { user, authLoading });
+        setError('Unable to identify current user. Please try refreshing the page.');
+        setResponding(false);
+        return;
+      }
+      
+      console.log('✅ [CollaborationModal] User authenticated:', user.uid);
+      
       const success = await acceptInteraction(invitation.id);
       
       if (success) {
