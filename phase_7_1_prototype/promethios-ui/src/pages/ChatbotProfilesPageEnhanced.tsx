@@ -1392,16 +1392,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
    // URL restoration effect - restore state from URL parameters
   const agentParam = useMemo(() => searchParams.get('agent'), [searchParams]);
   const panelParam = useMemo(() => searchParams.get('panel'), [searchParams]);
+  const sharedParam = useMemo(() => searchParams.get('shared'), [searchParams]);
   
   // Use refs for tracking to prevent circular dependencies
   const isRestoringFromURLRef = useRef(false);
-  const lastProcessedParamsRef = useRef({ agent: '', panel: '' });
+  const lastProcessedParamsRef = useRef({ agent: '', panel: '', shared: '' });
   
   // URL restoration with proper circular dependency prevention
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[URL restoration] triggered - RENDER #${renderCountRef.current}`);
     console.log('🔍 [DEBUG] - agentParam:', agentParam);
     console.log('🔍 [DEBUG] - panelParam:', panelParam);
+    console.log('🔍 [DEBUG] - sharedParam:', sharedParam);
     console.log('🔍 [DEBUG] - isRestoringFromURLRef.current:', isRestoringFromURLRef.current);
     console.log('🔍 [DEBUG] - chatbotProfiles.length:', chatbotProfiles.length);
     
@@ -1412,10 +1414,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
     
     // Check if params actually changed to prevent unnecessary processing
-    const currentParams = { agent: agentParam || '', panel: panelParam || '' };
+    const currentParams = { agent: agentParam || '', panel: panelParam || '', shared: sharedParam || '' };
     const lastParams = lastProcessedParamsRef.current;
     
-    if (currentParams.agent === lastParams.agent && currentParams.panel === lastParams.panel) {
+    if (currentParams.agent === lastParams.agent && 
+        currentParams.panel === lastParams.panel && 
+        currentParams.shared === lastParams.shared) {
       console.log('🔍 [DEBUG] - SKIPPING: URL params unchanged');
       return;
     }
@@ -1476,12 +1480,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Update last processed params
     lastProcessedParamsRef.current = currentParams;
     
+    // Handle shared conversation parameter
+    if (sharedParam && sharedConversations.length > 0) {
+      console.log('🔄 [URL Restoration] Processing shared conversation:', sharedParam);
+      const sharedConversation = sharedConversations.find(conv => conv.id === sharedParam);
+      if (sharedConversation) {
+        console.log('✅ [URL Restoration] Found shared conversation, selecting:', sharedConversation.name);
+        handleSharedConversationSelect(sharedParam);
+      } else {
+        console.log('⚠️ [URL Restoration] Shared conversation not found:', sharedParam);
+      }
+    }
+    
     // Reset restoration flag after a brief delay
     setTimeout(() => {
       isRestoringFromURLRef.current = false;
       console.log('🔍 [DEBUG] - URL restoration completed');
     }, 100);
-     }, [agentParam, panelParam, chatbotProfiles]);
+     }, [agentParam, panelParam, sharedParam, chatbotProfiles, sharedConversations, handleSharedConversationSelect]);
 
   // Load human participants for the current conversation
   useEffect(() => {
