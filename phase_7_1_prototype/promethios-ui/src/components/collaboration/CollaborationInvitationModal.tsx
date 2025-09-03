@@ -190,8 +190,40 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
               console.log('🔍 [CollaborationModal] Raw chatbot response:', chatbotProfiles);
               console.log('🔍 [CollaborationModal] Chatbot data details:', chatbotProfiles);
               
-              userAgent = chatbotProfiles && chatbotProfiles.length > 0 ? chatbotProfiles[0].id : null;
-              console.log('🎯 [CollaborationModal] Selected agent ID:', userAgent);
+              if (chatbotProfiles && chatbotProfiles.length > 0) {
+                const firstChatbot = chatbotProfiles[0];
+                console.log('🔍 [CollaborationModal] First chatbot object:', firstChatbot);
+                console.log('🔍 [CollaborationModal] First chatbot keys:', Object.keys(firstChatbot));
+                console.log('🔍 [CollaborationModal] Checking ID properties:', {
+                  id: firstChatbot.id,
+                  key: firstChatbot.key,
+                  'identity.id': firstChatbot.identity?.id,
+                  'identity.key': firstChatbot.identity?.key,
+                  name: firstChatbot.name,
+                  'identity.name': firstChatbot.identity?.name
+                });
+                
+                // Try multiple possible ID properties
+                userAgent = firstChatbot.id || 
+                           firstChatbot.key || 
+                           firstChatbot.identity?.id || 
+                           firstChatbot.identity?.key ||
+                           firstChatbot.name ||
+                           firstChatbot.identity?.name;
+                           
+                console.log('🎯 [CollaborationModal] Selected agent ID:', userAgent);
+                console.log('🎯 [CollaborationModal] Agent ID source:', 
+                  firstChatbot.id ? 'id' :
+                  firstChatbot.key ? 'key' :
+                  firstChatbot.identity?.id ? 'identity.id' :
+                  firstChatbot.identity?.key ? 'identity.key' :
+                  firstChatbot.name ? 'name' :
+                  firstChatbot.identity?.name ? 'identity.name' : 'none found'
+                );
+              } else {
+                userAgent = null;
+                console.log('🎯 [CollaborationModal] No chatbots found in response');
+              }
               
               // Additional debugging - check if there are any agents in localStorage or other storage
               const localStorageKeys = Object.keys(localStorage).filter(key => 
