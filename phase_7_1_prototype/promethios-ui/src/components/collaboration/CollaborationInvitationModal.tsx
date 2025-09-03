@@ -137,17 +137,16 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           }
         }
         
-        let commandCenterUrl;
-        if (userAgent) {
-          // User has agents - go to their command center with shared conversation
-          commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sharedConversation.id}`;
-          console.log('🎯 [CollaborationModal] User has agent:', userAgent, '- navigating to command center');
-        } else {
-          // User has no agents - go to basic command center with shared conversation
-          commandCenterUrl = `/ui/chat/chatbots?shared=${sharedConversation.id}`;
-          console.log('🎯 [CollaborationModal] User has no agents - navigating to basic command center');
+        if (!userAgent) {
+          // No agent found - show error instead of trying to navigate
+          console.error('❌ [CollaborationModal] No agent found - cannot navigate to command center');
+          setError('Unable to find your AI agent. Please make sure you have an agent configured.');
+          return;
         }
         
+        // Navigate to command center with agent and shared conversation
+        const commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sharedConversation.id}`;
+        console.log('🎯 [CollaborationModal] Navigating to command center with agent:', userAgent);
         console.log('🚀 [CollaborationModal] Attempting navigation to:', commandCenterUrl);
         
         try {
