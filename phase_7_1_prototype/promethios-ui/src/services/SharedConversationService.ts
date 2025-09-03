@@ -711,6 +711,32 @@ class SharedConversationService {
   }
 
   /**
+   * Get the host's chat session ID from a shared conversation ID
+   */
+  async getHostChatSessionId(sharedConversationId: string): Promise<string | null> {
+    try {
+      console.log('🔍 [SharedConversation] Getting host chat session ID for:', sharedConversationId);
+      
+      // Load the shared conversation
+      const sharedConversation = await this.getSharedConversation(sharedConversationId);
+      
+      if (!sharedConversation) {
+        console.warn('⚠️ [SharedConversation] Shared conversation not found:', sharedConversationId);
+        return null;
+      }
+
+      // Return the host's chat session ID
+      const hostChatSessionId = sharedConversation.hostChatSessionId || sharedConversation.conversationId;
+      console.log('✅ [SharedConversation] Found host chat session ID:', hostChatSessionId);
+      
+      return hostChatSessionId;
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to get host chat session ID:', error);
+      return null;
+    }
+  }
+
+  /**
    * Add recipient to the actual chat session so they can participate
    */
   async addRecipientToChatSession(

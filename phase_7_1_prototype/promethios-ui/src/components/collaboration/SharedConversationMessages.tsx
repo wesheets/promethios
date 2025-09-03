@@ -17,6 +17,7 @@ import {
 } from '@mui/icons-material';
 import { chatHistoryService, ChatSession } from '../../services/ChatHistoryService';
 import { ChatMessage } from '../../services/ChatStorageService';
+import SharedConversationService from '../../services/SharedConversationService';
 import MarkdownRenderer from '../MarkdownRenderer';
 import AttachmentRenderer from '../AttachmentRenderer';
 
@@ -38,6 +39,7 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sharedConversationService = SharedConversationService.getInstance();
 
   // Load chat session and messages
   useEffect(() => {
@@ -46,18 +48,29 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
         setLoading(true);
         setError(null);
         
-        console.log('🔍 [SharedConversationMessages] Loading chat session:', conversationId);
+        console.log('🔍 [SharedConversationMessages] Loading shared conversation:', conversationId);
         
-        // Load the chat session using the conversation ID
-        const session = await chatHistoryService.getChatSessionById(conversationId);
+        // First, get the host's chat session ID from the shared conversation ID
+        const hostChatSessionId = await sharedConversationService.getHostChatSessionId(conversationId);
+        
+        if (!hostChatSessionId) {
+          console.warn('⚠️ [SharedConversationMessages] Could not find host chat session ID for:', conversationId);
+          setError('Could not find the original conversation');
+          return;
+        }
+
+        console.log('🔍 [SharedConversationMessages] Loading host chat session:', hostChatSessionId);
+        
+        // Load the host's chat session
+        const session = await chatHistoryService.getChatSessionById(hostChatSessionId);
         
         if (session) {
-          console.log('✅ [SharedConversationMessages] Loaded chat session:', session.name);
+          console.log('✅ [SharedConversationMessages] Loaded host chat session:', session.name);
           setChatSession(session);
           setMessages(session.messages || []);
         } else {
-          console.warn('⚠️ [SharedConversationMessages] Chat session not found:', conversationId);
-          setError('Chat session not found');
+          console.warn('⚠️ [SharedConversationMessages] Host chat session not found:', hostChatSessionId);
+          setError('Original conversation not found');
         }
       } catch (err) {
         console.error('❌ [SharedConversationMessages] Error loading chat session:', err);
@@ -70,7 +83,7 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
     if (conversationId) {
       loadChatSession();
     }
-  }, [conversationId]);
+  }, [conversationId, sharedConversationService]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
