@@ -659,12 +659,6 @@ class UserInteractionRegistry {
       throw error;
     }
   }
-}
-
-export const userInteractionRegistry = UserInteractionRegistry.getInstance();
-export { UserInteractionRegistry };
-export default userInteractionRegistry;
-
 
   /**
    * Get sent interactions for a user (interactions they initiated)
@@ -693,4 +687,9 @@ export default userInteractionRegistry;
       return [];
     }
   }
+}
+
+export const userInteractionRegistry = UserInteractionRegistry.getInstance();
+export { UserInteractionRegistry };
+export default userInteractionRegistry;
 
