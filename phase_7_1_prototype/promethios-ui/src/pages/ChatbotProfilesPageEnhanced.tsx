@@ -1404,8 +1404,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🔍 [DEBUG] - agentParam:', agentParam);
     console.log('🔍 [DEBUG] - panelParam:', panelParam);
     console.log('🔍 [DEBUG] - sharedParam:', sharedParam);
+    console.log('🔍 [DEBUG] - window.location.href:', window.location.href);
+    console.log('🔍 [DEBUG] - window.location.search:', window.location.search);
+    console.log('🔍 [DEBUG] - searchParams.get("shared"):', searchParams.get('shared'));
+    console.log('🔍 [DEBUG] - searchParams toString():', searchParams.toString());
     console.log('🔍 [DEBUG] - isRestoringFromURLRef.current:', isRestoringFromURLRef.current);
     console.log('🔍 [DEBUG] - chatbotProfiles.length:', chatbotProfiles.length);
+    console.log('🔍 [DEBUG] - sharedConversations.length:', sharedConversations.length);
     
     // Prevent circular updates using ref (doesn't cause re-renders)
     if (isRestoringFromURLRef.current) {
