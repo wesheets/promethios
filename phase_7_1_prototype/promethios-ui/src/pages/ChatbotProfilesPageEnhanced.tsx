@@ -2230,11 +2230,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   const handleOpenChatInvitation = async () => {
+    console.log('🔍 [PersonAdd] handleOpenChatInvitation called');
+    console.log('🔍 [PersonAdd] selectedChatbot:', selectedChatbot);
+    
     if (!selectedChatbot) return;
 
     const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+    console.log('🔍 [PersonAdd] currentBotState:', currentBotState);
     
     if (currentBotState?.currentChatSession) {
+      console.log('🔍 [PersonAdd] Using existing chat session:', currentBotState.currentChatSession.id);
       // Existing chat session - use it for invitation
       setActiveChatInvitationSession({
         id: currentBotState.currentChatSession.id,
@@ -2242,6 +2247,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         messageCount: currentBotState.messages.length
       });
     } else {
+      console.log('🔍 [PersonAdd] No active chat session, creating new one...');
       // No active chat session - create a new one
       try {
         const newChatSession = await chatHistoryService.createChatSession(
@@ -2250,6 +2256,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           `Chat with ${selectedChatbot.identity?.name}`,
           selectedChatbot.identity?.name || 'AI Assistant'
         );
+
+        console.log('🔍 [PersonAdd] Created new chat session:', newChatSession.id);
 
         // Update bot state with new chat session
         const newBotState = {
@@ -2278,6 +2286,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
     }
 
+    console.log('🔍 [PersonAdd] Opening ChatInvitationModal...');
     setShowChatInvitationModal(true);
   };
 

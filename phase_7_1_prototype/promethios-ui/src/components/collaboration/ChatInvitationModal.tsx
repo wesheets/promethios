@@ -99,8 +99,12 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
 
   // Load team members when modal opens
   useEffect(() => {
+    console.log('🔍 [ChatInvitation] useEffect triggered - open:', open, 'user?.uid:', user?.uid);
     if (open && user?.uid) {
+      console.log('🔍 [ChatInvitation] Modal opened, calling loadTeamMembers...');
       loadTeamMembers();
+    } else {
+      console.log('🔍 [ChatInvitation] Modal not opened or no user - open:', open, 'user?.uid:', user?.uid);
     }
   }, [open, user?.uid]);
 
