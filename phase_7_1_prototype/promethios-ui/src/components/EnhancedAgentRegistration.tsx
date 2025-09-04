@@ -249,6 +249,21 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
             }
           };
           break;
+        case 'Custom GPT':
+          discoveredData = {
+            name: agentName || 'Custom GPT (Ready for Configuration)',
+            description: 'OpenAI API key validated. Ready to import your Custom GPT configuration.',
+            endpoint: 'https://api.openai.com/v1/chat/completions',
+            capabilities: [], // Will be configured in custom step
+            models: ['gpt-4o'], // Auto-assigned
+            contextLength: 128000,
+            supportsFunctions: true,
+            requiresCustomGPTConfig: true, // Flag to show custom config step
+            pricing: {
+              'gpt-4o': { input: 0.0025, output: 0.01 }
+            }
+          };
+          break;
         default:
           discoveredData = {
             name: agentName || 'Custom Agent',
@@ -409,6 +424,24 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
             Auto-discovery is not available for custom providers.
           </Typography>
         </Alert>
+      ) : provider === 'Custom GPT' ? (
+        <Alert 
+          severity="info" 
+          sx={{ 
+            backgroundColor: '#1e3a8a', 
+            color: 'white',
+            mb: 3,
+            '& .MuiAlert-icon': { color: 'white' },
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            🤖 Custom GPT Import
+          </Typography>
+          <Typography variant="body2">
+            Enter your OpenAI API key to validate access, then you'll be guided through importing 
+            your Custom GPT configuration. This creates an API-wrapped version with governance controls.
+          </Typography>
+        </Alert>
       ) : (
         <Alert 
           severity="info" 
@@ -533,6 +566,7 @@ const EnhancedAgentRegistration: React.FC<EnhancedAgentRegistrationProps> = ({
               <MenuItem value="Perplexity">Perplexity</MenuItem>
               <MenuItem value="Together">Together AI</MenuItem>
               <MenuItem value="Replicate">Replicate</MenuItem>
+              <MenuItem value="Custom GPT">Custom GPT</MenuItem>
               <MenuItem value="Custom">Custom/Other</MenuItem>
             </Select>
           </FormControl>

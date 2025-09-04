@@ -171,9 +171,10 @@ import { conversationalReceiptSearchService } from '../services/ConversationalRe
 import AgentManageModal from '../components/AgentManageModal';
 import DebugPanel from '../components/DebugPanel';
 import TeamPanel from '../components/team/TeamPanel';
+import CustomGPTTab from '../components/command-center/CustomGPTTab';
 
 // Right panel types
-type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | null;
+type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | 'custom_gpt' | null;
 
 // Multi-chat context types
 type ChatContextType = 'ai_agent' | 'human_chat' | 'team_channel';
@@ -803,6 +804,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
     setAutonomousMode(false);
     setAutonomousStarsActive(false);
+  };
+
+  // Helper function to check if agent is a Custom GPT
+  const isCustomGPT = (chatbot: ChatbotProfile): boolean => {
+    if (!chatbot) return false;
+    
+    // Check if it's a wrapped Custom GPT based on metadata
+    const metadata = chatbot.customGPTMetadata || chatbot.metadata;
+    if (metadata?.type === 'custom_gpt_wrapped' || metadata?.importSource === 'manual_configuration') {
+      return true;
+    }
+    
+    // Check if it's using OpenAI with custom GPT indicators
+    const apiDetails = chatbot.apiDetails;
+    if (apiDetails?.provider === 'OpenAI' && apiDetails?.selectedModel === 'gpt-4o') {
+      // Check for Custom GPT specific metadata
+      if (metadata?.originalGPTUrl || metadata?.originalGPTId) {
+        return true;
+      }
+      
+      // Check for Custom GPT naming patterns
+      if (chatbot.identity?.name?.includes('Custom GPT') || 
+          chatbot.identity?.description?.includes('Imported from Custom GPT')) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   // Helper function to update chat history refresh trigger
@@ -5259,6 +5288,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'sandbox', label: 'SANDBOX' },
                     { key: 'live_agent', label: 'LIVE AGENT', badge: autonomousMode ? 1 : 0, isLiveAgent: true },
                     { key: 'governance', label: 'GOVERNANCE' },
+                    ...(selectedChatbot && isCustomGPT(selectedChatbot) ? [{ key: 'custom_gpt', label: 'CUSTOM GPT', badge: 0 }] : []),
                     { key: 'debug', label: 'DEBUG' }
                   ].map((tab) => (
                     <Badge
@@ -6368,6 +6398,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     error: '#ef4444',
                     hover: '#334155'
                   }} />
+                )}
+
+                {rightPanelType === 'custom_gpt' && selectedChatbot && (
+                  <CustomGPTTab 
+                    agentId={selectedChatbot.identity.id}
+                    onClose={() => setRightPanelType(null)}
+                  />
                 )}
 
                 {rightPanelType === 'rag_policy' && (

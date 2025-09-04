@@ -37,7 +37,10 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import EnhancedAgentRegistration from '../../../components/EnhancedAgentRegistration';
+import CustomGPTConfigurationStep from '../../../components/collaboration/CustomGPTConfigurationStep';
 import ChatbotStorageService from '../../../services/ChatbotStorageService';
+import { CustomGPTService, CustomGPTConfig } from '../../../services/CustomGPTService';
+import { customGPTStorage } from '../../../services/CustomGPTStorageService';
 import { useAuth } from '../../../context/AuthContext';
 
 const steps = [
@@ -80,6 +83,7 @@ const ChatbotWrappingWizard: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { currentUser } = useAuth();
+  const customGPTService = new CustomGPTService();
   
   const [activeStep, setActiveStep] = useState(0);
   const [chatbotData, setChatbotData] = useState<any>({
@@ -87,6 +91,8 @@ const ChatbotWrappingWizard: React.FC = () => {
     useCase: 'customer_support',
     deploymentChannels: ['web']
   });
+  const [showCustomGPTConfig, setShowCustomGPTConfig] = useState(false);
+  const [customGPTConfig, setCustomGPTConfig] = useState<CustomGPTConfig | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -189,29 +195,93 @@ const ChatbotWrappingWizard: React.FC = () => {
       const chatbotId = `chatbot-${Date.now()}`;
       const chatbotName = chatbotData.identity?.name || chatbotData.agentName || 'Governed Chatbot';
       
-      const chatbotProfile = {
-        // Base agent structure for compatibility
-        identity: {
-          id: chatbotId,
-          name: chatbotName,
-          version: '1.0.0',
-          description: chatbotData.identity?.description || chatbotData.description || 'Governed AI Chatbot',
-          creationDate: new Date(),
-          lastModifiedDate: new Date(),
-        },
-        agentName: chatbotName,
-        apiDetails: {
-          endpoint: chatbotData.apiEndpoint || chatbotData.endpoint || 'https://api.openai.com/v1',
-          key: chatbotData.apiKey || chatbotData.key || '',
-          provider: chatbotData.provider || 'OpenAI',
-          selectedModel: chatbotData.selectedModel || chatbotData.model || 'model-not-specified',
-          selectedCapabilities: chatbotData.capabilities || [],
-          selectedContextLength: chatbotData.contextLength || 4096,
-          discoveredInfo: chatbotData.discoveredInfo || null,
-        },
-        governancePolicy,
-        isWrapped: true,
-        isDeployed: false,
+      // Handle Custom GPT creation
+      if (chatbotData.provider === 'Custom GPT' && customGPTConfig) {
+        console.log('🤖 Creating Custom GPT agent...');
+        
+        // Create governed agent using CustomGPTService
+        const governedAgent = await customGPTService.createGovernedAgent(
+          customGPTConfig,
+          chatbotData.apiKey,
+          {
+            trustLevel: chatbotData.trustThreshold >= 90 ? 'high' : chatbotData.trustThreshold >= 70 ? 'medium' : 'low',
+            complianceLevel: chatbotData.complianceFramework || 'general',
+            rateLimiting: {
+              requestsPerMinute: chatbotData.maxRequestsPerMinute || 100,
+              tokensPerMinute: chatbotData.maxTokensPerMinute || 10000,
+              dailyLimit: chatbotData.dailyLimit || 100000
+            },
+            auditLogging: chatbotData.enableAuditLogging !== false,
+            contentFiltering: chatbotData.enableContentFiltering || false
+          }
+        );
+        
+        // Store Custom GPT profile with comprehensive data preservation
+        const customGPTProfile = await customGPTStorage.storeCustomGPTProfile(
+          currentUser.uid,
+          customGPTConfig,
+          governedAgent,
+          customGPTConfig.knowledgeFiles
+        );
+        
+        console.log('✅ Custom GPT agent created successfully:', customGPTProfile.identity.id);
+        
+        // Store as regular chatbot profile for compatibility
+        const chatbotProfile = {
+          ...customGPTProfile,
+          // Ensure compatibility with existing chatbot system
+          chatbotConfig: {
+            personality: chatbotData.personality || 'professional',
+            useCase: chatbotData.useCase || 'general',
+            brandSettings: {
+              name: customGPTConfig.name,
+              colors: {
+                primary: customGPTProfile.customGPTConfig.commandCenter.iconColor,
+                secondary: '#374151',
+                background: '#1a202c'
+              }
+            },
+            deploymentChannels: chatbotData.deploymentChannels || ['web'],
+            knowledgeBases: customGPTProfile.customGPTConfig.preservedContent.knowledgeBase.files.map(f => f.id),
+            automationRules: [],
+            responseTemplates: []
+          },
+          chatbotMetadata: {
+            parentAgentId: governedAgent.id,
+            chatbotType: 'byok',
+            createdVia: 'agent_conversion',
+            isActive: true,
+            lastDeployment: new Date()
+          }
+        };
+        
+        await chatbotService.createChatbot(currentUser.uid, chatbotProfile);
+        
+      } else {
+        // Regular chatbot creation (existing logic)
+        const chatbotProfile = {
+          // Base agent structure for compatibility
+          identity: {
+            id: chatbotId,
+            name: chatbotName,
+            version: '1.0.0',
+            description: chatbotData.identity?.description || chatbotData.description || 'Governed AI Chatbot',
+            creationDate: new Date(),
+            lastModifiedDate: new Date(),
+          },
+          agentName: chatbotName,
+          apiDetails: {
+            endpoint: chatbotData.apiEndpoint || chatbotData.endpoint || 'https://api.openai.com/v1',
+            key: chatbotData.apiKey || chatbotData.key || '',
+            provider: chatbotData.provider || 'OpenAI',
+            selectedModel: chatbotData.selectedModel || chatbotData.model || 'model-not-specified',
+            selectedCapabilities: chatbotData.capabilities || [],
+            selectedContextLength: chatbotData.contextLength || 4096,
+            discoveredInfo: chatbotData.discoveredInfo || null,
+          },
+          governancePolicy,
+          isWrapped: true,
+          isDeployed: false,
         healthStatus: 'healthy' as const,
         trustLevel: governancePolicy.trustThreshold >= 90 ? 'high' : 
                    (governancePolicy.trustThreshold >= 75 ? 'medium' : 'low'),
@@ -245,12 +315,13 @@ const ChatbotWrappingWizard: React.FC = () => {
           creationMethod: 'chatbot_wrapping_wizard',
           governanceId: `G-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`
         }
-      };
+        };
 
-      console.log('Creating governed chatbot:', chatbotProfile);
+        console.log('Creating governed chatbot:', chatbotProfile);
 
-      // Save the chatbot using ChatbotStorageService (reuse existing instance)
-      await chatbotService.createChatbot(currentUser.uid, chatbotProfile);
+        // Save the chatbot using ChatbotStorageService (reuse existing instance)
+        await chatbotService.createChatbot(currentUser.uid, chatbotProfile);
+      }
 
       console.log('🎉 Governed chatbot successfully created');
       setShowSuccessDialog(true);
@@ -277,9 +348,44 @@ const ChatbotWrappingWizard: React.FC = () => {
               onDataChange={(data) => {
                 console.log('Chatbot data changed:', data);
                 setChatbotData(data);
+                
+                // Show Custom GPT configuration if Custom GPT provider is selected
+                if (data.provider === 'Custom GPT' && data.apiKey) {
+                  setShowCustomGPTConfig(true);
+                } else {
+                  setShowCustomGPTConfig(false);
+                  setCustomGPTConfig(null);
+                }
               }}
               isDialog={false}
             />
+            
+            {/* Custom GPT Configuration Step */}
+            {showCustomGPTConfig && (
+              <Box sx={{ mt: 4 }}>
+                <CustomGPTConfigurationStep
+                  config={customGPTConfig || {
+                    url: '',
+                    name: '',
+                    instructions: '',
+                    capabilities: [],
+                    knowledgeFiles: [],
+                    actions: []
+                  }}
+                  setConfig={(config) => {
+                    setCustomGPTConfig(config);
+                    setChatbotData({
+                      ...chatbotData,
+                      customGPTConfig: config,
+                      agentName: config.name,
+                      description: `Governed Custom GPT: ${config.name}`,
+                      instructions: config.instructions,
+                      capabilities: config.capabilities
+                    });
+                  }}
+                />
+              </Box>
+            )}
           </Box>
         );
       case 1:
