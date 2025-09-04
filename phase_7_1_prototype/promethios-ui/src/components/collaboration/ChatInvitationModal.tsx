@@ -98,6 +98,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
   const [tabValue, setTabValue] = useState(0);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<TeamMember[]>([]);
   const [emailInvites, setEmailInvites] = useState<string[]>(['']);
+  const [emailAddress, setEmailAddress] = useState('');
   const [personalMessage, setPersonalMessage] = useState('');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -178,7 +179,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
   };
 
   const handleSendTeamInvitations = async () => {
-    if (selectedMembers.length === 0) {
+    if (selectedTeamMembers.length === 0) {
       setError('Please select at least one team member to invite');
       return;
     }
@@ -192,14 +193,11 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
     setError(null);
 
     try {
-      const invitationPromises = selectedMembers.map(async (memberId) => {
-        const member = teamMembers.find(m => m.id === memberId);
-        if (!member) return null;
-
+      const invitationPromises = selectedTeamMembers.map(async (member) => {
         return await chatInvitationService.createChatInvitation({
           fromUserId: user.uid,
           fromUserName: user.displayName || user.email || 'Unknown User',
-          toUserId: memberId,
+          toUserId: member.id,
           toUserName: member.name,
           toEmail: member.email,
           chatSessionId: chatSession.id,
@@ -394,7 +392,14 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
                       <FormControlLabel
                         control={
                           <Checkbox
-                            checked={selectedMembers.includes(member.id)}
+                            checked={selectedTeamMembers.some(selected => selected.id === member.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTeamMembers(prev => [...prev, member]);
+                              } else {
+                                setSelectedTeamMembers(prev => prev.filter(selected => selected.id !== member.id));
+                              }
+                            }}
                             sx={{ color: '#3b82f6' }}
                           />
                         }
@@ -513,7 +518,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
         <Button
           onClick={tabValue === 0 ? handleSendTeamInvitations : handleSendEmailInvitation}
           variant="contained"
-          disabled={loading || (tabValue === 0 ? selectedMembers.length === 0 : !emailAddress.trim())}
+          disabled={loading || (tabValue === 0 ? selectedTeamMembers.length === 0 : !emailAddress.trim())}
           sx={{ 
             bgcolor: '#3b82f6', 
             '&:hover': { bgcolor: '#2563eb' },
@@ -523,7 +528,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
           {loading ? (
             <CircularProgress size={20} sx={{ color: 'white' }} />
           ) : (
-            `Send Invitation${tabValue === 0 && selectedMembers.length > 1 ? 's' : ''}`
+            `Send Invitation${tabValue === 0 && selectedTeamMembers.length > 1 ? 's' : ''}`
           )}
         </Button>
       </DialogActions>
