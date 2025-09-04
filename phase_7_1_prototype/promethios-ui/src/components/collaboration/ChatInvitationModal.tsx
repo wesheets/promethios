@@ -114,6 +114,9 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
         console.log('🔍 [ChatInvitation] Initializing HumanChatService with user:', user.uid);
         await humanChatService.initialize(user.uid);
         console.log('✅ [ChatInvitation] HumanChatService initialized');
+        
+        // Add a small delay to ensure connections are fully loaded
+        await new Promise(resolve => setTimeout(resolve, 500));
       } else {
         console.log('❌ [ChatInvitation] No user available for initialization');
         setError('User not authenticated');
@@ -121,14 +124,23 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
       }
       
       console.log('🔍 [ChatInvitation] Getting team members from service...');
-      const members = humanChatService.getTeamMembers();
+      let members = humanChatService.getTeamMembers();
       console.log('🔍 [ChatInvitation] Retrieved team members:', members);
       console.log('🔍 [ChatInvitation] Team members count:', members.length);
+      
+      // If no members found, try reinitializing once more
+      if (members.length === 0) {
+        console.log('⚠️ [ChatInvitation] No team members found, trying to reinitialize...');
+        await humanChatService.initialize(user!.uid);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        members = humanChatService.getTeamMembers();
+        console.log('🔍 [ChatInvitation] After reinitialize - team members count:', members.length);
+      }
       
       setTeamMembers(members);
       
       if (members.length === 0) {
-        console.log('⚠️ [ChatInvitation] No team members found');
+        console.log('⚠️ [ChatInvitation] Still no team members found after retry');
       } else {
         console.log('✅ [ChatInvitation] Successfully loaded', members.length, 'team members');
       }
