@@ -18,6 +18,7 @@ import SmartSuggestionService, { AgentSuggestion } from '../services/SmartSugges
 import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestionIndicator';
 // Shared conversation imports
 import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
+import CompactSharedChatTabs from '../components/collaboration/CompactSharedChatTabs';
 import SharedConversationService from '../services/SharedConversationService';
 import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
 import ChatInvitationModal from '../components/collaboration/ChatInvitationModal';
@@ -3823,17 +3824,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             <Box sx={{ display: 'flex', height: '100%' }}>
               {/* Left Side - Chat Interface */}
               <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}>
-                {/* Shared Conversation Tabs */}
-                {sharedConversations.length > 0 && (
-                  <SharedChatTabs
-                    sharedConversations={sharedConversations}
-                    activeConversationId={activeSharedConversation}
-                    onConversationSelect={handleSharedConversationSelect}
-                    onConversationClose={handleSharedConversationClose}
-                    onPrivacyToggle={handlePrivacyToggle}
-                    currentUserId={user?.uid || ''}
-                  />
-                )}
 
               {/* AI Observation Privacy Controls - Integrated into command center */}
               {activeSharedConversation && (
@@ -3946,6 +3936,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       )}
                     </Box>
                   ))}
+                  
+                  {/* Compact Shared Chat Tabs - Between Claude Assistant and Group Icon */}
+                  {sharedConversations.length > 0 && (
+                    <Box sx={{ 
+                      flex: '0 0 auto', 
+                      maxWidth: 400, // Fixed width to prevent pushing Group icon
+                      overflow: 'hidden',
+                      ml: 2 // Margin from chat context tabs
+                    }}>
+                      <CompactSharedChatTabs
+                        sharedConversations={sharedConversations}
+                        activeConversationId={activeSharedConversation}
+                        onConversationSelect={handleSharedConversationSelect}
+                        onConversationClose={handleSharedConversationClose}
+                        onPrivacyToggle={handlePrivacyToggle}
+                        currentUserId={user?.uid || ''}
+                        maxVisibleTabs={2} // Fewer tabs in this compact space
+                      />
+                    </Box>
+                  )}
                   
                   {/* Add Contact Button */}
                   <IconButton
