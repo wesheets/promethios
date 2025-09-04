@@ -85,12 +85,16 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
   agentId,
   agentName
 }) => {
+  console.log('🔍 [ChatInvitation] Component render - open:', open, 'chatSession:', chatSession);
+  
   const { user } = useAuth();
+  console.log('🔍 [ChatInvitation] Component render - user:', user?.uid);
+  
   const [tabValue, setTabValue] = useState(0);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [emailAddress, setEmailAddress] = useState('');
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<TeamMember[]>([]);
+  const [emailInvites, setEmailInvites] = useState<string[]>(['']);
   const [personalMessage, setPersonalMessage] = useState('');
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
