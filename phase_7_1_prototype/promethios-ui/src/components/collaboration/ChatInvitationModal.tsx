@@ -50,6 +50,7 @@ interface ChatInvitationModalProps {
   } | null;
   agentId?: string;
   agentName?: string;
+  user?: any; // Firebase user object
 }
 
 interface TabPanelProps {
@@ -83,12 +84,16 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
   onClose,
   chatSession,
   agentId,
-  agentName
+  agentName,
+  user
 }) => {
   console.log('🔍 [ChatInvitation] Component render - open:', open, 'chatSession:', chatSession);
+  console.log('🔍 [ChatInvitation] Component render - user from prop:', user?.uid);
   
-  const { user } = useAuth();
-  console.log('🔍 [ChatInvitation] Component render - user:', user?.uid);
+  // Fallback to useAuth if user prop is not provided
+  const { user: authUser } = useAuth();
+  const effectiveUser = user || authUser;
+  console.log('🔍 [ChatInvitation] Component render - effective user:', effectiveUser?.uid);
   
   const [tabValue, setTabValue] = useState(0);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<TeamMember[]>([]);
@@ -103,24 +108,24 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
 
   // Load team members when modal opens
   useEffect(() => {
-    console.log('🔍 [ChatInvitation] useEffect triggered - open:', open, 'user?.uid:', user?.uid);
-    if (open && user?.uid) {
+    console.log('🔍 [ChatInvitation] useEffect triggered - open:', open, 'effectiveUser?.uid:', effectiveUser?.uid);
+    if (open && effectiveUser?.uid) {
       console.log('🔍 [ChatInvitation] Modal opened, calling loadTeamMembers...');
       loadTeamMembers();
     } else {
-      console.log('🔍 [ChatInvitation] Modal not opened or no user - open:', open, 'user?.uid:', user?.uid);
+      console.log('🔍 [ChatInvitation] Modal not opened or no user - open:', open, 'effectiveUser?.uid:', effectiveUser?.uid);
     }
-  }, [open, user?.uid]);
+  }, [open, effectiveUser?.uid]);
 
   const loadTeamMembers = async () => {
     try {
       console.log('🔍 [ChatInvitation] Starting to load team members...');
-      console.log('🔍 [ChatInvitation] Current user:', user?.uid);
+      console.log('🔍 [ChatInvitation] Current effectiveUser:', effectiveUser?.uid);
       
       // Initialize the service with current user if not already initialized
-      if (user?.uid) {
-        console.log('🔍 [ChatInvitation] Initializing HumanChatService with user:', user.uid);
-        await humanChatService.initialize(user.uid);
+      if (effectiveUser?.uid) {
+        console.log('🔍 [ChatInvitation] Initializing HumanChatService with user:', effectiveUser.uid);
+        await humanChatService.initialize(effectiveUser.uid);
         console.log('✅ [ChatInvitation] HumanChatService initialized');
         
         // Add a small delay to ensure connections are fully loaded
@@ -139,7 +144,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
       // If no members found, try reinitializing once more
       if (members.length === 0) {
         console.log('⚠️ [ChatInvitation] No team members found, trying to reinitialize...');
-        await humanChatService.initialize(user!.uid);
+        await humanChatService.initialize(effectiveUser!.uid);
         await new Promise(resolve => setTimeout(resolve, 1000));
         members = humanChatService.getTeamMembers();
         console.log('🔍 [ChatInvitation] After reinitialize - team members count:', members.length);

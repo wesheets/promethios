@@ -7467,6 +7467,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         chatSession={activeChatInvitationSession}
         agentId={selectedChatbot?.id}
         agentName={selectedChatbot?.identity?.name || 'AI Assistant'}
+        user={user}
       />
 
       {/* Agent Permission Request Popup */}
