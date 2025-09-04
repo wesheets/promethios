@@ -38,7 +38,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import HumanChatService, { TeamMember } from '../../services/HumanChatService';
-import ChatInvitationService from '../../services/ChatInvitationService';
+import chatInvitationService from '../../services/ChatInvitationService';
 
 interface ChatInvitationModalProps {
   open: boolean;
@@ -96,7 +96,6 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
   const [success, setSuccess] = useState<string | null>(null);
 
   const humanChatService = HumanChatService.getInstance();
-  const chatInvitationService = ChatInvitationService.getInstance();
 
   // Load team members when modal opens
   useEffect(() => {
