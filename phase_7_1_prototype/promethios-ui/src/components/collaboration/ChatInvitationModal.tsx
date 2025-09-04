@@ -106,7 +106,12 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
 
   const loadTeamMembers = async () => {
     try {
-      const members = await humanChatService.getTeamMembers(user!.uid);
+      // Initialize the service with current user if not already initialized
+      if (user?.uid) {
+        await humanChatService.initialize(user.uid);
+      }
+      
+      const members = humanChatService.getTeamMembers();
       setTeamMembers(members);
     } catch (error) {
       console.error('❌ [ChatInvitation] Error loading team members:', error);
