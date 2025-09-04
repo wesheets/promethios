@@ -397,6 +397,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Human participants state
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
   const [showChatInvitationModal, setShowChatInvitationModal] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [chatInvitationContext, setChatInvitationContext] = useState<{
+    chatSessionId: string;
+    chatName: string;
+    agentId: string;
+    agentName: string;
+  } | null>(null);
   const [activeChatInvitationSession, setActiveChatInvitationSession] = useState<{
     id: string;
     name: string;
@@ -7235,7 +7242,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     email: inviteEmail
                   });
                   
-                  await chatInvitationService.createInvitation({
+                  await aiCollaborationInvitationService.createInvitation({
                     fromUserId: user?.uid || '',
                     fromUserName: user?.displayName || user?.email || 'User',
                     toEmail: inviteEmail,
