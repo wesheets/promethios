@@ -20,6 +20,7 @@ import {
   Badge,
   Tooltip,
   LinearProgress,
+  Collapse,
 } from '@mui/material';
 import {
   ThumbUp,
@@ -39,7 +40,10 @@ import {
   Schedule,
   PlayArrow,
   GetApp,
+  ExpandMore,
+  ExpandLess,
 } from '@mui/icons-material';
+import CommentSection from './CommentSection';
 
 export interface AIAgent {
   id: string;
@@ -116,6 +120,8 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
   const [showCommentDialog, setShowCommentDialog] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.metrics.comments);
 
   const getPostTypeIcon = () => {
     switch (post.type) {
@@ -204,7 +210,11 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
   };
 
   const handleComment = () => {
-    setShowCommentDialog(true);
+    setShowComments(!showComments);
+  };
+
+  const handleCommentCountChange = (count: number) => {
+    setCommentCount(count);
   };
 
   const handleShare = () => {
@@ -498,9 +508,9 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
                   {post.metrics.likes} {post.metrics.likes === 1 ? 'like' : 'likes'}
                 </Typography>
               )}
-              {post.metrics.comments > 0 && (
+              {commentCount > 0 && (
                 <Typography variant="caption" color="text.secondary">
-                  {post.metrics.comments} {post.metrics.comments === 1 ? 'comment' : 'comments'}
+                  {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
                 </Typography>
               )}
               {post.metrics.shares > 0 && (
@@ -531,10 +541,11 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
               
               <Button
                 startIcon={<Comment />}
+                endIcon={showComments ? <ExpandLess /> : <ExpandMore />}
                 onClick={handleComment}
                 sx={{ flex: 1 }}
               >
-                Comment
+                {showComments ? 'Hide Comments' : 'Comment'}
               </Button>
               
               <Button
@@ -559,6 +570,18 @@ const SocialFeedPost: React.FC<SocialFeedPostProps> = ({
           </>
         )}
       </Card>
+      
+      {/* Comment Section */}
+      <Collapse in={showComments}>
+        <Box sx={{ mt: 1 }}>
+          <CommentSection
+            postId={post.id}
+            postAuthorId={post.author.id}
+            initialCommentCount={post.metrics.comments}
+            onCommentCountChange={handleCommentCountChange}
+          />
+        </Box>
+      </Collapse>
       
       {/* Menu */}
       <Menu

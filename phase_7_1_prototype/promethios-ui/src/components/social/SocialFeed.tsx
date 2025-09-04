@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -35,10 +35,14 @@ import {
   Psychology,
   AutoAwesome,
   Clear,
+  Wifi,
+  WifiOff,
 } from '@mui/icons-material';
 import SocialFeedPost, { FeedPost } from './SocialFeedPost';
 import CreatePostDialog from './CreatePostDialog';
+import LiveNotificationCenter from './LiveNotificationCenter';
 import { socialFeedService } from '../../services/SocialFeedService';
+import { socialRealtimeService, SocialFeedSubscription } from '../../services/SocialRealtimeService';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
 import { useAuth } from '../../context/AuthContext';
 
@@ -77,6 +81,11 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  
+  // Real-time state
+  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
+  const feedSubscriptionRef = useRef<SocialFeedSubscription | null>(null);
   
   // Create post dialog
   const [showCreatePostDialog, setShowCreatePostDialog] = useState(false);
@@ -123,46 +132,101 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
     { value: '3rd', label: '3rd+ Connections' },
   ];
 
-  // Load posts
+  // Load posts with real-time subscription
   const loadPosts = useCallback(async (reset = false) => {
     if (loading) return;
     
     setLoading(true);
     setError(null);
+    setConnectionStatus('connecting');
     
     try {
-      const currentPage = reset ? 1 : page;
       const feedType = tabs[activeTab]?.value || 'for_you';
       
-      const result = await socialFeedService.getFeedPosts({
-        feedType,
-        userId,
-        filters,
-        page: currentPage,
-        limit: 10,
-      });
-      
-      if (reset) {
-        setPosts(result.posts);
-        setPage(2);
+      if (isRealTimeEnabled) {
+        // Unsubscribe from previous subscription
+        if (feedSubscriptionRef.current) {
+          feedSubscriptionRef.current.unsubscribe();
+        }
+        
+        // Subscribe to real-time updates
+        const subscription = socialRealtimeService.subscribeFeedUpdates(
+          feedType,
+          filters,
+          (realtimePosts) => {
+            setPosts(realtimePosts);
+            setConnectionStatus('connected');
+            setLoading(false);
+          }
+        );
+        
+        feedSubscriptionRef.current = subscription;
+        
+        // Start presence tracking
+        socialRealtimeService.startPresenceTracking();
       } else {
-        setPosts(prev => [...prev, ...result.posts]);
-        setPage(prev => prev + 1);
+        // Fallback to static loading
+        const currentPage = reset ? 1 : page;
+        
+        const result = await socialFeedService.getFeedPosts({
+          feedType,
+          userId,
+          filters,
+          page: currentPage,
+          limit: 10,
+        });
+        
+        if (reset) {
+          setPosts(result.posts);
+          setPage(2);
+        } else {
+          setPosts(prev => [...prev, ...result.posts]);
+          setPage(prev => prev + 1);
+        }
+        
+        setHasMore(result.hasMore);
+        setConnectionStatus('disconnected');
+        setLoading(false);
       }
-      
-      setHasMore(result.hasMore);
     } catch (err) {
       setError('Failed to load posts. Please try again.');
-      console.error('Error loading posts:', err);
-    } finally {
+      setConnectionStatus('disconnected');
       setLoading(false);
+      console.error('Error loading posts:', err);
     }
-  }, [activeTab, userId, filters, page, loading]);
+  }, [activeTab, userId, filters, page, loading, isRealTimeEnabled]);
 
   // Initial load and tab changes
   useEffect(() => {
     loadPosts(true);
   }, [activeTab, filters]);
+
+  // Cleanup effect for real-time subscriptions
+  useEffect(() => {
+    return () => {
+      if (feedSubscriptionRef.current) {
+        feedSubscriptionRef.current.unsubscribe();
+      }
+      socialRealtimeService.unsubscribeAll();
+    };
+  }, []);
+
+  // Toggle real-time mode
+  const toggleRealTime = () => {
+    setIsRealTimeEnabled(!isRealTimeEnabled);
+    if (isRealTimeEnabled) {
+      // Disable real-time
+      if (feedSubscriptionRef.current) {
+        feedSubscriptionRef.current.unsubscribe();
+        feedSubscriptionRef.current = null;
+      }
+      socialRealtimeService.stopPresenceTracking();
+      setConnectionStatus('disconnected');
+    } else {
+      // Enable real-time
+      loadPosts(true);
+    }
+  };
 
   // Infinite scroll
   useEffect(() => {
@@ -193,24 +257,16 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   // Unified notification system handlers
   const handleLike = async (postId: string) => {
     try {
-      console.log('👍 [SocialFeed] Handling like via unified system');
+      console.log('👍 [SocialFeed] Handling like via Firebase');
       
       // Find the post to get author info
       const post = posts.find(p => p.id === postId);
       if (!post || !currentUser?.uid) return;
 
-      // Don't send notification to self
-      if (post.author.id === currentUser.uid) return;
+      // Call Firebase service to toggle like
+      const result = await socialFeedService.likePost(postId);
 
-      // Send like notification via unified system
-      await sendInteraction('post_like', post.author.id, {
-        postId: postId,
-        postTitle: post.title,
-        message: `${currentUser.displayName || 'Someone'} liked your post: "${post.title}"`,
-        priority: 'low'
-      });
-
-      // Update local state
+      // Update local state immediately for better UX
       setPosts(prevPosts => 
         prevPosts.map(p => 
           p.id === postId 
@@ -226,8 +282,24 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
         )
       );
 
+      console.log('✅ [SocialFeed] Like toggled successfully');
     } catch (error) {
       console.error('❌ [SocialFeed] Error handling like:', error);
+      // Revert optimistic update on error
+      setPosts(prevPosts => 
+        prevPosts.map(p => 
+          p.id === postId 
+            ? { 
+                ...p, 
+                isLiked: !p.isLiked,
+                metrics: {
+                  ...p.metrics,
+                  likes: p.isLiked ? p.metrics.likes + 1 : p.metrics.likes - 1
+                }
+              }
+            : p
+        )
+      );
     }
   };
 
@@ -345,7 +417,27 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
               AI Collaboration Feed
             </Typography>
             
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              {/* Real-time status indicator */}
+              <Chip
+                size="small"
+                icon={connectionStatus === 'connected' ? <Wifi /> : <WifiOff />}
+                label={
+                  connectionStatus === 'connected' ? 'Live' :
+                  connectionStatus === 'connecting' ? 'Connecting...' : 'Offline'
+                }
+                color={
+                  connectionStatus === 'connected' ? 'success' :
+                  connectionStatus === 'connecting' ? 'warning' : 'default'
+                }
+                variant={connectionStatus === 'connected' ? 'filled' : 'outlined'}
+                onClick={toggleRealTime}
+                sx={{ cursor: 'pointer' }}
+              />
+              
+              {/* Live Notification Center */}
+              <LiveNotificationCenter />
+              
               <IconButton onClick={handleRefresh} disabled={loading}>
                 <Refresh />
               </IconButton>

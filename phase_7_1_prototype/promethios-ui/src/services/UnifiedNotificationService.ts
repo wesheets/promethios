@@ -17,6 +17,15 @@ export type UnifiedNotificationType =
   | 'team_invitation'
   | 'project_invitation'
   
+  // Social Feed Notifications
+  | 'post_like'
+  | 'post_comment'
+  | 'post_share'
+  | 'post_mention'
+  | 'comment_reply'
+  | 'collaboration_highlight_shared'
+  | 'ai_showcase_featured'
+  
   // Trust & Verification
   | 'trust_attestation'
   | 'verification_update'
@@ -99,14 +108,142 @@ class UnifiedNotificationService {
           error: result.error
         };
       }
-
     } catch (error) {
       console.error(`❌ [UnifiedNotification] Error sending ${request.type}:`, error);
       return {
         success: false,
-        error: `Failed to send ${request.type}`
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  /**
+   * Send social feed notification (likes, comments, shares)
+   */
+  async sendSocialNotification(
+    type: 'post_like' | 'post_comment' | 'post_share' | 'post_mention' | 'comment_reply',
+    fromUserId: string,
+    toUserId: string,
+    postId: string,
+    postTitle: string,
+    additionalData?: Record<string, any>
+  ): Promise<NotificationResponse> {
+    const notificationMessages = {
+      post_like: `liked your post: "${postTitle}"`,
+      post_comment: `commented on your post: "${postTitle}"`,
+      post_share: `shared your post: "${postTitle}"`,
+      post_mention: `mentioned you in a post: "${postTitle}"`,
+      comment_reply: `replied to your comment on: "${postTitle}"`
+    };
+
+    const priorities = {
+      post_like: 'low' as const,
+      post_comment: 'medium' as const,
+      post_share: 'medium' as const,
+      post_mention: 'high' as const,
+      comment_reply: 'medium' as const
+    };
+
+    return this.sendNotification({
+      type,
+      fromUserId,
+      toUserId,
+      title: `New ${type.replace('_', ' ')}`,
+      message: notificationMessages[type],
+      metadata: {
+        postId,
+        postTitle,
+        ...additionalData
+      },
+      priority: priorities[type]
+    });
+  }
+
+  /**
+   * Map unified notification types to UserInteractionRegistry types
+   */
+  private mapToInteractionType(type: UnifiedNotificationType): InteractionType {
+    // Map social notifications to existing interaction types
+    // Note: UserInteractionRegistry may need to be extended for social types
+    switch (type) {
+      case 'post_like':
+      case 'post_comment':
+      case 'post_share':
+      case 'post_mention':
+      case 'comment_reply':
+      case 'collaboration_highlight_shared':
+      case 'ai_showcase_featured':
+        return 'connection_request'; // Temporary mapping - should be extended
+      
+      case 'connection_request':
+        return 'connection_request';
+      case 'collaboration_invitation':
+        return 'collaboration_invitation';
+      case 'chat_invitation':
+        return 'chat_invitation';
+      case 'meeting_request':
+        return 'meeting_request';
+      case 'file_share_request':
+        return 'file_share_request';
+      case 'team_invitation':
+        return 'team_invitation';
+      case 'project_invitation':
+        return 'project_invitation';
+      
+      default:
+        console.warn(`⚠️ [UnifiedNotification] Unknown notification type: ${type}, defaulting to connection_request`);
+        return 'connection_request';
+    }
+  }
+
+  /**
+   * Send collaboration invitation notification
+   */
+  async sendCollaborationInvitation(
+    fromUserId: string,
+    toUserId: string,
+    conversationId: string,
+    conversationName: string,
+    agentName?: string
+  ): Promise<NotificationResponse> {
+    return this.sendNotification({
+      type: 'collaboration_invitation',
+      fromUserId,
+      toUserId,
+      title: 'AI Collaboration Invitation',
+      message: `invited you to collaborate on: "${conversationName}"`,
+      metadata: {
+        conversationId,
+        conversationName,
+        agentName,
+        sessionType: 'ai_collaboration'
+      },
+      priority: 'high'
+    });
+  }
+
+  /**
+   * Send chat invitation notification
+   */
+  async sendChatInvitation(
+    fromUserId: string,
+    toUserId: string,
+    conversationId: string,
+    conversationName: string
+  ): Promise<NotificationResponse> {
+    return this.sendNotification({
+      type: 'chat_invitation',
+      fromUserId,
+      toUserId,
+      title: 'Chat Invitation',
+      message: `invited you to join: "${conversationName}"`,
+      metadata: {
+        conversationId,
+        conversationName,
+        sessionType: 'human_chat'
+      },
+      priority: 'medium'
+    });
   }
 
   /**
@@ -121,224 +258,54 @@ class UnifiedNotificationService {
       type: 'connection_request',
       fromUserId,
       toUserId,
-      message: message || "Hi! I'd like to connect and explore collaboration opportunities.",
+      title: 'Connection Request',
+      message: message || 'wants to connect with you',
       priority: 'medium'
     });
   }
 
   /**
-   * Send collaboration invitation
+   * Batch send notifications (for bulk operations)
    */
-  async sendCollaborationInvitation(
-    fromUserId: string,
-    toUserId: string,
-    conversationId: string,
-    conversationName: string,
-    agentName: string,
-    message?: string
-  ): Promise<NotificationResponse> {
-    return this.sendNotification({
-      type: 'collaboration_invitation',
-      fromUserId,
-      toUserId,
-      message: message || `Join me in this AI collaboration session: "${conversationName}" with ${agentName}`,
-      metadata: {
-        conversationId,
-        conversationName,
-        agentName,
-        sessionType: 'ai_collaboration'
-      },
-      priority: 'high'
-    });
+  async sendBatchNotifications(requests: UnifiedNotificationRequest[]): Promise<NotificationResponse[]> {
+    const results = await Promise.allSettled(
+      requests.map(request => this.sendNotification(request))
+    );
+
+    return results.map(result => 
+      result.status === 'fulfilled' 
+        ? result.value 
+        : { success: false, error: 'Batch notification failed' }
+    );
   }
 
   /**
-   * Send chat invitation
+   * Get notification statistics
    */
-  async sendChatInvitation(
-    fromUserId: string,
-    toUserId: string,
-    chatId?: string,
-    message?: string
-  ): Promise<NotificationResponse> {
-    return this.sendNotification({
-      type: 'chat_invitation',
-      fromUserId,
-      toUserId,
-      message: message || "Would you like to join a chat conversation?",
-      metadata: {
-        chatId
-      },
-      priority: 'medium'
-    });
-  }
-
-  /**
-   * Send trust attestation notification
-   */
-  async sendTrustAttestation(
-    fromUserId: string,
-    toUserId: string,
-    attestationType: string,
-    message?: string
-  ): Promise<NotificationResponse> {
-    return this.sendNotification({
-      type: 'trust_attestation',
-      fromUserId,
-      toUserId,
-      message: message || `You have received a new trust attestation for ${attestationType}`,
-      metadata: {
-        attestationType
-      },
-      priority: 'medium'
-    });
-  }
-
-  /**
-   * Send system alert
-   */
-  async sendSystemAlert(
-    toUserId: string,
-    alertType: string,
-    message: string,
-    priority: 'low' | 'medium' | 'high' | 'urgent' = 'medium'
-  ): Promise<NotificationResponse> {
-    return this.sendNotification({
-      type: 'system_alert',
-      fromUserId: 'system', // Special system user ID
-      toUserId,
-      message,
-      metadata: {
-        alertType
-      },
-      priority
-    });
-  }
-
-  /**
-   * Send team invitation
-   */
-  async sendTeamInvitation(
-    fromUserId: string,
-    toUserId: string,
-    teamId: string,
-    teamName: string,
-    role?: string,
-    message?: string
-  ): Promise<NotificationResponse> {
-    return this.sendNotification({
-      type: 'team_invitation',
-      fromUserId,
-      toUserId,
-      message: message || `You've been invited to join the team "${teamName}"`,
-      metadata: {
-        teamId,
-        teamName,
-        role
-      },
-      priority: 'high'
-    });
-  }
-
-  /**
-   * Send file share request
-   */
-  async sendFileShareRequest(
-    fromUserId: string,
-    toUserId: string,
-    fileId: string,
-    fileName: string,
-    message?: string
-  ): Promise<NotificationResponse> {
-    return this.sendNotification({
-      type: 'file_share_request',
-      fromUserId,
-      toUserId,
-      message: message || `${fileName} has been shared with you`,
-      metadata: {
-        fileId,
-        fileName
-      },
-      priority: 'medium'
-    });
-  }
-
-  /**
-   * Respond to any notification (accept/decline)
-   */
-  async respondToNotification(
-    notificationId: string,
-    userId: string,
-    response: 'accepted' | 'declined'
-  ): Promise<NotificationResponse> {
+  async getNotificationStats(userId: string): Promise<{
+    total: number;
+    unread: number;
+    byType: Record<string, number>;
+  }> {
     try {
-      const result = await userInteractionRegistry.respondToInteraction(
-        notificationId,
-        userId,
-        response
-      );
-
+      // This would typically query the database for notification counts
+      // For now, return mock data
       return {
-        success: result.success,
-        error: result.error
+        total: 0,
+        unread: 0,
+        byType: {}
       };
     } catch (error) {
-      console.error('❌ [UnifiedNotification] Error responding to notification:', error);
+      console.error('❌ [UnifiedNotification] Error getting notification stats:', error);
       return {
-        success: false,
-        error: 'Failed to respond to notification'
+        total: 0,
+        unread: 0,
+        byType: {}
       };
     }
-  }
-
-  /**
-   * Get pending notifications for a user
-   */
-  async getPendingNotifications(userId: string, type?: UnifiedNotificationType) {
-    const interactionType = type ? this.mapToInteractionType(type) : undefined;
-    return userInteractionRegistry.getPendingInteractions(userId, interactionType);
-  }
-
-  /**
-   * Subscribe to real-time notifications
-   */
-  subscribeToNotifications(
-    userId: string,
-    callback: (notifications: any[]) => void,
-    type?: UnifiedNotificationType
-  ) {
-    const interactionType = type ? this.mapToInteractionType(type) : undefined;
-    return userInteractionRegistry.subscribeToInteractions(userId, callback, interactionType);
-  }
-
-  // Private helper methods
-
-  /**
-   * Map unified notification types to UserInteractionRegistry types
-   */
-  private mapToInteractionType(type: UnifiedNotificationType): InteractionType {
-    // Most types map directly
-    const directMappings: Record<string, InteractionType> = {
-      'connection_request': 'connection_request',
-      'collaboration_invitation': 'collaboration_invitation',
-      'chat_invitation': 'chat_invitation',
-      'meeting_request': 'meeting_request',
-      'file_share_request': 'file_share_request',
-      'team_invitation': 'team_invitation',
-      'project_invitation': 'project_invitation'
-    };
-
-    if (directMappings[type]) {
-      return directMappings[type];
-    }
-
-    // For types that don't have direct mappings, we can extend the InteractionType
-    // or use a generic type. For now, we'll use connection_request as a fallback
-    console.warn(`⚠️ [UnifiedNotification] No direct mapping for type: ${type}, using connection_request`);
-    return 'connection_request';
   }
 }
 
+export { UnifiedNotificationService };
 export const unifiedNotificationService = UnifiedNotificationService.getInstance();
-export default unifiedNotificationService;
 

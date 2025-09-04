@@ -142,45 +142,43 @@ export const CreatePostDialog: React.FC<CreatePostDialogProps> = ({
     setError(null);
 
     try {
+      // Map post type to Firebase format
+      const mapPostType = (type: string) => {
+        switch (type) {
+          case 'ai_collaboration': return 'collaboration_highlight';
+          case 'insight': return 'industry_insight';
+          case 'question': return 'professional_update';
+          default: return 'professional_update';
+        }
+      };
+
       const postData = {
-        type: postType,
+        type: mapPostType(postType),
         title: title.trim(),
         content: content.trim(),
         visibility,
         tags,
         aiAgentsUsed: selectedAgents,
-        enableNotifications,
-        author: {
-          id: currentUser?.uid || '',
-          name: currentUser?.displayName || currentUser?.email || 'Anonymous',
-          avatar: currentUser?.photoURL || '',
-          role: 'User', // TODO: Get from user profile
-          verified: false
-        },
-        collaborationData: postType === 'ai_collaboration' ? collaborationData : undefined,
-        createdAt: new Date().toISOString()
+        collaborationDuration: collaborationData?.duration,
+        collaborationParticipants: collaborationData?.participants,
+        attachments: collaborationData ? [{
+          type: 'conversation' as const,
+          url: collaborationData.conversationId,
+          title: collaborationData.conversationName,
+          thumbnail: ''
+        }] : []
       };
 
-      console.log('🎯 [CreatePostDialog] Creating post:', postData);
+      console.log('🎯 [CreatePostDialog] Creating post via Firebase:', postData);
 
-      // TODO: Replace with actual API call
-      // For now, simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Import and use the social feed service
+      const { socialFeedService } = await import('../../services/SocialFeedService');
+      const createdPost = await socialFeedService.createPost(postData);
+
+      console.log('✅ [CreatePostDialog] Post created successfully:', createdPost.id);
 
       if (onPostCreated) {
-        onPostCreated({
-          id: `post_${Date.now()}`,
-          ...postData,
-          metrics: {
-            likes: 0,
-            comments: 0,
-            shares: 0,
-            views: 0,
-            collaborations: 0
-          },
-          isLiked: false,
-          isBookmarked: false
-        });
+        onPostCreated(createdPost);
       }
 
       // Reset form
@@ -188,22 +186,15 @@ export const CreatePostDialog: React.FC<CreatePostDialogProps> = ({
       setContent('');
       setTags([]);
       setSelectedAgents([]);
-      setPostType('general');
       setVisibility('public');
+      setEnableNotifications(true);
       
       onClose();
-
     } catch (err) {
       console.error('❌ [CreatePostDialog] Error creating post:', err);
       setError('Failed to create post. Please try again.');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleTagAdd = (newTag: string) => {
-    if (newTag && !tags.includes(newTag)) {
-      setTags([...tags, newTag]);
     }
   };
 
