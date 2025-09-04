@@ -20,6 +20,7 @@ import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestio
 import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
 import SharedConversationService from '../services/SharedConversationService';
 import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
+import ChatInvitationModal from '../components/collaboration/ChatInvitationModal';
 import { useSharedConversations } from '../contexts/SharedConversationContext';
 // Notification and invitation imports
 import ConversationInvitationDialog, { InvitationFormData } from '../components/collaboration/ConversationInvitationDialog';
@@ -395,12 +396,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   
   // Human participants state
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [chatInvitationContext, setChatInvitationContext] = useState<{
-    chatSessionId: string;
-    chatName: string;
-    agentId: string;
-    agentName: string;
+  const [showChatInvitationModal, setShowChatInvitationModal] = useState(false);
+  const [activeChatInvitationSession, setActiveChatInvitationSession] = useState<{
+    id: string;
+    name: string;
+    messageCount?: number;
   } | null>(null);
   const [showHumanInviteConfirmDialog, setShowHumanInviteConfirmDialog] = useState(false);
   const [humansToInvite, setHumansToInvite] = useState<any[]>([]);
@@ -2222,6 +2222,58 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  const handleOpenChatInvitation = async () => {
+    if (!selectedChatbot) return;
+
+    const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+    
+    if (currentBotState?.currentChatSession) {
+      // Existing chat session - use it for invitation
+      setActiveChatInvitationSession({
+        id: currentBotState.currentChatSession.id,
+        name: currentBotState.currentChatSession.name || `Chat with ${selectedChatbot.identity?.name}`,
+        messageCount: currentBotState.messages.length
+      });
+    } else {
+      // No active chat session - create a new one
+      try {
+        const newChatSession = await chatHistoryService.createChatSession(
+          user!.uid,
+          selectedChatbot.id,
+          `Chat with ${selectedChatbot.identity?.name}`,
+          selectedChatbot.identity?.name || 'AI Assistant'
+        );
+
+        // Update bot state with new chat session
+        const newBotState = {
+          ...currentBotState,
+          currentChatSession: newChatSession,
+          messages: []
+        };
+        setBotStates(prev => new Map(prev.set(selectedChatbotId!, newBotState)));
+
+        // Set the new session for invitation
+        setActiveChatInvitationSession({
+          id: newChatSession.id,
+          name: newChatSession.name,
+          messageCount: 0
+        });
+
+        console.log('✅ Created new chat session for invitation:', newChatSession.id);
+      } catch (error) {
+        console.error('❌ Failed to create new chat session:', error);
+        // Fallback - still allow invitation without specific session
+        setActiveChatInvitationSession({
+          id: 'new-chat',
+          name: `Chat with ${selectedChatbot.identity?.name}`,
+          messageCount: 0
+        });
+      }
+    }
+
+    setShowChatInvitationModal(true);
+  };
+
   const handleAcceptInvitation = async (notificationId: string) => {
     if (!user?.uid) return;
 
@@ -3995,20 +4047,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 <IconButton
                                   size="small"
                                   onClick={() => {
-                                    // Set current chat context for active chat invitation
-                                    const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-                                    if (currentBotState?.currentChatSession && selectedChatbot) {
-                                      setChatInvitationContext({
-                                        chatSessionId: currentBotState.currentChatSession.id,
-                                        chatName: currentBotState.currentChatSession.name || `Chat with ${selectedChatbot.identity?.name}`,
-                                        agentId: selectedChatbot.id,
-                                        agentName: selectedChatbot.identity?.name || 'Agent'
-                                      });
-                                    } else {
-                                      // No active chat session - clear context for general invitation
-                                      setChatInvitationContext(null);
-                                    }
-                                    setShowInviteDialog(true);
+                                    handleOpenChatInvitation();
                                   }}
                                   sx={{
                                     bgcolor: '#1e293b',
@@ -7400,6 +7439,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         onDeclineInvitation={handleDeclineInvitation}
         onDismissNotification={handleDismissNotification}
         position="top-right"
+      />
+
+      {/* Chat Invitation Modal */}
+      <ChatInvitationModal
+        open={showChatInvitationModal}
+        onClose={() => {
+          setShowChatInvitationModal(false);
+          setActiveChatInvitationSession(null);
+        }}
+        chatSession={activeChatInvitationSession}
+        agentId={selectedChatbot?.id}
+        agentName={selectedChatbot?.identity?.name || 'AI Assistant'}
       />
 
       {/* Agent Permission Request Popup */}

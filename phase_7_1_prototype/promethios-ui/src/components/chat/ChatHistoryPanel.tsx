@@ -52,6 +52,7 @@ import {
 import { ChatHistoryService, ChatSession, ChatHistoryFilter } from '../../services/ChatHistoryService';
 import { ChatSharingService } from '../../services/ChatSharingService';
 import { useAuth } from '../../context/AuthContext';
+import ChatInvitationModal from '../collaboration/ChatInvitationModal';
 
 interface ChatHistoryPanelProps {
   agentId: string;
@@ -96,6 +97,10 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   // Share states
   const [shareLoading, setShareLoading] = useState<string | null>(null);
   const [shareSuccess, setShareSuccess] = useState<string | null>(null);
+
+  // Invitation states
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [invitationChatSession, setInvitationChatSession] = useState<ChatSession | null>(null);
 
   const chatHistoryService = ChatHistoryService.getInstance();
   const chatSharingService = ChatSharingService.getInstance();
@@ -291,18 +296,9 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   const handleInviteToChat = async (session: ChatSession) => {
     console.log('🎯 [ChatHistory] Inviting team member to chat:', session.name);
     
-    // Create a custom event to trigger the invitation modal with chat session context
-    const inviteEvent = new CustomEvent('openChatInvitation', {
-      detail: {
-        chatSession: session,
-        chatSessionId: session.id,
-        chatName: session.name,
-        agentId: agentId,
-        agentName: agentName
-      }
-    });
-    
-    window.dispatchEvent(inviteEvent);
+    // Open the invitation modal with the specific chat session
+    setInvitationChatSession(session);
+    setShowInvitationModal(true);
   };
 
   // Menu handlers
@@ -883,6 +879,22 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Chat Invitation Modal */}
+      <ChatInvitationModal
+        open={showInvitationModal}
+        onClose={() => {
+          setShowInvitationModal(false);
+          setInvitationChatSession(null);
+        }}
+        chatSession={invitationChatSession ? {
+          id: invitationChatSession.id,
+          name: invitationChatSession.name,
+          messageCount: invitationChatSession.messageCount
+        } : null}
+        agentId={agentId}
+        agentName={agentName}
+      />
     </Box>
   );
 };
