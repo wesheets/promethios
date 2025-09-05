@@ -672,7 +672,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     });
   };
 
+  // Custom handler for shared conversation selection that also updates chat context
+  const handleCustomSharedConversationSelect = (conversationId: string) => {
+    console.log(`🔄 [ChatSwitch] Selecting shared conversation: ${conversationId}`);
+    
+    // Call the original shared conversation select handler
+    handleSharedConversationSelect(conversationId);
+    
+    // Update multi-chat context to reflect shared mode
+    setMultiChatState(prev => ({
+      ...prev,
+      activeContextId: `shared_${conversationId}`,
+      contexts: prev.contexts.map(c => ({
+        ...c,
+        isActive: false // Deactivate all individual contexts when in shared mode
+      }))
+    }));
+  };
+
   const switchChatContext = (contextId: string) => {
+    console.log(`🔄 [ChatSwitch] Switching to context: ${contextId}`);
+    
+    // If switching to host chat context, clear shared mode
+    if (contextId === 'host' || contextId === selectedChatbotId) {
+      console.log(`🏠 [ChatSwitch] Switching to host chat, clearing shared mode`);
+      handleSharedConversationClose();
+    }
+    
     setMultiChatState(prev => ({
       ...prev,
       activeContextId: contextId,
@@ -3977,7 +4003,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       <CompactSharedChatTabs
                         sharedConversations={sharedConversations}
                         activeConversationId={activeSharedConversation}
-                        onConversationSelect={handleSharedConversationSelect}
+                        onConversationSelect={handleCustomSharedConversationSelect}
                         onConversationClose={handleSharedConversationClose}
                         onPrivacyToggle={handlePrivacyToggle}
                         currentUserId={user?.uid || ''}
