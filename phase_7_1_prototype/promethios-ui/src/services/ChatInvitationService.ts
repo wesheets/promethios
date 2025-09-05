@@ -127,6 +127,18 @@ class ChatInvitationService {
   }
 
   /**
+   * Backward compatibility method - delegates to sendCollaborationInvitation
+   */
+  async createChatInvitation(request: AICollaborationInvitationRequest): Promise<{
+    success: boolean;
+    invitationId?: string;
+    error?: string;
+  }> {
+    console.log('🔄 [ChatInvitationService] createChatInvitation called - delegating to sendCollaborationInvitation');
+    return this.sendCollaborationInvitation(request);
+  }
+
+  /**
    * Accept collaboration invitation using unified registry
    */
   async acceptInvitation(invitationId: string, userId: string): Promise<{

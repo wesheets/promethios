@@ -171,11 +171,17 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
   };
 
   const toggleMemberSelection = (memberId: string) => {
-    setSelectedMembers(prev => 
-      prev.includes(memberId) 
-        ? prev.filter(id => id !== memberId)
-        : [...prev, memberId]
-    );
+    setSelectedTeamMembers(prev => {
+      const member = teamMembers.find(m => m.id === memberId);
+      if (!member) return prev;
+      
+      const isSelected = prev.some(selected => selected.id === memberId);
+      if (isSelected) {
+        return prev.filter(selected => selected.id !== memberId);
+      } else {
+        return [...prev, member];
+      }
+    });
   };
 
   const handleSendTeamInvitations = async () => {
@@ -199,13 +205,10 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
           fromUserName: user.displayName || user.email || 'Unknown User',
           toUserId: member.id,
           toUserName: member.name,
-          toEmail: member.email,
-          chatSessionId: chatSession.id,
+          conversationId: chatSession.id,
           conversationName: chatSession.name,
-          agentId: agentId || '',
           agentName: agentName || 'AI Assistant',
-          personalMessage: personalMessage.trim() || undefined,
-          invitationType: 'team_member'
+          message: personalMessage.trim() || undefined,
         });
       });
 
@@ -213,7 +216,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
       const successCount = results.filter(r => r !== null).length;
 
       setSuccess(`Successfully sent ${successCount} invitation${successCount > 1 ? 's' : ''} to team members`);
-      setSelectedMembers([]);
+      setSelectedTeamMembers([]);
       setPersonalMessage('');
       
       // Close modal after short delay
@@ -248,13 +251,12 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
       await chatInvitationService.createChatInvitation({
         fromUserId: user.uid,
         fromUserName: user.displayName || user.email || 'Unknown User',
-        toEmail: emailAddress.trim(),
-        chatSessionId: chatSession.id,
+        toUserId: 'email_' + emailAddress.trim(), // Temporary ID for email invitations
+        toUserName: emailAddress.trim(),
+        conversationId: chatSession.id,
         conversationName: chatSession.name,
-        agentId: agentId || '',
         agentName: agentName || 'AI Assistant',
-        personalMessage: personalMessage.trim() || undefined,
-        invitationType: 'email'
+        message: personalMessage.trim() || undefined,
       });
 
       setSuccess(`Invitation sent to ${emailAddress}`);
@@ -276,7 +278,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
   };
 
   const handleClose = () => {
-    setSelectedMembers([]);
+    setSelectedTeamMembers([]);
     setEmailAddress('');
     setPersonalMessage('');
     setError(null);
