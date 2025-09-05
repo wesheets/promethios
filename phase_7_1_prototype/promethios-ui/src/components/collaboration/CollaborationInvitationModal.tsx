@@ -49,7 +49,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { acceptInteraction, declineInteraction } = useUserInteractions();
-  const { refreshSharedConversations, setSharedConversations, handleSharedConversationSelect } = useSharedConversations();
+  const { refreshSharedConversations, addSharedConversation, handleSharedConversationSelect } = useSharedConversations();
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
@@ -159,16 +159,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Add the specific conversation to the list instead of refreshing all
-        setSharedConversations(prev => {
-          // Check if conversation already exists to avoid duplicates
-          const exists = prev.some(conv => conv.id === sharedConversation.id);
-          if (exists) {
-            console.log('🔄 [CollaborationModal] Conversation already exists, selecting it');
-            return prev;
-          }
-          console.log('🔄 [CollaborationModal] Adding new conversation to list');
-          return [...prev, sharedConversation];
-        });
+        addSharedConversation(sharedConversation);
         
         // Select the new conversation as active
         handleSharedConversationSelect(sharedConversation.id);

@@ -14,6 +14,7 @@ interface SharedConversationContextType {
   setActiveSharedConversation: (conversationId: string | null) => void;
   setIsInSharedMode: (isShared: boolean) => void;
   refreshSharedConversations: () => Promise<void>;
+  addSharedConversation: (conversation: SharedConversation) => void;
   handleSharedConversationSelect: (conversationId: string) => void;
   handleSharedConversationClose: (conversationId: string) => void;
   handlePrivacyToggle: (conversationId: string, isPrivate: boolean) => Promise<void>;
@@ -155,6 +156,19 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
     }
   };
 
+  const addSharedConversation = (conversation: SharedConversation) => {
+    setSharedConversations(prev => {
+      // Check if conversation already exists to avoid duplicates
+      const exists = prev.some(conv => conv.id === conversation.id);
+      if (exists) {
+        console.log('🔄 [SharedConversationContext] Conversation already exists:', conversation.id);
+        return prev;
+      }
+      console.log('🔄 [SharedConversationContext] Adding new conversation:', conversation.id);
+      return [...prev, conversation];
+    });
+  };
+
   const handleSharedConversationSelect = (conversationId: string) => {
     setActiveSharedConversation(conversationId);
     setIsInSharedMode(true);
@@ -195,6 +209,7 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
     setActiveSharedConversation,
     setIsInSharedMode,
     refreshSharedConversations,
+    addSharedConversation,
     handleSharedConversationSelect,
     handleSharedConversationClose,
     handlePrivacyToggle

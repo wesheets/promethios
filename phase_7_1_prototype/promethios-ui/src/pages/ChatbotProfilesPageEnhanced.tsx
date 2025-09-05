@@ -425,6 +425,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     isInSharedMode,
     setActiveSharedConversation,
     setIsInSharedMode,
+    addSharedConversation,
     handleSharedConversationSelect,
     handleSharedConversationClose,
     handlePrivacyToggle,
@@ -2235,7 +2236,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         participants
       );
       
-      setSharedConversations(prev => [...prev, conversation]);
+      addSharedConversation(conversation);
       setActiveSharedConversation(conversation.id);
       setIsInSharedMode(true);
       
