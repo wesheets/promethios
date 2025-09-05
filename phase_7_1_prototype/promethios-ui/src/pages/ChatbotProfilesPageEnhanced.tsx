@@ -694,10 +694,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log(`🔄 [ChatSwitch] Switching to context: ${contextId}`);
     console.log(`🔄 [ChatSwitch] Current isInSharedMode: ${isInSharedMode}`);
     console.log(`🔄 [ChatSwitch] Current activeSharedConversation: ${activeSharedConversation}`);
+    console.log(`🔄 [ChatSwitch] selectedChatbotId: ${selectedChatbotId}`);
     
     // If switching to host chat context, clear shared mode
-    if (contextId === 'host' || contextId === selectedChatbotId) {
-      console.log(`🏠 [ChatSwitch] Switching to host chat, clearing shared mode`);
+    // Check for various host chat context IDs
+    const isHostChatContext = contextId === 'host' || 
+                             contextId === selectedChatbotId || 
+                             contextId === 'ai_agent' ||
+                             contextId.startsWith('chatbot-');
+    
+    if (isHostChatContext) {
+      console.log(`🏠 [ChatSwitch] Switching to host chat (${contextId}), clearing shared mode`);
       console.log(`🏠 [ChatSwitch] Before clearing - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
       
       setActiveSharedConversation(null);
@@ -709,6 +716,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setTimeout(() => {
         console.log(`🏠 [ChatSwitch] Delayed check - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
       }, 100);
+    } else {
+      console.log(`🔄 [ChatSwitch] Not a host chat context (${contextId}), keeping shared mode`);
     }
     
     setMultiChatState(prev => ({
