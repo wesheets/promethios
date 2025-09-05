@@ -144,6 +144,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         // This will automatically appear as a tab across ALL command centers
         const sharedConversation = await sharedConversationService.createSharedConversationFromInvitation({
           invitationId: invitation.id,
+          conversationId: metadata?.conversationId, // Pass the original chat session ID
           conversationName: metadata?.conversationName || 'AI Collaboration',
           agentName: metadata?.agentName || 'AI Assistant',
           fromUserId: invitation.fromUserId,

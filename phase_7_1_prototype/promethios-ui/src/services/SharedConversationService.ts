@@ -54,6 +54,9 @@ export interface SharedConversation {
     allowReceiptSharing: boolean;
     maxParticipants: number;
   };
+  // Fields for linking to original chat session
+  hostChatSessionId?: string; // ID of the original chat session containing messages
+  conversationId?: string; // Backward compatibility alias for hostChatSessionId
 }
 
 export interface ConversationInvitation {
@@ -588,6 +591,7 @@ class SharedConversationService {
    */
   async createSharedConversationFromInvitation(params: {
     invitationId: string;
+    conversationId?: string; // Original chat session ID
     conversationName: string;
     agentName: string;
     fromUserId: string;
@@ -598,6 +602,7 @@ class SharedConversationService {
   }): Promise<SharedConversation> {
     const {
       invitationId,
+      conversationId: hostChatSessionId, // Rename for clarity
       conversationName,
       agentName,
       fromUserId,
@@ -645,6 +650,24 @@ class SharedConversationService {
       conv.allowAIAgents = true;
       conv.allowReceiptSharing = true;
       conv.maxParticipants = 10;
+      
+      // Set the host chat session ID if provided
+      if (hostChatSessionId) {
+        conv.hostChatSessionId = hostChatSessionId;
+        conv.conversationId = hostChatSessionId; // Also set as conversationId for backward compatibility
+        console.log('✅ [SharedConversation] Set host chat session ID:', hostChatSessionId);
+        
+        // Update Firebase document with hostChatSessionId
+        try {
+          await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), {
+            hostChatSessionId: hostChatSessionId,
+            conversationId: hostChatSessionId
+          });
+          console.log('✅ [SharedConversation] Updated Firebase with host chat session ID');
+        } catch (error) {
+          console.error('❌ [SharedConversation] Failed to update Firebase with host chat session ID:', error);
+        }
+      }
     }
 
     // Get the created conversation to verify it exists
