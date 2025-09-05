@@ -99,11 +99,11 @@ class ChatInvitationService {
       if (result.success) {
         console.log('✅ [ChatInvitationService] Collaboration invitation sent successfully');
         
-        // Add user to shared conversation (prepare for acceptance)
-        await this.sharedConversationService.addUserToConversation(
+        // Add user as pending participant to shared conversation (prepare for acceptance)
+        await this.sharedConversationService.addPendingParticipant(
           request.conversationId,
           request.toUserId,
-          'invited'
+          request.fromUserId
         );
 
         return {
