@@ -123,56 +123,80 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
             placement="bottom"
             arrow
           >
-            <Chip
-              avatar={
-                <Badge
-                  badgeContent={getParticipantCount(conversation)}
-                  color="secondary"
-                  sx={{
-                    '& .MuiBadge-badge': {
-                      fontSize: '0.6rem',
-                      height: 14,
-                      minWidth: 14,
-                      backgroundColor: '#374151',
-                      color: 'white'
-                    }
-                  }}
-                >
-                  <Avatar 
-                    sx={{ 
-                      width: 20, 
-                      height: 20, 
-                      bgcolor: color,
-                      fontSize: '0.7rem',
-                      fontWeight: 600
-                    }}
-                  >
-                    {humanName.charAt(0)}
-                  </Avatar>
-                </Badge>
-              }
-              label={humanName}
-              size="small"
+            <Box
               onClick={() => onConversationSelect(conversation.id)}
-              onDelete={() => onConversationClose(conversation.id)}
-              deleteIcon={<Close sx={{ fontSize: 14 }} />}
               sx={{
-                maxWidth: 120,
-                bgcolor: isActive ? color : 'transparent',
-                color: isActive ? 'white' : '#e2e8f0',
-                borderColor: color,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 1.5,
+                py: 1,
+                borderRadius: 2,
+                bgcolor: isActive ? color : '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
                 border: `1px solid ${color}`,
                 '&:hover': {
-                  bgcolor: isActive ? color : `${color}20`,
-                },
-                '& .MuiChip-deleteIcon': {
-                  color: isActive ? 'white' : '#9ca3af',
-                  '&:hover': {
-                    color: isActive ? '#f3f4f6' : '#e5e7eb'
-                  }
+                  bgcolor: isActive ? color : `${color}40`,
                 }
               }}
-            />
+            >
+              {/* Avatar Group - Show up to 3 overlapping avatars */}
+              <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
+                  <Avatar
+                    key={participant.id}
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      fontSize: '0.6rem',
+                      bgcolor: participant.type === 'ai' ? '#6366f1' : '#10b981',
+                      border: '2px solid #1e293b',
+                      ml: pIndex > 0 ? -0.75 : 0,
+                      zIndex: 3 - pIndex
+                    }}
+                  >
+                    {participant.type === 'ai' ? '🤖' : participant.name.charAt(0).toUpperCase()}
+                  </Avatar>
+                ))}
+                
+                {/* Show +X count if more than 3 participants */}
+                {getParticipantCount(conversation) > 3 && (
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: isActive ? 'white' : '#94a3b8', 
+                      ml: 1, 
+                      fontSize: '0.7rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    +{getParticipantCount(conversation) - 3}
+                  </Typography>
+                )}
+              </Box>
+              
+              {/* Close Button */}
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onConversationClose(conversation.id);
+                }}
+                sx={{
+                  width: 16,
+                  height: 16,
+                  color: isActive ? 'rgba(255,255,255,0.8)' : '#94a3b8',
+                  ml: 0.5,
+                  '&:hover': {
+                    color: 'white',
+                    bgcolor: '#ef4444'
+                  }
+                }}
+              >
+                <Close sx={{ fontSize: 10 }} />
+              </IconButton>
+            </Box>
           </Tooltip>
         );
       })}
@@ -211,7 +235,6 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
           >
             {hiddenConversations.map((conversation, index) => {
               const color = getConversationColor(maxVisibleTabs + index);
-              const humanName = getHumanName(conversation);
               
               return (
                 <MenuItem
@@ -227,20 +250,29 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
                     minWidth: 200
                   }}
                 >
-                  <Avatar 
-                    sx={{ 
-                      width: 20, 
-                      height: 20, 
-                      bgcolor: color,
-                      fontSize: '0.7rem',
-                      fontWeight: 600
-                    }}
-                  >
-                    {humanName.charAt(0)}
-                  </Avatar>
+                  {/* Avatar Group for overflow menu */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                    {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
+                      <Avatar
+                        key={participant.id}
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          fontSize: '0.6rem',
+                          bgcolor: participant.type === 'ai' ? '#6366f1' : '#10b981',
+                          border: '1px solid #1e293b',
+                          ml: pIndex > 0 ? -0.5 : 0,
+                          zIndex: 3 - pIndex
+                        }}
+                      >
+                        {participant.type === 'ai' ? '🤖' : participant.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                    ))}
+                  </Box>
+                  
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {humanName}
+                      Shared Chat
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#9ca3af' }}>
                       {getParticipantCount(conversation)} participants • {getMessageCount(conversation)} messages
