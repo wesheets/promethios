@@ -423,6 +423,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     sharedConversations,
     activeSharedConversation,
     isInSharedMode,
+    setActiveSharedConversation,
+    setIsInSharedMode,
     handleSharedConversationSelect,
     handleSharedConversationClose,
     handlePrivacyToggle,
