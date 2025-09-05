@@ -569,9 +569,11 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                           </Typography>
                         )}
                         {session.isShared && (
-                          <Tooltip title="Shared with agent">
-                            <Share sx={{ fontSize: 14, color: '#10b981' }} />
-                          </Tooltip>
+                          <Chip 
+                            label="Shared"
+                            size="small"
+                            sx={{ ml: 1, bgcolor: '#3b82f6', color: 'white', height: '18px', fontSize: '0.7rem' }}
+                          />
                         )}
                         {session.cryptographicReceipt && (
                           <Tooltip title="Cryptographically verified">
