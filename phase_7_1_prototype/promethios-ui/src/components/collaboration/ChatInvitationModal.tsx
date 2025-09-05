@@ -191,8 +191,15 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
     try {
       console.log('📨 [ChatInvitation] Sending invitations to:', selectedTeamMembers);
       
-      // Use the same pattern as the working team panel implementation
-      const userIds = selectedTeamMembers.map(member => member.id);
+      // Deduplicate user IDs to prevent duplicate invitations
+      const userIds = [...new Set(selectedTeamMembers.map(member => member.id))];
+      console.log('🔍 [ChatInvitation] Deduplicated user IDs:', userIds);
+      
+      if (userIds.length === 0) {
+        setError('No team members selected');
+        return;
+      }
+      
       const currentUserId = effectiveUser.uid;
       const currentUserName = effectiveUser.displayName || effectiveUser.email || 'Current User';
       const conversationId = chatSession.id;

@@ -379,6 +379,22 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
            (notification.message && notification.message.toLowerCase().includes('wants to connect'));
   };
 
+  // Helper function to identify recent collaboration invitation notifications
+  const isRecentCollaborationInvitation = (notification: any): boolean => {
+    // Check if it's a collaboration invitation
+    const isCollabInvitation = notification.metadata?.notificationType === 'collaboration_invitation' ||
+                              notification.type === 'collaboration_invitation' ||
+                              notification.title === 'AI Collaboration Invitation';
+    
+    if (!isCollabInvitation) return false;
+    
+    // Only show invitations from the last 7 days
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    const notificationTime = notification.timestamp || notification.createdAt || 0;
+    
+    return notificationTime > sevenDaysAgo;
+  };
+
   // Get notification icon based on type
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -491,7 +507,18 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({
               </Box>
             ) : (
               <List sx={{ p: 0 }}>
-                {notifications.map((notification: any) => (
+                {notifications
+                  .filter((notification: any) => {
+                    // Filter out old collaboration invitations (older than 7 days)
+                    if (notification.metadata?.notificationType === 'collaboration_invitation' ||
+                        notification.type === 'collaboration_invitation' ||
+                        notification.title === 'AI Collaboration Invitation') {
+                      return isRecentCollaborationInvitation(notification);
+                    }
+                    // Keep all other notifications
+                    return true;
+                  })
+                  .map((notification: any) => (
                   <React.Fragment key={notification.id}>
                     <ListItem 
                       alignItems="flex-start"
