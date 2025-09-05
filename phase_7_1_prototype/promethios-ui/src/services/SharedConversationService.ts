@@ -143,29 +143,28 @@ class SharedConversationService {
     this.conversations.set(conversationId, conversation);
     this.addConversationToUser(creatorId, conversationId);
 
-    // Add creator as first participant
-    await this.addParticipant(conversationId, creatorId, creatorId);
-    
-    // Add initial participants
-    for (const participantId of initialParticipants) {
-      await this.addParticipant(conversationId, participantId, creatorId);
-    }
-
     try {
-      // Persist to Firebase
-      const participantIds = conversation.participants.map(p => p.id);
+      // Create Firebase document FIRST (empty participants initially)
       const firestoreData = {
         ...conversation,
-        participantIds, // Flat array for querying
+        participantIds: [], // Start with empty participants
         createdAt: Timestamp.fromDate(conversation.createdAt),
         lastActivity: Timestamp.fromDate(conversation.lastActivity)
       };
       
       await setDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), firestoreData);
-      console.log('✅ [SharedConversation] Persisted to Firebase:', conversationId);
+      console.log('✅ [SharedConversation] Created Firebase document:', conversationId);
     } catch (error) {
-      console.error('❌ [SharedConversation] Failed to persist to Firebase:', error);
+      console.error('❌ [SharedConversation] Failed to create Firebase document:', error);
       // Continue with in-memory version
+    }
+
+    // Now add participants (can safely updateDoc the existing document)
+    await this.addParticipant(conversationId, creatorId, creatorId);
+    
+    // Add initial participants
+    for (const participantId of initialParticipants) {
+      await this.addParticipant(conversationId, participantId, creatorId);
     }
 
     console.log('✅ Created shared conversation:', conversationId);
