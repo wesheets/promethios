@@ -99,13 +99,9 @@ class ChatInvitationService {
       if (result.success) {
         console.log('✅ [ChatInvitationService] Collaboration invitation sent successfully');
         
-        // Add user as pending participant to shared conversation (prepare for acceptance)
-        await this.sharedConversationService.addPendingParticipant(
-          request.conversationId,
-          request.toUserId,
-          request.fromUserId
-        );
-
+        // Note: Shared conversation will be created when invitation is accepted
+        // The addPendingParticipant call is not needed here as the conversation doesn't exist yet
+        
         return {
           success: true,
           invitationId: result.interactionId
