@@ -41,6 +41,41 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
   const [isInSharedMode, setIsInSharedMode] = useState(false);
   const sharedConversationService = SharedConversationService.getInstance();
 
+  // Helper functions for managing closed conversations
+  const getClosedConversationsKey = (userId: string) => `closedSharedConversations_${userId}`;
+  
+  const getClosedConversations = (userId: string): string[] => {
+    try {
+      const stored = localStorage.getItem(getClosedConversationsKey(userId));
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Error reading closed conversations:', error);
+      return [];
+    }
+  };
+  
+  const addClosedConversation = (userId: string, conversationId: string) => {
+    try {
+      const closed = getClosedConversations(userId);
+      if (!closed.includes(conversationId)) {
+        closed.push(conversationId);
+        localStorage.setItem(getClosedConversationsKey(userId), JSON.stringify(closed));
+      }
+    } catch (error) {
+      console.error('Error storing closed conversation:', error);
+    }
+  };
+  
+  const removeClosedConversation = (userId: string, conversationId: string) => {
+    try {
+      const closed = getClosedConversations(userId);
+      const filtered = closed.filter(id => id !== conversationId);
+      localStorage.setItem(getClosedConversationsKey(userId), JSON.stringify(filtered));
+    } catch (error) {
+      console.error('Error removing closed conversation:', error);
+    }
+  };
+
   // Load shared conversations when user changes
   useEffect(() => {
     const loadSharedConversations = async () => {
@@ -69,10 +104,17 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
           
           console.log('🌐 [SharedConversationContext] getUserSharedConversations returned:', conversations);
           console.log('🌐 [SharedConversationContext] Conversations count:', conversations?.length || 0);
-          console.log('🌐 [SharedConversationContext] Conversations details:', conversations);
           
-          setSharedConversations(conversations);
-          console.log('🌐 [SharedConversationContext] setSharedConversations called with', conversations.length, 'conversations');
+          // Filter out conversations that the user has closed
+          const closedConversationIds = getClosedConversations(currentUser.uid);
+          const filteredConversations = conversations.filter(conv => !closedConversationIds.includes(conv.id));
+          
+          console.log('🌐 [SharedConversationContext] Closed conversation IDs:', closedConversationIds);
+          console.log('🌐 [SharedConversationContext] Filtered conversations count:', filteredConversations.length);
+          console.log('🌐 [SharedConversationContext] Conversations details:', filteredConversations);
+          
+          setSharedConversations(filteredConversations);
+          console.log('🌐 [SharedConversationContext] setSharedConversations called with', filteredConversations.length, 'conversations');
         } else {
           console.log('🌐 [SharedConversationContext] No user available, clearing conversations');
           setSharedConversations([]);
@@ -102,7 +144,15 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
           console.log('🌐 [SharedConversationContext] Firebase user differs from useAuth user, reloading...');
           sharedConversationService.getUserSharedConversations(firebaseUser.uid).then(conversations => {
             console.log('🌐 [SharedConversationContext] Loaded conversations from Firebase auth:', conversations.length);
-            setSharedConversations(conversations);
+            
+            // Filter out closed conversations
+            const closedConversationIds = getClosedConversations(firebaseUser.uid);
+            const filteredConversations = conversations.filter(conv => !closedConversationIds.includes(conv.id));
+            
+            console.log('🌐 [SharedConversationContext] Firebase auth - Closed IDs:', closedConversationIds);
+            console.log('🌐 [SharedConversationContext] Firebase auth - Filtered count:', filteredConversations.length);
+            
+            setSharedConversations(filteredConversations);
           });
         }
       });
@@ -149,7 +199,15 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
         console.log('🔄 [Global Shared Conversations] Refreshing conversations for user:', currentUser.uid);
         const conversations = await sharedConversationService.getUserSharedConversations(currentUser.uid);
         console.log('🔄 [Global Shared Conversations] Refresh loaded:', conversations.length, 'conversations');
-        setSharedConversations(conversations);
+        
+        // Filter out closed conversations
+        const closedConversationIds = getClosedConversations(currentUser.uid);
+        const filteredConversations = conversations.filter(conv => !closedConversationIds.includes(conv.id));
+        
+        console.log('🔄 [Global Shared Conversations] Refresh - Closed IDs:', closedConversationIds);
+        console.log('🔄 [Global Shared Conversations] Refresh - Filtered count:', filteredConversations.length);
+        
+        setSharedConversations(filteredConversations);
       }
     } catch (error) {
       console.error('🔄 [Global Shared Conversations] Error refreshing conversations:', error);
@@ -157,6 +215,18 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
   };
 
   const addSharedConversation = (conversation: SharedConversation) => {
+    // Get current user
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        const { getAuth } = require('firebase/auth');
+        const auth = getAuth();
+        currentUser = auth.currentUser;
+      } catch (error) {
+        console.error('Error getting current user for add operation:', error);
+      }
+    }
+    
     setSharedConversations(prev => {
       // Check if conversation already exists to avoid duplicates
       const exists = prev.some(conv => conv.id === conversation.id);
@@ -165,6 +235,12 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
         return prev;
       }
       console.log('🔄 [SharedConversationContext] Adding new conversation:', conversation.id);
+      
+      // Remove from closed list if it was previously closed
+      if (currentUser?.uid) {
+        removeClosedConversation(currentUser.uid, conversation.id);
+      }
+      
       return [...prev, conversation];
     });
   };
@@ -176,13 +252,33 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
   };
 
   const handleSharedConversationClose = (conversationId: string) => {
+    // Get current user
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        const { getAuth } = require('firebase/auth');
+        const auth = getAuth();
+        currentUser = auth.currentUser;
+      } catch (error) {
+        console.error('Error getting current user for close operation:', error);
+      }
+    }
+    
     if (activeSharedConversation === conversationId) {
       setActiveSharedConversation(null);
       setIsInSharedMode(false);
     }
+    
     // Remove from user's conversation list
     setSharedConversations(prev => prev.filter(conv => conv.id !== conversationId));
-    console.log('❌ [Global Shared Conversations] Closed shared conversation:', conversationId);
+    
+    // Persist the closed state
+    if (currentUser?.uid) {
+      addClosedConversation(currentUser.uid, conversationId);
+      console.log('❌ [Global Shared Conversations] Closed and persisted shared conversation:', conversationId);
+    } else {
+      console.log('❌ [Global Shared Conversations] Closed shared conversation (no user for persistence):', conversationId);
+    }
   };
 
   const handlePrivacyToggle = async (conversationId: string, isPrivate: boolean) => {
