@@ -50,9 +50,10 @@ class ChatSharingService {
   }
 
   detectChatReference(message: string): string | null {
-    // Simple pattern matching for chat references
-    // Look for patterns like "chat:abc123" or "ref:chat_123" or direct chat session IDs
-    const chatRefPattern = /(?:chat:|ref:chat_|^)([a-zA-Z0-9_-]+)/i;
+    // More specific pattern matching for chat references
+    // Look for patterns like "chat:abc123", "ref:chat_123", or explicit chat session IDs starting with "chat_"
+    // Removed the broad "^" pattern that was matching any message starting with alphanumeric characters
+    const chatRefPattern = /(?:chat:|ref:chat_|^chat_)([a-zA-Z0-9_-]+)/i;
     const match = message.match(chatRefPattern);
     return match ? match[1] : null;
   }

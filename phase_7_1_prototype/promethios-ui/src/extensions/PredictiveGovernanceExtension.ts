@@ -530,14 +530,26 @@ export class PredictiveGovernanceExtension extends Extension {
   // Private helper methods
 
   private async getHistoricalReceipts(agentId: string, proposedAction: ProposedAction): Promise<EnhancedToolReceipt[]> {
-    // Get receipts for similar actions
-    const receipts = await this.receiptExtension.getAgentReceipts(agentId, {
-      filters: [
-        { field: 'toolName', operator: 'equals', value: proposedAction.toolName },
-        { field: 'actionType', operator: 'equals', value: proposedAction.actionType }
-      ],
-      limit: 100
-    });
+    try {
+      // Check if the method exists before calling it
+      if (typeof this.receiptExtension.getAgentReceipts === 'function') {
+        // Get receipts for similar actions
+        const receipts = await this.receiptExtension.getAgentReceipts(agentId, {
+          filters: [
+            { field: 'toolName', operator: 'equals', value: proposedAction.toolName },
+            { field: 'actionType', operator: 'equals', value: proposedAction.actionType }
+          ],
+          limit: 100
+        });
+        return receipts;
+      } else {
+        console.warn('⚠️ [PredictiveGov] getAgentReceipts method not available, returning empty receipts');
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ [PredictiveGov] Error getting historical receipts:', error);
+      return [];
+    }
 
     return receipts;
   }

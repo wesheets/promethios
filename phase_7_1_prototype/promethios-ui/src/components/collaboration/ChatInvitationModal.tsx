@@ -38,7 +38,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import HumanChatService, { TeamMember } from '../../services/HumanChatService';
-import chatInvitationService from '../../services/ChatInvitationService';
+import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../../services/ChatInvitationService';
 
 interface ChatInvitationModalProps {
   open: boolean;
@@ -123,38 +123,28 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
       console.log('🔍 [ChatInvitation] Starting to load team members...');
       console.log('🔍 [ChatInvitation] Current effectiveUser:', effectiveUser?.uid);
       
-      // Initialize the service with current user if not already initialized
-      if (effectiveUser?.uid) {
-        console.log('🔍 [ChatInvitation] Initializing HumanChatService with user:', effectiveUser.uid);
-        await humanChatService.initialize(effectiveUser.uid);
-        console.log('✅ [ChatInvitation] HumanChatService initialized');
-        
-        // Add a small delay to ensure connections are fully loaded
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } else {
-        console.log('❌ [ChatInvitation] No user available for initialization');
-        setError('User not authenticated');
-        return;
-      }
-      
+      // First try to get team members directly (service should already be initialized by main component)
       console.log('🔍 [ChatInvitation] Getting team members from service...');
       let members = humanChatService.getTeamMembers();
       console.log('🔍 [ChatInvitation] Retrieved team members:', members);
       console.log('🔍 [ChatInvitation] Team members count:', members.length);
       
-      // If no members found, try reinitializing once more
-      if (members.length === 0) {
-        console.log('⚠️ [ChatInvitation] No team members found, trying to reinitialize...');
-        await humanChatService.initialize(effectiveUser!.uid);
+      // If no members found and we have a user, try initializing the service
+      if (members.length === 0 && effectiveUser?.uid) {
+        console.log('⚠️ [ChatInvitation] No team members found, trying to initialize service...');
+        await humanChatService.initialize(effectiveUser.uid);
+        
+        // Add a small delay to ensure connections are fully loaded
         await new Promise(resolve => setTimeout(resolve, 1000));
+        
         members = humanChatService.getTeamMembers();
-        console.log('🔍 [ChatInvitation] After reinitialize - team members count:', members.length);
+        console.log('🔍 [ChatInvitation] After initialize - team members count:', members.length);
       }
       
       setTeamMembers(members);
       
       if (members.length === 0) {
-        console.log('⚠️ [ChatInvitation] Still no team members found after retry');
+        console.log('⚠️ [ChatInvitation] Still no team members found');
       } else {
         console.log('✅ [ChatInvitation] Successfully loaded', members.length, 'team members');
       }
@@ -190,7 +180,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
       return;
     }
 
-    if (!chatSession?.id || !user?.uid) {
+    if (!chatSession?.id || !effectiveUser?.uid) {
       setError('Missing chat session or user information');
       return;
     }
@@ -199,23 +189,40 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
     setError(null);
 
     try {
-      const invitationPromises = selectedTeamMembers.map(async (member) => {
-        return await chatInvitationService.createChatInvitation({
-          fromUserId: user.uid,
-          fromUserName: user.displayName || user.email || 'Unknown User',
-          toUserId: member.id,
-          toUserName: member.name,
-          conversationId: chatSession.id,
-          conversationName: chatSession.name,
-          agentName: agentName || 'AI Assistant',
-          message: personalMessage.trim() || undefined,
-        });
-      });
-
-      const results = await Promise.all(invitationPromises);
-      const successCount = results.filter(r => r !== null).length;
-
-      setSuccess(`Successfully sent ${successCount} invitation${successCount > 1 ? 's' : ''} to team members`);
+      console.log('📨 [ChatInvitation] Sending invitations to:', selectedTeamMembers);
+      
+      // Use the same pattern as the working team panel implementation
+      const userIds = selectedTeamMembers.map(member => member.id);
+      const currentUserId = effectiveUser.uid;
+      const currentUserName = effectiveUser.displayName || effectiveUser.email || 'Current User';
+      const conversationId = chatSession.id;
+      const conversationName = chatSession.name;
+      const message = personalMessage.trim() || `Join me in collaborating with ${agentName || 'AI Assistant'}`;
+      
+      // Send invitations through the same method used by team panel
+      const result = await aiCollaborationInvitationService.sendInvitationToMultipleUsers(
+        currentUserId,
+        currentUserName,
+        userIds,
+        conversationId,
+        conversationName,
+        agentName,
+        message
+      );
+      
+      console.log(`✅ [ChatInvitation] Invitation results:`, result);
+      
+      if (result.success) {
+        const successCount = result.successfulInvitations.length;
+        setSuccess(`Successfully sent ${successCount} invitation${successCount > 1 ? 's' : ''} to team members`);
+        
+        if (result.failedInvitations.length > 0) {
+          console.warn('⚠️ [ChatInvitation] Some invitations failed:', result.failedInvitations);
+        }
+      } else {
+        setError('Failed to send some invitations. Please try again.');
+      }
+      
       setSelectedTeamMembers([]);
       setPersonalMessage('');
       
@@ -239,7 +246,7 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
       return;
     }
 
-    if (!chatSession?.id || !user?.uid) {
+    if (!chatSession?.id || !effectiveUser?.uid) {
       setError('Missing chat session or user information');
       return;
     }
@@ -248,18 +255,36 @@ const ChatInvitationModal: React.FC<ChatInvitationModalProps> = ({
     setError(null);
 
     try {
-      await chatInvitationService.createChatInvitation({
-        fromUserId: user.uid,
-        fromUserName: user.displayName || user.email || 'Unknown User',
+      console.log('📨 [ChatInvitation] Sending email invitation to:', emailAddress);
+      
+      // Use the same pattern as the working team panel implementation
+      const currentUserId = effectiveUser.uid;
+      const currentUserName = effectiveUser.displayName || effectiveUser.email || 'Current User';
+      const conversationId = chatSession.id;
+      const conversationName = chatSession.name;
+      const message = personalMessage.trim() || `Join me in collaborating with ${agentName || 'AI Assistant'}`;
+      
+      // For email invitations, we still use the single invitation method
+      // but with the same structure as the team panel
+      const result = await aiCollaborationInvitationService.sendCollaborationInvitation({
+        fromUserId: currentUserId,
+        fromUserName: currentUserName,
         toUserId: 'email_' + emailAddress.trim(), // Temporary ID for email invitations
         toUserName: emailAddress.trim(),
-        conversationId: chatSession.id,
-        conversationName: chatSession.name,
+        conversationId: conversationId,
+        conversationName: conversationName,
         agentName: agentName || 'AI Assistant',
-        message: personalMessage.trim() || undefined,
+        message: message,
       });
 
-      setSuccess(`Invitation sent to ${emailAddress}`);
+      console.log('✅ [ChatInvitation] Email invitation result:', result);
+      
+      if (result.success) {
+        setSuccess(`Invitation sent to ${emailAddress}`);
+      } else {
+        setError(result.error || 'Failed to send invitation. Please try again.');
+      }
+      
       setEmailAddress('');
       setPersonalMessage('');
       

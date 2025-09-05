@@ -494,6 +494,23 @@ export class UniversalGovernanceAdapter {
             body: errorText
           });
           
+          // Check if this is an API key error (401) that we can fallback from
+          const isApiKeyError = response.status === 500 && 
+                               (errorText.includes('401 Incorrect API key') || 
+                                errorText.includes('invalid_api_key'));
+          
+          if (isApiKeyError && endpoint === CHAT_ENDPOINT) {
+            console.log(`🔄 [Universal] Backend API key error detected, attempting frontend fallback...`);
+            try {
+              const fallbackResult = await this.fallbackToFrontendAPI(data);
+              console.log(`✅ [Universal] Frontend fallback successful`);
+              return fallbackResult;
+            } catch (fallbackError) {
+              console.error(`❌ [Universal] Frontend fallback also failed:`, fallbackError);
+              // Continue with original error handling
+            }
+          }
+          
           // Check if this is an overloaded error that we should retry
           const isOverloadedError = errorText.includes('overloaded_error') || 
                                    errorText.includes('Overloaded') ||
@@ -3048,6 +3065,77 @@ You operate with governance oversight that monitors your interactions for safety
     } catch (error) {
       console.error(`❌ [Universal] Failed to store tool execution receipt:`, error);
       // Don't throw - receipt generation shouldn't break the main flow
+    }
+  }
+
+  /**
+   * Fallback to frontend API when backend fails due to API key issues
+   */
+  private async fallbackToFrontendAPI(backendRequest: any): Promise<any> {
+    try {
+      console.log(`🔄 [Universal] Attempting frontend API fallback...`);
+      
+      // Check if frontend API key is available
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error('Frontend API key not available for fallback');
+      }
+
+      // Convert backend request format to frontend format
+      const messages = [
+        {
+          role: 'system' as const,
+          content: `You are ${backendRequest.agent_configuration?.personality || 'a helpful AI assistant'}. ${backendRequest.agent_configuration?.behavior || 'Be helpful and professional.'}`
+        },
+        ...backendRequest.conversationHistory || [],
+        {
+          role: 'user' as const,
+          content: backendRequest.message
+        }
+      ];
+
+      // Use frontend OpenAI proxy
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: backendRequest.model || 'gpt-3.5-turbo',
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Frontend API error: ${errorData.error?.message || response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      // Convert frontend response to backend format
+      return {
+        response: result.choices[0]?.message?.content || 'I apologize, but I encountered an issue processing your request.',
+        session_id: backendRequest.session_id,
+        governance_enabled: false, // Fallback doesn't have full governance
+        governance_metrics: {
+          trust_score: 0.5, // Default trust score for fallback
+          compliance_score: 0.5,
+          risk_level: 'medium',
+          governance_enabled: false,
+          fallback_mode: true
+        },
+        provider: 'openai',
+        model: backendRequest.model || 'gpt-3.5-turbo',
+        usage: result.usage || {}
+      };
+
+    } catch (error) {
+      console.error(`❌ [Universal] Frontend fallback failed:`, error);
+      throw error;
     }
   }
 }

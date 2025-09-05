@@ -692,11 +692,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   const switchChatContext = (contextId: string) => {
     console.log(`🔄 [ChatSwitch] Switching to context: ${contextId}`);
+    console.log(`🔄 [ChatSwitch] Current isInSharedMode: ${isInSharedMode}`);
+    console.log(`🔄 [ChatSwitch] Current activeSharedConversation: ${activeSharedConversation}`);
     
     // If switching to host chat context, clear shared mode
     if (contextId === 'host' || contextId === selectedChatbotId) {
       console.log(`🏠 [ChatSwitch] Switching to host chat, clearing shared mode`);
-      handleSharedConversationClose();
+      console.log(`🏠 [ChatSwitch] Before clearing - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
+      
+      setActiveSharedConversation(null);
+      setIsInSharedMode(false);
+      
+      console.log(`🏠 [ChatSwitch] After clearing calls made - should be null and false`);
+      
+      // Add a small delay to ensure state updates are processed
+      setTimeout(() => {
+        console.log(`🏠 [ChatSwitch] Delayed check - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
+      }, 100);
     }
     
     setMultiChatState(prev => ({
@@ -707,6 +719,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         isActive: c.id === contextId
       }))
     }));
+    
+    console.log(`🔄 [ChatSwitch] MultiChatState updated for context: ${contextId}`);
   };
 
   const toggleSidePanel = () => {
@@ -3880,47 +3894,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               {/* Left Side - Chat Interface */}
               <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}>
 
-              {/* AI Observation Privacy Controls - Integrated into command center */}
-              {activeSharedConversation && (
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 2, 
-                  mb: 2,
-                  p: 1,
-                  bgcolor: observationState?.isPrivateMode ? '#ef444410' : '#10b98110',
-                  border: `1px solid ${observationState?.isPrivateMode ? '#ef4444' : '#10b981'}`,
-                  borderRadius: 1
-                }}>
-                  <AIObservationToggle
-                    conversationId={activeSharedConversation}
-                    currentUserId={user?.uid || ''}
-                    currentUserName={user?.displayName || 'User'}
-                    participatingAgents={selectedAgents.map(agent => ({
-                      id: agent.id,
-                      name: agent.name,
-                      type: agent.type || 'AI Agent'
-                    }))}
-                    onPrivacyChange={handlePrivacyChange}
-                    position="inline" // Special inline mode for command center integration
-                  />
-                  
-                  {/* Privacy Status Indicator */}
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" sx={{ 
-                      color: observationState?.isPrivateMode ? '#ef4444' : '#10b981',
-                      fontWeight: 600 
-                    }}>
-                      {observationState?.isPrivateMode ? (
-                        '🔒 Private Mode Active - AI agents cannot observe'
-                      ) : (
-                        '👁️ AI agents are observing this conversation'
-                      )}
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-
               {/* Multi-Tab Chat Header */}
               <Box sx={{ borderBottom: '1px solid #334155' }}>
                 {/* Tab Bar */}
@@ -4174,7 +4147,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
               {/* Chat Messages Area */}
               <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
-                {isInSharedMode && activeSharedConversation ? (
+                {(() => {
+                  console.log(`🎨 [UI Render] Checking shared mode - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
+                  console.log(`🎨 [UI Render] Condition result: ${isInSharedMode && activeSharedConversation}`);
+                  return isInSharedMode && activeSharedConversation;
+                })() ? (
                   /* Shared Conversation Interface */
                   <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                     {/* Shared Conversation Header */}
