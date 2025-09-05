@@ -4174,7 +4174,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
               {/* Chat Messages Area */}
               <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
-                {activeSharedConversation ? (
+                {isInSharedMode && activeSharedConversation ? (
                   /* Shared Conversation Interface */
                   <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                     {/* Shared Conversation Header */}
