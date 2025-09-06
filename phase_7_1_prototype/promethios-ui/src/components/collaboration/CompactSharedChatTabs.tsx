@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Chip, Tooltip, IconButton, Menu, MenuItem, Typography, Avatar, Badge } from '@mui/material';
-import { MoreHoriz, People, Chat, Close } from '@mui/icons-material';
-import { SharedConversation } from './SharedChatTabs';
-import { UserProfileService } from '../../services/UserProfileService';
-import { UserProfile } from '../../types/profile';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Box, Chip, Avatar, AvatarGroup, Tooltip, IconButton, Menu, MenuItem, Typography } from '@mui/material';
+import { MoreHoriz, Chat, Close } from '@mui/icons-material';
+import { SharedConversation } from '../../services/SharedConversationService';
+import { UserProfileService, UserProfile } from '../../services/UserProfileService';
 
 interface CompactSharedChatTabsProps {
   sharedConversations: SharedConversation[];
@@ -38,40 +37,53 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
   const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
   const [userProfileService] = useState(() => new UserProfileService());
 
+  // Memoize participant IDs to prevent unnecessary re-fetching
+  const allParticipantIds = useMemo(() => {
+    const participantIds = new Set<string>();
+    sharedConversations.forEach(conversation => {
+      conversation.participants?.forEach(participant => {
+        if (participant.type === 'human') {
+          participantIds.add(participant.id);
+        }
+      });
+    });
+    return Array.from(participantIds);
+  }, [sharedConversations]);
+
   // Fetch user profiles for all participants
   useEffect(() => {
     const fetchUserProfiles = async () => {
-      const allParticipantIds = new Set<string>();
+      // Only fetch profiles we don't already have
+      const profilesToFetch = allParticipantIds.filter(id => !userProfiles[id]);
       
-      // Collect all unique participant IDs from all conversations
-      sharedConversations.forEach(conversation => {
-        conversation.participants?.forEach(participant => {
-          if (participant.type === 'human') {
-            allParticipantIds.add(participant.id);
-          }
-        });
-      });
+      if (profilesToFetch.length === 0) {
+        return; // No new profiles to fetch
+      }
 
-      // Fetch profiles for all participants
-      const profiles: Record<string, UserProfile> = {};
-      for (const participantId of allParticipantIds) {
+      console.log(`🔄 Fetching ${profilesToFetch.length} new user profiles...`);
+      
+      const newProfiles: Record<string, UserProfile> = {};
+      for (const participantId of profilesToFetch) {
         try {
           const profile = await userProfileService.getUserProfile(participantId);
           if (profile) {
-            profiles[participantId] = profile;
+            newProfiles[participantId] = profile;
           }
         } catch (error) {
           console.error(`Failed to fetch profile for user ${participantId}:`, error);
         }
       }
       
-      setUserProfiles(profiles);
+      // Only update state if we have new profiles
+      if (Object.keys(newProfiles).length > 0) {
+        setUserProfiles(prev => ({ ...prev, ...newProfiles }));
+      }
     };
 
-    if (sharedConversations.length > 0) {
+    if (allParticipantIds.length > 0) {
       fetchUserProfiles();
     }
-  }, [sharedConversations, userProfileService]);
+  }, [allParticipantIds, userProfiles, userProfileService]);
 
   if (sharedConversations.length === 0) {
     return null;

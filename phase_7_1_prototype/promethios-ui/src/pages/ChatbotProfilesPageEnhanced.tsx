@@ -3136,10 +3136,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     const messageToSend = customMessage || messageInput.trim();
     if (!messageToSend || !activeSession || chatLoading) return;
 
+    // Create user message once for both UI display and persistence
+    let userMessage: ChatMessage | null = null;
+
     try {
       // Always add user message to chat for immediate feedback (unless it's an internal system message)
       if (!customMessage || (typeof customMessage === 'string' && !customMessage.startsWith('🤝') && !customMessage.startsWith('❓') && !customMessage.startsWith('😈') && !customMessage.startsWith('🎯') && !customMessage.startsWith('💡') && !customMessage.startsWith('🌧️'))) {
-        const userMessage: ChatMessage = {
+        userMessage = {
           id: `user_${Date.now()}`,
           content: messageToSend,
           sender: 'user',
@@ -3153,7 +3156,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           setBotStates(prev => {
             const newStates = new Map(prev);
             const currentState = newStates.get(botId) || initializeBotState(botId);
-            const updatedMessages = [...(currentState.chatMessages || []), userMessage];
+            const updatedMessages = [...(currentState.chatMessages || []), userMessage!];
             const updatedState = { ...currentState, chatMessages: updatedMessages };
             newStates.set(botId, updatedState);
             return newStates;
@@ -3185,7 +3188,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
       
       // Original single-agent message handling
-      await handleSingleAgentMessage(messageToSend);
+      await handleSingleAgentMessage(messageToSend, userMessage);
       
     } catch (error) {
       console.error('❌ [ChatPanel] Error sending message:', error);
@@ -3336,7 +3339,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Original single-agent message handling
-  const handleSingleAgentMessage = async (message?: string) => {
+  const handleSingleAgentMessage = async (message?: string, existingUserMessage?: ChatMessage | null) => {
     try {
       // Prepare the final message content - ensure it's always a string
       let finalMessageContent = typeof message === 'string' ? message : (message ? String(message) : messageInput.trim());
@@ -3569,8 +3572,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         // Session should already exist from proactive creation above
         if (sessionToUse) {
           try {
-            // Create user message object for saving
-            const userMessage: ChatMessage = {
+            // Use existing user message if provided, otherwise create new one
+            const userMessageForSaving = existingUserMessage || {
               id: `user_${Date.now()}`,
               content: messageInput.trim(),
               sender: 'user',
@@ -3579,10 +3582,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             };
             
             await chatHistoryService.addMessageToSession(sessionToUse.id, {
-              id: userMessage.id,
-              content: userMessage.content,
-              sender: userMessage.sender,
-              timestamp: userMessage.timestamp,
+              id: userMessageForSaving.id,
+              content: userMessageForSaving.content,
+              sender: userMessageForSaving.sender,
+              timestamp: userMessageForSaving.timestamp,
               agentId: selectedChatbot.id,
               agentName: selectedChatbot.name,
             });
@@ -3781,8 +3784,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Session should already exist from proactive creation above
       if (sessionToUse) {
         try {
-          // Create user message object for saving
-          const userMessage: ChatMessage = {
+          // Use existing user message if provided, otherwise create new one
+          const userMessageForSaving = existingUserMessage || {
             id: `user_${Date.now()}`,
             content: messageInput.trim(),
             sender: 'user',
@@ -3791,10 +3794,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           };
           
           await chatHistoryService.addMessageToSession(sessionToUse.id, {
-            id: userMessage.id,
-            content: userMessage.content,
-            sender: userMessage.sender,
-            timestamp: userMessage.timestamp,
+            id: userMessageForSaving.id,
+            content: userMessageForSaving.content,
+            sender: userMessageForSaving.sender,
+            timestamp: userMessageForSaving.timestamp,
             agentId: selectedChatbot.id,
             agentName: selectedChatbot.name,
           });

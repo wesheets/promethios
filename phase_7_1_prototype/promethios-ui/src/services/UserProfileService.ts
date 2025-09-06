@@ -62,6 +62,9 @@ export interface SearchResult {
 }
 
 export class UserProfileService {
+  private profileCache: Map<string, UserProfile> = new Map();
+  private cacheExpiry: Map<string, number> = new Map();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   private baseUrl = '/api/users';
   
   // No mock data - using real Firebase data only
@@ -274,6 +277,15 @@ export class UserProfileService {
    * Get user profile by ID
    */
   async getUserProfile(userId: string): Promise<UserProfile | null> {
+    // Check cache first
+    const cached = this.profileCache.get(userId);
+    const cacheTime = this.cacheExpiry.get(userId);
+    
+    if (cached && cacheTime && Date.now() < cacheTime) {
+      console.log('🎯 UserProfileService: Returning cached profile for:', userId);
+      return cached;
+    }
+    
     console.log('🔍 UserProfileService.getUserProfile called with userId:', userId);
     
     try {
@@ -292,6 +304,11 @@ export class UserProfileService {
       if (userDoc.exists()) {
         const profileData = { id: userDoc.id, ...userDoc.data() } as UserProfile;
         console.log('✅ UserProfileService: Profile data found:', profileData);
+        
+        // Cache the result
+        this.profileCache.set(userId, profileData);
+        this.cacheExpiry.set(userId, Date.now() + this.CACHE_DURATION);
+        
         return profileData;
       } else {
         console.log('❌ UserProfileService: No document found for userId:', userId);

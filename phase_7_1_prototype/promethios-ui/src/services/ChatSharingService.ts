@@ -51,11 +51,12 @@ class ChatSharingService {
 
   detectChatReference(message: string): string | null {
     // More specific pattern matching for chat references
-    // Look for patterns like "chat:abc123", "ref:chat_123", or explicit chat session IDs starting with "chat_"
-    // Removed the broad "^" pattern that was matching any message starting with alphanumeric characters
-    const chatRefPattern = /(?:chat:|ref:chat_|^chat_)([a-zA-Z0-9_-]+)/i;
+    // Look for patterns like "chat:chat_123", "ref:chat_123", or explicit chat session IDs starting with "chat_"
+    // Fixed to preserve the full session ID including the "chat_" prefix
+    const chatRefPattern = /(?:chat:|ref:)(chat_[a-zA-Z0-9_-]+)|^(chat_[a-zA-Z0-9_-]+)/i;
     const match = message.match(chatRefPattern);
-    return match ? match[1] : null;
+    // Return the captured group that contains the full session ID
+    return match ? (match[1] || match[2]) : null;
   }
 
   async processChatReference(chatReferenceId: string, userId: string, agentId: string, userMessage: string): Promise<{
