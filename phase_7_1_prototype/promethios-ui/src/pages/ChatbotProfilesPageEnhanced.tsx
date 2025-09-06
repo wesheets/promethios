@@ -4931,10 +4931,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       conversationId={`conv_${selectedChatbot?.id || 'default'}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
                                       // New unified invitation props
-                                      chatSession={currentChatSession ? {
-                                        id: currentChatSession.id,
-                                        name: currentChatSession.name || `${selectedChatbot?.name || 'AI'} Chat`,
-                                        messageCount: currentChatSession.messages?.length || 0
+                                      chatSession={currentBotState?.currentChatSession ? {
+                                        id: currentBotState.currentChatSession.id,
+                                        name: currentBotState.currentChatSession.name || `${selectedChatbot?.name || 'AI'} Chat`,
+                                        messageCount: currentBotState.currentChatSession.messages?.length || 0
                                       } : undefined}
                                       agentId={selectedChatbot?.id}
                                       user={user}
