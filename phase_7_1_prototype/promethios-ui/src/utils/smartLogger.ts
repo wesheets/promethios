@@ -12,7 +12,7 @@ interface LogConfig {
 
 class SmartLogger {
   private config: LogConfig = {
-    enabled: process.env.NODE_ENV === 'development',
+    enabled: import.meta.env.MODE === 'development',
     level: 'info',
     throttleMs: 100, // Minimum time between similar logs
     maxLogsPerSecond: 10 // Maximum logs per second
@@ -105,7 +105,7 @@ class SmartLogger {
 export const smartLogger = new SmartLogger();
 
 // Configure for production
-if (process.env.NODE_ENV === 'production') {
+if (import.meta.env.MODE === 'production') {
   smartLogger.productionMode();
 }
 

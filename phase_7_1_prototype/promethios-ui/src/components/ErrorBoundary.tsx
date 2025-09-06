@@ -75,7 +75,7 @@ class ErrorBoundary extends Component<Props, State> {
               </Button>
             </Box>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.MODE === 'development' && this.state.error && (
               <Alert severity="error" sx={{ textAlign: 'left', mt: 3 }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Error Details (Development Mode):

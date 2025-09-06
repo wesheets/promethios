@@ -51,7 +51,7 @@ const ApiInstructionsPanel: React.FC<ApiInstructionsPanelProps> = ({ deployment 
   const [copiedItem, setCopiedItem] = useState('');
 
   const apiKey = deployment.apiKey;
-  const endpoint = `${process.env.NEXT_PUBLIC_API_BASE || 'https://promethios-phase-7-1-api.onrender.com'}/api/deployed/${deployment.deploymentId}/chat`;
+  const endpoint = `${import.meta.env.NEXT_PUBLIC_API_BASE || 'https://promethios-phase-7-1-api.onrender.com'}/api/deployed/${deployment.deploymentId}/chat`;
   
   const copyToClipboard = async (text: string, item: string) => {
     try {

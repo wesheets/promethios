@@ -39,7 +39,7 @@ class ObserverIntegrationService {
   private events: ObserverEvent[] = [];
 
   constructor() {
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
     this.baseUrl = `${API_BASE_URL}/api/observer`;
   }
 

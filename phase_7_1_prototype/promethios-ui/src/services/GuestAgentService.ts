@@ -219,7 +219,7 @@ export class GuestAgentService {
       };
       
       // Store session
-      await this.storageService.store(`guest_session_${session.id}`, session);
+      await this.storageService.set('guest_sessions', session.id, session);
       this.activeSessions.set(session.id, session);
       
       // Notify owner
@@ -287,7 +287,7 @@ export class GuestAgentService {
       }
       
       // Update storage
-      await this.storageService.store(`guest_session_${session.id}`, session);
+      await this.storageService.set('guest_sessions', session.id, session);
       
       // Emit event
       this.emitSessionEvent(session.id, {
@@ -395,8 +395,8 @@ export class GuestAgentService {
       session.metadata.totalMessages++;
       
       // Store updates
-      await this.storageService.store(`guest_session_${sessionId}`, session);
-      await this.storageService.store(`guest_messages_${sessionId}`, this.sessionMessages.get(sessionId));
+      await this.storageService.set('guest_sessions', sessionId, session);
+      await this.storageService.set('guest_messages', sessionId, this.sessionMessages.get(sessionId));
       
       // Emit event
       this.emitMessageEvent(sessionId, message);
@@ -428,7 +428,7 @@ export class GuestAgentService {
       }
       
       // Update storage
-      await this.storageService.store(`guest_messages_${sessionId}`, messages);
+      await this.storageService.set('guest_messages', sessionId, messages);
       
       // Remove from pending approvals
       const pending = this.pendingApprovals.get(sessionId) || [];
@@ -723,7 +723,7 @@ export class GuestAgentService {
 
   private async archiveSession(session: GuestSession): Promise<void> {
     // Archive session data for long-term storage
-    await this.storageService.store(`archived_guest_session_${session.id}`, {
+    await this.storageService.set('archived_guest_sessions', session.id, {
       session,
       messages: this.sessionMessages.get(session.id) || []
     });
@@ -755,7 +755,7 @@ export class GuestAgentService {
   private async loadActiveSessions(): Promise<void> {
     // Load active sessions from storage
     try {
-      // Use keys() method instead of listKeys() - get all keys from guest_sessions namespace
+      // Use keys() method to get all keys from guest_sessions namespace
       const sessionKeys = await this.storageService.keys('guest_sessions');
       
       for (const key of sessionKeys) {
@@ -764,7 +764,7 @@ export class GuestAgentService {
         if (session && ['pending', 'active'].includes(session.status)) {
           this.activeSessions.set(session.id, session);
           
-          // Load messages - use get() method instead of retrieve()
+          // Load messages - use get() method
           const messages = await this.storageService.get<GuestMessage[]>('guest_messages', session.id);
           if (messages) {
             this.sessionMessages.set(session.id, messages);
@@ -799,7 +799,8 @@ export class GuestAgentService {
       data
     };
     
-    await this.storageService.store(`guest_session_log_${sessionId}_${Date.now()}`, logEntry);
+    const logKey = `${sessionId}_${Date.now()}`;
+    await this.storageService.set('guest_session_logs', logKey, logEntry);
   }
 
   // =====================================
@@ -876,7 +877,7 @@ export class GuestAgentService {
     const session = this.activeSessions.get(sessionId);
     if (session && session.status === 'active') {
       session.status = 'paused';
-      await this.storageService.store(`guest_session_${sessionId}`, session);
+      await this.storageService.set('guest_sessions', sessionId, session);
       
       this.emitSessionEvent(sessionId, {
         type: 'session_paused',
@@ -892,7 +893,7 @@ export class GuestAgentService {
     if (session && session.status === 'paused') {
       session.status = 'active';
       session.lastActivity = new Date();
-      await this.storageService.store(`guest_session_${sessionId}`, session);
+      await this.storageService.set('guest_sessions', sessionId, session);
       
       this.emitSessionEvent(sessionId, {
         type: 'session_resumed',

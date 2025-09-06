@@ -100,8 +100,8 @@ class PrometheosLLMService {
   private agentApiUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8001';
-    this.agentApiUrl = process.env.REACT_APP_AGENT_API_URL || 'http://localhost:8002';
+    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001';
+    this.agentApiUrl = import.meta.env.VITE_AGENT_API_URL || 'http://localhost:8002';
   }
 
   /**

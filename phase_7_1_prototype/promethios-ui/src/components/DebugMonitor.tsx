@@ -32,7 +32,7 @@ const DebugMonitor: React.FC = () => {
   const eventSourceRef = useRef<EventSource | null>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
   const categories = [
     'all', 'tool_execution', 'tool_schema', 'provider', 'chat', 

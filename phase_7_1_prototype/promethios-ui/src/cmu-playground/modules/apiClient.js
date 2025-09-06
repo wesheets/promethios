@@ -27,10 +27,10 @@ class APIClient {
         }
       },
       apiKeys: {
-        openai: process.env.OPENAI_API_KEY || '',
-        anthropic: process.env.ANTHROPIC_API_KEY || '',
-        cohere: process.env.COHERE_API_KEY || '',
-        huggingface: process.env.HUGGINGFACE_API_KEY || ''
+        openai: import.meta.env.OPENAI_API_KEY || '',
+        anthropic: import.meta.env.ANTHROPIC_API_KEY || '',
+        cohere: import.meta.env.COHERE_API_KEY || '',
+        huggingface: import.meta.env.HUGGINGFACE_API_KEY || ''
       }
     };
     

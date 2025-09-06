@@ -121,7 +121,7 @@ export class PrometheosLLMExtension extends Extension {
   constructor() {
     super('PrometheosLLMExtension', '1.0.0');
     this.agents = new Map();
-    this.apiBaseUrl = process.env.REACT_APP_AGENT_API_URL || 'http://localhost:8002';
+    this.apiBaseUrl = import.meta.env.VITE_AGENT_API_URL || 'http://localhost:8002';
   }
 
   /**

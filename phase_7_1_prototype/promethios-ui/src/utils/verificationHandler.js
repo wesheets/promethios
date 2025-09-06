@@ -7,7 +7,7 @@
 
 class VerificationHandler {
   constructor() {
-    this.apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     this.activeVerifications = new Map();
   }
 

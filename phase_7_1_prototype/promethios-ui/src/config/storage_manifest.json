@@ -328,6 +328,50 @@
     "retention": "5m",
     "compliance": [],
     "description": "User presence status, online/offline tracking, and real-time activity indicators"
+  },
+  "guest_sessions": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": ["GDPR"],
+    "description": "Guest agent access sessions, permissions, and collaboration tracking"
+  },
+  "guest_messages": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 2592000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "30d",
+    "compliance": ["GDPR"],
+    "description": "Guest session messages, approvals, and communication logs"
+  },
+  "archived_guest_sessions": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 220752000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7y",
+    "compliance": ["GDPR", "SOX"],
+    "description": "Archived guest sessions for audit trails and compliance"
+  },
+  "guest_session_logs": {
+    "provider": "firebase",
+    "fallback": "localStorage",
+    "ttl": 220752000000,
+    "encrypt": true,
+    "sync": "immediate",
+    "conflictResolution": "client-wins",
+    "retention": "7y",
+    "compliance": ["GDPR", "SOX"],
+    "description": "Guest session audit logs and event tracking"
   }
 }
 

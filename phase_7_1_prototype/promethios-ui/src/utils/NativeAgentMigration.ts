@@ -145,7 +145,7 @@ export class NativeAgentMigration {
     // Fallback for existing agents without real API keys
     return {
       endpoint: 'https://api.promethios.ai/v1',
-      key: process.env.REACT_APP_PROMETHIOS_API_KEY || 'native-model-key',
+      key: import.meta.env.VITE_PROMETHIOS_API_KEY || 'native-model-key',
       provider: 'promethios',
       selectedModel: 'promethios-lambda-7b',
       selectedCapabilities: ['text-generation', 'conversation', 'governance', 'constitutional-compliance'],

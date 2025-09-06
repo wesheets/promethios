@@ -230,7 +230,7 @@ class FirebaseDebugger {
 export const firebaseDebugger = new FirebaseDebugger();
 
 // Auto-start monitoring in development
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.MODE === 'development') {
   firebaseDebugger.startPerformanceMonitoring();
 }
 

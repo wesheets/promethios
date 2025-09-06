@@ -350,7 +350,7 @@ ${enhancedContext.emotionalContext ? `
       }
       
       // For other providers, try backend API with fallback
-      const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001';
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
       
       const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',

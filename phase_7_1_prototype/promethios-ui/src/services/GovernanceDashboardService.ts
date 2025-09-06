@@ -58,7 +58,7 @@ class GovernanceDashboardService {
 
   constructor() {
     // Use environment variable or default to local development
-    this.baseUrl = process.env.REACT_APP_GOVERNANCE_API_URL || 'http://localhost:5000/api';
+    this.baseUrl = import.meta.env.VITE_GOVERNANCE_API_URL || 'http://localhost:5000/api';
     this.initializeWebSocket();
   }
 

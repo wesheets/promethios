@@ -236,7 +236,7 @@ export class AgentConfigurationService {
         userId: context.userId,
         organizationId: baseConfiguration.identity.organizationId,
         channel: context.channel || 'web',
-        environment: process.env.NODE_ENV as any || 'development',
+        environment: import.meta.env.MODE as any || 'development',
         region: context.region || 'us-east-1',
         features: this.getEnabledFeatures(configuration)
       }

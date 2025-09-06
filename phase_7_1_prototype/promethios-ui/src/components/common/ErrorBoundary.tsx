@@ -61,7 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, errorInfo);
 
     // Log to error reporting service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.MODE === 'production') {
       // Example: Sentry.captureException(error, { extra: errorInfo });
     }
   }
@@ -157,7 +157,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </Box>
 
             {/* Development error details */}
-            {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+            {import.meta.env.MODE === 'development' && this.state.errorInfo && (
               <Box sx={{ mt: 4 }}>
                 <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
                   Development Error Details:

@@ -49,7 +49,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({ darkTheme }) => {
   });
   
   const eventSourceRef = useRef<EventSource | null>(null);
-  const API_BASE = process.env.REACT_APP_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://promethios-phase-7-1-api.onrender.com';
 
   const categories = ['all', 'tool_execution', 'provider', 'chat'];
 
