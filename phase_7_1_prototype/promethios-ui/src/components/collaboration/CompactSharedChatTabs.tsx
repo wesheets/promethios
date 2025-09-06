@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Chip, Tooltip, IconButton, Menu, MenuItem, Typography, Avatar, Badge } from '@mui/material';
 import { MoreHoriz, People, Chat, Close } from '@mui/icons-material';
 import { SharedConversation } from './SharedChatTabs';
+import { UserProfileService } from '../../services/UserProfileService';
+import { UserProfile } from '../../types/profile';
 
 interface CompactSharedChatTabsProps {
   sharedConversations: SharedConversation[];
@@ -33,6 +35,43 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
   maxVisibleTabs = 2
 }) => {
   const [overflowMenuAnchor, setOverflowMenuAnchor] = useState<null | HTMLElement>(null);
+  const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
+  const [userProfileService] = useState(() => new UserProfileService());
+
+  // Fetch user profiles for all participants
+  useEffect(() => {
+    const fetchUserProfiles = async () => {
+      const allParticipantIds = new Set<string>();
+      
+      // Collect all unique participant IDs from all conversations
+      sharedConversations.forEach(conversation => {
+        conversation.participants?.forEach(participant => {
+          if (participant.type === 'human') {
+            allParticipantIds.add(participant.id);
+          }
+        });
+      });
+
+      // Fetch profiles for all participants
+      const profiles: Record<string, UserProfile> = {};
+      for (const participantId of allParticipantIds) {
+        try {
+          const profile = await userProfileService.getUserProfile(participantId);
+          if (profile) {
+            profiles[participantId] = profile;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch profile for user ${participantId}:`, error);
+        }
+      }
+      
+      setUserProfiles(profiles);
+    };
+
+    if (sharedConversations.length > 0) {
+      fetchUserProfiles();
+    }
+  }, [sharedConversations, userProfileService]);
 
   if (sharedConversations.length === 0) {
     return null;
@@ -45,12 +84,37 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
     return CHAT_COLORS[index % CHAT_COLORS.length];
   };
 
+  const getParticipantDisplayName = (participant: any) => {
+    if (participant.type === 'ai') {
+      return participant.name;
+    }
+    
+    // For human participants, try to get real name from profile
+    const profile = userProfiles[participant.id];
+    return profile?.name || participant.name || 'User';
+  };
+
+  const getParticipantAvatar = (participant: any) => {
+    if (participant.type === 'ai') {
+      return null; // Will use emoji
+    }
+    
+    // For human participants, try to get real avatar from profile
+    const profile = userProfiles[participant.id];
+    return profile?.avatar || null;
+  };
+
   const getHumanName = (conversation: SharedConversation) => {
     // Extract human participant name (excluding current user)
     const humanParticipant = conversation.participants?.find(p => 
       p.type === 'human' && p.id !== conversation.hostUserId
     );
-    return humanParticipant?.name || 'Guest';
+    
+    if (humanParticipant) {
+      return getParticipantDisplayName(humanParticipant);
+    }
+    
+    return 'Guest';
   };
 
   const getParticipantCount = (conversation: SharedConversation) => {
@@ -86,16 +150,24 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
           <Typography variant="caption" sx={{ color: '#9ca3af', mb: 0.5, display: 'block' }}>
             Participants:
           </Typography>
-          {conversation.participants.map((participant, index) => (
-            <Box key={participant.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <Avatar sx={{ width: 16, height: 16, fontSize: '0.7rem' }}>
-                {participant.name.charAt(0)}
-              </Avatar>
-              <Typography variant="caption">
-                {participant.name} {participant.type === 'ai' ? '(AI)' : ''}
-              </Typography>
-            </Box>
-          ))}
+          {conversation.participants.map((participant, index) => {
+            const displayName = getParticipantDisplayName(participant);
+            const avatarSrc = getParticipantAvatar(participant);
+            
+            return (
+              <Box key={participant.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <Avatar 
+                  src={avatarSrc || undefined}
+                  sx={{ width: 16, height: 16, fontSize: '0.7rem' }}
+                >
+                  {participant.type === 'ai' ? '🤖' : displayName.charAt(0).toUpperCase()}
+                </Avatar>
+                <Typography variant="caption">
+                  {displayName} {participant.type === 'ai' ? '(AI)' : ''}
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
       )}
     </Box>
@@ -143,22 +215,28 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
             >
               {/* Avatar Group - Show up to 3 overlapping avatars */}
               <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
-                  <Avatar
-                    key={participant.id}
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      fontSize: '0.6rem',
-                      bgcolor: participant.type === 'ai' ? '#6366f1' : '#10b981',
-                      border: '2px solid #1e293b',
-                      ml: pIndex > 0 ? -0.75 : 0,
-                      zIndex: 3 - pIndex
-                    }}
-                  >
-                    {participant.type === 'ai' ? '🤖' : participant.name.charAt(0).toUpperCase()}
-                  </Avatar>
-                ))}
+                {conversation.participants?.slice(0, 3).map((participant, pIndex) => {
+                  const displayName = getParticipantDisplayName(participant);
+                  const avatarSrc = getParticipantAvatar(participant);
+                  
+                  return (
+                    <Avatar
+                      key={participant.id}
+                      src={avatarSrc || undefined}
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: '0.6rem',
+                        bgcolor: participant.type === 'ai' ? '#6366f1' : '#10b981',
+                        border: '2px solid #1e293b',
+                        ml: pIndex > 0 ? -0.75 : 0,
+                        zIndex: 3 - pIndex
+                      }}
+                    >
+                      {participant.type === 'ai' ? '🤖' : displayName.charAt(0).toUpperCase()}
+                    </Avatar>
+                  );
+                })}
                 
                 {/* Show +X count if more than 3 participants */}
                 {getParticipantCount(conversation) > 3 && (
@@ -252,22 +330,28 @@ const CompactSharedChatTabs: React.FC<CompactSharedChatTabsProps> = ({
                 >
                   {/* Avatar Group for overflow menu */}
                   <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                    {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
-                      <Avatar
-                        key={participant.id}
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          fontSize: '0.6rem',
-                          bgcolor: participant.type === 'ai' ? '#6366f1' : '#10b981',
-                          border: '1px solid #1e293b',
-                          ml: pIndex > 0 ? -0.5 : 0,
-                          zIndex: 3 - pIndex
-                        }}
-                      >
-                        {participant.type === 'ai' ? '🤖' : participant.name.charAt(0).toUpperCase()}
-                      </Avatar>
-                    ))}
+                    {conversation.participants?.slice(0, 3).map((participant, pIndex) => {
+                      const displayName = getParticipantDisplayName(participant);
+                      const avatarSrc = getParticipantAvatar(participant);
+                      
+                      return (
+                        <Avatar
+                          key={participant.id}
+                          src={avatarSrc || undefined}
+                          sx={{
+                            width: 20,
+                            height: 20,
+                            fontSize: '0.6rem',
+                            bgcolor: participant.type === 'ai' ? '#6366f1' : '#10b981',
+                            border: '1px solid #1e293b',
+                            ml: pIndex > 0 ? -0.5 : 0,
+                            zIndex: 3 - pIndex
+                          }}
+                        >
+                          {participant.type === 'ai' ? '🤖' : displayName.charAt(0).toUpperCase()}
+                        </Avatar>
+                      );
+                    })}
                   </Box>
                   
                   <Box sx={{ flex: 1 }}>

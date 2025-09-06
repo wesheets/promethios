@@ -94,6 +94,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Analytics,
@@ -144,7 +146,8 @@ import {
   Stop,
   Image as ImageIcon,
   Code as CodeIcon,
-  Insights as InsightsIcon
+  Insights as InsightsIcon,
+  People
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../services/ChatbotStorageService';
@@ -364,6 +367,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [multiAgentRoutingService] = useState(() => MultiAgentRoutingService.getInstance());
   const [multiAgentAuditLogger] = useState(() => MultiAgentAuditLogger.getInstance());
   const [messageParser] = useState(() => MessageParser.getInstance());
+  
+  // Responsive design hooks
+  const theme = useTheme();
+  const isXsScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isSmScreen = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isMdScreen = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  const isLgScreen = useMediaQuery(theme.breakpoints.up('lg'));
+  
+  // Calculate responsive max visible tabs
+  const maxVisibleTabs = useMemo(() => {
+    if (isLgScreen) return 4;
+    if (isMdScreen) return 3;
+    if (isSmScreen) return 2;
+    return 1; // xs screens
+  }, [isLgScreen, isMdScreen, isSmScreen]);
   
   // Token economics service
   const [tokenEconomicsService] = useState(() => TokenEconomicsService.getInstance());
@@ -3979,22 +3997,35 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   
                   {/* Compact Shared Chat Tabs - Between Claude Assistant and Group Icon */}
                   {sharedConversations.length > 0 && (
-                    <Box sx={{ 
-                      flex: '0 0 auto', 
-                      maxWidth: 400, // Fixed width to prevent pushing Group icon
-                      overflow: 'hidden',
-                      ml: 2 // Margin from chat context tabs
-                    }}>
-                      <CompactSharedChatTabs
-                        sharedConversations={sharedConversations}
-                        activeConversationId={activeSharedConversation}
-                        onConversationSelect={handleCustomSharedConversationSelect}
-                        onConversationClose={handleSharedConversationClose}
-                        onPrivacyToggle={handlePrivacyToggle}
-                        currentUserId={user?.uid || ''}
-                        maxVisibleTabs={2} // Fewer tabs in this compact space
-                      />
-                    </Box>
+                    <>
+                      {/* Separator and Shared Chat Icon */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1.5, 
+                        ml: 2,
+                        mr: 1
+                      }}>
+                        <Box sx={{ width: 1, height: 24, bgcolor: 'white', opacity: 0.3 }} />
+                        <Chat sx={{ color: '#94a3b8', fontSize: 18 }} />
+                      </Box>
+                      
+                      <Box sx={{ 
+                        flex: '0 0 auto', 
+                        maxWidth: { xs: 200, sm: 300, md: 400, lg: 500 }, // Responsive width
+                        overflow: 'hidden'
+                      }}>
+                        <CompactSharedChatTabs
+                          sharedConversations={sharedConversations}
+                          activeConversationId={activeSharedConversation}
+                          onConversationSelect={handleCustomSharedConversationSelect}
+                          onConversationClose={handleSharedConversationClose}
+                          onPrivacyToggle={handlePrivacyToggle}
+                          currentUserId={user?.uid || ''}
+                          maxVisibleTabs={maxVisibleTabs}
+                        />
+                      </Box>
+                    </>
                   )}
                   
                   {/* Add Contact Button */}
