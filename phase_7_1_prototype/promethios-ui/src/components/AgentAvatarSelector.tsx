@@ -56,6 +56,14 @@ export interface AgentAvatarSelectorProps {
   conversationName?: string;
   // Loading state to handle async data loading
   connectionsLoading?: boolean;
+  // New props for unified invitation functionality
+  chatSession?: {
+    id: string;
+    name: string;
+    messageCount?: number;
+  };
+  agentId?: string;
+  user?: any; // Firebase user object
 }
 
 export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
@@ -75,7 +83,10 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   currentUserName,
   conversationId,
   conversationName,
-  connectionsLoading = false
+  connectionsLoading = false,
+  chatSession,
+  agentId,
+  user
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
   const allAgents = [hostAgent, ...guestAgents];
@@ -444,6 +455,10 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         conversationName={conversationName}
         agentName={hostAgent.name}
         connectionsLoading={connectionsLoading}
+        // New unified functionality props
+        chatSession={chatSession}
+        agentId={agentId}
+        user={user}
       />
     </Box>
   );

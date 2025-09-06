@@ -4930,6 +4930,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       currentUserName={user?.displayName || 'User'}
                                       conversationId={`conv_${selectedChatbot?.id || 'default'}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
+                                      // New unified invitation props
+                                      chatSession={currentChatSession ? {
+                                        id: currentChatSession.id,
+                                        name: currentChatSession.name || `${selectedChatbot?.name || 'AI'} Chat`,
+                                        messageCount: currentChatSession.messages?.length || 0
+                                      } : undefined}
+                                      agentId={selectedChatbot?.id}
+                                      user={user}
                                     />
                                     
                                     {/* Behavioral Orchestration Hover Triggers */}

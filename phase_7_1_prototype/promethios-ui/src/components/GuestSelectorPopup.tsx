@@ -24,18 +24,25 @@ import {
   DialogActions,
   InputAdornment,
   Badge,
-  CircularProgress
+  CircularProgress,
+  Tabs,
+  Tab,
+  Alert
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Person as PersonIcon,
   SmartToy as AIIcon,
   Add as AddIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Email as EmailIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import AgentConfigurationPopup from './collaboration/AgentConfigurationPopup';
 import { temporaryRoleService, TemporaryRoleAssignment } from '../services/TemporaryRoleService';
 import { useUserInteractions } from '../hooks/useUserInteractions';
+import HumanChatService, { TeamMember as RealTeamMember } from '../services/HumanChatService';
+import aiCollaborationInvitationService from '../services/ChatInvitationService';
 
 interface TeamMember {
   id: string;
@@ -65,6 +72,14 @@ interface GuestSelectorPopupProps {
   agentName?: string;
   // Loading state for connections
   connectionsLoading?: boolean;
+  // New props for unified functionality
+  chatSession?: {
+    id: string;
+    name: string;
+    messageCount?: number;
+  };
+  agentId?: string;
+  user?: any; // Firebase user object
 }
 
 const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
@@ -80,17 +95,33 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   conversationId,
   conversationName,
   agentName,
-  connectionsLoading = false
+  connectionsLoading = false,
+  chatSession,
+  agentId,
+  user
 }) => {
   // Use unified notification system for sending invitations
   const { sendInteraction } = useUserInteractions();
   
+  // Existing state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGuests, setSelectedGuests] = useState<Set<string>>(new Set());
   const [showConfigPopup, setShowConfigPopup] = useState(false);
   const [selectedAIAgents, setSelectedAIAgents] = useState<TeamMember[]>([]);
   const [showInvitationDialog, setShowInvitationDialog] = useState(false);
   const [selectedHumansForInvitation, setSelectedHumansForInvitation] = useState<TeamMember[]>([]);
+
+  // New state for unified functionality
+  const [tabValue, setTabValue] = useState(0);
+  const [realTeamMembers, setRealTeamMembers] = useState<RealTeamMember[]>([]);
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<RealTeamMember[]>([]);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [personalMessage, setPersonalMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Service instances
+  const humanChatService = HumanChatService.getInstance();
 
   // Reset selection when popup opens
   useEffect(() => {
@@ -101,8 +132,34 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       setSelectedAIAgents([]);
       setShowInvitationDialog(false);
       setSelectedHumansForInvitation([]);
+      // Reset new state
+      setTabValue(0);
+      setSelectedTeamMembers([]);
+      setEmailAddress('');
+      setPersonalMessage('');
+      setError(null);
     }
   }, [open]);
+
+  // Load real team members when popup opens
+  useEffect(() => {
+    if (open && currentUserId) {
+      loadRealTeamMembers();
+    }
+  }, [open, currentUserId]);
+
+  const loadRealTeamMembers = async () => {
+    try {
+      console.log('🔍 [GuestSelector] Loading real team members...');
+      await humanChatService.initialize(currentUserId!);
+      const members = humanChatService.getTeamMembers();
+      setRealTeamMembers(members);
+      console.log('✅ [GuestSelector] Loaded', members.length, 'real team members');
+    } catch (error) {
+      console.error('❌ [GuestSelector] Error loading team members:', error);
+      setError('Failed to load team members');
+    }
+  };
 
   // Filter members based on search query and exclude current participants
   const filterMembers = (members: TeamMember[]) => {
@@ -249,6 +306,131 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
     }
   };
 
+  // New handler functions for unified functionality
+  const ensureChatSession = async () => {
+    if (chatSession?.id) {
+      return chatSession;
+    }
+    
+    // Create new session if none exists
+    const { ChatHistoryService } = await import('../services/ChatHistoryService');
+    const chatHistoryService = ChatHistoryService.getInstance();
+    
+    const newSession = await chatHistoryService.createChatSession(
+      currentUserId!,
+      agentId!,
+      `Chat with ${agentName}`,
+      agentName || 'AI Assistant'
+    );
+    
+    return {
+      id: newSession.id,
+      name: newSession.name,
+      messageCount: 0
+    };
+  };
+
+  const toggleTeamMemberSelection = (memberId: string) => {
+    setSelectedTeamMembers(prev => {
+      const member = realTeamMembers.find(m => m.id === memberId);
+      if (!member) return prev;
+      
+      const isSelected = prev.some(selected => selected.id === memberId);
+      if (isSelected) {
+        return prev.filter(selected => selected.id !== memberId);
+      } else {
+        return [...prev, member];
+      }
+    });
+  };
+
+  const handleSendTeamInvitations = async () => {
+    if (selectedTeamMembers.length === 0) {
+      setError('Please select at least one team member to invite');
+      return;
+    }
+
+    if (!currentUserId) {
+      setError('Missing user information');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('📨 [GuestSelector] Sending team invitations to:', selectedTeamMembers);
+      
+      const session = await ensureChatSession();
+      
+      for (const member of selectedTeamMembers) {
+        await aiCollaborationInvitationService.createInvitation({
+          fromUserId: currentUserId,
+          fromUserName: currentUserName || user?.displayName || user?.email || 'User',
+          toEmail: member.email,
+          conversationId: session.id,
+          conversationName: session.name,
+          agentName: agentName || 'AI Assistant',
+          message: personalMessage || `Join me in my chat "${session.name}" with ${agentName || 'AI Assistant'}`,
+          includeHistory: true
+        });
+      }
+      
+      console.log('✅ [GuestSelector] Team invitations sent successfully');
+      onClose();
+    } catch (error) {
+      console.error('❌ [GuestSelector] Failed to send team invitations:', error);
+      setError('Failed to send invitations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendEmailInvitation = async () => {
+    if (!emailAddress.trim()) {
+      setError('Please enter an email address');
+      return;
+    }
+
+    if (!currentUserId) {
+      setError('Missing user information');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('📧 [GuestSelector] Sending email invitation to:', emailAddress);
+      
+      const session = await ensureChatSession();
+      
+      await aiCollaborationInvitationService.createInvitation({
+        fromUserId: currentUserId,
+        fromUserName: currentUserName || user?.displayName || user?.email || 'User',
+        toEmail: emailAddress,
+        conversationId: session.id,
+        conversationName: session.name,
+        agentName: agentName || 'AI Assistant',
+        message: personalMessage || `Join me in my chat "${session.name}" with ${agentName || 'AI Assistant'}`,
+        includeHistory: true
+      });
+      
+      console.log('✅ [GuestSelector] Email invitation sent successfully');
+      onClose();
+    } catch (error) {
+      console.error('❌ [GuestSelector] Failed to send email invitation:', error);
+      setError('Failed to send email invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+    setError(null);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'online': return '#10b981';
@@ -384,86 +566,291 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       }}
     >
       <DialogTitle sx={{ color: 'white', pb: 1 }}>
-        <Box display="flex" alignItems="center" gap={1}>
+        <Box display="flex" alignItems="center" gap={1} mb={2}>
           <AddIcon sx={{ color: '#3b82f6' }} />
           <Typography variant="h6" fontWeight="600">
             Add to Conversation
           </Typography>
         </Box>
+        
+        {/* Tabbed Interface */}
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          sx={{
+            '& .MuiTabs-indicator': { backgroundColor: '#3b82f6' },
+            '& .MuiTab-root': { 
+              color: '#64748b',
+              '&.Mui-selected': { color: '#3b82f6' }
+            }
+          }}
+        >
+          <Tab 
+            icon={<AIIcon />} 
+            label="AI Agents" 
+            sx={{ minHeight: 48 }}
+          />
+          <Tab 
+            icon={<PeopleIcon />} 
+            label="Team Members" 
+            sx={{ minHeight: 48 }}
+          />
+          <Tab 
+            icon={<EmailIcon />} 
+            label="Email Invitation" 
+            sx={{ minHeight: 48 }}
+          />
+        </Tabs>
       </DialogTitle>
 
       <DialogContent sx={{ pt: 1 }}>
-        {/* Search Bar */}
-        <TextField
-          fullWidth
-          placeholder="Search team members..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: '#64748b' }} />
-              </InputAdornment>
-            )
-          }}
-          sx={{
-            mb: 3,
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: '#0f172a',
-              color: 'white',
-              '& fieldset': { borderColor: '#334155' },
-              '&:hover fieldset': { borderColor: '#3b82f6' },
-              '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-            }
-          }}
-        />
-
-        {/* Humans Section */}
-        {filteredHumans.length > 0 && (
-          <Box mb={3}>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <PersonIcon sx={{ color: '#3b82f6', fontSize: 20 }} />
-              <Typography variant="subtitle1" color="white" fontWeight="600">
-                HUMANS ({filteredHumans.length})
-              </Typography>
-            </Box>
-            <List sx={{ p: 0 }}>
-              {filteredHumans.map(renderMemberItem)}
-            </List>
-          </Box>
+        {/* Error Display */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
         )}
 
-        {/* AI Agents Section */}
-        {filteredAIAgents.length > 0 && (
-          <Box>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
-              <AIIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
-              <Typography variant="subtitle1" color="white" fontWeight="600">
-                AI AGENTS ({filteredAIAgents.length})
-              </Typography>
-            </Box>
-            <List sx={{ p: 0 }}>
-              {filteredAIAgents.map(renderMemberItem)}
-            </List>
-          </Box>
+        {/* Tab Panel 0: AI Agents (Existing functionality) */}
+        {tabValue === 0 && (
+          <>
+            {/* Search Bar */}
+            <TextField
+              fullWidth
+              placeholder="Search AI agents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: '#64748b' }} />
+                  </InputAdornment>
+                )
+              }}
+              sx={{
+                mb: 3,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#0f172a',
+                  color: 'white',
+                  '& fieldset': { borderColor: '#334155' },
+                  '&:hover fieldset': { borderColor: '#3b82f6' },
+                  '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                }
+              }}
+            />
+          </>
         )}
 
-        {/* No Results or Loading */}
-        {filteredHumans.length === 0 && filteredAIAgents.length === 0 && (
-          <Box textAlign="center" py={4}>
-            {connectionsLoading ? (
-              <>
-                <CircularProgress size={32} sx={{ color: '#3b82f6', mb: 2 }} />
-                <Typography variant="body1" color="#64748b">
-                  Loading team members...
-                </Typography>
-              </>
-            ) : (
-              <Typography variant="body1" color="#64748b">
-                {searchQuery ? 'No team members found matching your search.' : 'All team members are already in this conversation.'}
-              </Typography>
+        {/* Tab Panel 1: Team Members */}
+        {tabValue === 1 && (
+          <>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+              Select team members to invite to this conversation:
+            </Typography>
+          </>
+        )}
+
+        {/* Tab Panel 2: Email Invitation */}
+        {tabValue === 2 && (
+          <>
+            <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+              Invite someone by email to join this conversation:
+            </Typography>
+            
+            <TextField
+              fullWidth
+              label="Email Address"
+              variant="outlined"
+              placeholder="colleague@company.com"
+              value={emailAddress}
+              onChange={(e) => setEmailAddress(e.target.value)}
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#0f172a',
+                  color: '#e2e8f0',
+                  '& fieldset': { borderColor: '#334155' },
+                  '&:hover fieldset': { borderColor: '#3b82f6' },
+                  '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                },
+                '& .MuiInputLabel-root': { color: '#94a3b8' }
+              }}
+            />
+            
+            <TextField
+              fullWidth
+              label="Personal Message (Optional)"
+              variant="outlined"
+              multiline
+              rows={3}
+              placeholder="Add a personal message to your invitation..."
+              value={personalMessage}
+              onChange={(e) => setPersonalMessage(e.target.value)}
+              sx={{
+                mb: 2,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#0f172a',
+                  color: '#e2e8f0',
+                  '& fieldset': { borderColor: '#334155' },
+                  '&:hover fieldset': { borderColor: '#3b82f6' },
+                  '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                },
+                '& .MuiInputLabel-root': { color: '#94a3b8' }
+              }}
+            />
+          </>
+        )}
+
+        {/* Tab Panel 0: AI Agents Content */}
+        {tabValue === 0 && (
+          <>
+            {/* AI Agents Section */}
+            {filteredAIAgents.length > 0 && (
+              <Box>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <AIIcon sx={{ color: '#8b5cf6', fontSize: 20 }} />
+                  <Typography variant="subtitle1" color="white" fontWeight="600">
+                    AI AGENTS ({filteredAIAgents.length})
+                  </Typography>
+                </Box>
+                <List sx={{ p: 0 }}>
+                  {filteredAIAgents.map(renderMemberItem)}
+                </List>
+              </Box>
             )}
-          </Box>
+
+            {/* No Results or Loading for AI Agents */}
+            {filteredAIAgents.length === 0 && (
+              <Box textAlign="center" py={4}>
+                <Typography variant="body1" color="#64748b">
+                  {searchQuery ? 'No AI agents found matching your search.' : 'All AI agents are already in this conversation.'}
+                </Typography>
+              </Box>
+            )}
+          </>
+        )}
+
+        {/* Tab Panel 1: Team Members Content */}
+        {tabValue === 1 && (
+          <>
+            {realTeamMembers.length > 0 ? (
+              <List sx={{ p: 0 }}>
+                {realTeamMembers.map((member) => {
+                  const isSelected = selectedTeamMembers.some(selected => selected.id === member.id);
+                  return (
+                    <ListItem key={member.id} disablePadding>
+                      <ListItemButton
+                        onClick={() => toggleTeamMemberSelection(member.id)}
+                        sx={{
+                          borderRadius: 1,
+                          mb: 0.5,
+                          backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                          border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
+                          '&:hover': {
+                            backgroundColor: isSelected ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.05)'
+                          }
+                        }}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          sx={{
+                            color: '#64748b',
+                            '&.Mui-checked': { color: '#3b82f6' }
+                          }}
+                        />
+                        
+                        <ListItemAvatar>
+                          <Avatar
+                            src={member.profilePhoto}
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              bgcolor: '#3b82f6',
+                              color: 'white',
+                              fontSize: '0.875rem',
+                              fontWeight: 600
+                            }}
+                          >
+                            {member.name.charAt(0).toUpperCase()}
+                          </Avatar>
+                        </ListItemAvatar>
+                        
+                        <ListItemText
+                          primary={
+                            <Typography variant="body1" color="white" fontWeight="500">
+                              {member.name}
+                            </Typography>
+                          }
+                          secondary={
+                            <Typography variant="body2" color="#94a3b8">
+                              {member.email}
+                            </Typography>
+                          }
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            ) : (
+              <Box textAlign="center" py={4}>
+                <Typography variant="body1" color="#64748b">
+                  No team members available to invite.
+                </Typography>
+              </Box>
+            )}
+          </>
+        )}
+
+        {/* Tab Panel 2: Email Invitation Content */}
+        {tabValue === 2 && (
+          <>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" color="#94a3b8" sx={{ mb: 2 }}>
+                Invite external users to join this chat session via email.
+              </Typography>
+              
+              <TextField
+                fullWidth
+                label="Email Address"
+                type="email"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+                placeholder="Enter email address"
+                sx={{
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#0f172a',
+                    color: 'white',
+                    '& fieldset': { borderColor: '#334155' },
+                    '&:hover fieldset': { borderColor: '#475569' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root': { color: '#94a3b8' }
+                }}
+              />
+              
+              <TextField
+                fullWidth
+                label="Personal Message (Optional)"
+                multiline
+                rows={3}
+                value={personalMessage}
+                onChange={(e) => setPersonalMessage(e.target.value)}
+                placeholder="Add a personal message to the invitation..."
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: '#0f172a',
+                    color: 'white',
+                    '& fieldset': { borderColor: '#334155' },
+                    '&:hover fieldset': { borderColor: '#475569' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  },
+                  '& .MuiInputLabel-root': { color: '#94a3b8' }
+                }}
+              />
+            </Box>
+          </>
         )}
       </DialogContent>
 
@@ -474,18 +861,68 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
         >
           Cancel
         </Button>
-        <Button
-          onClick={handleAddSelected}
-          disabled={selectedGuests.size === 0}
-          variant="contained"
-          sx={{
-            backgroundColor: '#3b82f6',
-            '&:hover': { backgroundColor: '#2563eb' },
-            '&:disabled': { backgroundColor: '#374151', color: '#6b7280' }
-          }}
-        >
-          Add {selectedGuests.size > 0 ? `${selectedGuests.size} ` : ''}Guest{selectedGuests.size !== 1 ? 's' : ''}
-        </Button>
+        
+        {/* AI Agents Tab Actions */}
+        {tabValue === 0 && (
+          <Button
+            onClick={handleAddSelected}
+            disabled={selectedGuests.size === 0}
+            variant="contained"
+            sx={{
+              backgroundColor: '#3b82f6',
+              '&:hover': { backgroundColor: '#2563eb' },
+              '&:disabled': { backgroundColor: '#374151', color: '#6b7280' }
+            }}
+          >
+            Add {selectedGuests.size > 0 ? `${selectedGuests.size} ` : ''}Agent{selectedGuests.size !== 1 ? 's' : ''}
+          </Button>
+        )}
+        
+        {/* Team Members Tab Actions */}
+        {tabValue === 1 && (
+          <Button
+            onClick={handleSendTeamInvitations}
+            disabled={selectedTeamMembers.length === 0 || loading}
+            variant="contained"
+            sx={{
+              backgroundColor: '#3b82f6',
+              '&:hover': { backgroundColor: '#2563eb' },
+              '&:disabled': { backgroundColor: '#374151', color: '#6b7280' }
+            }}
+          >
+            {loading ? (
+              <>
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                Sending...
+              </>
+            ) : (
+              `Send Invitation${selectedTeamMembers.length !== 1 ? 's' : ''} (${selectedTeamMembers.length})`
+            )}
+          </Button>
+        )}
+        
+        {/* Email Invitation Tab Actions */}
+        {tabValue === 2 && (
+          <Button
+            onClick={handleSendEmailInvitation}
+            disabled={!emailAddress.trim() || loading}
+            variant="contained"
+            sx={{
+              backgroundColor: '#3b82f6',
+              '&:hover': { backgroundColor: '#2563eb' },
+              '&:disabled': { backgroundColor: '#374151', color: '#6b7280' }
+            }}
+          >
+            {loading ? (
+              <>
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                Sending...
+              </>
+            ) : (
+              'Send Invitation'
+            )}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
 
