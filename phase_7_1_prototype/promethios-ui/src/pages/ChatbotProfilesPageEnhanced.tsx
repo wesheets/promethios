@@ -3462,35 +3462,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save to chat history - create session if none exists
+      // Save to chat history - use existing session (should exist from proactive creation)
       const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
       let sessionToUse = currentFreshBotState?.currentChatSession;
       
-      // Auto-create chat session if none exists
-      if (!sessionToUse && selectedChatbot && user?.uid) {
-        console.log('🔄 [AutoSession] No current session found, creating new session for message storage');
-        try {
-          const newSession = await chatHistoryService.createChatSession(
-            user.uid,
-            selectedChatbot.id,
-            selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
-            userMessage.content // Use first message content to generate title
-          );
-          
-          console.log('✅ [AutoSession] Created new session:', newSession.id);
-          
-          // Update bot state with new session
-          updateBotState(selectedChatbot.id, {
-            currentChatSession: newSession,
-            currentChatName: newSession.name
-          });
-          
-          sessionToUse = newSession;
-        } catch (error) {
-          console.error('❌ [AutoSession] Failed to create session:', error);
-        }
-      }
-      
+      // Session should already exist from proactive creation above
       if (sessionToUse) {
         try {
           await chatHistoryService.addMessageToSession(sessionToUse.id, {
@@ -3586,35 +3562,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           });
         }
         
-        // Save to chat history - create session if none exists
+        // Save to chat history - use existing session (should exist from proactive creation)
         const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
         let sessionToUse = currentBotState?.currentChatSession;
         
-        // Auto-create chat session if none exists
-        if (!sessionToUse && selectedChatbot && user?.uid) {
-          console.log('🔄 [AutoSession] No current session found, creating new session for chat reference storage');
-          try {
-            const newSession = await chatHistoryService.createChatSession(
-              user.uid,
-              selectedChatbot.id,
-              selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
-              messageInput.trim() // Use first message content to generate title
-            );
-            
-            console.log('✅ [AutoSession] Created new session:', newSession.id);
-            
-            // Update bot state with new session
-            updateBotState(selectedChatbot.id, {
-              currentChatSession: newSession,
-              currentChatName: newSession.name
-            });
-            
-            sessionToUse = newSession;
-          } catch (error) {
-            console.error('❌ [AutoSession] Failed to create session:', error);
-          }
-        }
-        
+        // Session should already exist from proactive creation above
         if (sessionToUse) {
           try {
             // Create user message object for saving
@@ -3822,35 +3774,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save to chat history - create session if none exists
+      // Save to chat history - use existing session (should exist from proactive creation)
       const mainFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
       let sessionToUse = mainFreshBotState?.currentChatSession;
       
-      // Auto-create chat session if none exists
-      if (!sessionToUse && selectedChatbot && user?.uid) {
-        console.log('🔄 [AutoSession] No current session found, creating new session for regular message storage');
-        try {
-          const newSession = await chatHistoryService.createChatSession(
-            user.uid,
-            selectedChatbot.id,
-            selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
-            messageInput.trim() // Use first message content to generate title
-          );
-          
-          console.log('✅ [AutoSession] Created new session:', newSession.id);
-          
-          // Update bot state with new session
-          updateBotState(selectedChatbot.id, {
-            currentChatSession: newSession,
-            currentChatName: newSession.name
-          });
-          
-          sessionToUse = newSession;
-        } catch (error) {
-          console.error('❌ [AutoSession] Failed to create session:', error);
-        }
-      }
-      
+      // Session should already exist from proactive creation above
       if (sessionToUse) {
         try {
           // Create user message object for saving
