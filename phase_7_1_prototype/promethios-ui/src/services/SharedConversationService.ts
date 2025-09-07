@@ -862,6 +862,13 @@ class SharedConversationService {
         participants: sharedConversation.participants?.length || 0
       });
 
+      // Debug: Log all available fields
+      console.log('🔍 [SharedConversation] All document fields:', Object.keys(sharedConversation));
+      console.log('🔍 [SharedConversation] hostChatSessionId field:', sharedConversation.hostChatSessionId);
+      console.log('🔍 [SharedConversation] conversationId field:', sharedConversation.conversationId);
+      console.log('🔍 [SharedConversation] hostChatSessionId type:', typeof sharedConversation.hostChatSessionId);
+      console.log('🔍 [SharedConversation] conversationId type:', typeof sharedConversation.conversationId);
+      
       // Return the host's chat session ID
       const hostChatSessionId = sharedConversation.hostChatSessionId || sharedConversation.conversationId;
       console.log('✅ [SharedConversation] Found host chat session ID:', hostChatSessionId);
