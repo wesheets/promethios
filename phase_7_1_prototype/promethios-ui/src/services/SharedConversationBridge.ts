@@ -109,7 +109,7 @@ export class SharedConversationBridge {
 
     try {
       // Get the shared conversation from the legacy service
-      const sharedConversation = await this.sharedConversationService.getConversation(conversationId);
+      const sharedConversation = await this.sharedConversationService.getSharedConversation(conversationId);
       
       if (!sharedConversation) {
         console.error('❌ [SharedConversationBridge] Shared conversation not found:', conversationId);
