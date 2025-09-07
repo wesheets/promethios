@@ -138,23 +138,64 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
       const success = await acceptInteraction(invitation.id);
       
       if (success) {
-        console.log('✅ [CollaborationModal] Invitation accepted, creating shared conversation');
+        console.log('✅ [CollaborationModal] Invitation accepted, joining existing shared conversation');
         
-        // Create a shared conversation from the collaboration invitation
-        // This will automatically appear as a tab across ALL command centers
-        const sharedConversation = await sharedConversationService.createSharedConversationFromInvitation({
-          invitationId: invitation.id,
-          conversationId: metadata?.conversationId, // Pass the original chat session ID
-          conversationName: metadata?.conversationName || 'AI Collaboration',
-          agentName: metadata?.agentName || 'AI Assistant',
-          fromUserId: invitation.fromUserId,
-          fromUserName: invitation.fromUserName,
-          fromUserPhoto: invitation.fromUserPhoto,
-          toUserId: currentUserId, // Use the current user's ID instead of invitation.toUserId
-          includeHistory: true
-        });
+        // Get the host's conversation ID from the invitation metadata
+        const hostConversationId = metadata?.conversationId;
         
-        console.log('🎯 [CollaborationModal] Created shared conversation:', sharedConversation);
+        if (!hostConversationId) {
+          console.error('❌ [CollaborationModal] No conversation ID in invitation metadata');
+          setError('Invalid invitation: missing conversation information');
+          setResponding(false);
+          return;
+        }
+        
+        console.log('🔍 [CollaborationModal] Host conversation ID:', hostConversationId);
+        
+        // Find the existing shared conversation that was created when the invitation was sent
+        // The shared conversation should have the hostChatSessionId set to the host's conversation ID
+        const userSharedConversations = await sharedConversationService.getUserSharedConversations(currentUserId);
+        console.log('🔍 [CollaborationModal] User shared conversations:', userSharedConversations);
+        
+        // Look for a shared conversation that matches the host's conversation ID
+        let sharedConversation = userSharedConversations.find(conv => 
+          conv.hostChatSessionId === hostConversationId || 
+          conv.conversationId === hostConversationId
+        );
+        
+        if (!sharedConversation) {
+          console.log('🔍 [CollaborationModal] No existing shared conversation found, looking for one created by the sender...');
+          
+          // Alternative: look for shared conversations created by the sender
+          const allSharedConversations = await sharedConversationService.getUserSharedConversations(invitation.fromUserId);
+          sharedConversation = allSharedConversations.find(conv => 
+            conv.hostChatSessionId === hostConversationId || 
+            conv.conversationId === hostConversationId
+          );
+          
+          if (sharedConversation) {
+            console.log('🔍 [CollaborationModal] Found shared conversation created by sender:', sharedConversation.id);
+            
+            // Add the recipient as a participant to the existing shared conversation
+            await sharedConversationService.addParticipant(
+              sharedConversation.id,
+              currentUserId,
+              invitation.fromUserId,
+              user?.displayName || user?.email || 'Unknown User'
+            );
+            
+            console.log('✅ [CollaborationModal] Added recipient to existing shared conversation');
+          }
+        }
+        
+        if (!sharedConversation) {
+          console.error('❌ [CollaborationModal] Could not find or create shared conversation');
+          setError('Unable to join the conversation. Please try again.');
+          setResponding(false);
+          return;
+        }
+        
+        console.log('🎯 [CollaborationModal] Joined shared conversation:', sharedConversation);
         
         // Wait a moment for Firebase to persist the data
         await new Promise(resolve => setTimeout(resolve, 1000));

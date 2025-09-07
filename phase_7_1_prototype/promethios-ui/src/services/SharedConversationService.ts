@@ -1011,6 +1011,121 @@ class SharedConversationService {
   }
 
   /**
+   * Add user to an existing conversation (used when accepting invitations)
+   */
+  async addUserToConversation(
+    conversationId: string,
+    userId: string,
+    status: 'active' | 'pending' | 'declined' = 'active'
+  ): Promise<void> {
+    try {
+      console.log('🤝 [SharedConversation] Adding user to conversation:', {
+        conversationId,
+        userId,
+        status
+      });
+
+      // Get the shared conversation
+      const conversation = await this.getSharedConversation(conversationId);
+      if (!conversation) {
+        throw new Error(`Shared conversation not found: ${conversationId}`);
+      }
+
+      // Check if user is already a participant
+      const existingParticipant = conversation.participants.find(p => p.id === userId);
+      if (existingParticipant) {
+        console.log('🤝 [SharedConversation] User already in conversation, updating status:', userId);
+        existingParticipant.status = status;
+        existingParticipant.joinedAt = new Date();
+      } else {
+        // Add new participant
+        const participant: SharedConversationParticipant = {
+          id: userId,
+          name: `User ${userId}`,
+          type: 'human',
+          status,
+          role: 'participant',
+          addedBy: conversation.createdBy,
+          joinedAt: new Date(),
+          permissions: ['read', 'write'],
+          isOnline: false
+        };
+        conversation.participants.push(participant);
+      }
+
+      conversation.lastActivity = new Date();
+      
+      // Update Firebase
+      try {
+        const participantIds = conversation.participants.map(p => p.id);
+        await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), {
+          participants: conversation.participants,
+          participantIds,
+          lastActivity: Timestamp.fromDate(conversation.lastActivity)
+        });
+        console.log('✅ [SharedConversation] Updated Firebase with user addition');
+      } catch (error) {
+        console.error('❌ [SharedConversation] Failed to update Firebase:', error);
+      }
+
+      // Add conversation to user's list
+      this.addConversationToUser(userId, conversationId);
+
+      console.log('✅ [SharedConversation] Successfully added user to conversation');
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to add user to conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove user from conversation
+   */
+  async removeUserFromConversation(
+    conversationId: string,
+    userId: string
+  ): Promise<void> {
+    try {
+      console.log('🤝 [SharedConversation] Removing user from conversation:', {
+        conversationId,
+        userId
+      });
+
+      // Get the shared conversation
+      const conversation = await this.getSharedConversation(conversationId);
+      if (!conversation) {
+        console.warn('❌ [SharedConversation] Shared conversation not found:', conversationId);
+        return;
+      }
+
+      // Remove participant
+      conversation.participants = conversation.participants.filter(p => p.id !== userId);
+      conversation.lastActivity = new Date();
+      
+      // Update Firebase
+      try {
+        const participantIds = conversation.participants.map(p => p.id);
+        await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), {
+          participants: conversation.participants,
+          participantIds,
+          lastActivity: Timestamp.fromDate(conversation.lastActivity)
+        });
+        console.log('✅ [SharedConversation] Updated Firebase with user removal');
+      } catch (error) {
+        console.error('❌ [SharedConversation] Failed to update Firebase:', error);
+      }
+
+      // Remove conversation from user's list
+      this.removeConversationFromUser(userId, conversationId);
+
+      console.log('✅ [SharedConversation] Successfully removed user from conversation');
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to remove user from conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Accept invitation and set up recipient participation
    */
   async acceptInvitationAndSetupParticipation(
