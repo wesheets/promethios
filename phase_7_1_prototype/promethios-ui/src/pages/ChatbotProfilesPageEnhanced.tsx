@@ -567,9 +567,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 //   ]);
   
   // Run detection when participants or session changes
-  useEffect(() => {
-    detectModeFromParticipants();
-  }, [detectModeFromParticipants]);
+//   useEffect(() => {
+//     detectModeFromParticipants();
+//   }, [detectModeFromParticipants]);
 
   // Ensure active shared conversation is always in the header list
   useEffect(() => {
