@@ -98,6 +98,7 @@ import {
   useTheme,
 } from '@mui/material';
 import {
+  Add,
   Analytics,
   Palette,
   Psychology,
@@ -4009,12 +4010,80 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                      {multiChatState.contexts.find(c => c.isActive)?.name || 'Chat'}
-                      {currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
+                      {isInSharedMode && activeSharedConversation ? (
+                        <>🤝 Shared with {/* TODO: Get host name from shared conversation */}</>
+                      ) : (
+                        <>
+                          {multiChatState.contexts.find(c => c.isActive)?.name || 'Chat'}
+                          {currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
+                        </>
+                      )}
                     </Typography>
                     
-                    {/* Simple Participants Display */}
+                    {/* Participants Display */}
                     {(() => {
+                      // Shared conversation participants
+                      if (isInSharedMode && activeSharedConversation) {
+                        return (
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
+                              👥 3 Participants {/* TODO: Get actual participant count */}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                              {/* TODO: Show actual shared conversation participants */}
+                              <Chip
+                                avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#3b82f6' }}>H</Avatar>}
+                                label="Host User"
+                                size="small"
+                                sx={{
+                                  bgcolor: '#3b82f6',
+                                  color: 'white',
+                                  opacity: 0.9,
+                                  fontSize: '11px'
+                                }}
+                              />
+                              <Chip
+                                avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#10b981' }}>G</Avatar>}
+                                label="You"
+                                size="small"
+                                sx={{
+                                  bgcolor: '#10b981',
+                                  color: 'white',
+                                  opacity: 0.9,
+                                  fontSize: '11px'
+                                }}
+                              />
+                              <Chip
+                                avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
+                                label={`${selectedChatbot?.identity?.name || 'AI'} 🤖`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#8b5cf6',
+                                  color: 'white',
+                                  opacity: 0.9,
+                                  fontSize: '11px'
+                                }}
+                              />
+                              
+                              {/* Add Participants Button */}
+                              <IconButton
+                                size="small"
+                                sx={{ 
+                                  width: 24, 
+                                  height: 24, 
+                                  bgcolor: '#374151', 
+                                  color: '#9ca3af',
+                                  '&:hover': { bgcolor: '#4b5563', color: 'white' }
+                                }}
+                              >
+                                <Add sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        );
+                      }
+                      
+                      // Regular conversation participants
                       const activeContext = multiChatState.contexts.find(c => c.isActive);
                       const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
                       
@@ -4160,18 +4229,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 })() ? (
                   /* Shared Conversation Interface */
                   <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    {/* Shared Conversation Header */}
-                    <Box sx={{ mb: 3, p: 2, bgcolor: '#1e293b', borderRadius: 2, border: '1px solid #334155' }}>
-                      <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
-                        🤝 Shared Conversation
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                        You're now in a shared conversation. All participants can see and interact with this chat.
-                      </Typography>
-                    </Box>
-                    
                     {/* Shared Conversation Messages */}
-                    <Box sx={{ flex: 1, mb: 3 }}>
+                    <Box sx={{ flex: 1 }}>
                       <SharedConversationMessages
                         conversationId={activeSharedConversation}
                         currentUserId={user?.uid || 'anonymous'}
