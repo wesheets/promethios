@@ -5,13 +5,9 @@ import {
   Paper,
   Avatar,
   CircularProgress,
-  Alert,
-  TextField,
-  IconButton,
-  Divider
+  Alert
 } from '@mui/material';
 import {
-  Send as SendIcon,
   Person as PersonIcon,
   SmartToy as BotIcon
 } from '@mui/icons-material';
@@ -36,8 +32,6 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [newMessage, setNewMessage] = useState('');
-  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sharedConversationService = SharedConversationService.getInstance();
 
@@ -103,27 +97,6 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || sending || !onSendMessage) return;
-
-    try {
-      setSending(true);
-      await onSendMessage(newMessage.trim());
-      setNewMessage('');
-    } catch (err) {
-      console.error('❌ [SharedConversationMessages] Error sending message:', err);
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSendMessage();
-    }
-  };
 
   const renderMessage = (message: ChatMessage, index: number) => {
     const isUser = message.sender === 'user';
@@ -268,60 +241,6 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
       </Box>
 
       {/* Message input */}
-      {onSendMessage && (
-        <>
-          <Divider sx={{ borderColor: '#334155' }} />
-          <Box sx={{ p: 2, bgcolor: '#1e293b' }}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
-              <TextField
-                fullWidth
-                multiline
-                maxRows={4}
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                disabled={sending}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: '#374151',
-                    color: '#f1f5f9',
-                    '& fieldset': {
-                      borderColor: '#4b5563'
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#6b7280'
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#3b82f6'
-                    }
-                  },
-                  '& .MuiInputBase-input::placeholder': {
-                    color: '#9ca3af'
-                  }
-                }}
-              />
-              <IconButton
-                onClick={handleSendMessage}
-                disabled={!newMessage.trim() || sending}
-                sx={{
-                  bgcolor: '#3b82f6',
-                  color: '#ffffff',
-                  '&:hover': {
-                    bgcolor: '#2563eb'
-                  },
-                  '&:disabled': {
-                    bgcolor: '#374151',
-                    color: '#6b7280'
-                  }
-                }}
-              >
-                {sending ? <CircularProgress size={20} /> : <SendIcon />}
-              </IconButton>
-            </Box>
-          </Box>
-        </>
-      )}
     </Box>
   );
 };

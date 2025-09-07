@@ -3135,7 +3135,28 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Enhanced multi-agent message handling
   const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
     const messageToSend = customMessage || messageInput.trim();
-    if (!messageToSend || !activeSession || chatLoading) return;
+    if (!messageToSend || chatLoading) return;
+
+    // Route to shared conversation if in shared mode
+    if (isInSharedMode && activeSharedConversation) {
+      try {
+        await sharedConversationService.sendMessageToSharedConversation(
+          activeSharedConversation,
+          user?.uid || 'anonymous',
+          user?.displayName || user?.email || 'Anonymous User',
+          messageToSend
+        );
+        setMessageInput('');
+        setAttachedFiles([]);
+        return;
+      } catch (error) {
+        console.error('Failed to send message to shared conversation:', error);
+        return;
+      }
+    }
+
+    // Continue with regular message handling for personal chats
+    if (!activeSession) return;
 
     // Create user message once for both UI display and persistence
     let userMessage: ChatMessage | null = null;
@@ -4927,7 +4948,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               {/* Text Input with Integrated Avatar Selector */}
                               <TextField
                                 fullWidth
-                                placeholder="Type your message... (or use @agent-name or @human-name)"
+                                placeholder={
+                                  isInSharedMode && activeSharedConversation 
+                                    ? "Message shared conversation... (or use @agent-name or @human-name)"
+                                    : "Type your message... (or use @agent-name or @human-name)"
+                                }
                                 value={messageInput}
                                 onChange={(e) => handleInputChange(e.target.value)}
                                 onKeyDown={handleKeyNavigation}
@@ -4989,6 +5014,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       currentUserName={user?.displayName || 'User'}
                                       conversationId={`conv_${selectedChatbot?.id || 'default'}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
+                                      hideHostAgent={isInSharedMode && activeSharedConversation}
                                       // New unified invitation props
                                       chatSession={currentBotState?.currentChatSession ? {
                                         id: currentBotState.currentChatSession.id,

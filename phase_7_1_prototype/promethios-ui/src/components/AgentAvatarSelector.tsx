@@ -56,6 +56,8 @@ export interface AgentAvatarSelectorProps {
   conversationName?: string;
   // Loading state to handle async data loading
   connectionsLoading?: boolean;
+  // Hide host agent (for shared conversations)
+  hideHostAgent?: boolean;
   // New props for unified invitation functionality
   chatSession?: {
     id: string;
@@ -89,7 +91,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   user
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
-  const allAgents = [hostAgent, ...guestAgents];
+  const allAgents = hideHostAgent ? guestAgents : [hostAgent, ...guestAgents];
 
   // Debug logging to see what props are received
   console.log('🔍 [AgentAvatarSelector] Props received:');
