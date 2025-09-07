@@ -9,6 +9,13 @@ export type { EnhancedMessageWrapperProps } from './EnhancedMessageWrapper';
 
 export { default as ModernChatProvider, useModernChatContext } from './ModernChatProvider';
 
+export { default as ChatModeDetector, useChatMode, useIsSingleChat, useIsMultiAgent, useIsSharedConversation, useThreadingEnabled, useDragDropEnabled, useOrchestrationEnabled, useGovernanceEnabled } from './ChatModeDetector';
+export type { ChatMode, Participant, ChatModeContextValue } from './ChatModeDetector';
+
+export { default as AdaptiveMessageRenderer } from './AdaptiveMessageRenderer';
+
+export { default as ModernChatIntegration } from './ModernChatIntegration';
+
 // Hooks
 export { default as useModernChat } from '../hooks/useModernChat';
 export type { 
