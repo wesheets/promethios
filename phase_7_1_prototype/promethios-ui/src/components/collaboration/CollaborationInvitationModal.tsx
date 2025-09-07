@@ -32,6 +32,9 @@ import { useSharedConversations } from '../../contexts/SharedConversationContext
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService from '../../services/ChatbotStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
+import { SharedConversationBridge, defaultBridgeConfig } from '../../services/SharedConversationBridge';
+import { UnifiedChatManager } from '../../services/UnifiedChatManager';
+import { useUnifiedChat } from '../../hooks/useUnifiedChat';
 
 interface CollaborationInvitationModalProps {
   open: boolean;
@@ -54,6 +57,14 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
   const chatbotService = ChatbotStorageService.getInstance();
+  
+  // Initialize unified chat integration
+  const unifiedChat = useUnifiedChat({
+    sessionId: `invitation_${invitation?.id}`,
+    sessionName: invitation?.metadata?.conversationName || 'Shared Chat',
+    agentId: invitation?.metadata?.agentId,
+    autoInitialize: false
+  });
   console.log('🎯 [CollaborationInvitationModal] Rendering modal:', {
     open,
     invitation: invitation ? {
@@ -181,60 +192,110 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         
         console.log('🔍 [CollaborationModal] Host conversation ID:', hostConversationId);
         
-        // Find the existing shared conversation that was created when the invitation was sent
-        // The shared conversation should have the hostChatSessionId set to the host's conversation ID
-        const userSharedConversations = await sharedConversationService.getUserSharedConversations(currentUserId);
-        console.log('🔍 [CollaborationModal] User shared conversations:', userSharedConversations);
+        // Use SharedConversationBridge to handle the invitation acceptance
+        console.log('🔗 [CollaborationModal] Using SharedConversationBridge for invitation acceptance...');
         
-        // Look for a shared conversation that matches the host's conversation ID
-        let sharedConversation = userSharedConversations.find(conv => 
-          conv.hostChatSessionId === hostConversationId || 
-          conv.conversationId === hostConversationId
-        );
-        
-        if (!sharedConversation) {
-          console.log('🔍 [CollaborationModal] No existing shared conversation found, looking for one created by the sender...');
-          
-          // Alternative: look for shared conversations created by the sender
-          const allSharedConversations = await sharedConversationService.getUserSharedConversations(invitation.fromUserId);
-          sharedConversation = allSharedConversations.find(conv => 
-            conv.hostChatSessionId === hostConversationId || 
-            conv.conversationId === hostConversationId
-          );
-          
-          if (sharedConversation) {
-            console.log('🔍 [CollaborationModal] Found shared conversation created by sender:', sharedConversation.id);
-            
-            // Add the recipient as a participant to the existing shared conversation
-            await sharedConversationService.addParticipant(
-              sharedConversation.id,
-              currentUserId,
-              invitation.fromUserId,
-              user?.displayName || user?.email || 'Unknown User'
+        try {
+          // Initialize the bridge if unified chat is enabled
+          if (unifiedChat.isEnabled) {
+            const unifiedChatManager = UnifiedChatManager.getInstance();
+            const bridge = SharedConversationBridge.getInstance(
+              defaultBridgeConfig,
+              unifiedChatManager,
+              sharedConversationService
             );
             
-            console.log('✅ [CollaborationModal] Added recipient to existing shared conversation');
+            // Initialize the bridge with current user
+            await bridge.initialize(user);
+            
+            // Handle the invitation acceptance through the bridge
+            const bridgeResult = await bridge.handleInvitationAcceptance(
+              invitation.id,
+              hostConversationId,
+              user
+            );
+            
+            if (bridgeResult.success && bridgeResult.unifiedSessionId) {
+              console.log('✅ [CollaborationModal] Bridge handled invitation successfully');
+              
+              // The bridge has created/updated the unified session
+              // Now we need to navigate to it
+              const unifiedSessionId = bridgeResult.unifiedSessionId;
+              
+              // Trigger navigation to the unified chat session
+              window.dispatchEvent(new CustomEvent('navigateToUnifiedChat', {
+                detail: { sessionId: unifiedSessionId }
+              }));
+              
+              console.log('🔄 [CollaborationModal] Navigating to unified chat session:', unifiedSessionId);
+            } else {
+              console.error('❌ [CollaborationModal] Bridge failed to handle invitation:', bridgeResult.error);
+              throw new Error(bridgeResult.error || 'Bridge integration failed');
+            }
+          } else {
+            // Fallback to legacy shared conversation handling
+            console.log('🔄 [CollaborationModal] Unified chat disabled, using legacy handling...');
+            
+            // Find the existing shared conversation that was created when the invitation was sent
+            const userSharedConversations = await sharedConversationService.getUserSharedConversations(currentUserId);
+            console.log('🔍 [CollaborationModal] User shared conversations:', userSharedConversations);
+            
+            // Look for a shared conversation that matches the host's conversation ID
+            let sharedConversation = userSharedConversations.find(conv => 
+              conv.hostChatSessionId === hostConversationId || 
+              conv.conversationId === hostConversationId
+            );
+            
+            if (!sharedConversation) {
+              console.log('🔍 [CollaborationModal] No existing shared conversation found, looking for one created by the sender...');
+              
+              // Alternative: look for shared conversations created by the sender
+              const allSharedConversations = await sharedConversationService.getUserSharedConversations(invitation.fromUserId);
+              sharedConversation = allSharedConversations.find(conv => 
+                conv.hostChatSessionId === hostConversationId || 
+                conv.conversationId === hostConversationId
+              );
+              
+              if (sharedConversation) {
+                console.log('🔍 [CollaborationModal] Found shared conversation created by sender:', sharedConversation.id);
+                
+                // Add the recipient as a participant to the existing shared conversation
+                await sharedConversationService.addParticipant(
+                  sharedConversation.id,
+                  currentUserId,
+                  invitation.fromUserId,
+                  user?.displayName || user?.email || 'Unknown User'
+                );
+                
+                console.log('✅ [CollaborationModal] Added recipient to existing shared conversation');
+              }
+            }
+            
+            if (!sharedConversation) {
+              console.error('❌ [CollaborationModal] Could not find or create shared conversation');
+              setError('Unable to join the conversation. Please try again.');
+              setResponding(false);
+              return;
+            }
+            
+            console.log('🎯 [CollaborationModal] Joined shared conversation:', sharedConversation);
+            
+            // Wait a moment for Firebase to persist the data
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Add the specific conversation to the list instead of refreshing all
+            addSharedConversation(sharedConversation);
+            
+            // Select the new conversation as active
+            handleSharedConversationSelect(sharedConversation.id);
+            console.log('🔄 [CollaborationModal] Selected new conversation:', sharedConversation.id);
           }
-        }
-        
-        if (!sharedConversation) {
-          console.error('❌ [CollaborationModal] Could not find or create shared conversation');
+        } catch (bridgeError) {
+          console.error('❌ [CollaborationModal] Error in bridge integration:', bridgeError);
           setError('Unable to join the conversation. Please try again.');
           setResponding(false);
           return;
         }
-        
-        console.log('🎯 [CollaborationModal] Joined shared conversation:', sharedConversation);
-        
-        // Wait a moment for Firebase to persist the data
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Add the specific conversation to the list instead of refreshing all
-        addSharedConversation(sharedConversation);
-        
-        // Select the new conversation as active
-        handleSharedConversationSelect(sharedConversation.id);
-        console.log('🔄 [CollaborationModal] Selected new conversation:', sharedConversation.id);
         
         // Trigger a custom event to notify the context
         window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
