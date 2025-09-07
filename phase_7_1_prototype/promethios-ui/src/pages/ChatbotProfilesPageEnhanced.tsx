@@ -5149,7 +5149,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       aiAgents={getAIAgents()}
                                       connectionsLoading={connectionsLoading}
                                       onAddGuests={handleAddGuests}
-                                      humanParticipants={humanParticipants.map(h => ({
+                                      humanParticipants={humanParticipants
+                                        .filter(h => h.userId !== user?.uid) // Exclude current user from participant selector
+                                        .map(h => ({
                                         id: h.userId,
                                         name: h.name,
                                         type: 'human' as const,

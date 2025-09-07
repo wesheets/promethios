@@ -115,11 +115,23 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
       if (isSystem) return 'System';
       
       if (isUser) {
-        // For user messages, show the host's actual name
+        // For user messages, check metadata first for shared conversation sender info
+        if (message.metadata?.sharedConversationSender) {
+          return message.metadata.sharedConversationSender.name;
+        }
+        
+        // Fallback: look up the host user in shared conversation participants
         const hostUser = sharedConversation?.participants?.find(p => 
           p.type === 'human' && p.id === sharedConversation.createdBy
         );
-        return hostUser?.name || 'Host User';
+        
+        // If we found the host user and they have a proper name (not just an ID)
+        if (hostUser?.name && hostUser.name !== `User ${hostUser.id}`) {
+          return hostUser.name;
+        }
+        
+        // Final fallback: use a generic host label
+        return 'Host User';
       } else {
         // For AI messages, show the actual agent name
         return chatSession?.agentName || sharedConversation?.agentName || 'AI Assistant';

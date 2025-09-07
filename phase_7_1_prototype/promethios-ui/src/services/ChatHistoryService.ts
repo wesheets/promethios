@@ -573,6 +573,28 @@ export class ChatHistoryService {
   }
 
   /**
+   * Update an existing chat session
+   * Used by SharedConversationService to update sessions with new messages
+   */
+  async updateChatSession(session: ChatSession): Promise<void> {
+    try {
+      console.log('🔄 [ChatHistory] Updating chat session:', session.id);
+      
+      // Update the session's last updated timestamp
+      session.lastUpdated = new Date();
+      session.metadata.lastActivity = new Date();
+      
+      // Save the updated session
+      await this.saveChatSession(session);
+      
+      console.log('✅ [ChatHistory] Successfully updated chat session:', session.id);
+    } catch (error) {
+      console.error('❌ [ChatHistory] Failed to update chat session:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get shareable context for agent reference
    */
   async getShareableContext(contextId: string): Promise<ShareableChatContext | null> {

@@ -268,10 +268,35 @@ class SharedConversationService {
       return;
     }
 
+    // Try to get a better name if not provided
+    let finalName = participantName;
+    if (!finalName || finalName === 'Invited User' || finalName.startsWith('User ')) {
+      try {
+        // Try to fetch user profile information
+        const { UserProfileService } = await import('./UserProfileService');
+        const userProfileService = UserProfileService.getInstance();
+        const userProfile = await userProfileService.getUserProfile(participantId);
+        
+        if (userProfile?.displayName) {
+          finalName = userProfile.displayName;
+        } else if (userProfile?.email) {
+          // Use email prefix as fallback
+          finalName = userProfile.email.split('@')[0];
+        }
+      } catch (error) {
+        console.warn('❌ [SharedConversation] Could not fetch user profile for:', participantId, error);
+      }
+    }
+
+    // Final fallback to generic name
+    if (!finalName) {
+      finalName = `User ${participantId}`;
+    }
+
     // Add participant
     const participant: SharedConversationParticipant = {
       id: participantId,
-      name: participantName || `User ${participantId}`,
+      name: finalName,
       type: 'human',
       status: 'active', // Default to active when directly added
       role: 'participant',
@@ -299,7 +324,7 @@ class SharedConversationService {
       console.error('❌ [SharedConversation] Failed to update Firebase:', error);
     }
     
-    console.log('✅ Added participant to conversation:', participantId, conversationId);
+    console.log('✅ Added participant to conversation:', participantId, conversationId, 'with name:', finalName);
   }
 
   /**
