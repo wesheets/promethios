@@ -28,6 +28,7 @@ export interface StateChangeEvent {
 }
 
 export class ChatStateManager {
+  private static instance: ChatStateManager | null = null;
   private currentState: ChatState;
   private stateHistory: StateChangeEvent[] = [];
   private eventListeners: Map<string, Function[]> = new Map();
@@ -46,6 +47,16 @@ export class ChatStateManager {
     };
 
     console.log('🎛️ [ChatStateManager] Initialized with default state');
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): ChatStateManager {
+    if (!ChatStateManager.instance) {
+      ChatStateManager.instance = new ChatStateManager();
+    }
+    return ChatStateManager.instance;
   }
 
   /**
@@ -337,6 +348,13 @@ export class ChatStateManager {
       unreadCount: 0,
       error: null
     };
+  }
+
+  /**
+   * Reset singleton instance (for testing)
+   */
+  public static resetInstance(): void {
+    ChatStateManager.instance = null;
   }
 }
 
