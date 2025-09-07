@@ -49,12 +49,24 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
         setError(null);
         
         console.log('🔍 [SharedConversationMessages] Loading shared conversation:', conversationId);
+        console.log('🔍 [SharedConversationMessages] Current user ID:', currentUserId);
         
         // First, get the host's chat session ID from the shared conversation ID
+        console.log('🔍 [SharedConversationMessages] Calling getHostChatSessionId for:', conversationId);
         const hostChatSessionId = await sharedConversationService.getHostChatSessionId(conversationId);
         
+        console.log('🔍 [SharedConversationMessages] getHostChatSessionId result:', hostChatSessionId);
+        console.log('🔍 [SharedConversationMessages] hostChatSessionId type:', typeof hostChatSessionId);
+        console.log('🔍 [SharedConversationMessages] hostChatSessionId truthy:', !!hostChatSessionId);
+        
         if (!hostChatSessionId) {
-          console.warn('⚠️ [SharedConversationMessages] Could not find host chat session ID for:', conversationId);
+          console.error('❌ [SharedConversationMessages] Could not find host chat session ID for:', conversationId);
+          console.error('❌ [SharedConversationMessages] This means the shared conversation lookup failed');
+          console.error('❌ [SharedConversationMessages] Possible causes:');
+          console.error('❌   1. Shared conversation does not exist in Firebase');
+          console.error('❌   2. Permission denied accessing shared conversation');
+          console.error('❌   3. Shared conversation service error');
+          console.error('❌   4. Invalid conversation ID format');
           setError('Could not find the original conversation');
           return;
         }
