@@ -99,8 +99,28 @@ class ChatInvitationService {
       if (result.success) {
         console.log('✅ [ChatInvitationService] Collaboration invitation sent successfully');
         
-        // Note: Shared conversation will be created when invitation is accepted
-        // The addPendingParticipant call is not needed here as the conversation doesn't exist yet
+        // Create shared conversation immediately when invitation is sent
+        console.log('🔄 [ChatInvitationService] Creating shared conversation for invitation...');
+        try {
+          const sharedConversation = await this.sharedConversationService.createSharedConversationFromInvitation({
+            invitationId: result.interactionId!,
+            conversationId: request.conversationId, // This is the host's chat session ID
+            conversationName: request.conversationName,
+            agentName: request.agentName || 'AI Assistant',
+            fromUserId: request.fromUserId,
+            fromUserName: request.fromUserName,
+            toUserId: request.toUserId,
+            includeHistory: true
+          });
+          
+          console.log('✅ [ChatInvitationService] Shared conversation created:', sharedConversation.id);
+          console.log('✅ [ChatInvitationService] Host chat session ID set to:', request.conversationId);
+          
+        } catch (sharedConvError) {
+          console.error('❌ [ChatInvitationService] Failed to create shared conversation:', sharedConvError);
+          // Don't fail the invitation if shared conversation creation fails
+          // The invitation can still be sent, and we can retry conversation creation later
+        }
         
         return {
           success: true,
