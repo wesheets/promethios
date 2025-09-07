@@ -151,11 +151,29 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
       if (success) {
         console.log('✅ [CollaborationModal] Invitation accepted, joining existing shared conversation');
         
-        // Get the host's conversation ID from the invitation metadata
-        const hostConversationId = invitation.metadata?.conversationId;
+        // Get the full interaction data using the interactionId from metadata
+        let hostConversationId = invitation.metadata?.conversationId;
+        
+        if (!hostConversationId && invitation.metadata?.interactionId) {
+          console.log('🔍 [CollaborationModal] No conversationId in notification metadata, fetching full interaction data...');
+          try {
+            // Import UserInteractionRegistry to fetch the full interaction
+            const { userInteractionRegistry } = await import('../../services/UserInteractionRegistry');
+            const fullInteraction = await userInteractionRegistry.getInteraction(invitation.metadata.interactionId);
+            
+            if (fullInteraction?.metadata?.conversationId) {
+              hostConversationId = fullInteraction.metadata.conversationId;
+              console.log('✅ [CollaborationModal] Found conversationId in full interaction:', hostConversationId);
+            } else {
+              console.error('❌ [CollaborationModal] No conversationId found in full interaction either');
+            }
+          } catch (error) {
+            console.error('❌ [CollaborationModal] Error fetching full interaction:', error);
+          }
+        }
         
         if (!hostConversationId) {
-          console.error('❌ [CollaborationModal] No conversation ID in invitation metadata');
+          console.error('❌ [CollaborationModal] No conversation ID found in invitation or interaction metadata');
           setError('Invalid invitation: missing conversation information');
           setResponding(false);
           return;

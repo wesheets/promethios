@@ -489,6 +489,30 @@ class UserInteractionRegistry {
   }
 
   /**
+   * Get a specific interaction by ID
+   */
+  async getInteraction(interactionId: string): Promise<UserInteraction | null> {
+    try {
+      console.log(`🔍 [UserRegistry] Getting interaction: ${interactionId}`);
+
+      const docRef = doc(db, this.INTERACTIONS_COLLECTION, interactionId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const interaction = { id: docSnap.id, ...docSnap.data() } as UserInteraction;
+        console.log(`✅ [UserRegistry] Found interaction: ${interactionId}`);
+        return interaction;
+      } else {
+        console.log(`❌ [UserRegistry] Interaction not found: ${interactionId}`);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ [UserRegistry] Error getting interaction:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get relationships for a user
    */
   async getRelationships(userId: string): Promise<UserRelationship[]> {
