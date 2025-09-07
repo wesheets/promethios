@@ -62,6 +62,24 @@ class ChatInvitationService {
     invitationId?: string;
     error?: string;
   }> {
+    console.log('🔍 [ChatInvitationService] sendCollaborationInvitation called with request:', {
+      fromUserId: request.fromUserId,
+      fromUserName: request.fromUserName,
+      toUserId: request.toUserId,
+      toUserName: request.toUserName,
+      conversationId: request.conversationId,
+      conversationName: request.conversationName,
+      agentName: request.agentName,
+      message: request.message
+    });
+    
+    if (!request.conversationId) {
+      console.error('❌ [ChatInvitationService] Missing conversationId in request');
+      return {
+        success: false,
+        error: 'Missing conversation ID'
+      };
+    }
     try {
       console.log('🤖 [ChatInvitationService] Sending collaboration invitation via unified registry');
 
