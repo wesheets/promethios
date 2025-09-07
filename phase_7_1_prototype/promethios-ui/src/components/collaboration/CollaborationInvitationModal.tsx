@@ -71,6 +71,17 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
     authLoading
   });
 
+  // Debug: Log the full invitation metadata
+  if (invitation?.metadata) {
+    console.log('🔍 [CollaborationInvitationModal] Full metadata:', JSON.stringify(invitation.metadata, null, 2));
+    console.log('🔍 [CollaborationInvitationModal] Metadata keys:', Object.keys(invitation.metadata));
+    console.log('🔍 [CollaborationInvitationModal] conversationId:', invitation.metadata.conversationId);
+    console.log('🔍 [CollaborationInvitationModal] conversationName:', invitation.metadata.conversationName);
+    console.log('🔍 [CollaborationInvitationModal] agentName:', invitation.metadata.agentName);
+  } else {
+    console.log('❌ [CollaborationInvitationModal] No metadata found in invitation');
+  }
+
   if (!invitation) {
     return null;
   }
