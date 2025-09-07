@@ -962,14 +962,27 @@ class SharedConversationService {
         content: content.substring(0, 50) + '...'
       });
 
+      // First, get the shared conversation to find the host chat session ID
+      const sharedConversation = await this.getSharedConversation(conversationId);
+      if (!sharedConversation) {
+        throw new Error(`Shared conversation not found: ${conversationId}`);
+      }
+
+      const hostChatSessionId = sharedConversation.hostChatSessionId;
+      if (!hostChatSessionId) {
+        throw new Error(`No host chat session ID found for shared conversation: ${conversationId}`);
+      }
+
+      console.log('🔍 [SharedConversation] Using host chat session ID:', hostChatSessionId);
+
       // Import ChatHistoryService dynamically to avoid circular dependencies
       const { chatHistoryService } = await import('./ChatHistoryService');
       
-      // Load the chat session
-      const chatSession = await chatHistoryService.getChatSessionById(conversationId);
+      // Load the host chat session
+      const chatSession = await chatHistoryService.getChatSessionById(hostChatSessionId);
       
       if (!chatSession) {
-        throw new Error(`Chat session not found: ${conversationId}`);
+        throw new Error(`Host chat session not found: ${hostChatSessionId}`);
       }
 
       // Create new message
