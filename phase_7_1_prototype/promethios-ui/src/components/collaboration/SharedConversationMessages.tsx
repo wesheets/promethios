@@ -5,17 +5,21 @@ import {
   Paper,
   Avatar,
   CircularProgress,
-  Alert
+  Alert,
+  Chip
 } from '@mui/material';
 import {
   Person as PersonIcon,
-  SmartToy as BotIcon
+  SmartToy as BotIcon,
+  Edit as TypingIcon
 } from '@mui/icons-material';
 import { chatHistoryService, ChatSession } from '../../services/ChatHistoryService';
 import { ChatMessage } from '../../services/ChatStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
 import MarkdownRenderer from '../MarkdownRenderer';
 import AttachmentRenderer from '../AttachmentRenderer';
+import { onSnapshot, doc } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 
 interface SharedConversationMessagesProps {
   conversationId: string;
@@ -33,8 +37,11 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sharedConversationService = SharedConversationService.getInstance();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load chat session and messages
   useEffect(() => {
@@ -99,12 +106,88 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
     }
   }, [conversationId, sharedConversationService]);
 
+  // Real-time message listener
+  useEffect(() => {
+    if (!chatSession?.id) return;
+
+    console.log('🔄 [SharedConversationMessages] Setting up real-time listener for chat session:', chatSession.id);
+
+    // Set up Firebase listener for the chat session
+    const unsubscribe = onSnapshot(
+      doc(db, 'chatSessions', chatSession.id),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          console.log('🔄 [SharedConversationMessages] Real-time update received');
+          
+          // Update messages if they've changed
+          if (data.messages && Array.isArray(data.messages)) {
+            setMessages(data.messages);
+            console.log('✅ [SharedConversationMessages] Updated messages from real-time listener:', data.messages.length);
+          }
+        }
+      },
+      (error) => {
+        console.error('❌ [SharedConversationMessages] Real-time listener error:', error);
+      }
+    );
+
+    return () => {
+      console.log('🔄 [SharedConversationMessages] Cleaning up real-time listener');
+      unsubscribe();
+    };
+  }, [chatSession?.id]);
+
+  // Real-time typing indicators listener
+  useEffect(() => {
+    if (!conversationId) return;
+
+    console.log('⌨️ [SharedConversationMessages] Setting up typing indicators for:', conversationId);
+
+    // Set up Firebase listener for typing indicators
+    const unsubscribe = onSnapshot(
+      doc(db, 'shared_conversations_typing', conversationId),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          const currentlyTyping = new Set<string>();
+          
+          // Check who is currently typing (exclude current user)
+          Object.entries(data).forEach(([userId, typingData]: [string, any]) => {
+            if (userId !== currentUserId && typingData?.isTyping && 
+                Date.now() - typingData.timestamp < 5000) { // 5 second timeout
+              currentlyTyping.add(userId);
+            }
+          });
+          
+          setTypingUsers(currentlyTyping);
+        }
+      },
+      (error) => {
+        console.error('❌ [SharedConversationMessages] Typing indicators listener error:', error);
+      }
+    );
+
+    return () => {
+      console.log('⌨️ [SharedConversationMessages] Cleaning up typing indicators listener');
+      unsubscribe();
+    };
+  }, [conversationId, currentUserId]);
+
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
+
+  // Helper function to get participant name for typing indicators
+  const getParticipantName = (userId: string): string => {
+    if (!sharedConversation?.participants) return 'Someone';
+    
+    const participant = sharedConversation.participants.find((p: any) => p.id === userId);
+    return participant?.name || 'Someone';
+  };
 
   const renderMessage = (message: ChatMessage, index: number) => {
     const isUser = message.sender === 'user';
@@ -271,6 +354,32 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
         ) : (
           <>
             {messages.map((message, index) => renderMessage(message, index))}
+            
+            {/* Typing indicators */}
+            {typingUsers.size > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, ml: 1 }}>
+                <Avatar sx={{ width: 24, height: 24, mr: 1, bgcolor: '#64748b' }}>
+                  <TypingIcon sx={{ fontSize: 14 }} />
+                </Avatar>
+                <Chip
+                  label={
+                    Array.from(typingUsers).length === 1
+                      ? `${getParticipantName(Array.from(typingUsers)[0])} is typing...`
+                      : `${Array.from(typingUsers).map(id => getParticipantName(id)).join(', ')} are typing...`
+                  }
+                  size="small"
+                  sx={{
+                    bgcolor: '#374151',
+                    color: '#9ca3af',
+                    fontSize: '0.75rem',
+                    '& .MuiChip-label': {
+                      px: 1
+                    }
+                  }}
+                />
+              </Box>
+            )}
+            
             <div ref={messagesEndRef} />
           </>
         )}

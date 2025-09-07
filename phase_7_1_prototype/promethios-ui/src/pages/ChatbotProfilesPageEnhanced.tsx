@@ -2937,6 +2937,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const handleInputChange = useCallback((value: string) => {
     setMessageInput(value);
     
+    // Handle typing indicators for shared conversations
+    if (isInSharedMode && activeSharedConversation && user?.uid) {
+      if (value.trim() !== messageInput.trim()) {
+        // User is typing - set typing indicator
+        sharedConversationService.handleTypingStart(activeSharedConversation, user.uid);
+      }
+    }
+    
     // Check for @mentions (both agents and humans)
     const mentionMatch = value.match(/@(\w+)$/);
     if (mentionMatch) {
@@ -3240,6 +3248,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Route to shared conversation if in shared mode
     if (isInSharedMode && activeSharedConversation) {
       try {
+        // Clear typing indicator before sending message
+        if (user?.uid) {
+          await sharedConversationService.clearTypingIndicator(activeSharedConversation, user.uid);
+        }
+        
         await sharedConversationService.sendMessageToSharedConversation(
           activeSharedConversation,
           user?.uid || 'anonymous',

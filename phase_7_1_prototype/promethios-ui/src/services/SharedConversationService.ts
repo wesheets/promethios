@@ -1256,6 +1256,62 @@ class SharedConversationService {
       return undefined;
     }
   }
+
+  /**
+   * Set typing indicator for a user in a shared conversation
+   */
+  async setTypingIndicator(
+    conversationId: string,
+    userId: string,
+    isTyping: boolean
+  ): Promise<void> {
+    try {
+      const typingDocRef = doc(db, 'shared_conversations_typing', conversationId);
+      
+      await updateDoc(typingDocRef, {
+        [`${userId}`]: {
+          isTyping,
+          timestamp: Date.now(),
+          userId
+        }
+      });
+      
+      console.log(`⌨️ [SharedConversation] Set typing indicator for ${userId}: ${isTyping}`);
+    } catch (error) {
+      // If document doesn't exist, create it
+      try {
+        await setDoc(doc(db, 'shared_conversations_typing', conversationId), {
+          [`${userId}`]: {
+            isTyping,
+            timestamp: Date.now(),
+            userId
+          }
+        });
+        console.log(`⌨️ [SharedConversation] Created typing document and set indicator for ${userId}: ${isTyping}`);
+      } catch (createError) {
+        console.error('❌ [SharedConversation] Failed to set typing indicator:', createError);
+      }
+    }
+  }
+
+  /**
+   * Clear typing indicator for a user (convenience method)
+   */
+  async clearTypingIndicator(conversationId: string, userId: string): Promise<void> {
+    await this.setTypingIndicator(conversationId, userId, false);
+  }
+
+  /**
+   * Handle typing start (with auto-clear timeout)
+   */
+  async handleTypingStart(conversationId: string, userId: string): Promise<void> {
+    await this.setTypingIndicator(conversationId, userId, true);
+    
+    // Auto-clear after 3 seconds of inactivity
+    setTimeout(() => {
+      this.clearTypingIndicator(conversationId, userId);
+    }, 3000);
+  }
 }
 
 export default SharedConversationService;
