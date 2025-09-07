@@ -356,7 +356,7 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
     }
 
     setLoading(true);
-    setError(null);
+    setError('');
 
     try {
       console.log('📨 [GuestSelector] Sending team invitations to:', selectedTeamMembers);
@@ -364,16 +364,23 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       const session = await ensureChatSession();
       
       for (const member of selectedTeamMembers) {
-        await aiCollaborationInvitationService.createInvitation({
+        // Use the correct method name and parameters
+        const result = await aiCollaborationInvitationService.sendCollaborationInvitation({
           fromUserId: currentUserId,
           fromUserName: currentUserName || user?.displayName || user?.email || 'User',
-          toEmail: member.email,
+          toUserId: member.id,
+          toUserName: member.name,
           conversationId: session.id,
           conversationName: session.name,
           agentName: agentName || 'AI Assistant',
-          message: personalMessage || `Join me in my chat "${session.name}" with ${agentName || 'AI Assistant'}`,
-          includeHistory: true
+          message: personalMessage || `Join me in my chat "${session.name}" with ${agentName || 'AI Assistant'}`
         });
+
+        if (!result.success) {
+          console.error('❌ [GuestSelector] Failed to send invitation to:', member.name, result.error);
+        } else {
+          console.log('✅ [GuestSelector] Invitation sent to:', member.name);
+        }
       }
       
       console.log('✅ [GuestSelector] Team invitations sent successfully');
@@ -783,7 +790,7 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
                           }
                           secondary={
                             <Typography variant="body2" color="#94a3b8">
-                              {member.email}
+                              {member.role || 'Team Member'}
                             </Typography>
                           }
                         />
@@ -970,13 +977,17 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
         {selectedHumansForInvitation.map((human) => (
           <Box key={human.id} display="flex" alignItems="center" gap={2} mb={1}>
             <Avatar
+              src={human.avatar || human.profilePhoto}
               sx={{
                 bgcolor: '#3b82f6',
                 width: 32,
-                height: 32
+                height: 32,
+                color: 'white',
+                fontSize: '0.75rem',
+                fontWeight: 600
               }}
             >
-              <PersonIcon sx={{ fontSize: 16 }} />
+              {human.name.charAt(0).toUpperCase()}
             </Avatar>
             <Box>
               <Typography variant="body1" color="white" fontWeight="500">
