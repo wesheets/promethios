@@ -57,6 +57,8 @@ export interface SharedConversation {
   // Fields for linking to original chat session
   hostChatSessionId?: string; // ID of the original chat session containing messages
   conversationId?: string; // Backward compatibility alias for hostChatSessionId
+  agentId?: string; // ID of the AI agent in this conversation
+  agentName?: string; // Name of the AI agent for display purposes
 }
 
 export interface ConversationInvitation {
@@ -118,9 +120,12 @@ class SharedConversationService {
    * Create a new shared conversation (with Firebase persistence)
    */
   async createSharedConversation(
-    name: string,
     creatorId: string,
-    initialParticipants: string[] = []
+    creatorName: string,
+    name: string,
+    initialParticipants: string[] = [],
+    agentId?: string,
+    hostChatSessionId?: string
   ): Promise<SharedConversation> {
     const conversationId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -134,6 +139,9 @@ class SharedConversationService {
       isPrivateMode: false,
       hasHistory: true,
       unreadCounts: {},
+      agentId: agentId,
+      agentName: agentId ? `Agent ${agentId}` : undefined, // Default agent name, can be updated later
+      hostChatSessionId: hostChatSessionId, // Link to existing chat session
       settings: {
         allowParticipantInvites: true,
         allowAIAgents: true,
@@ -163,14 +171,14 @@ class SharedConversationService {
     }
 
     // Now add participants (can safely updateDoc the existing document)
-    await this.addParticipant(conversationId, creatorId, creatorId);
+    await this.addParticipant(conversationId, creatorId, creatorId, creatorName);
     
     // Add initial participants
     for (const participantId of initialParticipants) {
       await this.addParticipant(conversationId, participantId, creatorId);
     }
 
-    console.log('✅ Created shared conversation:', conversationId);
+    console.log('✅ Created shared conversation:', conversationId, 'linked to session:', hostChatSessionId);
     return conversation;
   }
 
