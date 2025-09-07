@@ -156,12 +156,19 @@ class SharedConversationService {
 
     try {
       // Create Firebase document FIRST (empty participants initially)
-      const firestoreData = {
+      const firestoreData: any = {
         ...conversation,
         participantIds: [], // Start with empty participants
         createdAt: Timestamp.fromDate(conversation.createdAt),
         lastActivity: Timestamp.fromDate(conversation.lastActivity)
       };
+      
+      // Remove undefined fields to prevent Firebase errors
+      Object.keys(firestoreData).forEach(key => {
+        if (firestoreData[key] === undefined) {
+          delete firestoreData[key];
+        }
+      });
       
       await setDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), firestoreData);
       console.log('✅ [SharedConversation] Created Firebase document:', conversationId);

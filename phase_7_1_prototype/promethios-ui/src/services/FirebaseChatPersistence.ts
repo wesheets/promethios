@@ -148,7 +148,7 @@ export class FirebaseChatPersistence {
    */
   public async saveSession(session: ChatSession): Promise<void> {
     try {
-      const sessionDoc: SessionDocument = {
+      const sessionDoc: any = {
         id: session.id,
         name: session.name,
         mode: session.mode,
@@ -163,7 +163,10 @@ export class FirebaseChatPersistence {
         unreadCounts: {}
       };
 
-      await setDoc(doc(db, this.COLLECTIONS.sessions, session.id), sessionDoc);
+      // Remove undefined fields to prevent Firebase errors
+      const cleanSessionDoc = this.removeUndefinedFields(sessionDoc);
+
+      await setDoc(doc(db, this.COLLECTIONS.sessions, session.id), cleanSessionDoc);
       
       // Add to user's session list
       await this.addUserSession(session.hostUserId, session.id);
@@ -605,6 +608,27 @@ export class FirebaseChatPersistence {
 
     this.activeListeners.set(`session_${sessionId}`, unsubscribe);
     return unsubscribe;
+  }
+
+  /**
+   * Remove undefined fields from object recursively to prevent Firebase errors
+   */
+  private removeUndefinedFields(obj: any): any {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.removeUndefinedFields(item));
+    }
+
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = this.removeUndefinedFields(value);
+      }
+    }
+    return cleaned;
   }
 
   /**
