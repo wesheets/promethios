@@ -68,7 +68,11 @@ export const getModernChatConfig = (): ModernChatFeatureFlags => {
       ...baseConfig,
       'enhanced-message-wrapper': true,
       'unified-state-management': true,
-      'modern-chat-analytics': true
+      'modern-chat-analytics': true,
+      // Week 2: Enable drag & drop for development
+      'drag-drop-injection': true,
+      'enhanced-agent-avatars': true,
+      'contextual-prompts': true
     };
   }
   

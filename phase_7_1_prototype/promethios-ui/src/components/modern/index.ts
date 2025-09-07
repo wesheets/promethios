@@ -16,6 +16,19 @@ export { default as AdaptiveMessageRenderer } from './AdaptiveMessageRenderer';
 
 export { default as ModernChatIntegration } from './ModernChatIntegration';
 
+// Week 2: Drag & Drop Behavioral Injection
+export { default as DraggableAgentAvatar } from './DraggableAgentAvatar';
+export type { AgentData, DraggableAgentAvatarProps } from './DraggableAgentAvatar';
+
+export { default as MessageDropTarget } from './MessageDropTarget';
+export type { DropTargetProps } from './MessageDropTarget';
+
+export { default as BehavioralInjectionModal } from './BehavioralInjectionModal';
+export type { BehavioralInjectionModalProps, BehavioralInjectionConfig } from './BehavioralInjectionModal';
+
+export { default as DragDropOrchestrator, useDragDropOrchestrator } from './DragDropOrchestrator';
+export type { DragDropOrchestratorProps } from './DragDropOrchestrator';
+
 // Hooks
 export { default as useModernChat } from '../hooks/useModernChat';
 export type { 
