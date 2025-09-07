@@ -911,6 +911,14 @@ class SharedConversationService {
         throw new Error(`Chat session not found: ${conversationId}`);
       }
 
+      // Ensure participants structure exists
+      if (!chatSession.participants) {
+        chatSession.participants = { guests: [] };
+      }
+      if (!chatSession.participants.guests) {
+        chatSession.participants.guests = [];
+      }
+
       // Check if recipient is already a participant
       const existingParticipant = chatSession.participants.guests.find(
         guest => guest.id === recipientId
@@ -1011,6 +1019,14 @@ class SharedConversationService {
       chatSession.metadata.lastActivity = new Date();
 
       // Update participant's message count and last active
+      // Ensure participants structure exists
+      if (!chatSession.participants) {
+        chatSession.participants = { guests: [] };
+      }
+      if (!chatSession.participants.guests) {
+        chatSession.participants.guests = [];
+      }
+      
       const participant = chatSession.participants.guests.find(guest => guest.id === senderId);
       if (participant) {
         participant.messageCount++;
