@@ -4051,18 +4051,28 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               👥 3 Participants {/* TODO: Get actual participant count */}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                              {/* TODO: Show actual shared conversation participants */}
-                              <Chip
-                                avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#3b82f6' }}>H</Avatar>}
-                                label="Host User"
-                                size="small"
-                                sx={{
-                                  bgcolor: '#3b82f6',
-                                  color: 'white',
-                                  opacity: 0.9,
-                                  fontSize: '11px'
-                                }}
-                              />
+                              {/* Host User */}
+                              {(() => {
+                                const hostUser = activeSharedConversation?.participants?.find(p => 
+                                  p.type === 'human' && p.id === activeSharedConversation.createdBy
+                                );
+                                const hostName = hostUser?.name || 'Host User';
+                                return (
+                                  <Chip
+                                    avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#3b82f6' }}>
+                                      {hostName.charAt(0)}
+                                    </Avatar>}
+                                    label={`${hostName} (Host)`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#3b82f6',
+                                      color: 'white',
+                                      opacity: 0.9,
+                                      fontSize: '11px'
+                                    }}
+                                  />
+                                );
+                              })()}
                               <Chip
                                 avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#10b981' }}>G</Avatar>}
                                 label="You"
