@@ -961,7 +961,8 @@ class SharedConversationService {
     conversationId: string,
     senderId: string,
     senderName: string,
-    content: string
+    content: string,
+    mentionedParticipants?: string[]
   ): Promise<void> {
     try {
       // Ensure content is a string
@@ -971,7 +972,8 @@ class SharedConversationService {
         conversationId,
         senderId,
         senderName,
-        content: messageContent.substring(0, 50) + (messageContent.length > 50 ? '...' : '')
+        content: messageContent.substring(0, 50) + (messageContent.length > 50 ? '...' : ''),
+        mentionedParticipants: mentionedParticipants || []
       });
 
       // First, get the shared conversation to find the host chat session ID

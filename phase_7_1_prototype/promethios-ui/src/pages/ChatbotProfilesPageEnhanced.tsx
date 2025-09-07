@@ -22,6 +22,7 @@ import CompactSharedChatTabs from '../components/collaboration/CompactSharedChat
 import SharedConversationService from '../services/SharedConversationService';
 import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
 import ChatInvitationModal from '../components/collaboration/ChatInvitationModal';
+import MentionInput, { MentionParticipant } from '../components/collaboration/MentionInput';
 import { useSharedConversations } from '../contexts/SharedConversationContext';
 // Notification and invitation imports
 import ConversationInvitationDialog, { InvitationFormData } from '../components/collaboration/ConversationInvitationDialog';
@@ -1293,6 +1294,48 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     
     // Final fallback - show as unknown instead of defaulting to a working provider
     return { name: 'Unknown', color: '#6b7280' };
+  };
+
+  // Get shared conversation participants for @mention functionality
+  const getSharedConversationParticipants = (): MentionParticipant[] => {
+    if (!isInSharedMode || !selectedSharedConversation) return [];
+    
+    const participants: MentionParticipant[] = [];
+    
+    // Add host user
+    const hostUser = selectedSharedConversation.participants?.find(p => p.id === selectedSharedConversation.createdBy);
+    if (hostUser) {
+      participants.push({
+        id: hostUser.id,
+        name: hostUser.name,
+        type: 'human',
+        displayName: hostUser.name.toLowerCase().replace(/\s+/g, '') // e.g., "Ted Sheets" -> "tedsheets"
+      });
+    }
+    
+    // Add AI agent
+    if (selectedChatbot) {
+      participants.push({
+        id: selectedChatbot.id,
+        name: selectedChatbot.identity?.name || selectedChatbot.name || 'Assistant',
+        type: 'ai',
+        displayName: (selectedChatbot.identity?.name || selectedChatbot.name || 'assistant').toLowerCase().replace(/\s+/g, '')
+      });
+    }
+    
+    // Add other participants (guests)
+    selectedSharedConversation.participants?.forEach(participant => {
+      if (participant.id !== selectedSharedConversation.createdBy && participant.id !== user?.uid) {
+        participants.push({
+          id: participant.id,
+          name: participant.name,
+          type: 'human',
+          displayName: participant.name.toLowerCase().replace(/\s+/g, '')
+        });
+      }
+    });
+    
+    return participants;
   };
 
   // Add loading circuit breaker
@@ -3164,6 +3207,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     return { bgcolor: '#3b82f6', animation: 'pulse 1.5s infinite' };
   };
 
+  // Handle @mention messages in shared conversations
+  const handleMentionMessage = async (message: string, mentionedParticipants: string[]) => {
+    if (!isInSharedMode || !activeSharedConversation) return;
+    
+    try {
+      // Send message to shared conversation with mention context
+      await sharedConversationService.sendMessageToSharedConversation(
+        activeSharedConversation,
+        user?.uid || 'anonymous',
+        user?.displayName || user?.email || 'Anonymous User',
+        message,
+        mentionedParticipants // Pass mentioned participants for targeted messaging
+      );
+      
+      console.log('📧 [MentionMessage] Sent with mentions:', {
+        message,
+        mentionedParticipants,
+        conversationId: activeSharedConversation
+      });
+      
+    } catch (error) {
+      console.error('Failed to send mention message:', error);
+    }
+  };
+
   // Enhanced multi-agent message handling
   const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
     const messageToSend = customMessage || messageInput.trim();
@@ -4411,45 +4479,58 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
-                          {/* Text Input */}
-                          <TextField
-                            fullWidth
-                            placeholder="Type your message..."
-                            value={messageInput}
-                            onChange={(e) => setMessageInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            variant="standard"
-                            disabled={chatLoading}
-                            InputProps={{
-                              disableUnderline: true,
-                              sx: {
-                                color: 'white',
-                                fontSize: '1rem',
-                                px: 2,
-                                py: 1.5,
-                                '& input::placeholder': {
-                                  color: '#9ca3af',
-                                  opacity: 1
+                          {/* Conditional Input: MentionInput for shared conversations, TextField for personal chats */}
+                          {isInSharedMode ? (
+                            <MentionInput
+                              value={messageInput}
+                              onChange={setMessageInput}
+                              onSend={handleMentionMessage}
+                              participants={getSharedConversationParticipants()}
+                              placeholder={`Message shared conversation...`}
+                              disabled={chatLoading}
+                            />
+                          ) : (
+                            <TextField
+                              fullWidth
+                              placeholder="Type your message..."
+                              value={messageInput}
+                              onChange={(e) => setMessageInput(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                              variant="standard"
+                              disabled={chatLoading}
+                              InputProps={{
+                                disableUnderline: true,
+                                sx: {
+                                  color: 'white',
+                                  fontSize: '1rem',
+                                  px: 2,
+                                  py: 1.5,
+                                  '& input::placeholder': {
+                                    color: '#9ca3af',
+                                    opacity: 1
+                                  }
                                 }
-                              }
-                            }}
-                          />
+                              }}
+                            />
+                          )}
                           
-                          {/* Send Button */}
-                          <IconButton
-                            onClick={handleSendMessage}
-                            disabled={!messageInput.trim() || chatLoading}
-                            sx={{
-                              color: messageInput.trim() ? '#3b82f6' : '#6b7280',
-                              '&:hover': { 
-                                color: '#2563eb', 
-                                bgcolor: 'rgba(59, 130, 246, 0.1)' 
-                              },
-                              mr: 1
-                            }}
-                          >
-                            {chatLoading ? <CircularProgress size={20} /> : <Send sx={{ fontSize: 20 }} />}
-                          </IconButton>
+                          {/* Send Button - only show for personal chats (shared conversations handle sending internally) */}
+                          {!isInSharedMode && (
+                            <IconButton
+                              onClick={handleSendMessage}
+                              disabled={!messageInput.trim() || chatLoading}
+                              sx={{
+                                color: messageInput.trim() ? '#3b82f6' : '#6b7280',
+                                '&:hover': { 
+                                  color: '#2563eb', 
+                                  bgcolor: 'rgba(59, 130, 246, 0.1)' 
+                                },
+                                mr: 1
+                              }}
+                            >
+                              {chatLoading ? <CircularProgress size={20} /> : <Send sx={{ fontSize: 20 }} />}
+                            </IconButton>
+                          )}
                         </Box>
                       </Box>
                     </Box>
