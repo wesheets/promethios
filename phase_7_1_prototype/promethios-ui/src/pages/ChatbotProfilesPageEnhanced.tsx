@@ -481,92 +481,95 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Track which shared conversations are active in header (opened from drawer or notifications)
   const [activeHeaderConversations, setActiveHeaderConversations] = useState<string[]>([]);
   
-  // Smart mode detection - automatically switch between regular and shared mode
-  useEffect(() => {
-    const detectModeFromParticipants = () => {
-      // Check if we have human participants in the current chat
-      const hasHumanGuests = humanParticipants && humanParticipants.length > 0;
-      const currentSessionId = activeSession?.id || currentChatSession?.id;
+  // Smart mode detection function - automatically switch between regular and shared mode
+  const detectModeFromParticipants = useCallback(() => {
+    // Check if we have human participants in the current chat
+    const hasHumanGuests = humanParticipants && humanParticipants.length > 0;
+    const currentSessionId = activeSession?.id || currentChatSession?.id;
+    
+    console.log('🔍 [Smart Mode Detection] Checking participants:');
+    console.log('🔍 [Smart Mode Detection] - hasHumanGuests:', hasHumanGuests);
+    console.log('🔍 [Smart Mode Detection] - humanParticipants.length:', humanParticipants?.length || 0);
+    console.log('🔍 [Smart Mode Detection] - currentSessionId:', currentSessionId);
+    console.log('🔍 [Smart Mode Detection] - current isInSharedMode:', isInSharedMode);
+    console.log('🔍 [Smart Mode Detection] - activeSharedConversation:', activeSharedConversation);
+    
+    if (hasHumanGuests && !isInSharedMode && currentSessionId) {
+      // We have human guests but we're not in shared mode - switch to shared mode
+      console.log('🔄 [Smart Mode Detection] Switching to shared mode - guests detected');
       
-      console.log('🔍 [Smart Mode Detection] Checking participants:');
-      console.log('🔍 [Smart Mode Detection] - hasHumanGuests:', hasHumanGuests);
-      console.log('🔍 [Smart Mode Detection] - humanParticipants.length:', humanParticipants?.length || 0);
-      console.log('🔍 [Smart Mode Detection] - currentSessionId:', currentSessionId);
-      console.log('🔍 [Smart Mode Detection] - current isInSharedMode:', isInSharedMode);
-      console.log('🔍 [Smart Mode Detection] - activeSharedConversation:', activeSharedConversation);
-      
-      if (hasHumanGuests && !isInSharedMode && currentSessionId) {
-        // We have human guests but we're not in shared mode - switch to shared mode
-        console.log('🔄 [Smart Mode Detection] Switching to shared mode - guests detected');
-        
-        // Create or find shared conversation for this session
-        const createSharedConversationForSession = async () => {
-          try {
-            if (!user?.uid || !selectedChatbot?.id) return;
+      // Create or find shared conversation for this session
+      const createSharedConversationForSession = async () => {
+        try {
+          if (!user?.uid || !selectedChatbot?.id) return;
+          
+          // Check if shared conversation already exists for this session
+          const existingConversation = sharedConversations.find(conv => 
+            conv.hostChatSessionId === currentSessionId
+          );
+          
+          if (existingConversation) {
+            console.log('🔄 [Smart Mode Detection] Using existing shared conversation:', existingConversation.id);
+            setActiveSharedConversation(existingConversation.id);
+            setIsInSharedMode(true);
+          } else {
+            console.log('🔄 [Smart Mode Detection] Creating new shared conversation for session:', currentSessionId);
             
-            // Check if shared conversation already exists for this session
-            const existingConversation = sharedConversations.find(conv => 
-              conv.hostChatSessionId === currentSessionId
+            const conversation = await sharedConversationService.createSharedConversation(
+              user.uid,
+              user.displayName || user.email || 'Host User',
+              `Shared: ${currentChatSession?.name || 'Chat with Agent'}`,
+              [], // Start with no additional participants
+              selectedChatbot.id,
+              currentSessionId // Link to the current chat session
             );
             
-            if (existingConversation) {
-              console.log('🔄 [Smart Mode Detection] Using existing shared conversation:', existingConversation.id);
-              setActiveSharedConversation(existingConversation.id);
-              setIsInSharedMode(true);
-            } else {
-              console.log('🔄 [Smart Mode Detection] Creating new shared conversation for session:', currentSessionId);
-              
-              const conversation = await sharedConversationService.createSharedConversation(
+            // Add human participants to the shared conversation
+            for (const participant of humanParticipants) {
+              await sharedConversationService.addParticipant(
+                conversation.id,
+                participant.userId,
                 user.uid,
-                user.displayName || user.email || 'Host User',
-                `Shared: ${currentChatSession?.name || 'Chat with Agent'}`,
-                [], // Start with no additional participants
-                selectedChatbot.id,
-                currentSessionId // Link to the current chat session
+                participant.name
               );
-              
-              // Add human participants to the shared conversation
-              for (const participant of humanParticipants) {
-                await sharedConversationService.addParticipant(
-                  conversation.id,
-                  participant.userId,
-                  user.uid,
-                  participant.name
-                );
-              }
-              
-              addSharedConversation(conversation);
-              setActiveSharedConversation(conversation.id);
-              setIsInSharedMode(true);
-              
-              console.log('✅ [Smart Mode Detection] Created and activated shared conversation:', conversation.id);
             }
-          } catch (error) {
-            console.error('❌ [Smart Mode Detection] Failed to create shared conversation:', error);
+            
+            addSharedConversation(conversation);
+            setActiveSharedConversation(conversation.id);
+            setIsInSharedMode(true);
+            
+            console.log('✅ [Smart Mode Detection] Created and activated shared conversation:', conversation.id);
           }
-        };
-        
-        createSharedConversationForSession();
-        
-      } else if (!hasHumanGuests && isInSharedMode && activeSharedConversation) {
-        // No human guests but we're in shared mode - switch back to regular mode
-        console.log('🔄 [Smart Mode Detection] Switching to regular mode - no guests detected');
-        setIsInSharedMode(false);
-        setActiveSharedConversation(null);
-      }
-    };
-    
-    // Run detection when participants or session changes
-    detectModeFromParticipants();
+        } catch (error) {
+          console.error('❌ [Smart Mode Detection] Failed to create shared conversation:', error);
+        }
+      };
+      
+      createSharedConversationForSession();
+      
+    } else if (!hasHumanGuests && isInSharedMode && activeSharedConversation) {
+      // No human guests but we're in shared mode - switch back to regular mode
+      console.log('🔄 [Smart Mode Detection] Switching to regular mode - no guests detected');
+      setIsInSharedMode(false);
+      setActiveSharedConversation(null);
+    }
   }, [
-    humanParticipants?.length, 
-    activeSession?.id, 
-    currentChatSession?.id, 
-    isInSharedMode, 
+    humanParticipants,
+    activeSession?.id,
+    currentChatSession?.id,
+    isInSharedMode,
     activeSharedConversation,
     user?.uid,
-    selectedChatbot?.id
+    selectedChatbot?.id,
+    sharedConversations,
+    sharedConversationService,
+    addSharedConversation
   ]);
+  
+  // Run detection when participants or session changes
+  useEffect(() => {
+    detectModeFromParticipants();
+  }, [detectModeFromParticipants]);
 
   // Ensure active shared conversation is always in the header list
   useEffect(() => {
