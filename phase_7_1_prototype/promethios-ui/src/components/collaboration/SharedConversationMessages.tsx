@@ -29,6 +29,7 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
   onSendMessage
 }) => {
   const [chatSession, setChatSession] = useState<ChatSession | null>(null);
+  const [sharedConversation, setSharedConversation] = useState<any>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +68,13 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
 
         console.log('🔍 [SharedConversationMessages] Loading host chat session:', hostChatSessionId);
         
+        // Load the shared conversation data to get host information
+        const sharedConv = await sharedConversationService.getSharedConversation(conversationId);
+        if (sharedConv) {
+          console.log('✅ [SharedConversationMessages] Loaded shared conversation data:', sharedConv);
+          setSharedConversation(sharedConv);
+        }
+        
         // Load the host's chat session
         const session = await chatHistoryService.getChatSessionById(hostChatSessionId);
         
@@ -101,6 +109,22 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
   const renderMessage = (message: ChatMessage, index: number) => {
     const isUser = message.sender === 'user';
     const isSystem = message.sender === 'system';
+    
+    // Get actual sender names for shared conversation context
+    const getSenderName = () => {
+      if (isSystem) return 'System';
+      
+      if (isUser) {
+        // For user messages, show the host's actual name
+        const hostUser = sharedConversation?.participants?.find(p => 
+          p.type === 'human' && p.id === sharedConversation.createdBy
+        );
+        return hostUser?.name || 'Host User';
+      } else {
+        // For AI messages, show the actual agent name
+        return chatSession?.agentName || sharedConversation?.agentName || 'AI Assistant';
+      }
+    };
     
     return (
       <Box
@@ -139,7 +163,7 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
           {/* Message header */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Typography variant="caption" sx={{ color: '#94a3b8', mr: 1 }}>
-              {isUser ? 'You' : isSystem ? 'System' : chatSession?.agentName || 'AI Assistant'}
+              {getSenderName()}
             </Typography>
             <Typography variant="caption" sx={{ color: '#64748b' }}>
               {new Date(message.timestamp).toLocaleTimeString()}

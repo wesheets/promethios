@@ -58,6 +58,15 @@ export interface AgentAvatarSelectorProps {
   connectionsLoading?: boolean;
   // Hide host agent (for shared conversations)
   hideHostAgent?: boolean;
+  // Shared conversation context
+  isSharedMode?: boolean;
+  sharedConversationParticipants?: Array<{
+    id: string;
+    name: string;
+    type: 'human' | 'ai';
+    avatar?: string;
+    status?: 'online' | 'offline';
+  }>;
   // New props for unified invitation functionality
   chatSession?: {
     id: string;
@@ -87,15 +96,32 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   conversationName,
   connectionsLoading = false,
   hideHostAgent = false,
+  isSharedMode = false,
+  sharedConversationParticipants = [],
   chatSession,
   agentId,
   user
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
-  const allAgents = hideHostAgent ? guestAgents : [hostAgent, ...guestAgents];
+  
+  // Determine which agents/participants to show
+  const allAgents = isSharedMode 
+    ? sharedConversationParticipants.map(participant => ({
+        id: participant.id,
+        name: participant.name,
+        avatar: participant.avatar,
+        color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
+        hotkey: undefined
+      }))
+    : hideHostAgent 
+      ? guestAgents 
+      : [hostAgent, ...guestAgents];
 
   // Debug logging to see what props are received
   console.log('🔍 [AgentAvatarSelector] Props received:');
+  console.log('🔍 [AgentAvatarSelector] isSharedMode:', isSharedMode);
+  console.log('🔍 [AgentAvatarSelector] sharedConversationParticipants:', sharedConversationParticipants);
+  console.log('🔍 [AgentAvatarSelector] allAgents:', allAgents);
   console.log('🔍 [AgentAvatarSelector] teamMembers:', teamMembers);
   console.log('🔍 [AgentAvatarSelector] teamMembers.length:', teamMembers.length);
   console.log('🔍 [AgentAvatarSelector] aiAgents:', aiAgents);

@@ -5084,6 +5084,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       conversationId={`conv_${selectedChatbot?.id || 'default'}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
                                       hideHostAgent={isInSharedMode && activeSharedConversation}
+                                      // Shared conversation context
+                                      isSharedMode={isInSharedMode && activeSharedConversation}
+                                      sharedConversationParticipants={
+                                        isInSharedMode && activeSharedConversation 
+                                          ? sharedConversations.find(c => c.id === activeSharedConversation)?.participants || []
+                                          : []
+                                      }
                                       // New unified invitation props
                                       chatSession={currentBotState?.currentChatSession ? {
                                         id: currentBotState.currentChatSession.id,
