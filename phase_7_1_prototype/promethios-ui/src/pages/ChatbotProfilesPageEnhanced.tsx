@@ -44,6 +44,9 @@ import TokenBudgetWidget from '../components/TokenBudgetWidget';
 import TokenResponseIcon from '../components/TokenResponseIcon';
 import TokenEconomicsConfigPanel from '../components/TokenEconomicsConfigPanel';
 import TokenBudgetPopup from '../components/TokenBudgetPopup';
+// Unified Chat System imports
+import { useUnifiedChat } from '../hooks/useUnifiedChat';
+import { unifiedChatLogger, isUnifiedChatEnabled, isFeatureEnabled } from '../config/unifiedChatConfig';
 // Autonomous systems imports
 import { AutonomousGovernanceExtension, AutonomousTaskPlan, AutonomousPhase, AutonomousExecutionState } from '../services/AutonomousGovernanceExtension';
 import { AutonomousTaskPlanningEngine } from '../services/AutonomousTaskPlanningEngine';
@@ -290,6 +293,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
     };
 
+    // Initialize unified chat system
+    const initializeUnifiedChat = async () => {
+      if (!isUnifiedChatEnabled()) {
+        unifiedChatLogger.debug('Unified chat disabled, skipping initialization');
+        return;
+      }
+
+      if (!user) {
+        unifiedChatLogger.debug('User not available, deferring unified chat initialization');
+        return;
+      }
+
+      try {
+        unifiedChatLogger.info('Initializing unified chat system for user:', user.uid);
+        await unifiedChat.initialize(user);
+        unifiedChatLogger.info('Unified chat system initialized successfully');
+      } catch (error) {
+        unifiedChatLogger.error('Failed to initialize unified chat system:', error);
+      }
+    };
+
     // Initialize repository systems
     const initializeRepositorySystems = async () => {
       try {
@@ -310,6 +334,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     };
     
     initializeAutonomousSystems();
+    initializeUnifiedChat();
     initializeRepositorySystems();
     
     return () => {
@@ -387,6 +412,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   
   // Token economics service
   const [tokenEconomicsService] = useState(() => TokenEconomicsService.getInstance());
+  
+  // Unified Chat System integration
+  const unifiedChat = useUnifiedChat({
+    sessionId: activeSession?.sessionId,
+    sessionName: activeSession?.sessionName || 'Chat Session',
+    agentId: selectedChatbot?.identity?.id || selectedChatbot?.key,
+    autoInitialize: false // We'll initialize manually when user is available
+  });
   
   // Multi-agent state
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
@@ -3331,6 +3364,50 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
     const messageToSend = customMessage || messageInput.trim();
     if (!messageToSend || chatLoading) return;
+
+    // 🚀 UNIFIED CHAT INTEGRATION: Try unified chat system first
+    if (isFeatureEnabled('messages') && unifiedChat.isEnabled && unifiedChat.isInitialized) {
+      try {
+        unifiedChatLogger.info('🚀 [UnifiedChat] Attempting to send message via unified system');
+        
+        // Create or get unified chat session
+        if (!unifiedChat.currentSession && activeSession) {
+          unifiedChatLogger.verbose('Creating unified chat session for:', activeSession.sessionId);
+          
+          const session = await unifiedChat.createOrGetSession(
+            activeSession.sessionId,
+            activeSession.sessionName || 'Chat Session',
+            selectedChatbot?.identity?.id || selectedChatbot?.key,
+            humanParticipants.map(p => p.userId)
+          );
+          
+          if (session) {
+            unifiedChatLogger.info('✅ [UnifiedChat] Session created/retrieved:', session.id, 'mode:', session.mode);
+          }
+        }
+        
+        // Send message via unified chat
+        if (unifiedChat.currentSession) {
+          const message = await unifiedChat.sendMessage(messageToSend, targetAgentIds ? { agentIds: targetAgentIds } : undefined);
+          
+          if (message) {
+            unifiedChatLogger.info('✅ [UnifiedChat] Message sent successfully:', message.id);
+            
+            // Clear input immediately for better UX
+            setMessageInput('');
+            setAttachedFiles([]);
+            
+            // For now, continue with legacy system for agent responses
+            // TODO: Replace with unified system once agent integration is complete
+            unifiedChatLogger.debug('Continuing with legacy system for agent response processing');
+          }
+        }
+      } catch (error) {
+        unifiedChatLogger.error('❌ [UnifiedChat] Failed to send message via unified system:', error);
+        unifiedChatLogger.info('Falling back to legacy message system');
+        // Continue with legacy system below
+      }
+    }
 
     // Route to shared conversation if in shared mode
     if (isInSharedMode && activeSharedConversation) {
