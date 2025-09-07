@@ -141,7 +141,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         console.log('✅ [CollaborationModal] Invitation accepted, joining existing shared conversation');
         
         // Get the host's conversation ID from the invitation metadata
-        const hostConversationId = metadata?.conversationId;
+        const hostConversationId = invitation.metadata?.conversationId;
         
         if (!hostConversationId) {
           console.error('❌ [CollaborationModal] No conversation ID in invitation metadata');
