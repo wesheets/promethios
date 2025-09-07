@@ -62,10 +62,29 @@ export interface SearchResult {
 }
 
 export class UserProfileService {
+  private static instance: UserProfileService;
+  
   private profileCache: Map<string, UserProfile> = new Map();
   private cacheExpiry: Map<string, number> = new Map();
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   private baseUrl = '/api/users';
+
+  /**
+   * Get singleton instance of UserProfileService
+   */
+  public static getInstance(): UserProfileService {
+    if (!UserProfileService.instance) {
+      UserProfileService.instance = new UserProfileService();
+    }
+    return UserProfileService.instance;
+  }
+
+  /**
+   * Reset singleton instance (for testing)
+   */
+  public static resetInstance(): void {
+    UserProfileService.instance = undefined as any;
+  }
   
   // No mock data - using real Firebase data only
 

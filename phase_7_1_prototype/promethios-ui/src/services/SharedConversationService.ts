@@ -8,7 +8,7 @@ import {
   collection, 
   doc, 
   setDoc, 
-  getDoc, 
+  getDoc,
   getDocs, 
   updateDoc, 
   deleteDoc, 
@@ -165,9 +165,15 @@ class SharedConversationService {
       
       await setDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), firestoreData);
       console.log('✅ [SharedConversation] Created Firebase document:', conversationId);
+      
+      // Wait a moment to ensure document is fully created
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
     } catch (error) {
       console.error('❌ [SharedConversation] Failed to create Firebase document:', error);
-      // Continue with in-memory version
+      // Remove from memory cache if Firebase creation failed
+      this.conversations.delete(conversationId);
+      throw new Error(`Failed to create shared conversation in Firebase: ${error}`);
     }
 
     // Now add participants (can safely updateDoc the existing document)
@@ -322,7 +328,17 @@ class SharedConversationService {
     // Update Firebase with new participant
     try {
       const participantIds = conversation.participants.map(p => p.id);
-      await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), {
+      
+      // Verify document exists before updating
+      const docRef = doc(db, this.CONVERSATIONS_COLLECTION, conversationId);
+      const docSnap = await getDoc(docRef);
+      
+      if (!docSnap.exists()) {
+        console.error('❌ [SharedConversation] Document does not exist for update:', conversationId);
+        throw new Error(`Document ${conversationId} does not exist`);
+      }
+      
+      await updateDoc(docRef, {
         participants: conversation.participants,
         participantIds, // Update the flat array for querying
         lastActivity: Timestamp.fromDate(conversation.lastActivity)
@@ -330,6 +346,7 @@ class SharedConversationService {
       console.log('✅ [SharedConversation] Updated Firebase with new participant:', participantId);
     } catch (error) {
       console.error('❌ [SharedConversation] Failed to update Firebase:', error);
+      // Don't throw here - participant was added to memory, just Firebase sync failed
     }
     
     console.log('✅ Added participant to conversation:', participantId, conversationId, 'with name:', finalName);
