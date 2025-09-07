@@ -360,10 +360,26 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
 
     try {
       console.log('📨 [GuestSelector] Sending team invitations to:', selectedTeamMembers);
+      console.log('🔍 [GuestSelector] Current user ID:', currentUserId);
+      console.log('🔍 [GuestSelector] Current user name:', currentUserName);
+      console.log('🔍 [GuestSelector] Agent name:', agentName);
       
       const session = await ensureChatSession();
+      console.log('🔍 [GuestSelector] Chat session obtained:', {
+        id: session.id,
+        name: session.name,
+        type: typeof session.id,
+        length: session.id?.length
+      });
       
       for (const member of selectedTeamMembers) {
+        console.log('🔄 [GuestSelector] Sending invitation to member:', {
+          id: member.id,
+          name: member.name,
+          conversationId: session.id,
+          conversationName: session.name
+        });
+        
         // Use the correct method name and parameters
         const result = await aiCollaborationInvitationService.sendCollaborationInvitation({
           fromUserId: currentUserId,
@@ -376,10 +392,12 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
           message: personalMessage || `Join me in my chat "${session.name}" with ${agentName || 'AI Assistant'}`
         });
 
+        console.log('🔍 [GuestSelector] Invitation result for', member.name, ':', result);
+
         if (!result.success) {
           console.error('❌ [GuestSelector] Failed to send invitation to:', member.name, result.error);
         } else {
-          console.log('✅ [GuestSelector] Invitation sent to:', member.name);
+          console.log('✅ [GuestSelector] Invitation sent to:', member.name, 'with ID:', result.invitationId);
         }
       }
       
@@ -387,6 +405,11 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       onClose();
     } catch (error) {
       console.error('❌ [GuestSelector] Failed to send team invitations:', error);
+      console.error('❌ [GuestSelector] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       setError('Failed to send invitations');
     } finally {
       setLoading(false);
