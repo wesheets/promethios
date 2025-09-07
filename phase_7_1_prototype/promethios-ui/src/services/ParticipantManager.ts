@@ -51,6 +51,7 @@ export interface ParticipantManagerConfig {
 }
 
 export class ParticipantManager {
+  private static instance: ParticipantManager | null = null;
   private config: ParticipantManagerConfig;
   private user: User | null = null;
   private currentState: ChatState | null = null;
@@ -79,6 +80,16 @@ export class ParticipantManager {
     };
 
     console.log('👥 [ParticipantManager] Initialized with config:', this.config);
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(config?: Partial<ParticipantManagerConfig>): ParticipantManager {
+    if (!ParticipantManager.instance) {
+      ParticipantManager.instance = new ParticipantManager(config);
+    }
+    return ParticipantManager.instance;
   }
 
   /**
@@ -512,6 +523,13 @@ export class ParticipantManager {
     this.presenceTimers.clear();
     this.user = null;
     this.currentState = null;
+  }
+
+  /**
+   * Reset singleton instance (for testing)
+   */
+  public static resetInstance(): void {
+    ParticipantManager.instance = null;
   }
 }
 
