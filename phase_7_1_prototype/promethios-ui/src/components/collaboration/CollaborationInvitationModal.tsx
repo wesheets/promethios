@@ -150,7 +150,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
       if (!currentUserId) {
         console.error('❌ [CollaborationModal] No user available for invitation acceptance');
         console.error('❌ [CollaborationModal] Auth state:', { user, authLoading });
-        setError('Unable to identify current user. Please try refreshing the page.');
+        setError('You must be logged in to accept this invitation. Please log in first, then try again.');
         setResponding(false);
         return;
       }
@@ -589,7 +589,24 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}>
+            <Alert 
+              severity="error" 
+              sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}
+              action={
+                error.includes('logged in') ? (
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    onClick={() => {
+                      // Redirect to login page
+                      window.location.href = '/ui/auth/login';
+                    }}
+                  >
+                    Login
+                  </Button>
+                ) : null
+              }
+            >
               {error}
             </Alert>
           )}

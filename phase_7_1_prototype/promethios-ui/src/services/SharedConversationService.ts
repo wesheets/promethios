@@ -691,53 +691,54 @@ class SharedConversationService {
     }
 
     // Create the shared conversation with correct parameters
-    const conversation = await this.createSharedConversation(
-      conversationName,
-      fromUserId,
-      [] // initialParticipants - we'll add them separately
+    const createdConversation = await this.createSharedConversation(
+      fromUserId,        // creatorId
+      'Host User',       // creatorName (we'll get the actual name later)
+      conversationName,  // name
+      [],               // initialParticipants - we'll add them separately
+      undefined,        // agentId
+      conversationId    // hostChatSessionId
     );
 
-    const conversationId = conversation.id;
-    console.log('✅ [SharedConversation] Created conversation:', conversationId);
+    const sharedConversationId = createdConversation.id;
+    console.log('✅ [SharedConversation] Created conversation:', sharedConversationId);
 
-    // Update conversation settings for collaboration
-    if (this.conversations.has(conversationId)) {
-      const conv = this.conversations.get(conversationId)!;
+    // Up    // Update conversation settings for collaboration
+    if (this.conversations.has(sharedConversationId)) {
+      const conv = this.conversations.get(sharedConversationId)!;
       conv.allowParticipantInvites = true;
       conv.allowAIAgents = true;
       conv.allowReceiptSharing = true;
       conv.maxParticipants = 10;
       
-      // Set the host chat session ID if provided
-      if (hostChatSessionId) {
-        conv.hostChatSessionId = hostChatSessionId;
-        conv.conversationId = hostChatSessionId; // Also set as conversationId for backward compatibility
-        console.log('✅ [SharedConversation] Set host chat session ID:', hostChatSessionId);
-        
-        // Update Firebase document with hostChatSessionId
-        try {
-          await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, conversationId), {
-            hostChatSessionId: hostChatSessionId,
-            conversationId: hostChatSessionId
-          });
-          console.log('✅ [SharedConversation] Updated Firebase with host chat session ID');
-        } catch (error) {
-          console.error('❌ [SharedConversation] Failed to update Firebase with host chat session ID:', error);
-        }
+      // Set host chat session ID for linking
+      conv.hostChatSessionId = conversationId;
+      console.log('✅ [SharedConversation] Set host chat session ID:', conversationId);
+      
+      // Update Firebase with host chat session ID
+      try {
+        await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, sharedConversationId), {
+          hostChatSessionId: conversationId,
+          allowParticipantInvites: true,
+          allowAIAgents: true,
+          allowReceiptSharing: true,
+          maxParticipants: 10
+        });
+        console.log('✅ [SharedConversation] Updated Firebase with host chat session ID');
+      } catch (error) {
+        console.error('❌ [SharedConversation] Failed to update Firebase:', error);
       }
     }
 
-    // Get the created conversation to verify it exists
-    const createdConversation = this.conversations.get(conversationId);
     if (!createdConversation) {
       throw new Error('Failed to create shared conversation');
     }
 
     // Add the AI agent as a participant
-    await this.addAIAgent(conversationId, `ai-${agentName.toLowerCase().replace(/\s+/g, '-')}`, agentName, fromUserId);
+    await this.addAIAgent(sharedConversationId, `ai-${agentName.toLowerCase().replace(/\s+/g, '-')}`, agentName, fromUserId);
 
     // Add the invited user as a participant
-    await this.addParticipant(conversationId, toUserId, fromUserId, 'Invited User');
+    await this.addParticipant(sharedConversationId, toUserId, fromUserId, 'Invited User');
 
     // Set history visibility if requested
     if (includeHistory) {
@@ -753,7 +754,7 @@ class SharedConversationService {
     }
 
     console.log('✅ [SharedConversation] Created conversation from invitation:', {
-      conversationId,
+      sharedConversationId,
       participants: createdConversation.participants.length,
       name: conversationName,
       participantIds: createdConversation.participants.map(p => p.id)
