@@ -86,6 +86,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   conversationId,
   conversationName,
   connectionsLoading = false,
+  hideHostAgent = false,
   chatSession,
   agentId,
   user
