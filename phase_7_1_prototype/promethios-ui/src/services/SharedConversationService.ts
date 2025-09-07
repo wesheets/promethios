@@ -956,10 +956,14 @@ class SharedConversationService {
     content: string
   ): Promise<void> {
     try {
+      // Ensure content is a string
+      const messageContent = typeof content === 'string' ? content : String(content || '');
+      
       console.log('💬 [SharedConversation] Sending message to shared conversation:', {
         conversationId,
         senderId,
-        content: content.substring(0, 50) + '...'
+        senderName,
+        content: messageContent.substring(0, 50) + (messageContent.length > 50 ? '...' : '')
       });
 
       // First, get the shared conversation to find the host chat session ID
@@ -988,7 +992,7 @@ class SharedConversationService {
       // Create new message
       const newMessage = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        content,
+        content: messageContent,
         sender: 'user',
         timestamp: new Date().toISOString(),
         attachments: [],
