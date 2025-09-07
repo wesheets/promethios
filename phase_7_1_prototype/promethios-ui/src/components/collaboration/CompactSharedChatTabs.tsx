@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Chip, Avatar, AvatarGroup, Tooltip, IconButton, Menu, MenuItem, Typography } from '@mui/material';
-import { MoreHoriz, Chat, Close } from '@mui/icons-material';
+import { MoreHoriz, Chat, Close, People } from '@mui/icons-material';
 import { SharedConversation } from '../../services/SharedConversationService';
 import { UserProfileService, UserProfile } from '../../services/UserProfileService';
 
