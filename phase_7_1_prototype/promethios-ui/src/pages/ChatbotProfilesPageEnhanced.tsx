@@ -121,7 +121,6 @@ import {
   CloudUpload,
   AutoAwesome,
   AccountBalanceWallet as WalletIcon,
-  Add,
   PersonAdd,
   Edit,
   Send,

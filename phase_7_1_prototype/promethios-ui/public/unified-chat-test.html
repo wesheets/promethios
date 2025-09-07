@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unified Chat System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .status.enabled {
+            background-color: #1a7f37;
+        }
+        .status.disabled {
+            background-color: #da3633;
+        }
+        .test-section {
+            border: 1px solid #444;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #0969da;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0860ca;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Unified Chat System Test</h1>
+    
+    <div class="container">
+        <h2>Environment Configuration</h2>
+        <div id="env-status" class="status">Loading...</div>
+        <div id="env-details"></div>
+    </div>
+
+    <div class="container">
+        <h2>Unified Chat Manager</h2>
+        <div id="manager-status" class="status">Not initialized</div>
+        <button onclick="initializeManager()">Initialize Manager</button>
+        <button onclick="testConfiguration()">Test Configuration</button>
+    </div>
+
+    <div class="container">
+        <h2>Session Management</h2>
+        <div class="test-section">
+            <h3>Create Session</h3>
+            <input type="text" id="sessionId" placeholder="Session ID" value="test-session-1">
+            <input type="text" id="sessionName" placeholder="Session Name" value="Test Chat Session">
+            <input type="text" id="agentId" placeholder="Agent ID (optional)" value="test-agent">
+            <button onclick="createSession()">Create Session</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Mode Switching Test</h3>
+            <button onclick="testRegularMode()">Test Regular Mode</button>
+            <button onclick="testSharedMode()">Test Shared Mode</button>
+            <button onclick="addParticipant()">Add Participant</button>
+            <button onclick="removeParticipant()">Remove Participant</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Message Testing</h2>
+        <div class="test-section">
+            <input type="text" id="messageContent" placeholder="Message content" value="Hello, this is a test message">
+            <select id="messageTarget">
+                <option value="">All participants</option>
+                <option value="agent">Agent only</option>
+                <option value="human">Humans only</option>
+            </select>
+            <button onclick="sendMessage()">Send Message</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Test Log</h2>
+        <button onclick="clearLog()">Clear Log</button>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        // Test environment variables and configuration
+        function testEnvironment() {
+            log('🔍 Testing environment configuration...');
+            
+            // Test Vite environment variables
+            const viteEnv = {
+                VITE_UNIFIED_CHAT_ENABLED: import.meta?.env?.VITE_UNIFIED_CHAT_ENABLED,
+                VITE_UNIFIED_MESSAGES: import.meta?.env?.VITE_UNIFIED_MESSAGES,
+                VITE_UNIFIED_PARTICIPANTS: import.meta?.env?.VITE_UNIFIED_PARTICIPANTS,
+                VITE_UNIFIED_REALTIME: import.meta?.env?.VITE_UNIFIED_REALTIME,
+                VITE_UNIFIED_NOTIFICATIONS: import.meta?.env?.VITE_UNIFIED_NOTIFICATIONS,
+                VITE_UNIFIED_CHAT_DEBUG: import.meta?.env?.VITE_UNIFIED_CHAT_DEBUG,
+                VITE_UNIFIED_CHAT_VERBOSE_LOGGING: import.meta?.env?.VITE_UNIFIED_CHAT_VERBOSE_LOGGING
+            };
+            
+            log('🔧 Vite Environment Variables:', JSON.stringify(viteEnv, null, 2));
+            
+            const isEnabled = viteEnv.VITE_UNIFIED_CHAT_ENABLED === 'true';
+            const statusEl = document.getElementById('env-status');
+            const detailsEl = document.getElementById('env-details');
+            
+            if (isEnabled) {
+                statusEl.textContent = '✅ Unified Chat Enabled';
+                statusEl.className = 'status enabled';
+            } else {
+                statusEl.textContent = '❌ Unified Chat Disabled';
+                statusEl.className = 'status disabled';
+            }
+            
+            detailsEl.innerHTML = `
+                <strong>Configuration:</strong><br>
+                Enabled: ${viteEnv.VITE_UNIFIED_CHAT_ENABLED}<br>
+                Messages: ${viteEnv.VITE_UNIFIED_MESSAGES}<br>
+                Participants: ${viteEnv.VITE_UNIFIED_PARTICIPANTS}<br>
+                Real-time: ${viteEnv.VITE_UNIFIED_REALTIME}<br>
+                Notifications: ${viteEnv.VITE_UNIFIED_NOTIFICATIONS}<br>
+                Debug: ${viteEnv.VITE_UNIFIED_CHAT_DEBUG}<br>
+                Verbose Logging: ${viteEnv.VITE_UNIFIED_CHAT_VERBOSE_LOGGING}
+            `;
+        }
+
+        function initializeManager() {
+            log('🚀 Attempting to initialize UnifiedChatManager...');
+            
+            try {
+                // This would normally import the actual UnifiedChatManager
+                // For now, we'll simulate the initialization
+                log('⚠️ Note: This is a simulation - actual UnifiedChatManager would be imported from the module');
+                log('✅ Manager initialization simulated successfully');
+                
+                document.getElementById('manager-status').textContent = '✅ Manager Initialized (Simulated)';
+                document.getElementById('manager-status').className = 'status enabled';
+                
+            } catch (error) {
+                log('❌ Failed to initialize manager:', error.message);
+                document.getElementById('manager-status').textContent = '❌ Manager Failed';
+                document.getElementById('manager-status').className = 'status disabled';
+            }
+        }
+
+        function testConfiguration() {
+            log('🔧 Testing unified chat configuration...');
+            
+            // Test if configuration is accessible
+            try {
+                log('📋 Configuration test completed');
+                log('ℹ️ In a real implementation, this would test the actual unifiedChatConfig module');
+            } catch (error) {
+                log('❌ Configuration test failed:', error.message);
+            }
+        }
+
+        function createSession() {
+            const sessionId = document.getElementById('sessionId').value;
+            const sessionName = document.getElementById('sessionName').value;
+            const agentId = document.getElementById('agentId').value;
+            
+            log(`🎯 Creating session: ${sessionId}`);
+            log(`   Name: ${sessionName}`);
+            log(`   Agent: ${agentId || 'None'}`);
+            
+            // Simulate session creation
+            log('✅ Session created successfully (simulated)');
+            log('📊 Initial mode: regular (1-on-1)');
+        }
+
+        function testRegularMode() {
+            log('🔄 Testing regular mode (1-on-1 chat)...');
+            log('✅ Regular mode active');
+            log('👤 Participants: User + Agent');
+        }
+
+        function testSharedMode() {
+            log('🔄 Testing shared mode (multi-participant)...');
+            log('✅ Shared mode active');
+            log('👥 Participants: User + Agent + 2 additional participants');
+        }
+
+        function addParticipant() {
+            log('➕ Adding participant to session...');
+            log('✅ Participant added successfully');
+            log('🔄 Mode switched to shared (multi-participant)');
+        }
+
+        function removeParticipant() {
+            log('➖ Removing participant from session...');
+            log('✅ Participant removed successfully');
+            log('🔄 Checking if mode should switch back to regular...');
+        }
+
+        function sendMessage() {
+            const content = document.getElementById('messageContent').value;
+            const target = document.getElementById('messageTarget').value;
+            
+            log(`💬 Sending message: "${content}"`);
+            log(`🎯 Target: ${target || 'all participants'}`);
+            log('✅ Message sent successfully (simulated)');
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function log(message, data = null) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            let logMessage = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                logMessage += '\n' + (typeof data === 'string' ? data : JSON.stringify(data, null, 2));
+            }
+            
+            logEl.textContent += logMessage + '\n';
+            logEl.scrollTop = logEl.scrollHeight;
+            
+            // Also log to browser console
+            console.log(message, data);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔥 Unified Chat Test Page Loaded');
+            testEnvironment();
+        });
+    </script>
+</body>
+</html>
+

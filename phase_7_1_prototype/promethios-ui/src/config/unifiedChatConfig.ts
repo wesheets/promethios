@@ -56,18 +56,19 @@ const defaultConfig: UnifiedChatConfig = {
 
 // Load configuration from environment variables
 export const unifiedChatConfig: UnifiedChatConfig = {
-  enabled: process.env.REACT_APP_UNIFIED_CHAT_ENABLED === 'true',
+  // Use defaults first, then override with environment variables
+  ...defaultConfig,
+  enabled: import.meta.env.VITE_UNIFIED_CHAT_ENABLED === 'true',
   features: {
-    messages: process.env.REACT_APP_UNIFIED_MESSAGES === 'true',
-    participants: process.env.REACT_APP_UNIFIED_PARTICIPANTS === 'true',
-    realTime: process.env.REACT_APP_UNIFIED_REALTIME === 'true',
-    notifications: process.env.REACT_APP_UNIFIED_NOTIFICATIONS === 'true'
+    messages: import.meta.env.VITE_UNIFIED_MESSAGES === 'true',
+    participants: import.meta.env.VITE_UNIFIED_PARTICIPANTS === 'true',
+    realTime: import.meta.env.VITE_UNIFIED_REALTIME === 'true',
+    notifications: import.meta.env.VITE_UNIFIED_NOTIFICATIONS === 'true'
   },
-  debug: process.env.REACT_APP_UNIFIED_CHAT_DEBUG === 'true',
-  verboseLogging: process.env.REACT_APP_UNIFIED_CHAT_VERBOSE_LOGGING === 'true',
-  batchMessages: process.env.REACT_APP_UNIFIED_CHAT_BATCH_MESSAGES !== 'false',
-  cacheParticipants: process.env.REACT_APP_UNIFIED_CHAT_CACHE_PARTICIPANTS !== 'false',
-  ...defaultConfig
+  debug: import.meta.env.VITE_UNIFIED_CHAT_DEBUG === 'true',
+  verboseLogging: import.meta.env.VITE_UNIFIED_CHAT_VERBOSE_LOGGING === 'true',
+  batchMessages: import.meta.env.VITE_UNIFIED_CHAT_BATCH_MESSAGES !== 'false',
+  cacheParticipants: import.meta.env.VITE_UNIFIED_CHAT_CACHE_PARTICIPANTS !== 'false'
 };
 
 // Logging utility for unified chat system
