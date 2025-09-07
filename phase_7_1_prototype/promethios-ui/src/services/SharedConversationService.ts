@@ -1175,6 +1175,40 @@ class SharedConversationService {
       throw error;
     }
   }
+
+  /**
+   * Subscribe to real-time updates for a shared conversation
+   */
+  subscribeToConversation(
+    conversationId: string,
+    callback: (conversation: any) => void
+  ): (() => void) | undefined {
+    try {
+      console.log('🔄 [SharedConversation] Setting up real-time listener for:', conversationId);
+      
+      // Import Firebase functions
+      const { doc, onSnapshot } = require('firebase/firestore');
+      const { db } = require('../config/firebase');
+      
+      // Set up Firestore listener
+      const conversationRef = doc(db, 'sharedConversations', conversationId);
+      
+      const unsubscribe = onSnapshot(conversationRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          console.log('🔄 [SharedConversation] Real-time update received:', data);
+          callback(data);
+        }
+      }, (error) => {
+        console.error('❌ [SharedConversation] Real-time listener error:', error);
+      });
+      
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to set up real-time listener:', error);
+      return undefined;
+    }
+  }
 }
 
 export default SharedConversationService;

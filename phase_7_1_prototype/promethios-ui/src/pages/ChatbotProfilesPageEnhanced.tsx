@@ -463,6 +463,38 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   }, [activeSharedConversation, activeHeaderConversations]);
   
+  // Real-time listener for shared conversation participant updates
+  useEffect(() => {
+    if (!activeSharedConversation) return;
+    
+    console.log(`🔄 [RealTime] Setting up listener for shared conversation: ${activeSharedConversation}`);
+    
+    // Set up Firebase listener for shared conversation changes
+    const unsubscribe = sharedConversationService.subscribeToConversation(
+      activeSharedConversation,
+      (updatedConversation) => {
+        console.log(`🔄 [RealTime] Shared conversation updated:`, updatedConversation);
+        
+        // Update shared conversations list with new data
+        setSharedConversations(prev => 
+          prev.map(conv => 
+            conv.id === activeSharedConversation 
+              ? { ...conv, ...updatedConversation }
+              : conv
+          )
+        );
+        
+        // Force re-render of header and participants
+        // The header will automatically update due to the sharedConversations dependency
+      }
+    );
+    
+    return () => {
+      console.log(`🔄 [RealTime] Cleaning up listener for: ${activeSharedConversation}`);
+      unsubscribe?.();
+    };
+  }, [activeSharedConversation, sharedConversationService]);
+  
   // Notification and invitation state
   const [showInvitationDialog, setShowInvitationDialog] = useState(false);
   const [showUserDiscoveryDialog, setShowUserDiscoveryDialog] = useState(false);
@@ -4032,7 +4064,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
                       {isInSharedMode && activeSharedConversation ? (
-                        <>🤝 Shared with {/* TODO: Get host name from shared conversation */}</>
+                        <>
+                          {(() => {
+                            const sharedConv = sharedConversations.find(c => c.id === activeSharedConversation);
+                            const hostUser = sharedConv?.participants?.find(p => 
+                              p.type === 'human' && p.id === sharedConv.createdBy
+                            );
+                            const hostName = hostUser?.name || 'Host User';
+                            const conversationName = sharedConv?.name || 'Shared Chat';
+                            
+                            return (
+                              <Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <span>🤝 Shared with {hostName}</span>
+                                  <Box sx={{ 
+                                    px: 1.5, 
+                                    py: 0.5, 
+                                    bgcolor: '#374151', 
+                                    borderRadius: 1,
+                                    fontSize: '12px',
+                                    color: '#9ca3af'
+                                  }}>
+                                    {conversationName}
+                                  </Box>
+                                </Box>
+                              </Box>
+                            );
+                          })()}
+                        </>
                       ) : (
                         <>
                           {multiChatState.contexts.find(c => c.isActive)?.name || 'Chat'}
