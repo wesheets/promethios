@@ -413,14 +413,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Token economics service
   const [tokenEconomicsService] = useState(() => TokenEconomicsService.getInstance());
   
-  // Unified Chat System integration
-  const unifiedChat = useUnifiedChat({
-    sessionId: activeSession?.sessionId,
-    sessionName: activeSession?.sessionName || 'Chat Session',
-    agentId: selectedChatbot?.identity?.id || selectedChatbot?.key,
-    autoInitialize: false // We'll initialize manually when user is available
-  });
-  
   // Multi-agent state
   const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
   const [multiAgentResponses, setMultiAgentResponses] = useState<AgentResponse[]>([]);
@@ -717,6 +709,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const chatMessages = currentBotState?.chatMessages || [];
   const activeSession = currentBotState?.activeSession || null;
   const isWorkspaceMode = currentBotState?.isWorkspaceMode || false;
+  
+  // Unified Chat System integration (after activeSession is available)
+  const unifiedChat = useUnifiedChat({
+    sessionId: activeSession?.sessionId,
+    sessionName: activeSession?.sessionName || 'Chat Session',
+    agentId: selectedChatbot?.identity?.id || selectedChatbot?.key,
+    autoInitialize: false // We'll initialize manually when user is available
+  });
   
   // Debug workspace mode
   console.log(`🔍 [WORKSPACE DEBUG] selectedChatbotId: ${selectedChatbotId}`);
