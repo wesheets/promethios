@@ -14,7 +14,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['*', '5173-irvp18jlopbh17iy0n4g8-ffd3d388.manusvm.computer', '5173-iodgdwzdg7fidmqwueiz8-e58de46c.manusvm.computer', '5173-iwjuy1m7kphmidu41hlw3-73b17971.manusvm.computer', '5173-ib2j0uguz57orodfwialy-d1a933a4.manusvm.computer', '5173-i1c6f2ewtnb2j8vhqg88w-2c5a68d5.manusvm.computer', '5173-iyhhbp2fqi3br0qdmx8bx-89efeae8.manusvm.computer', '5173-i8759pvbm6r5w8szho317-1c139d81.manusvm.computer', '5173-i0nlgaeak2bvj81r2hfw3-7d77665a.manusvm.computer', '5173-io05rqent9do9ne3aod4d-60831a17.manusvm.computer', '5173-i8j47sbjmm9y9oewj710g-60831a17.manusvm.computer', '5173-ij9pqqog2mhqr9zt0i854-c10b74a8.manusvm.computer'],
+    allowedHosts: ['*', '5173-i31frn7bzz6wx8drq8g9b-d6da2786.manusvm.computer', '5173-irvp18jlopbh17iy0n4g8-ffd3d388.manusvm.computer', '5173-iodgdwzdg7fidmqwueiz8-e58de46c.manusvm.computer', '5173-iwjuy1m7kphmidu41hlw3-73b17971.manusvm.computer', '5173-ib2j0uguz57orodfwialy-d1a933a4.manusvm.computer', '5173-i1c6f2ewtnb2j8vhqg88w-2c5a68d5.manusvm.computer', '5173-iyhhbp2fqi3br0qdmx8bx-89efeae8.manusvm.computer', '5173-i8759pvbm6r5w8szho317-1c139d81.manusvm.computer', '5173-i0nlgaeak2bvj81r2hfw3-7d77665a.manusvm.computer', '5173-io05rqent9do9ne3aod4d-60831a17.manusvm.computer', '5173-i8j47sbjmm9y9oewj710g-60831a17.manusvm.computer', '5173-ij9pqqog2mhqr9zt0i854-c10b74a8.manusvm.computer'],
     proxy: {
       '/api': {
         target: 'https://promethios-phase-7-1-api.onrender.com',

@@ -191,11 +191,29 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         }
         
         console.log('🔍 [CollaborationModal] Host conversation ID:', hostConversationId);
+        console.log('🔍 [CollaborationModal] Full invitation metadata:', invitation.metadata);
         
         // Use SharedConversationBridge to handle the invitation acceptance
         console.log('🔗 [CollaborationModal] Using SharedConversationBridge for invitation acceptance...');
         
         try {
+          // Validate user object before proceeding
+          if (!user) {
+            console.error('❌ [CollaborationModal] No authenticated user found');
+            throw new Error('User authentication required');
+          }
+
+          if (!user.uid) {
+            console.error('❌ [CollaborationModal] User missing uid property:', user);
+            throw new Error('User must have uid property');
+          }
+
+          console.log('🔍 [CollaborationModal] User validation passed:', {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName
+          });
+
           // Initialize the bridge if unified chat is enabled
           if (unifiedChat.isEnabled) {
             const unifiedChatManager = UnifiedChatManager.getInstance();
@@ -206,9 +224,15 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             );
             
             // Initialize the bridge with current user
+            console.log('🔗 [CollaborationModal] Initializing bridge with user:', user.uid);
             await bridge.initialize(user);
             
             // Handle the invitation acceptance through the bridge
+            console.log('🔗 [CollaborationModal] Calling bridge.handleInvitationAcceptance with:', {
+              invitationId: invitation.id,
+              conversationId: hostConversationId,
+              userId: user.uid
+            });
             const bridgeResult = await bridge.handleInvitationAcceptance(
               invitation.id,
               hostConversationId,

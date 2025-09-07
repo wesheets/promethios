@@ -72,6 +72,19 @@ export class SharedConversationBridge {
     console.log('🔗 [SharedConversationBridge] Initializing bridge service...');
 
     try {
+      // Validate currentUser object
+      if (!currentUser) {
+        console.warn('⚠️ [SharedConversationBridge] No current user provided for initialization');
+        throw new Error('Current user is required for bridge initialization');
+      }
+
+      if (!currentUser.uid) {
+        console.warn('⚠️ [SharedConversationBridge] Current user missing uid property:', currentUser);
+        throw new Error('Current user must have uid property');
+      }
+
+      console.log('🔍 [SharedConversationBridge] Initializing for user:', currentUser.uid);
+
       // Sync existing shared conversations with unified chat system
       if (this.config.enableAutoMigration) {
         await this.migrateExistingConversations(currentUser);
@@ -94,7 +107,7 @@ export class SharedConversationBridge {
   }
 
   /**
-   * Handle shared conversation invitation acceptance
+   * Handle invitation acceptance and bridge to unified chat system
    */
   public async handleInvitationAcceptance(
     invitationId: string,
@@ -108,11 +121,45 @@ export class SharedConversationBridge {
     });
 
     try {
-      // Get the shared conversation from the legacy service
-      const sharedConversation = await this.sharedConversationService.getSharedConversation(conversationId);
+      // Validate inputs
+      if (!invitationId || !conversationId || !currentUser?.uid) {
+        const error = 'Missing required parameters for invitation acceptance';
+        console.error('❌ [SharedConversationBridge]', error);
+        return { success: false, error };
+      }
+
+      // First, try to get the shared conversation directly by ID
+      console.log('🔍 [SharedConversationBridge] Looking for shared conversation with ID:', conversationId);
+      let sharedConversation = await this.sharedConversationService.getSharedConversation(conversationId);
+      
+      if (!sharedConversation) {
+        console.log('🔍 [SharedConversationBridge] Direct lookup failed, searching user conversations...');
+        
+        // If not found, search through user's shared conversations
+        const userSharedConversations = await this.sharedConversationService.getUserSharedConversations(currentUser.uid);
+        console.log('🔍 [SharedConversationBridge] User has', userSharedConversations.length, 'shared conversations');
+        
+        // Look for a conversation that matches the host conversation ID
+        sharedConversation = userSharedConversations.find(conv => 
+          conv.hostChatSessionId === conversationId || 
+          conv.conversationId === conversationId ||
+          conv.id === conversationId
+        );
+        
+        if (sharedConversation) {
+          console.log('🔍 [SharedConversationBridge] Found matching conversation:', sharedConversation.id);
+        }
+      }
       
       if (!sharedConversation) {
         console.error('❌ [SharedConversationBridge] Shared conversation not found:', conversationId);
+        console.log('🔍 [SharedConversationBridge] Available conversations for user:', 
+          (await this.sharedConversationService.getUserSharedConversations(currentUser.uid)).map(c => ({
+            id: c.id,
+            hostChatSessionId: c.hostChatSessionId,
+            conversationId: c.conversationId
+          }))
+        );
         return { success: false, error: 'Shared conversation not found' };
       }
 
@@ -157,6 +204,18 @@ export class SharedConversationBridge {
     console.log('🔄 [SharedConversationBridge] Migrating existing shared conversations...');
 
     try {
+      // Validate currentUser object
+      if (!currentUser) {
+        console.warn('⚠️ [SharedConversationBridge] No current user provided, skipping migration');
+        return;
+      }
+
+      if (!currentUser.uid) {
+        console.warn('⚠️ [SharedConversationBridge] Current user missing uid property:', currentUser);
+        return;
+      }
+
+      console.log('🔍 [SharedConversationBridge] Migrating for user:', currentUser.uid);
       const userSharedConversations = await this.sharedConversationService.getUserSharedConversations(currentUser.uid);
       
       console.log(`🔄 [SharedConversationBridge] Found ${userSharedConversations.length} shared conversations to migrate`);
