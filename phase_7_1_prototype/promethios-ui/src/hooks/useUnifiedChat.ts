@@ -78,6 +78,17 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   // Check if unified chat is enabled
   const isEnabled = isUnifiedChatEnabled();
 
+  // Debug: Track state changes
+  useEffect(() => {
+    unifiedChatLogger.info('🔍 [useUnifiedChat] State changed:', {
+      isInitialized,
+      hasManager: !!chatManager,
+      managerType: typeof chatManager,
+      isLoading,
+      error
+    });
+  }, [isInitialized, chatManager, isLoading, error]);
+
   /**
    * Initialize the unified chat system
    */
@@ -97,9 +108,14 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       const manager = UnifiedChatManager.getInstance(unifiedChatConfig);
       await manager.initialize(user);
 
+      unifiedChatLogger.info('🔧 [useUnifiedChat] About to update hook state...');
+      unifiedChatLogger.info('🔧 [useUnifiedChat] Manager instance:', manager);
+
       userRef.current = user;
       setChatManager(manager);
       setIsInitialized(true);
+
+      unifiedChatLogger.info('🔧 [useUnifiedChat] State updates called - setChatManager and setIsInitialized');
 
       // Set up event listeners
       setupEventListeners();
