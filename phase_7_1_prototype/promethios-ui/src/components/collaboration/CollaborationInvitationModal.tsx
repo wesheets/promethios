@@ -280,6 +280,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           if (unifiedChat.isEnabled) {
             console.log('🔗 [CollaborationModal] Initializing unified chat components...');
             
+            // Get UnifiedChatManager instance
+            const unifiedChatManager = UnifiedChatManager.getInstance(unifiedChat.config || {});
+            
             // Initialize UnifiedChatManager with the effective user first
             await unifiedChatManager.initialize(effectiveUser);
             console.log('✅ [CollaborationModal] UnifiedChatManager initialized');
