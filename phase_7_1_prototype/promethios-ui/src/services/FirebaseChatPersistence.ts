@@ -16,6 +16,8 @@ import {
   where, 
   orderBy, 
   limit, 
+  limitToLast,
+  getDocs,
   onSnapshot, 
   Timestamp,
   writeBatch,
@@ -27,6 +29,7 @@ import { db } from '../firebase/config';
 import { ChatSession } from './UnifiedChatManager';
 import { Participant } from './ParticipantManager';
 import { Message } from './MessageRouter';
+import { Thread, ThreadMessage, ThreadActivity, ThreadSearchCriteria } from '../types/threading';
 
 export interface FirebaseSchema {
   // Collections
@@ -662,6 +665,305 @@ export class FirebaseChatPersistence {
     
     return cleaned;
   }
+
+  // ==================== THREADING METHODS ====================
+
+  /**
+   * Save a thread to Firebase
+   */
+  public async saveThread(thread: Thread): Promise<void> {
+    try {
+      const threadsRef = collection(this.db, 'threads');
+      const cleanThread = this.removeUndefinedFields(thread);
+      
+      await setDoc(doc(threadsRef, thread.id), cleanThread);
+      
+      console.log('💾 [FirebaseChatPersistence] Thread saved:', thread.id);
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to save thread:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a thread in Firebase
+   */
+  public async updateThread(thread: Thread): Promise<void> {
+    try {
+      const threadRef = doc(this.db, 'threads', thread.id);
+      const cleanThread = this.removeUndefinedFields(thread);
+      
+      await updateDoc(threadRef, cleanThread);
+      
+      console.log('💾 [FirebaseChatPersistence] Thread updated:', thread.id);
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to update thread:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a thread from Firebase
+   */
+  public async getThread(threadId: string): Promise<Thread | null> {
+    try {
+      const threadRef = doc(this.db, 'threads', threadId);
+      const threadSnap = await getDoc(threadRef);
+      
+      if (threadSnap.exists()) {
+        return threadSnap.data() as Thread;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to get thread:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all threads for a session
+   */
+  public async getSessionThreads(sessionId: string): Promise<Thread[]> {
+    try {
+      const threadsRef = collection(this.db, 'threads');
+      const q = query(
+        threadsRef,
+        where('sessionId', '==', sessionId),
+        orderBy('lastActivityAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const threads: Thread[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        threads.push(doc.data() as Thread);
+      });
+      
+      return threads;
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to get session threads:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Save a thread message to Firebase
+   */
+  public async saveThreadMessage(message: ThreadMessage): Promise<void> {
+    try {
+      // Save to regular messages collection with thread metadata
+      await this.saveMessage(message);
+      
+      // Also save to thread-specific messages subcollection for efficient querying
+      const threadMessagesRef = collection(this.db, 'threads', message.threadId, 'messages');
+      const cleanMessage = this.removeUndefinedFields(message);
+      
+      await setDoc(doc(threadMessagesRef, message.id), cleanMessage);
+      
+      console.log('💾 [FirebaseChatPersistence] Thread message saved:', {
+        messageId: message.id,
+        threadId: message.threadId
+      });
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to save thread message:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get messages for a thread
+   */
+  public async getThreadMessages(threadId: string, limit?: number, offset?: number): Promise<ThreadMessage[]> {
+    try {
+      const threadMessagesRef = collection(this.db, 'threads', threadId, 'messages');
+      let q = query(threadMessagesRef, orderBy('timestamp', 'asc'));
+      
+      if (limit) {
+        q = query(q, limitToLast(limit));
+      }
+      
+      const querySnapshot = await getDocs(q);
+      const messages: ThreadMessage[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        messages.push(doc.data() as ThreadMessage);
+      });
+      
+      return messages;
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to get thread messages:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Search threads
+   */
+  public async searchThreads(sessionId: string, criteria: ThreadSearchCriteria): Promise<Thread[]> {
+    try {
+      const threadsRef = collection(this.db, 'threads');
+      let q = query(threadsRef, where('sessionId', '==', sessionId));
+      
+      // Apply status filter
+      if (criteria.status && criteria.status.length > 0) {
+        q = query(q, where('status', 'in', criteria.status));
+      }
+      
+      // Apply participant filter
+      if (criteria.participants && criteria.participants.length > 0) {
+        q = query(q, where('participants', 'array-contains-any', criteria.participants));
+      }
+      
+      // Apply date range filter
+      if (criteria.dateRange) {
+        q = query(q, 
+          where('createdAt', '>=', criteria.dateRange.start),
+          where('createdAt', '<=', criteria.dateRange.end)
+        );
+      }
+      
+      // Apply sorting
+      const sortBy = criteria.sortBy || 'lastActivityAt';
+      const sortDirection = criteria.sortDirection || 'desc';
+      q = query(q, orderBy(sortBy, sortDirection));
+      
+      // Apply limit
+      if (criteria.limit) {
+        q = query(q, limit(criteria.limit));
+      }
+      
+      const querySnapshot = await getDocs(q);
+      const threads: Thread[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const thread = doc.data() as Thread;
+        
+        // Apply text search filter (client-side for now)
+        if (criteria.query) {
+          const query = criteria.query.toLowerCase();
+          const matchesTitle = thread.title.toLowerCase().includes(query);
+          const matchesDescription = thread.description?.toLowerCase().includes(query);
+          const matchesTags = thread.metadata.tags?.some(tag => 
+            tag.toLowerCase().includes(query)
+          );
+          
+          if (matchesTitle || matchesDescription || matchesTags) {
+            threads.push(thread);
+          }
+        } else {
+          threads.push(thread);
+        }
+      });
+      
+      return threads;
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to search threads:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Save thread activity
+   */
+  public async saveThreadActivity(activity: ThreadActivity): Promise<void> {
+    try {
+      const activitiesRef = collection(this.db, 'thread_activities');
+      const cleanActivity = this.removeUndefinedFields(activity);
+      
+      await setDoc(doc(activitiesRef, activity.id), cleanActivity);
+      
+      console.log('💾 [FirebaseChatPersistence] Thread activity saved:', activity.id);
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to save thread activity:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get thread activities
+   */
+  public async getThreadActivities(sessionId: string, limit: number = 50): Promise<ThreadActivity[]> {
+    try {
+      // Get all threads for the session first
+      const threads = await this.getSessionThreads(sessionId);
+      const threadIds = threads.map(t => t.id);
+      
+      if (threadIds.length === 0) return [];
+      
+      const activitiesRef = collection(this.db, 'thread_activities');
+      const q = query(
+        activitiesRef,
+        where('threadId', 'in', threadIds),
+        orderBy('timestamp', 'desc'),
+        limit(limit)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const activities: ThreadActivity[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        activities.push(doc.data() as ThreadActivity);
+      });
+      
+      return activities;
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to get thread activities:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Listen to thread changes
+   */
+  public listenToThreads(sessionId: string, callback: (threads: Thread[]) => void): () => void {
+    try {
+      const threadsRef = collection(this.db, 'threads');
+      const q = query(
+        threadsRef,
+        where('sessionId', '==', sessionId),
+        orderBy('lastActivityAt', 'desc')
+      );
+      
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const threads: Thread[] = [];
+        querySnapshot.forEach((doc) => {
+          threads.push(doc.data() as Thread);
+        });
+        callback(threads);
+      });
+      
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to listen to threads:', error);
+      return () => {};
+    }
+  }
+
+  /**
+   * Listen to thread messages
+   */
+  public listenToThreadMessages(threadId: string, callback: (messages: ThreadMessage[]) => void): () => void {
+    try {
+      const threadMessagesRef = collection(this.db, 'threads', threadId, 'messages');
+      const q = query(threadMessagesRef, orderBy('timestamp', 'asc'));
+      
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const messages: ThreadMessage[] = [];
+        querySnapshot.forEach((doc) => {
+          messages.push(doc.data() as ThreadMessage);
+        });
+        callback(messages);
+      });
+      
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ [FirebaseChatPersistence] Failed to listen to thread messages:', error);
+      return () => {};
+    }
+  }
+
+  // ==================== END THREADING METHODS ====================
 
   /**
    * Cleanup resources
