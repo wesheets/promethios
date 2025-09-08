@@ -3,11 +3,13 @@
  * 
  * Now uses the UserInteractionRegistry for consistent experience
  * Acts as a wrapper around the unified notification system
+ * Creates unified chat sessions directly instead of shared conversations
  */
 
 import { userInteractionRegistry, InteractionMetadata } from './UserInteractionRegistry';
 import { ConnectionService } from './ConnectionService';
 import SharedConversationService from './SharedConversationService';
+import { UnifiedChatManager } from './UnifiedChatManager';
 
 export interface AICollaborationInvitationRequest {
   fromUserId: string;
@@ -41,6 +43,7 @@ class ChatInvitationService {
   private static instance: ChatInvitationService;
   private connectionService: ConnectionService;
   private sharedConversationService: SharedConversationService;
+  private unifiedChatManager: UnifiedChatManager | null = null;
 
   constructor() {
     this.connectionService = ConnectionService.getInstance();
@@ -52,6 +55,18 @@ class ChatInvitationService {
       ChatInvitationService.instance = new ChatInvitationService();
     }
     return ChatInvitationService.instance;
+  }
+
+  /**
+   * Initialize UnifiedChatManager if not already initialized
+   */
+  private async ensureUnifiedChatManager(user: any): Promise<UnifiedChatManager> {
+    if (!this.unifiedChatManager) {
+      this.unifiedChatManager = UnifiedChatManager.getInstance({});
+      await this.unifiedChatManager.initialize(user);
+      console.log('✅ [ChatInvitationService] UnifiedChatManager initialized');
+    }
+    return this.unifiedChatManager;
   }
 
   /**
@@ -117,27 +132,64 @@ class ChatInvitationService {
       if (result.success) {
         console.log('✅ [ChatInvitationService] Collaboration invitation sent successfully');
         
-        // Create shared conversation immediately when invitation is sent
-        console.log('🔄 [ChatInvitationService] Creating shared conversation for invitation...');
+        // Create unified session immediately when invitation is sent (pure unified approach)
+        console.log('🔄 [ChatInvitationService] Creating unified session for invitation...');
         try {
-          const sharedConversation = await this.sharedConversationService.createSharedConversationFromInvitation({
-            invitationId: result.interactionId!,
-            conversationId: request.conversationId, // This is the host's chat session ID
-            conversationName: request.conversationName,
-            agentName: request.agentName || 'AI Assistant',
-            fromUserId: request.fromUserId,
-            fromUserName: request.fromUserName,
-            toUserId: request.toUserId,
-            includeHistory: true
+          // Get user info for session creation
+          const fromUserInfo = await userInteractionRegistry.getUserInfo(request.fromUserId);
+          const toUserInfo = await userInteractionRegistry.getUserInfo(request.toUserId);
+          
+          if (!fromUserInfo) {
+            console.error('❌ [ChatInvitationService] From user info not found');
+            throw new Error('From user information not available');
+          }
+          
+          // Create unified session ID based on the original conversation
+          const unifiedSessionId = `unified_invitation_${result.interactionId}`;
+          
+          // Initialize UnifiedChatManager
+          const unifiedChatManager = await this.ensureUnifiedChatManager(fromUserInfo);
+          
+          // Create unified session
+          const unifiedSession = await unifiedChatManager.createSession({
+            id: unifiedSessionId,
+            name: request.conversationName || 'Collaboration Session',
+            mode: 'shared' as const,
+            hostUserId: request.fromUserId,
+            participants: [
+              {
+                userId: request.fromUserId,
+                name: fromUserInfo.displayName || fromUserInfo.email || 'Host',
+                role: 'host',
+                isOnline: true,
+                joinedAt: new Date(),
+                permissions: []
+              },
+              {
+                userId: request.toUserId,
+                name: toUserInfo?.displayName || toUserInfo?.email || request.toUserName || 'Guest',
+                role: 'participant',
+                isOnline: false,
+                joinedAt: new Date(),
+                permissions: []
+              }
+            ],
+            metadata: {
+              isPrivate: false,
+              allowInvites: true,
+              originalConversationId: request.conversationId,
+              invitationId: result.interactionId,
+              agentName: request.agentName
+            }
           });
           
-          console.log('✅ [ChatInvitationService] Shared conversation created:', sharedConversation.id);
-          console.log('✅ [ChatInvitationService] Host chat session ID set to:', request.conversationId);
+          console.log('✅ [ChatInvitationService] Unified session created:', unifiedSession.id);
+          console.log('✅ [ChatInvitationService] Original conversation ID preserved:', request.conversationId);
           
-        } catch (sharedConvError) {
-          console.error('❌ [ChatInvitationService] Failed to create shared conversation:', sharedConvError);
-          // Don't fail the invitation if shared conversation creation fails
-          // The invitation can still be sent, and we can retry conversation creation later
+        } catch (unifiedSessionError) {
+          console.error('❌ [ChatInvitationService] Failed to create unified session:', unifiedSessionError);
+          // Don't fail the invitation if unified session creation fails
+          // The invitation can still be sent, and we can retry session creation later
         }
         
         return {
