@@ -278,8 +278,13 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
 
           // Initialize the bridge if unified chat is enabled
           if (unifiedChat.isEnabled) {
-            const unifiedChatManager = UnifiedChatManager.getInstance();
-            const bridge = SharedConversationBridge.getInstance(
+            console.log('🔗 [CollaborationModal] Initializing unified chat components...');
+            
+            // Initialize UnifiedChatManager with the effective user first
+            await unifiedChatManager.initialize(effectiveUser);
+            console.log('✅ [CollaborationModal] UnifiedChatManager initialized');
+            
+            const bridge = new SharedConversationBridge(
               defaultBridgeConfig,
               unifiedChatManager,
               sharedConversationService
