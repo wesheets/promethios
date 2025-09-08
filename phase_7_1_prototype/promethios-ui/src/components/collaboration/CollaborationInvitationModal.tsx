@@ -63,6 +63,16 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
     agentId: invitation?.metadata?.agentId,
     autoInitialize: false
   });
+  
+  // Add debug logging to track which hook instance the component is using
+  console.log('🎯 [CollaborationInvitationModal] Using unified chat hook:', {
+    isEnabled: unifiedChat.isEnabled,
+    isInitialized: unifiedChat.isInitialized,
+    hasManager: !!unifiedChat.manager,
+    managerType: typeof unifiedChat.manager,
+    hookReference: unifiedChat
+  });
+  
   console.log('🎯 [CollaborationInvitationModal] Rendering modal:', {
     open,
     invitation: invitation ? {
@@ -277,6 +287,11 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           // Initialize unified chat directly without bridge complexity
           if (unifiedChat.isEnabled) {
             console.log('🔗 [CollaborationModal] Using direct unified chat for invitation acceptance...');
+            console.log('🔍 [CollaborationModal] Hook instance before initialization:', {
+              hookReference: unifiedChat,
+              isInitialized: unifiedChat.isInitialized,
+              hasManager: !!unifiedChat.manager
+            });
             
             // Check if unified chat is already initialized
             if (!unifiedChat.isInitialized) {
@@ -303,17 +318,19 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
               isEnabled: unifiedChat.isEnabled,
               isInitialized: unifiedChat.isInitialized,
               hasManager: !!unifiedChat.manager,
-              managerType: typeof unifiedChat.manager
+              managerType: typeof unifiedChat.manager,
+              hookReference: unifiedChat
             });
             
             // Verify both initialization and manager availability
             if (!unifiedChat.isInitialized || !unifiedChat.manager) {
               console.error('❌ [CollaborationModal] Unified chat system not properly initialized');
-              console.log('🔍 [CollaborationModal] Detailed state:', {
+              console.log('🔍 [CollaborationModal] Detailed state after waiting:', {
                 isEnabled: unifiedChat.isEnabled,
                 isInitialized: unifiedChat.isInitialized,
                 manager: unifiedChat.manager,
-                managerType: typeof unifiedChat.manager
+                managerType: typeof unifiedChat.manager,
+                hookReference: unifiedChat
               });
               setError('Unified chat system not available. Please try again.');
               setResponding(false);

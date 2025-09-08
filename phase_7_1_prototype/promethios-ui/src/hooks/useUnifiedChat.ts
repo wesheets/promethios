@@ -60,6 +60,9 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     autoInitialize = true
   } = options;
 
+  // Generate unique instance ID for this hook
+  const instanceId = useRef(`hook_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`);
+  
   // State
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,9 +81,17 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   // Check if unified chat is enabled
   const isEnabled = isUnifiedChatEnabled();
 
-  // Debug: Track state changes
+  // Debug: Track hook instance creation
   useEffect(() => {
-    unifiedChatLogger.info('🔍 [useUnifiedChat] State changed:', {
+    unifiedChatLogger.info(`🆔 [useUnifiedChat] Hook instance created: ${instanceId.current}`);
+    return () => {
+      unifiedChatLogger.info(`🗑️ [useUnifiedChat] Hook instance destroyed: ${instanceId.current}`);
+    };
+  }, []);
+
+  // Debug: Track state changes with instance ID
+  useEffect(() => {
+    unifiedChatLogger.info(`🔍 [useUnifiedChat:${instanceId.current}] State changed:`, {
       isInitialized,
       hasManager: !!chatManager,
       managerType: typeof chatManager,
@@ -94,7 +105,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    */
   const initialize = useCallback(async (user: User) => {
     if (!isEnabled) {
-      unifiedChatLogger.debug('Unified chat disabled, skipping initialization');
+      unifiedChatLogger.debug(`[${instanceId.current}] Unified chat disabled, skipping initialization`);
       return;
     }
 
@@ -102,29 +113,29 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       setIsLoading(true);
       setError(null);
 
-      unifiedChatLogger.info('Initializing unified chat for user:', user.uid);
+      unifiedChatLogger.info(`[${instanceId.current}] Initializing unified chat for user:`, user.uid);
 
       // Get UnifiedChatManager instance
       const manager = UnifiedChatManager.getInstance(unifiedChatConfig);
       await manager.initialize(user);
 
-      unifiedChatLogger.info('🔧 [useUnifiedChat] About to update hook state...');
-      unifiedChatLogger.info('🔧 [useUnifiedChat] Manager instance:', manager);
+      unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] About to update hook state...`);
+      unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] Manager instance:`, manager);
 
       userRef.current = user;
       setChatManager(manager);
       setIsInitialized(true);
 
-      unifiedChatLogger.info('🔧 [useUnifiedChat] State updates called - setChatManager and setIsInitialized');
+      unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] State updates called - setChatManager and setIsInitialized`);
 
       // Set up event listeners
       setupEventListeners();
 
-      unifiedChatLogger.info('Unified chat initialized successfully');
+      unifiedChatLogger.info(`[${instanceId.current}] Unified chat initialized successfully`);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error during initialization';
-      unifiedChatLogger.error('Failed to initialize unified chat:', err);
+      unifiedChatLogger.error(`[${instanceId.current}] Failed to initialize unified chat:`, err);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
