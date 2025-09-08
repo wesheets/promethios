@@ -193,7 +193,10 @@ export class FirebaseChatPersistence {
         activeParticipants: session.participants.filter(p => p.isOnline).map(p => p.userId)
       };
 
-      await updateDoc(doc(db, this.COLLECTIONS.sessions, session.id), updates);
+      // Remove undefined fields to prevent Firebase errors
+      const cleanUpdates = this.removeUndefinedFields(updates);
+
+      await updateDoc(doc(db, this.COLLECTIONS.sessions, session.id), cleanUpdates);
       
       console.log('✅ [FirebaseChatPersistence] Updated session:', session.id);
     } catch (error) {

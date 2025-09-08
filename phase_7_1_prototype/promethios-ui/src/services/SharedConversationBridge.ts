@@ -110,61 +110,137 @@ export class SharedConversationBridge {
    * Handle invitation acceptance and bridge to unified chat system
    */
   public async handleInvitationAcceptance(
-    invitationId: string,
-    conversationId: string,
+    invitationId: string, 
+    conversationId: string, 
     currentUser: any
-  ): Promise<{ success: boolean; unifiedSessionId?: string; error?: string }> {
-    console.log('🔗 [SharedConversationBridge] Handling invitation acceptance:', {
+  ): Promise<{ success: boolean; error?: string; unifiedSessionId?: string }> {
+    console.log('🎯 [SharedConversationBridge] Starting invitation acceptance process:', {
       invitationId,
       conversationId,
-      userId: currentUser?.uid
+      currentUserId: currentUser?.uid,
+      currentUserEmail: currentUser?.email,
+      timestamp: new Date().toISOString()
     });
 
     try {
-      // Validate inputs
-      if (!invitationId || !conversationId || !currentUser?.uid) {
-        const error = 'Missing required parameters for invitation acceptance';
-        console.error('❌ [SharedConversationBridge]', error);
-        return { success: false, error };
+      // Validate inputs with detailed logging
+      console.log('🔍 [SharedConversationBridge] Validating inputs...');
+      if (!invitationId) {
+        console.error('❌ [SharedConversationBridge] Missing invitationId');
+        return { success: false, error: 'Missing invitation ID' };
       }
+      if (!conversationId) {
+        console.error('❌ [SharedConversationBridge] Missing conversationId');
+        return { success: false, error: 'Missing conversation ID' };
+      }
+      if (!currentUser?.uid) {
+        console.error('❌ [SharedConversationBridge] Missing or invalid currentUser:', {
+          hasUser: !!currentUser,
+          hasUid: !!currentUser?.uid,
+          userType: typeof currentUser
+        });
+        return { success: false, error: 'User not authenticated' };
+      }
+      console.log('✅ [SharedConversationBridge] Input validation passed');
+
+      // Check service dependencies
+      console.log('🔍 [SharedConversationBridge] Checking service dependencies...');
+      if (!this.sharedConversationService) {
+        console.error('❌ [SharedConversationBridge] SharedConversationService not available');
+        return { success: false, error: 'Shared conversation service unavailable' };
+      }
+      if (!this.unifiedChatManager) {
+        console.error('❌ [SharedConversationBridge] UnifiedChatManager not available');
+        return { success: false, error: 'Unified chat manager unavailable' };
+      }
+      console.log('✅ [SharedConversationBridge] Service dependencies available');
 
       // First, try to get the shared conversation directly by ID
       console.log('🔍 [SharedConversationBridge] Looking for shared conversation with ID:', conversationId);
-      let sharedConversation = await this.sharedConversationService.getSharedConversation(conversationId);
+      let sharedConversation;
+      
+      try {
+        sharedConversation = await this.sharedConversationService.getSharedConversation(conversationId);
+        console.log('🔍 [SharedConversationBridge] Direct lookup result:', {
+          found: !!sharedConversation,
+          conversationId: sharedConversation?.id,
+          conversationName: sharedConversation?.name
+        });
+      } catch (error) {
+        console.error('❌ [SharedConversationBridge] Error in direct conversation lookup:', error);
+      }
       
       if (!sharedConversation) {
         console.log('🔍 [SharedConversationBridge] Direct lookup failed, searching user conversations...');
         
-        // If not found, search through user's shared conversations
-        const userSharedConversations = await this.sharedConversationService.getUserSharedConversations(currentUser.uid);
-        console.log('🔍 [SharedConversationBridge] User has', userSharedConversations.length, 'shared conversations');
-        
-        // Look for a conversation that matches the host conversation ID
-        sharedConversation = userSharedConversations.find(conv => 
-          conv.hostChatSessionId === conversationId || 
-          conv.conversationId === conversationId ||
-          conv.id === conversationId
-        );
-        
-        if (sharedConversation) {
-          console.log('🔍 [SharedConversationBridge] Found matching conversation:', sharedConversation.id);
+        try {
+          // If not found, search through user's shared conversations
+          const userSharedConversations = await this.sharedConversationService.getUserSharedConversations(currentUser.uid);
+          console.log('🔍 [SharedConversationBridge] User has', userSharedConversations.length, 'shared conversations');
+          
+          // Log available conversations for debugging
+          console.log('🔍 [SharedConversationBridge] Available conversations:', 
+            userSharedConversations.map(c => ({
+              id: c.id,
+              name: c.name,
+              hostChatSessionId: c.hostChatSessionId,
+              conversationId: c.conversationId,
+              participantCount: c.participants?.length || 0
+            }))
+          );
+          
+          // Look for a conversation that matches the host conversation ID
+          sharedConversation = userSharedConversations.find(conv => 
+            conv.hostChatSessionId === conversationId || 
+            conv.conversationId === conversationId ||
+            conv.id === conversationId
+          );
+          
+          if (sharedConversation) {
+            console.log('✅ [SharedConversationBridge] Found matching conversation:', {
+              id: sharedConversation.id,
+              name: sharedConversation.name,
+              matchedBy: sharedConversation.hostChatSessionId === conversationId ? 'hostChatSessionId' :
+                        sharedConversation.conversationId === conversationId ? 'conversationId' : 'id'
+            });
+          }
+        } catch (error) {
+          console.error('❌ [SharedConversationBridge] Error searching user conversations:', error);
         }
       }
       
       if (!sharedConversation) {
-        console.error('❌ [SharedConversationBridge] Shared conversation not found:', conversationId);
-        console.log('🔍 [SharedConversationBridge] Available conversations for user:', 
-          (await this.sharedConversationService.getUserSharedConversations(currentUser.uid)).map(c => ({
-            id: c.id,
-            hostChatSessionId: c.hostChatSessionId,
-            conversationId: c.conversationId
-          }))
-        );
+        console.error('❌ [SharedConversationBridge] Shared conversation not found after all attempts');
         return { success: false, error: 'Shared conversation not found' };
       }
 
+      // Validate conversation data
+      console.log('🔍 [SharedConversationBridge] Validating conversation data...');
+      if (!sharedConversation.participants || sharedConversation.participants.length === 0) {
+        console.error('❌ [SharedConversationBridge] Conversation has no participants');
+        return { success: false, error: 'Invalid conversation: no participants' };
+      }
+      console.log('✅ [SharedConversationBridge] Conversation validation passed:', {
+        participantCount: sharedConversation.participants.length,
+        hasName: !!sharedConversation.name,
+        hasId: !!sharedConversation.id
+      });
+
       // Convert shared conversation to unified chat session
-      const unifiedSession = await this.convertToUnifiedSession(sharedConversation, currentUser);
+      console.log('🔄 [SharedConversationBridge] Converting to unified session...');
+      let unifiedSession;
+      try {
+        unifiedSession = await this.convertToUnifiedSession(sharedConversation, currentUser);
+        console.log('🔄 [SharedConversationBridge] Conversion result:', {
+          success: !!unifiedSession,
+          sessionId: unifiedSession?.id,
+          sessionName: unifiedSession?.name,
+          participantCount: unifiedSession?.participants?.length || 0
+        });
+      } catch (error) {
+        console.error('❌ [SharedConversationBridge] Error converting to unified session:', error);
+        return { success: false, error: 'Failed to convert conversation format' };
+      }
       
       if (!unifiedSession) {
         console.error('❌ [SharedConversationBridge] Failed to convert to unified session');
@@ -172,34 +248,85 @@ export class SharedConversationBridge {
       }
 
       // Register the session with unified chat manager
-      await this.unifiedChatManager.createOrGetSession(
-        unifiedSession.id,
-        unifiedSession.name,
-        unifiedSession.agentId
-      );
+      console.log('🔗 [SharedConversationBridge] Registering session with UnifiedChatManager...');
+      try {
+        await this.unifiedChatManager.createOrGetSession(
+          unifiedSession.id,
+          unifiedSession.name,
+          unifiedSession.agentId
+        );
+        console.log('✅ [SharedConversationBridge] Session registered successfully');
+      } catch (error) {
+        console.error('❌ [SharedConversationBridge] Error registering session:', error);
+        return { success: false, error: 'Failed to register session' };
+      }
 
       // Add all participants to the unified session using the correct session ID
+      console.log('👥 [SharedConversationBridge] Adding participants to unified session...');
+      let participantAddCount = 0;
+      let participantErrors = [];
+      
       for (const participant of sharedConversation.participants) {
         if (participant.id !== currentUser?.uid) {
-          console.log('🔗 [SharedConversationBridge] Adding participant to unified session:', {
+          console.log('🔗 [SharedConversationBridge] Adding participant:', {
             sessionId: unifiedSession.id,
             participantId: participant.id,
-            participantName: participant.name
+            participantName: participant.name,
+            participantRole: participant.role || 'participant'
           });
           
-          await this.unifiedChatManager.addParticipant(
-            unifiedSession.id, // Use the unified session ID, not the participant ID
-            participant.id,
-            this.mapParticipantRole(participant.role || 'participant')
-          );
+          try {
+            await this.unifiedChatManager.addParticipant(
+              unifiedSession.id, // Use the unified session ID, not the participant ID
+              participant.id,
+              this.mapParticipantRole(participant.role || 'participant')
+            );
+            participantAddCount++;
+            console.log('✅ [SharedConversationBridge] Participant added successfully:', participant.id);
+          } catch (error) {
+            console.error('❌ [SharedConversationBridge] Error adding participant:', {
+              participantId: participant.id,
+              error: error instanceof Error ? error.message : error
+            });
+            participantErrors.push({ participantId: participant.id, error });
+          }
+        } else {
+          console.log('⏭️ [SharedConversationBridge] Skipping current user as participant');
         }
       }
 
-      console.log('✅ [SharedConversationBridge] Successfully bridged invitation acceptance');
-      return { success: true, unifiedSessionId: unifiedSession.id };
+      console.log('👥 [SharedConversationBridge] Participant addition summary:', {
+        totalParticipants: sharedConversation.participants.length,
+        participantsAdded: participantAddCount,
+        errors: participantErrors.length,
+        errorDetails: participantErrors
+      });
+
+      if (participantErrors.length > 0 && participantAddCount === 0) {
+        console.error('❌ [SharedConversationBridge] Failed to add any participants');
+        return { success: false, error: 'Failed to add participants to session' };
+      }
+
+      console.log('✅ [SharedConversationBridge] Successfully bridged invitation acceptance:', {
+        unifiedSessionId: unifiedSession.id,
+        participantsAdded: participantAddCount,
+        hasErrors: participantErrors.length > 0
+      });
+      
+      return { 
+        success: true, 
+        unifiedSessionId: unifiedSession.id,
+        ...(participantErrors.length > 0 && { warnings: `${participantErrors.length} participants failed to add` })
+      };
 
     } catch (error) {
-      console.error('❌ [SharedConversationBridge] Error handling invitation acceptance:', error);
+      console.error('❌ [SharedConversationBridge] Unexpected error in invitation acceptance:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        invitationId,
+        conversationId,
+        currentUserId: currentUser?.uid
+      });
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
@@ -294,7 +421,9 @@ export class SharedConversationBridge {
         metadata: {
           isPrivate: !sharedConversation.isPublic,
           allowInvites: true,
-          linkedSessionId: sharedConversation.hostChatSessionId || sharedConversation.conversationId || null,
+          ...(sharedConversation.hostChatSessionId || sharedConversation.conversationId ? {
+            linkedSessionId: sharedConversation.hostChatSessionId || sharedConversation.conversationId
+          } : {}),
           originalSharedConversationId: sharedConversation.id
         }
       };

@@ -169,63 +169,158 @@ export class UnifiedChatManager {
 
     // Store session
     this.activeSessions.set(sessionId, session);
-    
-    // Persist to Firebase
-    await this.persistence.saveSession(session);
-    
-    // Update state manager
-    await this.stateManager.setActiveSession(sessionId, mode);
-    
-    console.log('✅ [UnifiedChatManager] Created session:', sessionId, 'mode:', mode);
-    
-    // Emit session created event
-    this.emit('sessionCreated', session);
-    
-    return session;
-  }
 
   /**
    * Add a participant to a session
    */
-  public async addParticipant(
-    sessionId: string,
-    userId: string,
-    role: ParticipantRole = 'participant'
-  ): Promise<void> {
-    const session = this.activeSessions.get(sessionId);
-    if (!session) {
-      throw new Error(`Session ${sessionId} not found`);
-    }
-
-    // Check participant limit
-    if (session.participants.length >= this.config.maxParticipants) {
-      throw new Error(`Session ${sessionId} has reached maximum participants (${this.config.maxParticipants})`);
-    }
-
-    // Add participant
-    await this.participantManager.addParticipant(sessionId, {
+  public async addParticipant(sessionId: string, userId: string, role: ParticipantRole = 'participant'): Promise<void> {
+    console.log('👥 [UnifiedChatManager] Starting addParticipant process:', {
+      sessionId,
       userId,
-      name: `User ${userId}`, // Will be resolved by ParticipantManager
       role,
-      joinedAt: new Date(),
-      isOnline: true,
-      permissions: role === 'host' ? ['read', 'write', 'invite', 'moderate'] : ['read', 'write']
+      timestamp: new Date().toISOString()
     });
 
-    // Update session mode if needed
-    const newMode = this.determineSessionMode(session);
-    if (newMode !== session.mode) {
-      await this.switchSessionMode(sessionId, newMode);
+    try {
+      // Validate inputs
+      console.log('🔍 [UnifiedChatManager] Validating addParticipant inputs...');
+      if (!sessionId) {
+        console.error('❌ [UnifiedChatManager] Missing sessionId');
+        throw new Error('Session ID is required');
+      }
+      if (!userId) {
+        console.error('❌ [UnifiedChatManager] Missing userId');
+        throw new Error('User ID is required');
+      }
+      console.log('✅ [UnifiedChatManager] Input validation passed');
+
+      // Check if session exists
+      console.log('🔍 [UnifiedChatManager] Checking if session exists...');
+      const session = this.activeSessions.get(sessionId);
+      if (!session) {
+        console.error('❌ [UnifiedChatManager] Session not found:', sessionId);
+        console.log('🔍 [UnifiedChatManager] Available sessions:', Array.from(this.activeSessions.keys()));
+        throw new Error(`Session ${sessionId} not found`);
+      }
+      console.log('✅ [UnifiedChatManager] Session found:', {
+        sessionId: session.id,
+        sessionName: session.name,
+        currentParticipants: session.participants.length,
+        maxParticipants: this.config.maxParticipants
+      });
+
+      // Check if user is already a participant
+      console.log('🔍 [UnifiedChatManager] Checking if user is already a participant...');
+      const existingParticipant = session.participants.find(p => p.userId === userId);
+      if (existingParticipant) {
+        console.log('⚠️ [UnifiedChatManager] User is already a participant:', {
+          userId,
+          existingRole: existingParticipant.role,
+          newRole: role
+        });
+        // Update role if different
+        if (existingParticipant.role !== role) {
+          console.log('🔄 [UnifiedChatManager] Updating participant role');
+          existingParticipant.role = role;
+          existingParticipant.permissions = role === 'host' ? ['read', 'write', 'invite', 'moderate'] : ['read', 'write'];
+        }
+        return;
+      }
+
+      // Check participant limit
+      console.log('🔍 [UnifiedChatManager] Checking participant limit...');
+      if (session.participants.length >= this.config.maxParticipants) {
+        console.error('❌ [UnifiedChatManager] Session has reached maximum participants:', {
+          current: session.participants.length,
+          max: this.config.maxParticipants
+        });
+        throw new Error(`Session ${sessionId} has reached maximum participants (${this.config.maxParticipants})`);
+      }
+      console.log('✅ [UnifiedChatManager] Participant limit check passed');
+
+      // Add participant via ParticipantManager
+      console.log('👥 [UnifiedChatManager] Adding participant via ParticipantManager...');
+      try {
+        await this.participantManager.addParticipant(sessionId, {
+          userId,
+          name: `User ${userId}`, // Will be resolved by ParticipantManager
+          role,
+          joinedAt: new Date(),
+          isOnline: true,
+          permissions: role === 'host' ? ['read', 'write', 'invite', 'moderate'] : ['read', 'write']
+        });
+        console.log('✅ [UnifiedChatManager] Participant added via ParticipantManager');
+      } catch (error) {
+        console.error('❌ [UnifiedChatManager] Error adding participant via ParticipantManager:', error);
+        throw error;
+      }
+
+      // Update session mode if needed
+      console.log('🔍 [UnifiedChatManager] Checking if session mode needs update...');
+      const currentMode = session.mode;
+      const newMode = this.determineSessionMode(session);
+      console.log('🔍 [UnifiedChatManager] Mode check result:', {
+        currentMode,
+        newMode,
+        needsUpdate: newMode !== currentMode
+      });
+      
+      if (newMode !== session.mode) {
+        console.log('🔄 [UnifiedChatManager] Switching session mode...');
+        try {
+          await this.switchSessionMode(sessionId, newMode);
+          console.log('✅ [UnifiedChatManager] Session mode switched successfully');
+        } catch (error) {
+          console.error('❌ [UnifiedChatManager] Error switching session mode:', error);
+          // Don't throw here, mode switch failure shouldn't prevent participant addition
+        }
+      }
+
+      // Update last activity and persist session
+      console.log('💾 [UnifiedChatManager] Updating session last activity and persisting...');
+      session.lastActivity = new Date();
+      
+      console.log('💾 [UnifiedChatManager] Session data before persistence:', {
+        sessionId: session.id,
+        participantCount: session.participants.length,
+        lastActivity: session.lastActivity,
+        metadata: session.metadata,
+        hasUndefinedInMetadata: session.metadata ? Object.entries(session.metadata).some(([k, v]) => v === undefined) : false
+      });
+
+      try {
+        await this.persistence.updateSession(session);
+        console.log('✅ [UnifiedChatManager] Session persisted successfully');
+      } catch (error) {
+        console.error('❌ [UnifiedChatManager] Error persisting session:', {
+          error: error instanceof Error ? error.message : error,
+          sessionId: session.id,
+          metadata: session.metadata
+        });
+        throw error;
+      }
+
+      console.log('✅ [UnifiedChatManager] Successfully added participant:', {
+        userId,
+        sessionId,
+        role,
+        totalParticipants: session.participants.length
+      });
+      
+      // Emit participant added event
+      console.log('📡 [UnifiedChatManager] Emitting participantAdded event');
+      this.emit('participantAdded', { sessionId, userId, role });
+
+    } catch (error) {
+      console.error('❌ [UnifiedChatManager] Unexpected error in addParticipant:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        sessionId,
+        userId,
+        role
+      });
+      throw error;
     }
-
-    // Update last activity
-    session.lastActivity = new Date();
-    await this.persistence.updateSession(session);
-
-    console.log('👥 [UnifiedChatManager] Added participant:', userId, 'to session:', sessionId);
-    
-    // Emit participant added event
-    this.emit('participantAdded', { sessionId, userId, role });
   }
 
   /**
