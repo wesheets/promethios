@@ -32,8 +32,6 @@ import { useSharedConversations } from '../../contexts/SharedConversationContext
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService from '../../services/ChatbotStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
-import { SharedConversationBridge, defaultBridgeConfig } from '../../services/SharedConversationBridge';
-import { UnifiedChatManager } from '../../services/UnifiedChatManager';
 import { useUnifiedChat } from '../../hooks/useUnifiedChat';
 
 interface CollaborationInvitationModalProps {
@@ -276,56 +274,83 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             displayName: effectiveUser.displayName
           });
 
-          // Initialize the bridge if unified chat is enabled
+          // Initialize unified chat directly without bridge complexity
           if (unifiedChat.isEnabled) {
-            console.log('🔗 [CollaborationModal] Initializing unified chat components...');
+            console.log('🔗 [CollaborationModal] Using direct unified chat for invitation acceptance...');
+            
+            // Get the shared conversation data
+            const sharedConversation = await sharedConversationService.getSharedConversation(hostConversationId);
+            
+            if (!sharedConversation) {
+              console.error('❌ [CollaborationModal] Shared conversation not found:', hostConversationId);
+              setError('Invitation conversation not found. It may have been deleted.');
+              setResponding(false);
+              return;
+            }
+            
+            console.log('✅ [CollaborationModal] Found shared conversation:', sharedConversation);
+            
+            // Create unified session ID
+            const unifiedSessionId = `unified_${sharedConversation.id}`;
             
             // Get UnifiedChatManager instance
-            const unifiedChatManager = UnifiedChatManager.getInstance(unifiedChat.config || {});
+            const unifiedChatManager = unifiedChat.manager;
             
-            // Initialize UnifiedChatManager with the effective user first
+            if (!unifiedChatManager) {
+              console.error('❌ [CollaborationModal] UnifiedChatManager not available');
+              setError('Unified chat system not available. Please try again.');
+              setResponding(false);
+              return;
+            }
+            
+            // Initialize UnifiedChatManager with the effective user
             await unifiedChatManager.initialize(effectiveUser);
             console.log('✅ [CollaborationModal] UnifiedChatManager initialized');
             
-            const bridge = new SharedConversationBridge(
-              defaultBridgeConfig,
-              unifiedChatManager,
-              sharedConversationService
-            );
+            // Create or get the unified session
+            let unifiedSession = await unifiedChatManager.getSession(unifiedSessionId);
             
-            // Initialize the bridge with current user
-            console.log('🔗 [CollaborationModal] Initializing bridge with user:', effectiveUser.uid);
-            await bridge.initialize(effectiveUser);
-            
-            // Handle the invitation acceptance through the bridge
-            console.log('🔗 [CollaborationModal] Calling bridge.handleInvitationAcceptance with:', {
-              invitationId: invitation.id,
-              conversationId: hostConversationId,
-              userId: effectiveUser.uid
-            });
-            const bridgeResult = await bridge.handleInvitationAcceptance(
-              invitation.id,
-              hostConversationId,
-              effectiveUser
-            );
-            
-            if (bridgeResult.success && bridgeResult.unifiedSessionId) {
-              console.log('✅ [CollaborationModal] Bridge handled invitation successfully');
+            if (!unifiedSession) {
+              console.log('🔄 [CollaborationModal] Creating new unified session from shared conversation...');
               
-              // The bridge has created/updated the unified session
-              // Now we need to navigate to it
-              const unifiedSessionId = bridgeResult.unifiedSessionId;
+              // Create unified session from shared conversation data
+              unifiedSession = await unifiedChatManager.createSession({
+                id: unifiedSessionId,
+                name: sharedConversation.name || 'Shared Conversation',
+                mode: 'shared' as const,
+                hostUserId: sharedConversation.createdBy,
+                participants: sharedConversation.participants.map(p => ({
+                  userId: p.id,
+                  name: p.name || p.displayName || 'Unknown',
+                  role: p.id === sharedConversation.createdBy ? 'host' : 'participant',
+                  isOnline: false,
+                  joinedAt: new Date(),
+                  permissions: []
+                })),
+                metadata: {
+                  isPrivate: sharedConversation.isPrivateMode || false,
+                  allowInvites: sharedConversation.allowParticipantInvites || true,
+                  originalSharedConversationId: sharedConversation.id
+                }
+              });
               
-              // Trigger navigation to the unified chat session
-              window.dispatchEvent(new CustomEvent('navigateToUnifiedChat', {
-                detail: { sessionId: unifiedSessionId }
-              }));
-              
-              console.log('🔄 [CollaborationModal] Navigating to unified chat session:', unifiedSessionId);
-            } else {
-              console.error('❌ [CollaborationModal] Bridge failed to handle invitation:', bridgeResult.error);
-              throw new Error(bridgeResult.error || 'Bridge integration failed');
+              console.log('✅ [CollaborationModal] Created unified session:', unifiedSession.id);
             }
+            
+            // Add current user as participant if not already present
+            const isParticipant = unifiedSession.participants.some(p => p.userId === effectiveUser.uid);
+            if (!isParticipant) {
+              console.log('🔄 [CollaborationModal] Adding user as participant...');
+              await unifiedChatManager.addParticipant(unifiedSession.id, effectiveUser.uid, 'participant');
+              console.log('✅ [CollaborationModal] User added as participant');
+            }
+            
+            // Trigger navigation to the unified chat session
+            window.dispatchEvent(new CustomEvent('navigateToUnifiedChat', {
+              detail: { sessionId: unifiedSessionId }
+            }));
+            
+            console.log('🔄 [CollaborationModal] Navigating to unified chat session:', unifiedSessionId);
           } else {
             // Fallback to legacy shared conversation handling
             console.log('🔄 [CollaborationModal] Unified chat disabled, using legacy handling...');
