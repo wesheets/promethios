@@ -51,6 +51,16 @@ interface UseUnifiedChatReturn {
   cleanup: () => Promise<void>;
 }
 
+// Global hook registry to maintain state across component re-renders
+interface HookState {
+  isInitialized: boolean;
+  chatManager: UnifiedChatManager | null;
+  user: User | null;
+  instanceId: string;
+}
+
+const globalHookRegistry = new Map<string, HookState>();
+
 export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedChatReturn => {
   const {
     sessionId: initialSessionId,
@@ -60,11 +70,56 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     autoInitialize = true
   } = options;
 
-  // Generate unique instance ID for this hook
+  // Generate stable hook key based on options (for component identity)
+  const hookKey = `${initialSessionId || 'default'}_${initialAgentId || 'default'}`;
+  
+  // Generate unique instance ID for this hook (stable across re-renders)
   const instanceId = useRef(`hook_${Math.random().toString(36).substr(2, 9)}_${Date.now()}`);
   
-  // State
-  const [isInitialized, setIsInitialized] = useState(false);
+  // Get or create global state for this hook key
+  const getGlobalState = useCallback((): HookState => {
+    if (!globalHookRegistry.has(hookKey)) {
+      globalHookRegistry.set(hookKey, {
+        isInitialized: false,
+        chatManager: null,
+        user: null,
+        instanceId: instanceId.current
+      });
+    }
+    return globalHookRegistry.get(hookKey)!;
+  }, [hookKey]);
+
+  // Update global state
+  const updateGlobalState = useCallback((updates: Partial<HookState>) => {
+    const currentState = getGlobalState();
+    globalHookRegistry.set(hookKey, { ...currentState, ...updates });
+  }, [hookKey, getGlobalState]);
+  
+  // CRITICAL FIX: Use refs for persistent state that survives re-renders
+  const isInitializedRef = useRef(false);
+  const chatManagerRef = useRef<UnifiedChatManager | null>(null);
+  const userRef = useRef<User | null>(null);
+  
+  // Initialize refs from global state
+  useEffect(() => {
+    const globalState = getGlobalState();
+    isInitializedRef.current = globalState.isInitialized;
+    chatManagerRef.current = globalState.chatManager;
+    userRef.current = globalState.user;
+    
+    // Sync React state with global state
+    if (globalState.isInitialized !== isInitialized) {
+      setIsInitialized(globalState.isInitialized);
+      unifiedChatLogger.info(`🔄 [useUnifiedChat:${instanceId.current}] Synced React state with global state:`, {
+        'global isInitialized': globalState.isInitialized,
+        'React isInitialized': isInitialized,
+        'updated to': globalState.isInitialized
+      });
+    }
+  }, [getGlobalState, isInitialized]);
+  
+  // React state for triggering re-renders (but not the source of truth)
+  const [isInitialized, setIsInitialized] = useState(() => getGlobalState().isInitialized);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
@@ -72,10 +127,8 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [typingParticipants, setTypingParticipants] = useState<string[]>([]);
   const [onlineParticipants, setOnlineParticipants] = useState<string[]>([]);
-  const [chatManager, setChatManager] = useState<UnifiedChatManager | null>(null);
 
   // Refs for stable references
-  const userRef = useRef<User | null>(null);
   const eventListenersRef = useRef<Map<string, Function>>(new Map());
 
   // Check if unified chat is enabled
@@ -83,22 +136,23 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
   // Debug: Track hook instance creation
   useEffect(() => {
-    unifiedChatLogger.info(`🆔 [useUnifiedChat] Hook instance created: ${instanceId.current}`);
+    unifiedChatLogger.info(`🆔 [useUnifiedChat] Hook instance created: ${instanceId.current} for key: ${hookKey}`);
     return () => {
-      unifiedChatLogger.info(`🗑️ [useUnifiedChat] Hook instance destroyed: ${instanceId.current}`);
+      unifiedChatLogger.info(`🗑️ [useUnifiedChat] Hook instance destroyed: ${instanceId.current} for key: ${hookKey}`);
     };
-  }, []);
+  }, [hookKey]);
 
   // Debug: Track state changes with instance ID
   useEffect(() => {
     unifiedChatLogger.info(`🔍 [useUnifiedChat:${instanceId.current}] State changed:`, {
       isInitialized,
-      hasManager: !!chatManager,
-      managerType: typeof chatManager,
+      hasManager: !!chatManagerRef.current,
+      managerType: typeof chatManagerRef.current,
       isLoading,
-      error
+      error,
+      hookKey
     });
-  }, [isInitialized, chatManager, isLoading, error]);
+  }, [isInitialized, isLoading, error, hookKey]);
 
   /**
    * Initialize the unified chat system
@@ -106,6 +160,20 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   const initialize = useCallback(async (user: User) => {
     if (!isEnabled) {
       unifiedChatLogger.debug(`[${instanceId.current}] Unified chat disabled, skipping initialization`);
+      return;
+    }
+
+    // CRITICAL FIX: Check persistent ref AND global state
+    const globalState = getGlobalState();
+    if (globalState.isInitialized && globalState.chatManager) {
+      unifiedChatLogger.info(`[${instanceId.current}] Already initialized in global state, reusing`);
+      
+      // Sync local refs with global state
+      isInitializedRef.current = globalState.isInitialized;
+      chatManagerRef.current = globalState.chatManager;
+      userRef.current = globalState.user;
+      setIsInitialized(true);
+      
       return;
     }
 
@@ -122,14 +190,33 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] About to update hook state...`);
       unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] Manager instance:`, manager);
 
+      // CRITICAL FIX: Update persistent refs first
       userRef.current = user;
-      setChatManager(manager);
+      chatManagerRef.current = manager;
+      isInitializedRef.current = true;
+
+      // Update global state registry
+      updateGlobalState({
+        isInitialized: true,
+        chatManager: manager,
+        user: user
+      });
+
+      // Then update React state to trigger re-renders
       setIsInitialized(true);
 
-      unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] State updates called - setChatManager and setIsInitialized`);
+      unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] State updates called - persistent refs, global state, and React state updated`);
+      unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] Post-update state check:`, {
+        'isInitializedRef.current': isInitializedRef.current,
+        'chatManagerRef.current': !!chatManagerRef.current,
+        'React isInitialized': isInitialized,
+        'Global state': getGlobalState()
+      });
 
-      // Set up event listeners
-      setupEventListeners();
+      // Set up event listeners after state is updated
+      setTimeout(() => {
+        setupEventListeners();
+      }, 0);
 
       unifiedChatLogger.info(`[${instanceId.current}] Unified chat initialized successfully`);
 
@@ -137,10 +224,19 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       const errorMessage = err instanceof Error ? err.message : 'Unknown error during initialization';
       unifiedChatLogger.error(`[${instanceId.current}] Failed to initialize unified chat:`, err);
       setError(errorMessage);
+      
+      // Reset refs and global state on error
+      isInitializedRef.current = false;
+      chatManagerRef.current = null;
+      updateGlobalState({
+        isInitialized: false,
+        chatManager: null,
+        user: null
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [isEnabled]);
+  }, [isEnabled, getGlobalState, updateGlobalState]);
 
   /**
    * Create or get existing session
@@ -151,7 +247,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     agentId?: string,
     guestParticipants?: string[]
   ): Promise<ChatSession | null> => {
-    if (!isEnabled || !chatManager) {
+    if (!isEnabled || !chatManagerRef.current) {
       unifiedChatLogger.warn('Cannot create session: unified chat not enabled or not initialized');
       return null;
     }
@@ -162,7 +258,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
       unifiedChatLogger.info('Creating or getting session:', sessionId);
 
-      const session = await chatManager.createOrGetSession(
+      const session = await chatManagerRef.current.createOrGetSession(
         sessionId,
         sessionName,
         agentId,
@@ -184,7 +280,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     } finally {
       setIsLoading(false);
     }
-  }, [isEnabled, chatManager]);
+  }, [isEnabled]);
 
   /**
    * Send message to current session
@@ -193,7 +289,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     content: string,
     target?: MessageTarget
   ): Promise<Message | null> => {
-    if (!isEnabled || !chatManager || !currentSession) {
+    if (!isEnabled || !chatManagerRef.current || !currentSession) {
       unifiedChatLogger.warn('Cannot send message: unified chat not enabled, not initialized, or no active session');
       return null;
     }
@@ -204,7 +300,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
       unifiedChatLogger.info('Sending message to session:', currentSession.id);
 
-      const message = await chatManager.sendMessage(
+      const message = await chatManagerRef.current.sendMessage(
         currentSession.id,
         content,
         target
@@ -225,7 +321,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Add participant
    */
   const addParticipant = useCallback(async (userId: string, role: string = 'participant') => {
-    if (!isEnabled || !chatManager || !currentSession) {
+    if (!isEnabled || !chatManagerRef.current || !currentSession) {
       unifiedChatLogger.debug('Cannot add participant: unified chat not available or no active session');
       return;
     }
@@ -235,7 +331,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
       unifiedChatLogger.verbose('Adding participant:', userId, 'with role:', role);
 
-      await chatManager.addParticipant(currentSession.id, userId, role);
+      await chatManagerRef.current.addParticipant(currentSession.id, userId, role);
 
       unifiedChatLogger.info('Participant added:', userId);
 
@@ -250,7 +346,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Remove participant
    */
   const removeParticipant = useCallback(async (userId: string) => {
-    if (!isEnabled || !chatManager || !currentSession) {
+    if (!isEnabled || !chatManagerRef.current || !currentSession) {
       unifiedChatLogger.debug('Cannot remove participant: unified chat not available or no active session');
       return;
     }
@@ -260,7 +356,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
       unifiedChatLogger.verbose('Removing participant:', userId);
 
-      await chatManager.removeParticipant(currentSession.id, userId);
+      await chatManagerRef.current.removeParticipant(currentSession.id, userId);
 
       unifiedChatLogger.info('Participant removed:', userId);
 
@@ -275,12 +371,12 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Set typing status
    */
   const setTypingStatus = useCallback(async (isTyping: boolean) => {
-    if (!isEnabled || !chatManager || !currentSession) {
+    if (!isEnabled || !chatManagerRef.current || !currentSession) {
       return;
     }
 
     try {
-      await chatManager.setTypingStatus(currentSession.id, isTyping);
+      await chatManagerRef.current.setTypingStatus(currentSession.id, isTyping);
       unifiedChatLogger.verbose('Typing status set:', isTyping);
     } catch (err) {
       unifiedChatLogger.error('Failed to set typing status:', err);
@@ -291,9 +387,9 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Set up event listeners
    */
   const setupEventListeners = useCallback(() => {
-    if (!chatManager) return;
+    if (!chatManagerRef.current) return;
 
-    const manager = chatManager;
+    const manager = chatManagerRef.current;
 
     // Message events
     const onMessageReceived = (message: Message) => {
@@ -323,27 +419,25 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     };
 
     // Typing events
-    const onTypingStatusChanged = (data: { userId: string; isTyping: boolean }) => {
-      unifiedChatLogger.verbose('Typing status changed:', data.userId, data.isTyping);
-      setTypingParticipants(prev => {
-        if (data.isTyping) {
-          return [...prev.filter(id => id !== data.userId), data.userId];
-        } else {
-          return prev.filter(id => id !== data.userId);
-        }
-      });
+    const onTypingStarted = (data: { userId: string }) => {
+      unifiedChatLogger.verbose('Typing started:', data.userId);
+      setTypingParticipants(prev => [...prev.filter(id => id !== data.userId), data.userId]);
+    };
+
+    const onTypingStopped = (data: { userId: string }) => {
+      unifiedChatLogger.verbose('Typing stopped:', data.userId);
+      setTypingParticipants(prev => prev.filter(id => id !== data.userId));
     };
 
     // Presence events
-    const onPresenceChanged = (data: { userId: string; isOnline: boolean }) => {
-      unifiedChatLogger.verbose('Presence changed:', data.userId, data.isOnline);
-      setOnlineParticipants(prev => {
-        if (data.isOnline) {
-          return [...prev.filter(id => id !== data.userId), data.userId];
-        } else {
-          return prev.filter(id => id !== data.userId);
-        }
-      });
+    const onParticipantOnline = (data: { userId: string }) => {
+      unifiedChatLogger.verbose('Participant online:', data.userId);
+      setOnlineParticipants(prev => [...prev.filter(id => id !== data.userId), data.userId]);
+    };
+
+    const onParticipantOffline = (data: { userId: string }) => {
+      unifiedChatLogger.verbose('Participant offline:', data.userId);
+      setOnlineParticipants(prev => prev.filter(id => id !== data.userId));
     };
 
     // Session events
@@ -356,12 +450,15 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
     // Register event listeners
     manager.on('messageReceived', onMessageReceived);
+    manager.on('messageDelivered', onMessageDelivered);
     manager.on('participantJoined', onParticipantJoined);
     manager.on('participantLeft', onParticipantLeft);
+    manager.on('participantUpdated', onParticipantUpdated);
     manager.on('typingStarted', onTypingStarted);
     manager.on('typingStopped', onTypingStopped);
     manager.on('participantOnline', onParticipantOnline);
     manager.on('participantOffline', onParticipantOffline);
+    manager.on('sessionModeChanged', onSessionModeChanged);
 
     // Store listeners for cleanup
     eventListenersRef.current.set('messageReceived', onMessageReceived);
@@ -369,8 +466,10 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     eventListenersRef.current.set('participantJoined', onParticipantJoined);
     eventListenersRef.current.set('participantLeft', onParticipantLeft);
     eventListenersRef.current.set('participantUpdated', onParticipantUpdated);
-    eventListenersRef.current.set('typingStatusChanged', onTypingStatusChanged);
-    eventListenersRef.current.set('presenceChanged', onPresenceChanged);
+    eventListenersRef.current.set('typingStarted', onTypingStarted);
+    eventListenersRef.current.set('typingStopped', onTypingStopped);
+    eventListenersRef.current.set('participantOnline', onParticipantOnline);
+    eventListenersRef.current.set('participantOffline', onParticipantOffline);
     eventListenersRef.current.set('sessionModeChanged', onSessionModeChanged);
 
     unifiedChatLogger.debug('Event listeners set up');
@@ -383,14 +482,14 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     unifiedChatLogger.debug('Cleaning up unified chat hook');
 
     // Remove event listeners
-    if (chatManager) {
+    if (chatManagerRef.current) {
       for (const [event, listener] of eventListenersRef.current) {
-        chatManager.off(event, listener);
+        chatManagerRef.current.off(event, listener);
       }
     }
 
-    if (chatManager) {
-      await chatManager.cleanup();
+    if (chatManagerRef.current) {
+      await chatManagerRef.current.cleanup();
     }
 
     // Reset state
@@ -403,10 +502,14 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     setError(null);
 
     // Clear refs
-    setChatManager(null);
+    isInitializedRef.current = false;
+    chatManagerRef.current = null;
     userRef.current = null;
     eventListenersRef.current.clear();
-  }, [chatManager]);
+
+    // Clear global state registry
+    globalHookRegistry.delete(hookKey);
+  }, [hookKey]);
 
   // Auto-initialize if requested
   useEffect(() => {
@@ -425,7 +528,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   return {
     // State
     isEnabled,
-    isInitialized,
+    isInitialized: isInitializedRef.current, // CRITICAL FIX: Use persistent ref
     isLoading,
     error,
     
@@ -439,7 +542,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     onlineParticipants,
     
     // Manager access
-    manager: chatManager,
+    manager: chatManagerRef.current, // CRITICAL FIX: Use persistent ref
     
     // Actions
     initialize,
