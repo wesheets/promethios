@@ -338,26 +338,6 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
               }
             }
             
-            // Wait for React state to update after initialization
-            console.log('🔄 [CollaborationModal] Waiting for React state to update...');
-            let attempts = 0;
-            const maxAttempts = 20; // 2 seconds max
-            
-            while (attempts < maxAttempts) {
-              if (unifiedChat.isInitialized && unifiedChat.manager) {
-                console.log('✅ [CollaborationModal] State polling successful - system ready!');
-                break;
-              }
-              
-              console.log(`🔄 [CollaborationModal] Polling attempt ${attempts + 1}/${maxAttempts} - State:`, {
-                isInitialized: unifiedChat.isInitialized,
-                hasManager: !!unifiedChat.manager
-              });
-              
-              await new Promise(resolve => setTimeout(resolve, 100));
-              attempts++;
-            }
-
             // Double-check initialization status and manager availability
             console.log('🔍 [CollaborationModal] Post-initialization state:', {
               isEnabled: unifiedChat.isEnabled,
