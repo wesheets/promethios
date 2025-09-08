@@ -179,10 +179,16 @@ export class FirebaseChatPersistence {
   }
 
   /**
-   * Update existing session
+   * Update existing session in Firebase
    */
   public async updateSession(session: ChatSession): Promise<void> {
     try {
+      console.log('💾 [FirebaseChatPersistence] Updating session:', {
+        sessionId: session.id,
+        metadata: session.metadata,
+        hasUndefinedInMetadata: session.metadata ? Object.entries(session.metadata).some(([k, v]) => v === undefined) : false
+      });
+
       const updates: Partial<SessionDocument> = {
         name: session.name,
         mode: session.mode,
@@ -193,14 +199,28 @@ export class FirebaseChatPersistence {
         activeParticipants: session.participants.filter(p => p.isOnline).map(p => p.userId)
       };
 
+      console.log('💾 [FirebaseChatPersistence] Updates before cleaning:', {
+        metadata: updates.metadata,
+        hasUndefinedInUpdates: updates.metadata ? Object.entries(updates.metadata).some(([k, v]) => v === undefined) : false
+      });
+
       // Remove undefined fields to prevent Firebase errors
       const cleanUpdates = this.removeUndefinedFields(updates);
+
+      console.log('💾 [FirebaseChatPersistence] Updates after cleaning:', {
+        metadata: cleanUpdates.metadata,
+        hasUndefinedInCleanUpdates: cleanUpdates.metadata ? Object.entries(cleanUpdates.metadata).some(([k, v]) => v === undefined) : false
+      });
 
       await updateDoc(doc(db, this.COLLECTIONS.sessions, session.id), cleanUpdates);
       
       console.log('✅ [FirebaseChatPersistence] Updated session:', session.id);
     } catch (error) {
-      console.error('❌ [FirebaseChatPersistence] Failed to update session:', error);
+      console.error('❌ [FirebaseChatPersistence] Failed to update session:', {
+        sessionId: session.id,
+        error: error instanceof Error ? error.message : error,
+        metadata: session.metadata
+      });
       throw error;
     }
   }
@@ -626,11 +646,20 @@ export class FirebaseChatPersistence {
     }
 
     const cleaned: any = {};
+    let removedFields: string[] = [];
+    
     for (const [key, value] of Object.entries(obj)) {
       if (value !== undefined) {
         cleaned[key] = this.removeUndefinedFields(value);
+      } else {
+        removedFields.push(key);
       }
     }
+    
+    if (removedFields.length > 0) {
+      console.log('🧹 [FirebaseChatPersistence] Removed undefined fields:', removedFields);
+    }
+    
     return cleaned;
   }
 
