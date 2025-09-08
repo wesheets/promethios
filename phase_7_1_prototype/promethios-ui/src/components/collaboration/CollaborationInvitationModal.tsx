@@ -283,6 +283,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             await unifiedChat.initialize(effectiveUser);
             console.log('✅ [CollaborationModal] Unified chat initialized');
             
+            // Wait a moment for the hook to update the manager reference
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             // Create unified session ID based on the invitation ID (matching ChatInvitationService)
             const unifiedSessionId = `unified_invitation_${invitation.id}`;
             console.log('🔍 [CollaborationModal] Looking for unified session:', unifiedSessionId);
@@ -292,6 +295,12 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             
             if (!unifiedChatManager) {
               console.error('❌ [CollaborationModal] UnifiedChatManager still not available after initialization');
+              console.log('🔍 [CollaborationModal] Debug - unifiedChat state:', {
+                isEnabled: unifiedChat.isEnabled,
+                isInitialized: unifiedChat.isInitialized,
+                manager: unifiedChat.manager,
+                managerType: typeof unifiedChat.manager
+              });
               setError('Unified chat system not available. Please try again.');
               setResponding(false);
               return;
