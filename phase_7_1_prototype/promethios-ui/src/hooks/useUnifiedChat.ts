@@ -100,6 +100,16 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   const chatManagerRef = useRef<UnifiedChatManager | null>(null);
   const userRef = useRef<User | null>(null);
   
+  // React state for triggering re-renders (but not the source of truth)
+  const [isInitialized, setIsInitialized] = useState(() => getGlobalState().isInitialized);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [typingParticipants, setTypingParticipants] = useState<string[]>([]);
+  const [onlineParticipants, setOnlineParticipants] = useState<string[]>([]);
+  
   // Initialize refs from global state
   useEffect(() => {
     const globalState = getGlobalState();
@@ -117,16 +127,6 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       });
     }
   }, [getGlobalState, isInitialized]);
-  
-  // React state for triggering re-renders (but not the source of truth)
-  const [isInitialized, setIsInitialized] = useState(() => getGlobalState().isInitialized);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [typingParticipants, setTypingParticipants] = useState<string[]>([]);
-  const [onlineParticipants, setOnlineParticipants] = useState<string[]>([]);
 
   // Refs for stable references
   const eventListenersRef = useRef<Map<string, Function>>(new Map());
