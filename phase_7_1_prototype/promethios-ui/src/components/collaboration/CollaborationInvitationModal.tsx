@@ -311,7 +311,32 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             
             // Wait for React state updates to take effect (timing fix)
             console.log('⏳ [CollaborationModal] Waiting for state updates to take effect...');
-            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Poll for state updates with timeout
+            let attempts = 0;
+            const maxAttempts = 20; // 2 seconds max wait
+            const pollInterval = 100; // 100ms intervals
+            
+            while (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, pollInterval));
+              attempts++;
+              
+              console.log(`🔄 [CollaborationModal] Polling attempt ${attempts}/${maxAttempts} - State:`, {
+                isInitialized: unifiedChat.isInitialized,
+                hasManager: !!unifiedChat.manager,
+                managerType: typeof unifiedChat.manager
+              });
+              
+              // Check if state has updated
+              if (unifiedChat.isInitialized && unifiedChat.manager) {
+                console.log('✅ [CollaborationModal] State polling successful - system ready!');
+                break;
+              }
+              
+              if (attempts === maxAttempts) {
+                console.warn('⚠️ [CollaborationModal] State polling timeout - proceeding anyway');
+              }
+            }
             
             // Double-check initialization status and manager availability
             console.log('🔍 [CollaborationModal] Post-initialization state:', {
