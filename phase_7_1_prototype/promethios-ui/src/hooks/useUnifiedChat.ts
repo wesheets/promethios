@@ -195,6 +195,11 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       chatManagerRef.current = manager;
       isInitializedRef.current = true;
 
+      // Validate that manager is properly set
+      if (!chatManagerRef.current) {
+        throw new Error('Manager ref not set properly after initialization');
+      }
+
       // Update global state registry
       updateGlobalState({
         isInitialized: true,
@@ -209,6 +214,8 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       unifiedChatLogger.info(`🔧 [useUnifiedChat:${instanceId.current}] Post-update state check:`, {
         'isInitializedRef.current': isInitializedRef.current,
         'chatManagerRef.current': !!chatManagerRef.current,
+        'chatManagerRef.current type': typeof chatManagerRef.current,
+        'manager === chatManagerRef.current': manager === chatManagerRef.current,
         'React isInitialized': isInitialized,
         'Global state': getGlobalState()
       });
@@ -216,6 +223,11 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       // Force a re-render to ensure the component sees the updated state
       setTimeout(() => {
         unifiedChatLogger.info(`🔄 [useUnifiedChat:${instanceId.current}] Forcing state re-check after initialization`);
+        unifiedChatLogger.info(`🔄 [useUnifiedChat:${instanceId.current}] Manager still available:`, {
+          'chatManagerRef.current': !!chatManagerRef.current,
+          'chatManagerRef.current type': typeof chatManagerRef.current,
+          'isInitializedRef.current': isInitializedRef.current
+        });
         setIsInitialized(true); // Force re-render
       }, 100);
 
