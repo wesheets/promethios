@@ -70,8 +70,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
     invitation: invitation ? {
       id: invitation.id,
       type: invitation.type,
-      fromUserId: invitation.fromUserId,
-      fromUserName: invitation.fromUserName,
+      fromUser: invitation.fromUser,
+      toUser: invitation.toUser,
       metadata: invitation.metadata
     } : null,
     user: user ? {
@@ -81,6 +81,20 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
     } : 'undefined',
     authLoading
   });
+  
+  // Additional auth debugging
+  console.log('🔍 [CollaborationInvitationModal] Auth debugging:', {
+    'useAuth() user': user,
+    'useAuth() loading': authLoading,
+    'user type': typeof user,
+    'user keys': user ? Object.keys(user) : 'no user'
+  });
+  
+  // Add debugger to inspect auth state
+  if (!user && !authLoading) {
+    console.log('🚨 [CollaborationInvitationModal] DEBUGGER: No user found, stopping for inspection');
+    debugger; // This will pause execution when user is undefined
+  }
 
   // Debug: Log the full invitation metadata
   if (invitation?.metadata) {
@@ -197,15 +211,27 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         console.log('🔗 [CollaborationModal] Using SharedConversationBridge for invitation acceptance...');
         
         try {
+          // Add debugger before user validation
+          console.log('🚨 [CollaborationModal] DEBUGGER: About to validate user');
+          debugger; // This will pause execution to inspect user state
+          
           // Validate user object before proceeding
           if (!user) {
             console.error('❌ [CollaborationModal] No authenticated user found');
-            throw new Error('User authentication required');
+            console.log('🚨 [CollaborationModal] DEBUGGER: User validation failed');
+            debugger; // This will pause when user is null/undefined
+            setError('You must be logged in to accept this invitation. Please log in and try again.');
+            setResponding(false);
+            return;
           }
 
           if (!user.uid) {
             console.error('❌ [CollaborationModal] User missing uid property:', user);
-            throw new Error('User must have uid property');
+            console.log('🚨 [CollaborationModal] DEBUGGER: User missing uid');
+            debugger; // This will pause when user.uid is missing
+            setError('Invalid user session. Please log out and log in again.');
+            setResponding(false);
+            return;
           }
 
           console.log('🔍 [CollaborationModal] User validation passed:', {
