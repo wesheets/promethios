@@ -5,7 +5,7 @@
  * Handles routing to command center after acceptance
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -90,8 +90,44 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
     'user keys': user ? Object.keys(user) : 'no user'
   });
   
+  // Add Firebase Auth fallback when useAuth() fails
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  
+  useEffect(() => {
+    if (!user && !authLoading) {
+      console.log('🔍 [CollaborationModal] useAuth() failed, trying Firebase Auth directly...');
+      
+      const checkFirebaseAuth = async () => {
+        try {
+          const { getAuth } = await import('firebase/auth');
+          const auth = getAuth();
+          
+          if (auth.currentUser) {
+            console.log('✅ [CollaborationModal] Found Firebase Auth user:', auth.currentUser.uid);
+            setFirebaseUser(auth.currentUser);
+          } else {
+            console.log('❌ [CollaborationModal] No Firebase Auth user found');
+          }
+        } catch (error) {
+          console.error('❌ [CollaborationModal] Firebase Auth check failed:', error);
+        }
+      };
+      
+      checkFirebaseAuth();
+    }
+  }, [user, authLoading]);
+  
+  // Use either useAuth() user or Firebase Auth fallback
+  const effectiveUser = user || firebaseUser;
+  
+  console.log('🔍 [CollaborationModal] Effective user:', {
+    'useAuth user': user?.uid,
+    'firebase user': firebaseUser?.uid,
+    'effective user': effectiveUser?.uid
+  });
+  
   // Add debugger to inspect auth state
-  if (!user && !authLoading) {
+  if (!effectiveUser && !authLoading) {
     console.log('🚨 [CollaborationInvitationModal] DEBUGGER: No user found, stopping for inspection');
     debugger; // This will pause execution when user is undefined
   }
@@ -216,7 +252,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           debugger; // This will pause execution to inspect user state
           
           // Validate user object before proceeding
-          if (!user) {
+          if (!effectiveUser) {
             console.error('❌ [CollaborationModal] No authenticated user found');
             console.log('🚨 [CollaborationModal] DEBUGGER: User validation failed');
             debugger; // This will pause when user is null/undefined
@@ -225,8 +261,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             return;
           }
 
-          if (!user.uid) {
-            console.error('❌ [CollaborationModal] User missing uid property:', user);
+          if (!effectiveUser.uid) {
+            console.error('❌ [CollaborationModal] User missing uid property:', effectiveUser);
             console.log('🚨 [CollaborationModal] DEBUGGER: User missing uid');
             debugger; // This will pause when user.uid is missing
             setError('Invalid user session. Please log out and log in again.');
@@ -235,9 +271,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           }
 
           console.log('🔍 [CollaborationModal] User validation passed:', {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName
+            uid: effectiveUser.uid,
+            email: effectiveUser.email,
+            displayName: effectiveUser.displayName
           });
 
           // Initialize the bridge if unified chat is enabled
@@ -250,19 +286,19 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             );
             
             // Initialize the bridge with current user
-            console.log('🔗 [CollaborationModal] Initializing bridge with user:', user.uid);
-            await bridge.initialize(user);
+            console.log('🔗 [CollaborationModal] Initializing bridge with user:', effectiveUser.uid);
+            await bridge.initialize(effectiveUser);
             
             // Handle the invitation acceptance through the bridge
             console.log('🔗 [CollaborationModal] Calling bridge.handleInvitationAcceptance with:', {
               invitationId: invitation.id,
               conversationId: hostConversationId,
-              userId: user.uid
+              userId: effectiveUser.uid
             });
             const bridgeResult = await bridge.handleInvitationAcceptance(
               invitation.id,
               hostConversationId,
-              user
+              effectiveUser
             );
             
             if (bridgeResult.success && bridgeResult.unifiedSessionId) {
