@@ -697,7 +697,7 @@ class SharedConversationService {
       conversationName,  // name
       [],               // initialParticipants - we'll add them separately
       undefined,        // agentId
-      conversationId    // hostChatSessionId
+      hostChatSessionId  // hostChatSessionId - use the correct variable name
     );
 
     const sharedConversationId = createdConversation.id;
@@ -712,13 +712,13 @@ class SharedConversationService {
       conv.maxParticipants = 10;
       
       // Set host chat session ID for linking
-      conv.hostChatSessionId = conversationId;
-      console.log('✅ [SharedConversation] Set host chat session ID:', conversationId);
+      conv.hostChatSessionId = hostChatSessionId;
+      console.log('✅ [SharedConversation] Set host chat session ID:', hostChatSessionId);
       
       // Update Firebase with host chat session ID
       try {
         await updateDoc(doc(db, this.CONVERSATIONS_COLLECTION, sharedConversationId), {
-          hostChatSessionId: conversationId,
+          hostChatSessionId: hostChatSessionId,
           allowParticipantInvites: true,
           allowAIAgents: true,
           allowReceiptSharing: true,
