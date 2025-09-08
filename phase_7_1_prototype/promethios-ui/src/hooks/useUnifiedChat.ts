@@ -213,6 +213,12 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
         'Global state': getGlobalState()
       });
 
+      // Force a re-render to ensure the component sees the updated state
+      setTimeout(() => {
+        unifiedChatLogger.info(`🔄 [useUnifiedChat:${instanceId.current}] Forcing state re-check after initialization`);
+        setIsInitialized(true); // Force re-render
+      }, 100);
+
       // Set up event listeners after state is updated
       setTimeout(() => {
         setupEventListeners();
@@ -528,7 +534,8 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   return {
     // State
     isEnabled,
-    isInitialized: isInitializedRef.current, // CRITICAL FIX: Use persistent ref
+    isInitialized, // CRITICAL FIX: Use React state to trigger re-renders
+    hasManager: !!chatManagerRef.current, // Add hasManager for debugging
     isLoading,
     error,
     
