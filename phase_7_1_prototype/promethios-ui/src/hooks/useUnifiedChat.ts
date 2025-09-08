@@ -389,6 +389,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     // State
     isEnabled,
     isInitialized,
+    hasManager: !!chatManagerRef.current,
     isLoading,
     error,
     
