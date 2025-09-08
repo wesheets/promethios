@@ -128,8 +128,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   
   // Add debugger to inspect auth state
   if (!effectiveUser && !authLoading) {
-    console.log('🚨 [CollaborationInvitationModal] DEBUGGER: No user found, stopping for inspection');
-    debugger; // This will pause execution when user is undefined
+    console.log('🚨 [CollaborationInvitationModal] No effective user found after all fallbacks');
+    // debugger; // Removed - blocking the flow
   }
 
   // Debug: Log the full invitation metadata
@@ -248,14 +248,14 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         
         try {
           // Add debugger before user validation
-          console.log('🚨 [CollaborationModal] DEBUGGER: About to validate user');
-          debugger; // This will pause execution to inspect user state
+          console.log('🚨 [CollaborationModal] About to validate user');
+          // debugger; // Removed - blocking the flow
           
           // Validate user object before proceeding
           if (!effectiveUser) {
             console.error('❌ [CollaborationModal] No authenticated user found');
-            console.log('🚨 [CollaborationModal] DEBUGGER: User validation failed');
-            debugger; // This will pause when user is null/undefined
+            console.log('🚨 [CollaborationModal] User validation failed');
+            // debugger; // Removed - blocking the flow
             setError('You must be logged in to accept this invitation. Please log in and try again.');
             setResponding(false);
             return;
@@ -263,8 +263,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
 
           if (!effectiveUser.uid) {
             console.error('❌ [CollaborationModal] User missing uid property:', effectiveUser);
-            console.log('🚨 [CollaborationModal] DEBUGGER: User missing uid');
-            debugger; // This will pause when user.uid is missing
+            console.log('🚨 [CollaborationModal] User missing uid');
+            // debugger; // Removed - blocking the flow
             setError('Invalid user session. Please log out and log in again.');
             setResponding(false);
             return;
