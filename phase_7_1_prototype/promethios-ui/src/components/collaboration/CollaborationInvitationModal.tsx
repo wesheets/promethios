@@ -278,23 +278,26 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           if (unifiedChat.isEnabled) {
             console.log('🔗 [CollaborationModal] Using direct unified chat for invitation acceptance...');
             
+            // Initialize unified chat first to ensure manager is available
+            console.log('🔄 [CollaborationModal] Initializing unified chat...');
+            await unifiedChat.initialize(effectiveUser);
+            console.log('✅ [CollaborationModal] Unified chat initialized');
+            
             // Create unified session ID based on the invitation ID (matching ChatInvitationService)
             const unifiedSessionId = `unified_invitation_${invitation.id}`;
             console.log('🔍 [CollaborationModal] Looking for unified session:', unifiedSessionId);
             
-            // Get UnifiedChatManager instance
+            // Get UnifiedChatManager instance (should now be available after initialization)
             const unifiedChatManager = unifiedChat.manager;
             
             if (!unifiedChatManager) {
-              console.error('❌ [CollaborationModal] UnifiedChatManager not available');
+              console.error('❌ [CollaborationModal] UnifiedChatManager still not available after initialization');
               setError('Unified chat system not available. Please try again.');
               setResponding(false);
               return;
             }
             
-            // Initialize UnifiedChatManager with the effective user
-            await unifiedChatManager.initialize(effectiveUser);
-            console.log('✅ [CollaborationModal] UnifiedChatManager initialized');
+            console.log('✅ [CollaborationModal] UnifiedChatManager is available');
             
             // Get the unified session that was created when the invitation was sent
             let unifiedSession = await unifiedChatManager.getSession(unifiedSessionId);
