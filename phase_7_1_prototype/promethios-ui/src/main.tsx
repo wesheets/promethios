@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { SharedConversationProvider } from './contexts/SharedConversationContext';
+import { UnifiedChatProvider } from './contexts/UnifiedChatContext';
 import AnalyticsProvider from './components/common/AnalyticsProvider';
 import App from './App';
 
@@ -27,9 +28,11 @@ try {
     <React.StrictMode>
       <AuthProvider>
         <SharedConversationProvider>
-          <AnalyticsProvider>
-            <App />
-          </AnalyticsProvider>
+          <UnifiedChatProvider>
+            <AnalyticsProvider>
+              <App />
+            </AnalyticsProvider>
+          </UnifiedChatProvider>
         </SharedConversationProvider>
       </AuthProvider>
     </React.StrictMode>,
