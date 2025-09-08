@@ -169,6 +169,7 @@ export class UnifiedChatManager {
 
     // Store session
     this.activeSessions.set(sessionId, session);
+  }
 
   /**
    * Add a participant to a session
