@@ -320,7 +320,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             
             // Poll for state updates with timeout
             let attempts = 0;
-            const maxAttempts = 20; // 2 seconds max wait
+            const maxAttempts = 50; // 5 seconds max wait
             const pollInterval = 100; // 100ms intervals
             
             while (attempts < maxAttempts) {
