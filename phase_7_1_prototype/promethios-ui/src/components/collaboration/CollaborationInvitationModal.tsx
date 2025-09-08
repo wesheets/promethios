@@ -32,7 +32,7 @@ import { useSharedConversations } from '../../contexts/SharedConversationContext
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService from '../../services/ChatbotStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
-import { useUnifiedChat } from '../../hooks/useUnifiedChat';
+import { useUnifiedChatContext } from '../../contexts/UnifiedChatContext';
 
 interface CollaborationInvitationModalProps {
   open: boolean;
@@ -56,13 +56,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const sharedConversationService = SharedConversationService.getInstance();
   const chatbotService = ChatbotStorageService.getInstance();
   
-  // Initialize unified chat integration
-  const unifiedChat = useUnifiedChat({
-    sessionId: `invitation_${invitation?.id}`,
-    sessionName: invitation?.metadata?.conversationName || 'Shared Chat',
-    agentId: invitation?.metadata?.agentId,
-    autoInitialize: false
-  });
+  // Get unified chat from context instead of creating new instance
+  const { unifiedChat } = useUnifiedChatContext();
   
   // Add debug logging to track which hook instance the component is using
   console.log('🎯 [CollaborationInvitationModal] Using unified chat hook:', {
