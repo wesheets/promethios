@@ -36,6 +36,9 @@ interface UseUnifiedChatReturn {
   typingParticipants: string[];
   onlineParticipants: string[];
   
+  // Manager access
+  manager: UnifiedChatManager | null;
+  
   // Actions
   initialize: (user: User) => Promise<void>;
   createOrGetSession: (sessionId: string, sessionName: string, agentId?: string, guestParticipants?: string[]) => Promise<ChatSession | null>;
@@ -406,6 +409,9 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     // Real-time status
     typingParticipants,
     onlineParticipants,
+    
+    // Manager access
+    manager: chatManagerRef.current,
     
     // Actions
     initialize,
