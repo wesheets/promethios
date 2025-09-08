@@ -294,7 +294,7 @@ export class SharedConversationBridge {
         metadata: {
           isPrivate: !sharedConversation.isPublic,
           allowInvites: true,
-          linkedSessionId: sharedConversation.hostChatSessionId,
+          linkedSessionId: sharedConversation.hostChatSessionId || sharedConversation.conversationId || null,
           originalSharedConversationId: sharedConversation.id
         }
       };
