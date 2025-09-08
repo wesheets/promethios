@@ -278,20 +278,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           if (unifiedChat.isEnabled) {
             console.log('🔗 [CollaborationModal] Using direct unified chat for invitation acceptance...');
             
-            // Get the shared conversation data
-            const sharedConversation = await sharedConversationService.getSharedConversation(hostConversationId);
-            
-            if (!sharedConversation) {
-              console.error('❌ [CollaborationModal] Shared conversation not found:', hostConversationId);
-              setError('Invitation conversation not found. It may have been deleted.');
-              setResponding(false);
-              return;
-            }
-            
-            console.log('✅ [CollaborationModal] Found shared conversation:', sharedConversation);
-            
-            // Create unified session ID
-            const unifiedSessionId = `unified_${sharedConversation.id}`;
+            // Create unified session ID based on the invitation ID (matching ChatInvitationService)
+            const unifiedSessionId = `unified_invitation_${invitation.id}`;
+            console.log('🔍 [CollaborationModal] Looking for unified session:', unifiedSessionId);
             
             // Get UnifiedChatManager instance
             const unifiedChatManager = unifiedChat.manager;
@@ -307,35 +296,17 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             await unifiedChatManager.initialize(effectiveUser);
             console.log('✅ [CollaborationModal] UnifiedChatManager initialized');
             
-            // Create or get the unified session
+            // Get the unified session that was created when the invitation was sent
             let unifiedSession = await unifiedChatManager.getSession(unifiedSessionId);
             
             if (!unifiedSession) {
-              console.log('🔄 [CollaborationModal] Creating new unified session from shared conversation...');
-              
-              // Create unified session from shared conversation data
-              unifiedSession = await unifiedChatManager.createSession({
-                id: unifiedSessionId,
-                name: sharedConversation.name || 'Shared Conversation',
-                mode: 'shared' as const,
-                hostUserId: sharedConversation.createdBy,
-                participants: sharedConversation.participants.map(p => ({
-                  userId: p.id,
-                  name: p.name || p.displayName || 'Unknown',
-                  role: p.id === sharedConversation.createdBy ? 'host' : 'participant',
-                  isOnline: false,
-                  joinedAt: new Date(),
-                  permissions: []
-                })),
-                metadata: {
-                  isPrivate: sharedConversation.isPrivateMode || false,
-                  allowInvites: sharedConversation.allowParticipantInvites || true,
-                  originalSharedConversationId: sharedConversation.id
-                }
-              });
-              
-              console.log('✅ [CollaborationModal] Created unified session:', unifiedSession.id);
+              console.error('❌ [CollaborationModal] Unified session not found:', unifiedSessionId);
+              setError('Invitation session not found. It may have been deleted or not created properly.');
+              setResponding(false);
+              return;
             }
+            
+            console.log('✅ [CollaborationModal] Found unified session:', unifiedSession.id);
             
             // Add current user as participant if not already present
             const isParticipant = unifiedSession.participants.some(p => p.userId === effectiveUser.uid);
@@ -343,6 +314,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
               console.log('🔄 [CollaborationModal] Adding user as participant...');
               await unifiedChatManager.addParticipant(unifiedSession.id, effectiveUser.uid, 'participant');
               console.log('✅ [CollaborationModal] User added as participant');
+            } else {
+              console.log('✅ [CollaborationModal] User already a participant');
             }
             
             // Trigger navigation to the unified chat session
