@@ -178,10 +178,17 @@ export class SharedConversationBridge {
         unifiedSession.agentId
       );
 
-      // Add all participants to the unified session
+      // Add all participants to the unified session using the correct session ID
       for (const participant of sharedConversation.participants) {
         if (participant.id !== currentUser?.uid) {
+          console.log('🔗 [SharedConversationBridge] Adding participant to unified session:', {
+            sessionId: unifiedSession.id,
+            participantId: participant.id,
+            participantName: participant.name
+          });
+          
           await this.unifiedChatManager.addParticipant(
+            unifiedSession.id, // Use the unified session ID, not the participant ID
             participant.id,
             this.mapParticipantRole(participant.role || 'participant')
           );
