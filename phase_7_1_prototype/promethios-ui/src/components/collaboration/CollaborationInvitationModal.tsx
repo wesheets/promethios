@@ -294,6 +294,10 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
               console.log('✅ [CollaborationModal] Unified chat already initialized');
             }
             
+            // Wait for React state updates to take effect (timing fix)
+            console.log('⏳ [CollaborationModal] Waiting for state updates to take effect...');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             // Double-check initialization status and manager availability
             console.log('🔍 [CollaborationModal] Post-initialization state:', {
               isEnabled: unifiedChat.isEnabled,
