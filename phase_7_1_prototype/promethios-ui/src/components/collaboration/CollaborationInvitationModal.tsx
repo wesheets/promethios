@@ -290,9 +290,20 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             
             // Check if unified chat is already initialized
             if (!unifiedChat.isInitialized) {
-              console.log('🔄 [CollaborationModal] Initializing unified chat...');
+              console.log('🔄 [CollaborationModal] Initializing unified chat with invitation context...');
               try {
-                await unifiedChat.initialize(effectiveUser);
+                // Initialize with invitation-specific parameters
+                const sessionId = `invitation_${invitation.id}`;
+                const agentId = invitation.metadata?.agentId || 'default';
+                
+                console.log('🔧 [CollaborationModal] Initializing with:', { sessionId, agentId, user: effectiveUser });
+                
+                await unifiedChat.initialize(effectiveUser, {
+                  sessionId,
+                  agentId,
+                  sessionName: invitation.metadata?.conversationName || 'Shared Chat'
+                });
+                
                 console.log('✅ [CollaborationModal] Unified chat initialization completed');
               } catch (initError) {
                 console.error('❌ [CollaborationModal] Unified chat initialization failed:', initError);
