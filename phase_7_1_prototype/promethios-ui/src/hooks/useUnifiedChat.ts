@@ -69,9 +69,9 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [typingParticipants, setTypingParticipants] = useState<string[]>([]);
   const [onlineParticipants, setOnlineParticipants] = useState<string[]>([]);
+  const [chatManager, setChatManager] = useState<UnifiedChatManager | null>(null);
 
-  // Refs
-  const chatManagerRef = useRef<UnifiedChatManager | null>(null);
+  // Refs for stable references
   const userRef = useRef<User | null>(null);
   const eventListenersRef = useRef<Map<string, Function>>(new Map());
 
@@ -94,10 +94,11 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       unifiedChatLogger.info('Initializing unified chat for user:', user.uid);
 
       // Get UnifiedChatManager instance
-      chatManagerRef.current = UnifiedChatManager.getInstance(unifiedChatConfig);
-      await chatManagerRef.current.initialize(user);
+      const manager = UnifiedChatManager.getInstance(unifiedChatConfig);
+      await manager.initialize(user);
 
       userRef.current = user;
+      setChatManager(manager);
       setIsInitialized(true);
 
       // Set up event listeners
@@ -123,8 +124,8 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     agentId?: string,
     guestParticipants?: string[]
   ): Promise<ChatSession | null> => {
-    if (!isEnabled || !chatManagerRef.current) {
-      unifiedChatLogger.debug('Unified chat not available, skipping session creation');
+    if (!isEnabled || !chatManager) {
+      unifiedChatLogger.warn('Cannot create session: unified chat not enabled or not initialized');
       return null;
     }
 
@@ -132,9 +133,9 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       setIsLoading(true);
       setError(null);
 
-      unifiedChatLogger.verbose('Creating/getting session:', sessionId);
+      unifiedChatLogger.info('Creating or getting session:', sessionId);
 
-      const session = await chatManagerRef.current.createOrGetSession(
+      const session = await chatManager.createOrGetSession(
         sessionId,
         sessionName,
         agentId,
@@ -149,32 +150,34 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error creating session';
-      unifiedChatLogger.error('Failed to create/get session:', err);
+      unifiedChatLogger.error('Failed to create or get session:', err);
       setError(errorMessage);
       return null;
+
     } finally {
       setIsLoading(false);
     }
-  }, [isEnabled]);
+  }, [isEnabled, chatManager]);
 
   /**
-   * Send message
+   * Send message to current session
    */
   const sendMessage = useCallback(async (
     content: string,
     target?: MessageTarget
   ): Promise<Message | null> => {
-    if (!isEnabled || !chatManagerRef.current || !currentSession) {
-      unifiedChatLogger.debug('Cannot send message: unified chat not available or no active session');
+    if (!isEnabled || !chatManager || !currentSession) {
+      unifiedChatLogger.warn('Cannot send message: unified chat not enabled, not initialized, or no active session');
       return null;
     }
 
     try {
+      setIsLoading(true);
       setError(null);
 
-      unifiedChatLogger.verbose('Sending message:', content.substring(0, 50) + '...');
+      unifiedChatLogger.info('Sending message to session:', currentSession.id);
 
-      const message = await chatManagerRef.current.sendMessage(
+      const message = await chatManager.sendMessage(
         currentSession.id,
         content,
         target
@@ -195,7 +198,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Add participant
    */
   const addParticipant = useCallback(async (userId: string, role: string = 'participant') => {
-    if (!isEnabled || !chatManagerRef.current || !currentSession) {
+    if (!isEnabled || !chatManager || !currentSession) {
       unifiedChatLogger.debug('Cannot add participant: unified chat not available or no active session');
       return;
     }
@@ -205,7 +208,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
       unifiedChatLogger.verbose('Adding participant:', userId, 'with role:', role);
 
-      await chatManagerRef.current.addParticipant(currentSession.id, userId, role);
+      await chatManager.addParticipant(currentSession.id, userId, role);
 
       unifiedChatLogger.info('Participant added:', userId);
 
@@ -220,7 +223,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Remove participant
    */
   const removeParticipant = useCallback(async (userId: string) => {
-    if (!isEnabled || !chatManagerRef.current || !currentSession) {
+    if (!isEnabled || !chatManager || !currentSession) {
       unifiedChatLogger.debug('Cannot remove participant: unified chat not available or no active session');
       return;
     }
@@ -230,7 +233,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
 
       unifiedChatLogger.verbose('Removing participant:', userId);
 
-      await chatManagerRef.current.removeParticipant(currentSession.id, userId);
+      await chatManager.removeParticipant(currentSession.id, userId);
 
       unifiedChatLogger.info('Participant removed:', userId);
 
@@ -245,12 +248,12 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Set typing status
    */
   const setTypingStatus = useCallback(async (isTyping: boolean) => {
-    if (!isEnabled || !chatManagerRef.current || !currentSession) {
+    if (!isEnabled || !chatManager || !currentSession) {
       return;
     }
 
     try {
-      await chatManagerRef.current.setTypingStatus(currentSession.id, isTyping);
+      await chatManager.setTypingStatus(currentSession.id, isTyping);
       unifiedChatLogger.verbose('Typing status set:', isTyping);
     } catch (err) {
       unifiedChatLogger.error('Failed to set typing status:', err);
@@ -261,9 +264,9 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
    * Set up event listeners
    */
   const setupEventListeners = useCallback(() => {
-    if (!chatManagerRef.current) return;
+    if (!chatManager) return;
 
-    const chatManager = chatManagerRef.current;
+    const manager = chatManager;
 
     // Message events
     const onMessageReceived = (message: Message) => {
@@ -325,14 +328,13 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     };
 
     // Register event listeners
-    chatManager.on('messageReceived', onMessageReceived);
-    chatManager.on('messageDelivered', onMessageDelivered);
-    chatManager.on('participantJoined', onParticipantJoined);
-    chatManager.on('participantLeft', onParticipantLeft);
-    chatManager.on('participantUpdated', onParticipantUpdated);
-    chatManager.on('typingStatusChanged', onTypingStatusChanged);
-    chatManager.on('presenceChanged', onPresenceChanged);
-    chatManager.on('sessionModeChanged', onSessionModeChanged);
+    manager.on('messageReceived', onMessageReceived);
+    manager.on('participantJoined', onParticipantJoined);
+    manager.on('participantLeft', onParticipantLeft);
+    manager.on('typingStarted', onTypingStarted);
+    manager.on('typingStopped', onTypingStopped);
+    manager.on('participantOnline', onParticipantOnline);
+    manager.on('participantOffline', onParticipantOffline);
 
     // Store listeners for cleanup
     eventListenersRef.current.set('messageReceived', onMessageReceived);
@@ -354,15 +356,14 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     unifiedChatLogger.debug('Cleaning up unified chat hook');
 
     // Remove event listeners
-    if (chatManagerRef.current) {
+    if (chatManager) {
       for (const [event, listener] of eventListenersRef.current) {
-        chatManagerRef.current.off(event, listener);
+        chatManager.off(event, listener);
       }
     }
 
-    // Cleanup chat manager
-    if (chatManagerRef.current) {
-      await chatManagerRef.current.cleanup();
+    if (chatManager) {
+      await chatManager.cleanup();
     }
 
     // Reset state
@@ -375,10 +376,10 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     setError(null);
 
     // Clear refs
-    chatManagerRef.current = null;
+    setChatManager(null);
     userRef.current = null;
     eventListenersRef.current.clear();
-  }, []);
+  }, [chatManager]);
 
   // Auto-initialize if requested
   useEffect(() => {
@@ -411,7 +412,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     onlineParticipants,
     
     // Manager access
-    manager: chatManagerRef.current,
+    manager: chatManager,
     
     // Actions
     initialize,
