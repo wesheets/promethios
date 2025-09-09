@@ -4728,27 +4728,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
-                          {/* Conditional Input: MentionInput for shared conversations, TextField for personal chats */}
-                          {isInSharedMode ? (
-                            <MentionInput
-                              value={messageInput}
-                              onChange={setMessageInput}
-                              onSend={handleMentionMessage}
-                              participants={getSharedConversationParticipants()}
-                              placeholder={`Message shared conversation...`}
-                              disabled={chatLoading}
-                            />
-                          ) : (
-                            <TextField
-                              fullWidth
-                              placeholder="Type your message..."
-                              value={messageInput}
-                              onChange={(e) => setMessageInput(e.target.value)}
-                              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                              variant="standard"
-                              disabled={chatLoading}
-                              InputProps={{
-                                disableUnderline: true,
+                          {/* Simplified Input: Use regular TextField for both shared and personal chats */}
+                          <TextField
+                            fullWidth
+                            placeholder={isInSharedMode ? "Message shared conversation..." : "Type your message..."}
+                            value={messageInput}
+                            onChange={(e) => setMessageInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                            variant="standard"
+                            disabled={chatLoading}
+                            InputProps={{
+                              disableUnderline: true,
                                 sx: {
                                   color: 'white',
                                   fontSize: '1rem',
@@ -4761,7 +4751,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                 }
                               }}
                             />
-                          )}
                           
                           {/* Send Button - show for both personal and shared chats */}
                           <IconButton
