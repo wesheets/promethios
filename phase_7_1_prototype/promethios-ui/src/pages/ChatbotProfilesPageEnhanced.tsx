@@ -3299,8 +3299,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         setAttachedFiles([]);
         
         // Check if we should trigger AI agent responses in shared conversation
-        if (selectedChatbot && !customMessage) {
-          console.log('🤖 [SharedConversation] Triggering AI agent response for shared conversation');
+        // Only respond if the agent is explicitly selected as the target
+        const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot.id;
+        
+        if (selectedChatbot && !customMessage && isAgentExplicitlySelected) {
+          console.log('🤖 [SharedConversation] Agent explicitly selected - triggering AI response:', {
+            selectedTarget,
+            selectedChatbotId: selectedChatbot.id,
+            isExplicitlySelected: isAgentExplicitlySelected
+          });
           
           // Set loading states for AI response
           setChatLoading(true);
@@ -3322,6 +3329,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             setIsTyping(false);
             clearSmartThinkingIndicator();
           }
+        } else if (selectedChatbot && !customMessage && !isAgentExplicitlySelected) {
+          console.log('🤖 [SharedConversation] Agent not explicitly selected - skipping AI response:', {
+            selectedTarget,
+            selectedChatbotId: selectedChatbot.id,
+            message: 'AI will only respond when explicitly selected in shared conversations'
+          });
         }
         
         return;
