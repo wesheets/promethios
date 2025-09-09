@@ -3242,8 +3242,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Enhanced multi-agent message handling
   const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
-    const messageToSend = customMessage || messageInput.trim();
-    if (!messageToSend || chatLoading) return;
+    // Enhanced message content validation
+    let messageToSend: string;
+    
+    if (customMessage) {
+      // Ensure customMessage is always a string
+      messageToSend = typeof customMessage === 'string' ? customMessage : String(customMessage || '');
+    } else {
+      // Ensure messageInput is always a string
+      const rawInput = messageInput;
+      if (typeof rawInput === 'string') {
+        messageToSend = rawInput.trim();
+      } else if (rawInput && typeof rawInput === 'object') {
+        // Handle case where messageInput might be an object
+        console.warn('⚠️ [handleSendMessage] messageInput is an object, converting to string:', rawInput);
+        messageToSend = JSON.stringify(rawInput);
+      } else {
+        messageToSend = String(rawInput || '').trim();
+      }
+    }
+    
+    // Final validation - ensure we have a non-empty string
+    if (!messageToSend || typeof messageToSend !== 'string' || chatLoading) {
+      console.warn('⚠️ [handleSendMessage] Invalid message content:', { messageToSend, type: typeof messageToSend, chatLoading });
+      return;
+    }
+    
+    console.log('✅ [handleSendMessage] Validated message content:', { messageToSend, type: typeof messageToSend, length: messageToSend.length });
 
     // Route to shared conversation if in shared mode
     if (isInSharedMode && activeSharedConversation) {
@@ -3252,6 +3277,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         if (user?.uid) {
           await sharedConversationService.clearTypingIndicator(activeSharedConversation, user.uid);
         }
+        
+        console.log('📤 [SharedConversation] About to send message:', { 
+          conversationId: activeSharedConversation,
+          senderId: user?.uid,
+          senderName: user?.displayName || user?.email,
+          content: messageToSend,
+          contentType: typeof messageToSend,
+          contentLength: messageToSend.length
+        });
         
         await sharedConversationService.sendMessageToSharedConversation(
           activeSharedConversation,
