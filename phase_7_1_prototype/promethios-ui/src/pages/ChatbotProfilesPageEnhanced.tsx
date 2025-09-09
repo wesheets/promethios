@@ -480,8 +480,38 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Track which shared conversations are active in header (opened from drawer or notifications)
   const [activeHeaderConversations, setActiveHeaderConversations] = useState<string[]>([]);
   
-  // State to track loaded unified chat sessions
-  const [loadedUnifiedSessions, setLoadedUnifiedSessions] = useState<Map<string, any>>(new Map());
+  // Ensure active shared conversation is always in the header list
+  useEffect(() => {
+    if (activeSharedConversation && !activeHeaderConversations.includes(activeSharedConversation)) {
+      console.log(`🔄 [Header] Adding active shared conversation to header: ${activeSharedConversation}`);
+      setActiveHeaderConversations(prev => [...prev, activeSharedConversation]);
+    }
+  }, [activeSharedConversation, activeHeaderConversations]);
+  
+  // Listen for collaboration invitation acceptance events
+  useEffect(() => {
+    const handleCollaborationAccepted = (event: CustomEvent) => {
+      const { conversationId } = event.detail;
+      console.log('🎯 [CollaborationEvent] Collaboration accepted, adding to header:', conversationId);
+      
+      // Add the conversation to active header conversations
+      setActiveHeaderConversations(prev => {
+        if (!prev.includes(conversationId)) {
+          console.log('🔄 [CollaborationEvent] Adding conversation to header tabs:', conversationId);
+          return [...prev, conversationId];
+        }
+        return prev;
+      });
+    };
+
+    window.addEventListener('collaborationAccepted', handleCollaborationAccepted as EventListener);
+    
+    return () => {
+      window.removeEventListener('collaborationAccepted', handleCollaborationAccepted as EventListener);
+    };
+  }, []);
+  
+  // Smart mode detection - automatically switch between regular and shared mode
   
   // Function to convert unified chat session to SharedConversation format
   const convertUnifiedSessionToSharedConversation = (session: any): SharedConversation => {
