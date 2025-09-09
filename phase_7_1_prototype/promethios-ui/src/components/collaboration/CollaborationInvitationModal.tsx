@@ -315,50 +315,22 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
               console.log('✅ [CollaborationModal] Unified chat already initialized');
             }
             
-            // Wait for React state updates to take effect (timing fix)
-            console.log('⏳ [CollaborationModal] Waiting for state updates to take effect...');
-            
-            // Poll for state updates with timeout
-            let attempts = 0;
-            const maxAttempts = 50; // 5 seconds max wait
-            const pollInterval = 100; // 100ms intervals
-            
-            while (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, pollInterval));
-              attempts++;
-              
-              console.log(`🔄 [CollaborationModal] Polling attempt ${attempts}/${maxAttempts} - State:`, {
-                isInitialized: unifiedChat.isInitialized,
-                hasManager: !!unifiedChat.manager,
-                managerType: typeof unifiedChat.manager
-              });
-              
-              // Check if state has updated
-              if (unifiedChat.isInitialized && unifiedChat.manager) {
-                console.log('✅ [CollaborationModal] State polling successful - system ready!');
-                break;
-              }
-              
-              if (attempts === maxAttempts) {
-                console.warn('⚠️ [CollaborationModal] State polling timeout - proceeding anyway');
-              }
-            }
-            
-            // Double-check initialization status and manager availability
+            // Check initialization status and manager availability immediately
             console.log('🔍 [CollaborationModal] Post-initialization state:', {
               isEnabled: unifiedChat.isEnabled,
               isInitialized: unifiedChat.isInitialized,
-              hasManager: !!unifiedChat.manager,
+              hasManager: unifiedChat.hasManager,
               managerType: typeof unifiedChat.manager,
               hookReference: unifiedChat
             });
             
             // Verify both initialization and manager availability
-            if (!unifiedChat.isInitialized || !unifiedChat.manager) {
+            if (!unifiedChat.isInitialized || !unifiedChat.hasManager || !unifiedChat.manager) {
               console.error('❌ [CollaborationModal] Unified chat system not properly initialized');
-              console.log('🔍 [CollaborationModal] Detailed state after waiting:', {
+              console.log('🔍 [CollaborationModal] Detailed state:', {
                 isEnabled: unifiedChat.isEnabled,
                 isInitialized: unifiedChat.isInitialized,
+                hasManager: unifiedChat.hasManager,
                 manager: unifiedChat.manager,
                 managerType: typeof unifiedChat.manager,
                 hookReference: unifiedChat

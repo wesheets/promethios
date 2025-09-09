@@ -24,6 +24,7 @@ interface UseUnifiedChatReturn {
   // State
   isEnabled: boolean;
   isInitialized: boolean;
+  hasManager: boolean;
   isLoading: boolean;
   error: string | null;
   
@@ -70,6 +71,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
   
   // React state for triggering re-renders
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasManager, setHasManager] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
@@ -136,6 +138,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       chatManagerRef.current = manager;
       isInitializedRef.current = true;
       setIsInitialized(true);
+      setHasManager(true);
 
       unifiedChatLogger.info(`✅ [useUnifiedChat:${instanceId.current}] Initialization complete`);
 
@@ -151,6 +154,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
       chatManagerRef.current = null;
       userRef.current = null;
       setIsInitialized(false);
+      setHasManager(false);
     } finally {
       setIsLoading(false);
     }
@@ -367,6 +371,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     chatManagerRef.current = null;
     userRef.current = null;
     setIsInitialized(false);
+    setHasManager(false);
     setCurrentSession(null);
     setMessages([]);
     setParticipants([]);
@@ -389,7 +394,7 @@ export const useUnifiedChat = (options: UseUnifiedChatOptions = {}): UseUnifiedC
     // State
     isEnabled,
     isInitialized,
-    hasManager: !!chatManagerRef.current,
+    hasManager,
     isLoading,
     error,
     
