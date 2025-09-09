@@ -6,12 +6,15 @@ import {
   Avatar,
   CircularProgress,
   Alert,
-  Chip
+  Chip,
+  TextField,
+  IconButton
 } from '@mui/material';
 import {
   Person as PersonIcon,
   SmartToy as BotIcon,
-  Edit as TypingIcon
+  Edit as TypingIcon,
+  Send as SendIcon
 } from '@mui/icons-material';
 import { chatHistoryService, ChatSession } from '../../services/ChatHistoryService';
 import { ChatMessage } from '../../services/ChatStorageService';
@@ -39,6 +42,8 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [isTyping, setIsTyping] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sharedConversationService = SharedConversationService.getInstance();
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -187,6 +192,29 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
     
     const participant = sharedConversation.participants.find((p: any) => p.id === userId);
     return participant?.name || 'Someone';
+  };
+
+  // Handle sending messages
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || sending || !onSendMessage) return;
+    
+    setSending(true);
+    try {
+      await onSendMessage(messageInput.trim());
+      setMessageInput('');
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Handle key press for sending
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
   };
 
   const renderMessage = (message: ChatMessage, index: number) => {
@@ -386,6 +414,60 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
       </Box>
 
       {/* Message input */}
+      <Box sx={{ 
+        p: 2, 
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        bgcolor: 'rgba(0, 0, 0, 0.2)'
+      }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+          <TextField
+            fullWidth
+            multiline
+            maxRows={4}
+            placeholder="Type your message... (or use @agent-name or @human-name)"
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={sending}
+            variant="outlined"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                color: 'white',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                '& fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#3b82f6',
+                },
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: 'rgba(255, 255, 255, 0.5)',
+                opacity: 1,
+              },
+            }}
+          />
+          <IconButton
+            onClick={handleSendMessage}
+            disabled={!messageInput.trim() || sending}
+            sx={{
+              color: messageInput.trim() ? '#3b82f6' : 'rgba(255, 255, 255, 0.3)',
+              '&:hover': { 
+                color: '#2563eb', 
+                bgcolor: 'rgba(59, 130, 246, 0.1)' 
+              },
+              '&.Mui-disabled': {
+                color: 'rgba(255, 255, 255, 0.2)'
+              }
+            }}
+          >
+            {sending ? <CircularProgress size={20} /> : <SendIcon />}
+          </IconButton>
+        </Box>
+      </Box>
     </Box>
   );
 };
