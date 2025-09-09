@@ -167,8 +167,12 @@ export class UnifiedChatManager {
       await this.addParticipant(sessionId, participantId, 'participant');
     }
 
-    // Store session
+    // Store session in memory
     this.activeSessions.set(sessionId, session);
+    
+    // Persist session to Firebase so other users can find it
+    await this.persistence.updateSession(session);
+    console.log('💾 [UnifiedChatManager] Session persisted to Firebase:', sessionId);
   }
 
   /**
@@ -415,9 +419,37 @@ export class UnifiedChatManager {
   }
 
   /**
-   * Get session by ID
+   * Get session by ID - loads from Firebase if not in memory
    */
-  public getSession(sessionId: string): ChatSession | undefined {
+  public async getSession(sessionId: string): Promise<ChatSession | undefined> {
+    // First check memory
+    let session = this.activeSessions.get(sessionId);
+    
+    if (!session) {
+      // Try to load from Firebase persistence using global session lookup
+      console.log('🔍 [UnifiedChatManager] Session not in memory, loading from Firebase:', sessionId);
+      try {
+        session = await this.persistence.getSession(sessionId);
+        
+        if (session) {
+          // Add to memory for future access
+          this.activeSessions.set(sessionId, session);
+          console.log('✅ [UnifiedChatManager] Session loaded from Firebase:', sessionId);
+        } else {
+          console.log('❌ [UnifiedChatManager] Session not found in Firebase:', sessionId);
+        }
+      } catch (error) {
+        console.error('❌ [UnifiedChatManager] Error loading session from Firebase:', error);
+      }
+    }
+    
+    return session || undefined;
+  }
+
+  /**
+   * Get session by ID (synchronous version for backward compatibility)
+   */
+  public getSessionSync(sessionId: string): ChatSession | undefined {
     return this.activeSessions.get(sessionId);
   }
 
