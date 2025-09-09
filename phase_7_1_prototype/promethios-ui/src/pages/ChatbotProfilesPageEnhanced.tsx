@@ -548,7 +548,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   
   // Get combined conversations (shared + unified)
   const getCombinedConversations = () => {
-    const unifiedConversations = Array.from(loadedUnifiedSessions.values())
+    // Use the unified chat context to get sessions
+    const unifiedSessions = unifiedChat?.manager?.getUserSessions() || [];
+    const unifiedConversations = unifiedSessions
       .map(session => convertUnifiedSessionToSharedConversation(session));
     
     return [...sharedConversations, ...unifiedConversations];
