@@ -155,6 +155,10 @@ export class UnifiedChatManager {
     // Store session in memory FIRST so addParticipant can find it
     this.activeSessions.set(sessionId, session);
 
+    // Persist session to Firebase BEFORE adding participants (so updateSession calls work)
+    await this.persistence.saveSession(session);
+    console.log('💾 [UnifiedChatManager] Session persisted to Firebase:', sessionId);
+
     // Add host as first participant
     await this.participantManager.addParticipant(sessionId, {
       userId: this.currentUser.uid,
@@ -169,10 +173,6 @@ export class UnifiedChatManager {
     for (const participantId of initialParticipants) {
       await this.addParticipant(sessionId, participantId, 'participant');
     }
-    
-    // Persist session to Firebase so other users can find it (use saveSession for new sessions)
-    await this.persistence.saveSession(session);
-    console.log('💾 [UnifiedChatManager] Session persisted to Firebase:', sessionId);
   }
 
   /**
