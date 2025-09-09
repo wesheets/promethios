@@ -548,8 +548,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     window.addEventListener('collaborationAccepted', handleCollaborationAccepted as EventListener);
     
+    // Listen for unified chat navigation events (from invitation acceptance)
+    const handleNavigateToUnifiedChat = async (event: CustomEvent) => {
+      const { sessionId } = event.detail;
+      console.log('🎯 [NavigateToUnifiedChat] Navigating to unified chat session:', sessionId);
+      
+      try {
+        // Use the existing handleCustomSharedConversationSelect function
+        handleCustomSharedConversationSelect(sessionId);
+        console.log('✅ [NavigateToUnifiedChat] Successfully opened shared chat tab for session:', sessionId);
+      } catch (error) {
+        console.error('❌ [NavigateToUnifiedChat] Error navigating to unified chat:', error);
+      }
+    };
+
+    window.addEventListener('navigateToUnifiedChat', handleNavigateToUnifiedChat as EventListener);
+    
     return () => {
       window.removeEventListener('collaborationAccepted', handleCollaborationAccepted as EventListener);
+      window.removeEventListener('navigateToUnifiedChat', handleNavigateToUnifiedChat as EventListener);
     };
   }, []);
   
