@@ -956,8 +956,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     try {
       console.log('🔄 [UnifiedChat] Loading session:', sessionId);
       
-      // Get the session from UnifiedChatManager
-      const session = await unifiedChat.getSession(sessionId);
+      // Get the session from UnifiedChatManager using the manager directly
+      const session = await unifiedChat.manager?.getSession(sessionId);
       if (!session) {
         console.error('❌ [UnifiedChat] Session not found:', sessionId);
         return;
