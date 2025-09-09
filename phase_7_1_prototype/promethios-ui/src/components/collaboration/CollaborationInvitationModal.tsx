@@ -5,7 +5,7 @@
  * Handles routing to command center after acceptance
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -32,7 +32,6 @@ import { useSharedConversations } from '../../contexts/SharedConversationContext
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService from '../../services/ChatbotStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
-import { useUnifiedChatContext } from '../../contexts/UnifiedChatContext';
 
 interface CollaborationInvitationModalProps {
   open: boolean;
@@ -55,26 +54,13 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
   const chatbotService = ChatbotStorageService.getInstance();
-  
-  // Get unified chat from context instead of creating new instance
-  const { unifiedChat } = useUnifiedChatContext();
-  
-  // Add debug logging to track which hook instance the component is using
-  console.log('🎯 [CollaborationInvitationModal] Using unified chat hook:', {
-    isEnabled: unifiedChat.isEnabled,
-    isInitialized: unifiedChat.isInitialized,
-    hasManager: !!unifiedChat.manager,
-    managerType: typeof unifiedChat.manager,
-    hookReference: unifiedChat
-  });
-  
   console.log('🎯 [CollaborationInvitationModal] Rendering modal:', {
     open,
     invitation: invitation ? {
       id: invitation.id,
       type: invitation.type,
-      fromUser: invitation.fromUser,
-      toUser: invitation.toUser,
+      fromUserId: invitation.fromUserId,
+      fromUserName: invitation.fromUserName,
       metadata: invitation.metadata
     } : null,
     user: user ? {
@@ -84,56 +70,6 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
     } : 'undefined',
     authLoading
   });
-  
-  // Additional auth debugging
-  console.log('🔍 [CollaborationInvitationModal] Auth debugging:', {
-    'useAuth() user': user,
-    'useAuth() loading': authLoading,
-    'user type': typeof user,
-    'user keys': user ? Object.keys(user) : 'no user'
-  });
-  
-  // Add Firebase Auth fallback when useAuth() fails
-  const [firebaseUser, setFirebaseUser] = useState(null);
-  
-  useEffect(() => {
-    if (!user && !authLoading) {
-      console.log('🔍 [CollaborationModal] useAuth() failed, trying Firebase Auth directly...');
-      
-      const checkFirebaseAuth = async () => {
-        try {
-          const { getAuth } = await import('firebase/auth');
-          const auth = getAuth();
-          
-          if (auth.currentUser) {
-            console.log('✅ [CollaborationModal] Found Firebase Auth user:', auth.currentUser.uid);
-            setFirebaseUser(auth.currentUser);
-          } else {
-            console.log('❌ [CollaborationModal] No Firebase Auth user found');
-          }
-        } catch (error) {
-          console.error('❌ [CollaborationModal] Firebase Auth check failed:', error);
-        }
-      };
-      
-      checkFirebaseAuth();
-    }
-  }, [user, authLoading]);
-  
-  // Use either useAuth() user or Firebase Auth fallback
-  const effectiveUser = user || firebaseUser;
-  
-  console.log('🔍 [CollaborationModal] Effective user:', {
-    'useAuth user': user?.uid,
-    'firebase user': firebaseUser?.uid,
-    'effective user': effectiveUser?.uid
-  });
-  
-  // Add debugger to inspect auth state
-  if (!effectiveUser && !authLoading) {
-    console.log('🚨 [CollaborationInvitationModal] No effective user found after all fallbacks');
-    // debugger; // Removed - blocking the flow
-  }
 
   // Debug: Log the full invitation metadata
   if (invitation?.metadata) {
@@ -203,7 +139,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
       if (!currentUserId) {
         console.error('❌ [CollaborationModal] No user available for invitation acceptance');
         console.error('❌ [CollaborationModal] Auth state:', { user, authLoading });
-        setError('You must be logged in to accept this invitation. Please log in first, then try again.');
+        setError('Unable to identify current user. Please try refreshing the page.');
         setResponding(false);
         return;
       }
@@ -244,176 +180,65 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         }
         
         console.log('🔍 [CollaborationModal] Host conversation ID:', hostConversationId);
-        console.log('🔍 [CollaborationModal] Full invitation metadata:', invitation.metadata);
         
-        // Variable to track the session/conversation ID for navigation
-        let sessionId: string | null = null;
+        // Find the existing shared conversation that was created when the invitation was sent
+        // The shared conversation should have the hostChatSessionId set to the host's conversation ID
+        const userSharedConversations = await sharedConversationService.getUserSharedConversations(currentUserId);
+        console.log('🔍 [CollaborationModal] User shared conversations:', userSharedConversations);
         
-        // Use SharedConversationBridge to handle the invitation acceptance
-        console.log('🔗 [CollaborationModal] Using SharedConversationBridge for invitation acceptance...');
+        // Look for a shared conversation that matches the host's conversation ID
+        let sharedConversation = userSharedConversations.find(conv => 
+          conv.hostChatSessionId === hostConversationId || 
+          conv.conversationId === hostConversationId
+        );
         
-        try {
-          // Add debugger before user validation
-          console.log('🚨 [CollaborationModal] About to validate user');
-          // debugger; // Removed - blocking the flow
+        if (!sharedConversation) {
+          console.log('🔍 [CollaborationModal] No existing shared conversation found, looking for one created by the sender...');
           
-          // Validate user object before proceeding
-          if (!effectiveUser) {
-            console.error('❌ [CollaborationModal] No authenticated user found');
-            console.log('🚨 [CollaborationModal] User validation failed');
-            // debugger; // Removed - blocking the flow
-            setError('You must be logged in to accept this invitation. Please log in and try again.');
-            setResponding(false);
-            return;
-          }
-
-          if (!effectiveUser.uid) {
-            console.error('❌ [CollaborationModal] User missing uid property:', effectiveUser);
-            console.log('🚨 [CollaborationModal] User missing uid');
-            // debugger; // Removed - blocking the flow
-            setError('Invalid user session. Please log out and log in again.');
-            setResponding(false);
-            return;
-          }
-
-          console.log('🔍 [CollaborationModal] User validation passed:', {
-            uid: effectiveUser.uid,
-            email: effectiveUser.email,
-            displayName: effectiveUser.displayName
-          });
-
-          // Initialize unified chat directly without bridge complexity
-          if (unifiedChat.isEnabled) {
-            console.log('🔗 [CollaborationModal] Using direct unified chat for invitation acceptance...');
-            console.log('🔍 [CollaborationModal] Hook instance before initialization:', {
-              hookReference: unifiedChat,
-              isInitialized: unifiedChat.isInitialized,
-              hasManager: !!unifiedChat.manager
-            });
+          // Alternative: look for shared conversations created by the sender
+          const allSharedConversations = await sharedConversationService.getUserSharedConversations(invitation.fromUserId);
+          sharedConversation = allSharedConversations.find(conv => 
+            conv.hostChatSessionId === hostConversationId || 
+            conv.conversationId === hostConversationId
+          );
+          
+          if (sharedConversation) {
+            console.log('🔍 [CollaborationModal] Found shared conversation created by sender:', sharedConversation.id);
             
-            // SIMPLE FIX: Ensure unified chat is initialized
-            if (!unifiedChat.isInitialized) {
-              console.log('🔄 [CollaborationModal] Initializing unified chat...');
-              await unifiedChat.initialize(effectiveUser);
-            }
-            
-            // Simple check - if not ready, show clear error
-            if (!unifiedChat.manager) {
-              console.error('❌ [CollaborationModal] Unified chat manager not available');
-              setError('Chat system not ready. Please refresh the page and try again.');
-              setResponding(false);
-              return;
-            }
-            
-            // Create unified session ID based on the invitation ID (matching ChatInvitationService)
-            const unifiedSessionId = `unified_invitation_${invitation.id}`;
-            console.log('🔍 [CollaborationModal] Looking for unified session:', unifiedSessionId);
-            
-            // Get UnifiedChatManager instance (now guaranteed to be available)
-            const unifiedChatManager = unifiedChat.manager;
-            
-            // Get the unified session that was created when the invitation was sent
-            let unifiedSession = await unifiedChatManager.getSession(unifiedSessionId);
-            
-            if (!unifiedSession) {
-              console.error('❌ [CollaborationModal] Unified session not found:', unifiedSessionId);
-              setError('Invitation session not found. It may have been deleted or not created properly.');
-              setResponding(false);
-              return;
-            }
-            
-            console.log('✅ [CollaborationModal] Found unified session:', unifiedSession.id);
-            
-            // Set sessionId for navigation
-            sessionId = unifiedSession.id;
-            
-            // Add current user as participant if not already present
-            const isParticipant = unifiedSession.participants.some(p => p.userId === effectiveUser.uid);
-            if (!isParticipant) {
-              console.log('🔄 [CollaborationModal] Adding user as participant...');
-              await unifiedChatManager.addParticipant(unifiedSession.id, effectiveUser.uid, 'participant');
-              console.log('✅ [CollaborationModal] User added as participant');
-            } else {
-              console.log('✅ [CollaborationModal] User already a participant');
-            }
-            
-            // Trigger navigation to the unified chat session
-            window.dispatchEvent(new CustomEvent('navigateToUnifiedChat', {
-              detail: { sessionId: unifiedSessionId }
-            }));
-            
-            console.log('🔄 [CollaborationModal] Navigating to unified chat session:', unifiedSessionId);
-          } else {
-            // Fallback to legacy shared conversation handling
-            console.log('🔄 [CollaborationModal] Unified chat disabled, using legacy handling...');
-            
-            // Find the existing shared conversation that was created when the invitation was sent
-            const userSharedConversations = await sharedConversationService.getUserSharedConversations(currentUserId);
-            console.log('🔍 [CollaborationModal] User shared conversations:', userSharedConversations);
-            
-            // Look for a shared conversation that matches the host's conversation ID
-            let sharedConversation = userSharedConversations.find(conv => 
-              conv.hostChatSessionId === hostConversationId || 
-              conv.conversationId === hostConversationId
+            // Add the recipient as a participant to the existing shared conversation
+            await sharedConversationService.addParticipant(
+              sharedConversation.id,
+              currentUserId,
+              invitation.fromUserId,
+              user?.displayName || user?.email || 'Unknown User'
             );
             
-            if (!sharedConversation) {
-              console.log('🔍 [CollaborationModal] No existing shared conversation found, looking for one created by the sender...');
-              
-              // Alternative: look for shared conversations created by the sender
-              const allSharedConversations = await sharedConversationService.getUserSharedConversations(invitation.fromUserId);
-              sharedConversation = allSharedConversations.find(conv => 
-                conv.hostChatSessionId === hostConversationId || 
-                conv.conversationId === hostConversationId
-              );
-              
-              if (sharedConversation) {
-                console.log('🔍 [CollaborationModal] Found shared conversation created by sender:', sharedConversation.id);
-                
-                // Add the recipient as a participant to the existing shared conversation
-                await sharedConversationService.addParticipant(
-                  sharedConversation.id,
-                  currentUserId,
-                  invitation.fromUserId,
-                  user?.displayName || user?.email || 'Unknown User'
-                );
-                
-                console.log('✅ [CollaborationModal] Added recipient to existing shared conversation');
-              }
-            }
-            
-            if (!sharedConversation) {
-              console.error('❌ [CollaborationModal] Could not find or create shared conversation');
-              setError('Unable to join the conversation. Please try again.');
-              setResponding(false);
-              return;
-            }
-            
-            console.log('🎯 [CollaborationModal] Joined shared conversation:', sharedConversation);
-            
-            // Set sessionId for navigation
-            sessionId = sharedConversation.id;
-            
-            // Wait a moment for Firebase to persist the data
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Add the specific conversation to the list instead of refreshing all
-            addSharedConversation(sharedConversation);
-            
-            // Select the new conversation as active
-            handleSharedConversationSelect(sharedConversation.id);
-            console.log('🔄 [CollaborationModal] Selected new conversation:', sharedConversation.id);
+            console.log('✅ [CollaborationModal] Added recipient to existing shared conversation');
           }
-        } catch (bridgeError) {
-          console.error('❌ [CollaborationModal] Error in bridge integration:', bridgeError);
+        }
+        
+        if (!sharedConversation) {
+          console.error('❌ [CollaborationModal] Could not find or create shared conversation');
           setError('Unable to join the conversation. Please try again.');
           setResponding(false);
           return;
         }
         
+        console.log('🎯 [CollaborationModal] Joined shared conversation:', sharedConversation);
+        
+        // Wait a moment for Firebase to persist the data
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Add the specific conversation to the list instead of refreshing all
+        addSharedConversation(sharedConversation);
+        
+        // Select the new conversation as active
+        handleSharedConversationSelect(sharedConversation.id);
+        console.log('🔄 [CollaborationModal] Selected new conversation:', sharedConversation.id);
+        
         // Trigger a custom event to notify the context
-        window.dispatchEvent(new CustomEvent('collaborationAccepted', {
-          detail: { conversationId: sessionId }
+        window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
+          detail: { conversationId: sharedConversation.id }
         }));
         
         // Route to command center - the shared conversation tab will be visible
@@ -512,8 +337,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           return;
         }
         
-        // Navigate to command center with agent and session
-        const commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sessionId}`;
+        // Navigate to command center with agent and shared conversation
+        const commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sharedConversation.id}`;
         console.log('🎯 [CollaborationModal] Navigating to command center with agent:', userAgent);
         console.log('🚀 [CollaborationModal] Attempting navigation to:', commandCenterUrl);
         
@@ -679,24 +504,7 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           </Box>
 
           {error && (
-            <Alert 
-              severity="error" 
-              sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}
-              action={
-                error.includes('logged in') ? (
-                  <Button 
-                    color="inherit" 
-                    size="small" 
-                    onClick={() => {
-                      // Redirect to login page
-                      window.location.href = '/ui/auth/login';
-                    }}
-                  >
-                    Login
-                  </Button>
-                ) : null
-              }
-            >
+            <Alert severity="error" sx={{ bgcolor: 'rgba(244, 67, 54, 0.1)' }}>
               {error}
             </Alert>
           )}
