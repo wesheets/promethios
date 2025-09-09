@@ -1025,7 +1025,7 @@ class SharedConversationService {
       }
 
       // Determine sender type - check if this is an AI agent or human user
-      const isAIAgent = senderId.startsWith('chatbot-') || senderId.includes('agent') || senderId.includes('bot');
+      const isAIAgent = senderId && (senderId.startsWith('chatbot-') || senderId.includes('agent') || senderId.includes('bot'));
       const senderType = isAIAgent ? 'assistant' : 'user';
       
       console.log('🔍 [SharedConversation] Sender type detection:', {
