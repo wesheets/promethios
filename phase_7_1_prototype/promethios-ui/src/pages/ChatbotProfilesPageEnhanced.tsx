@@ -480,6 +480,50 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Track which shared conversations are active in header (opened from drawer or notifications)
   const [activeHeaderConversations, setActiveHeaderConversations] = useState<string[]>([]);
   
+  // State to track loaded unified chat sessions
+  const [loadedUnifiedSessions, setLoadedUnifiedSessions] = useState<Map<string, any>>(new Map());
+  
+  // Function to convert unified chat session to SharedConversation format
+  const convertUnifiedSessionToSharedConversation = (session: any): SharedConversation => {
+    return {
+      id: session.id,
+      name: session.name || 'Unified Chat Session',
+      createdBy: session.hostUserId || user?.uid || '',
+      createdAt: session.createdAt || new Date(),
+      lastActivity: session.lastActivity || new Date(),
+      participants: session.participants?.map((p: any) => ({
+        id: p.userId,
+        name: p.displayName || p.userId,
+        type: p.role === 'agent' ? 'ai_agent' : 'human',
+        avatar: p.avatar,
+        isOnline: p.isOnline || false,
+        status: 'active',
+        role: p.userId === session.hostUserId ? 'creator' : 'participant',
+        joinedAt: p.joinedAt || new Date(),
+        permissions: p.permissions || ['read', 'write']
+      })) || [],
+      isPrivateMode: false,
+      hasHistory: true,
+      unreadCounts: {},
+      settings: {
+        allowParticipantInvites: true,
+        allowAIAgents: true,
+        allowReceiptSharing: true,
+        maxParticipants: session.maxParticipants || 10
+      },
+      hostChatSessionId: session.id,
+      agentId: session.agentId
+    };
+  };
+  
+  // Get combined conversations (shared + unified)
+  const getCombinedConversations = () => {
+    const unifiedConversations = Array.from(loadedUnifiedSessions.values())
+      .map(session => convertUnifiedSessionToSharedConversation(session));
+    
+    return [...sharedConversations, ...unifiedConversations];
+  };
+  
   // Smart mode detection function - automatically switch between regular and shared mode
 //   const detectModeFromParticipants = useCallback(() => {
 //     // Check if we have human participants in the current chat
@@ -895,6 +939,59 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     
     // Call the original shared conversation close handler
     handleSharedConversationClose(conversationId);
+    
+    // Update multi-chat context to return to AI agent mode
+    setMultiChatState(prev => ({
+      ...prev,
+      activeContextId: 'ai_agent',
+      contexts: prev.contexts.map(c => ({
+        ...c,
+        isActive: c.id === 'ai_agent'
+      }))
+    }));
+  };
+
+  // Handler for loading unified chat sessions
+  const handleUnifiedChatSessionLoad = async (sessionId: string) => {
+    try {
+      console.log('🔄 [UnifiedChat] Loading session:', sessionId);
+      
+      // Get the session from UnifiedChatManager
+      const session = await unifiedChat.getSession(sessionId);
+      if (!session) {
+        console.error('❌ [UnifiedChat] Session not found:', sessionId);
+        return;
+      }
+      
+      console.log('✅ [UnifiedChat] Session loaded:', session.name);
+      
+      // Store the loaded session
+      setLoadedUnifiedSessions(prev => new Map(prev.set(sessionId, session)));
+      
+      // Add to active header conversations if not already there
+      setActiveHeaderConversations(prev => {
+        if (!prev.includes(sessionId)) {
+          return [...prev, sessionId];
+        }
+        return prev;
+      });
+      
+      // Update multi-chat context to reflect unified chat mode
+      setMultiChatState(prev => ({
+        ...prev,
+        activeContextId: `unified_${sessionId}`,
+        contexts: prev.contexts.map(c => ({
+          ...c,
+          isActive: false // Deactivate all individual contexts when in unified mode
+        }))
+      }));
+      
+      // Set as active shared conversation (reusing the shared conversation state)
+      handleSharedConversationSelect(sessionId);
+      
+    } catch (error) {
+      console.error('❌ [UnifiedChat] Error loading session:', error);
+    }
   };
 
   const switchChatContext = (contextId: string) => {
@@ -1837,6 +1934,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       } else {
         console.log('⚠️ [URL Restoration] Shared conversation not found:', sharedParam);
       }
+    }
+    
+    // Handle unified chat session parameter (when sharedParam starts with 'unified_invitation_')
+    if (sharedParam && sharedParam.startsWith('unified_invitation_')) {
+      console.log('🔄 [URL Restoration] Processing unified chat session:', sharedParam);
+      handleUnifiedChatSessionLoad(sharedParam);
     }
     
     // Reset restoration flag after a brief delay
@@ -4291,7 +4394,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         overflow: 'hidden'
                       }}>
                         <CompactSharedChatTabs
-                          sharedConversations={sharedConversations.filter(conv => 
+                          sharedConversations={getCombinedConversations().filter(conv => 
                             activeHeaderConversations.includes(conv.id)
                           )}
                           activeConversationId={activeSharedConversation}
@@ -4586,14 +4689,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         currentUserId={user?.uid || 'anonymous'}
                         onSendMessage={async (message: string) => {
                           try {
-                            await sharedConversationService.sendMessageToSharedConversation(
-                              activeSharedConversation,
-                              user?.uid || 'anonymous',
-                              user?.displayName || user?.email || 'Anonymous User',
-                              message
-                            );
+                            // Check if this is a unified session
+                            if (activeSharedConversation?.startsWith('unified_invitation_')) {
+                              // Handle unified chat message sending
+                              const session = loadedUnifiedSessions.get(activeSharedConversation);
+                              if (session && unifiedChat.isInitialized) {
+                                await unifiedChat.sendMessage(activeSharedConversation, message);
+                              } else {
+                                console.error('Unified chat session not available for sending message');
+                              }
+                            } else {
+                              // Handle regular shared conversation message sending
+                              await sharedConversationService.sendMessageToSharedConversation(
+                                activeSharedConversation,
+                                user?.uid || 'anonymous',
+                                user?.displayName || user?.email || 'Anonymous User',
+                                message
+                              );
+                            }
                           } catch (error) {
-                            console.error('Failed to send message to shared conversation:', error);
+                            console.error('Failed to send message:', error);
                           }
                         }}
                       />
