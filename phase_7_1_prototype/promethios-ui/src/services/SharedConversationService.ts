@@ -1024,11 +1024,22 @@ class SharedConversationService {
         throw new Error(`Host chat session not found: ${hostChatSessionId}`);
       }
 
+      // Determine sender type - check if this is an AI agent or human user
+      const isAIAgent = senderId.startsWith('chatbot-') || senderId.includes('agent') || senderId.includes('bot');
+      const senderType = isAIAgent ? 'assistant' : 'user';
+      
+      console.log('🔍 [SharedConversation] Sender type detection:', {
+        senderId,
+        senderName,
+        isAIAgent,
+        senderType
+      });
+
       // Create new message
       const newMessage = {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         content: messageContent,
-        sender: 'user',
+        sender: senderType,
         timestamp: new Date(),
         attachments: [],
         metadata: {

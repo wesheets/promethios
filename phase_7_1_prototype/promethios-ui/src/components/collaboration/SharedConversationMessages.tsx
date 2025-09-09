@@ -316,16 +316,46 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
           <Box>
             {message.content && (
               <>
-                {/* Debug logging */}
-                {console.log('🐛 [SharedConversationMessages] Rendering message:', {
-                  id: message.id,
-                  content: message.content,
-                  contentType: typeof message.content,
-                  sender: message.sender,
-                  timestamp: message.timestamp,
-                  timestampType: typeof message.timestamp
-                })}
-                <MarkdownRenderer content={typeof message.content === 'string' ? message.content : JSON.stringify(message.content)} />
+                {/* Enhanced debug logging */}
+                {(() => {
+                  console.log('🐛 [SharedConversationMessages] Message details:', {
+                    id: message.id,
+                    content: message.content,
+                    contentType: typeof message.content,
+                    contentStringified: JSON.stringify(message.content),
+                    sender: message.sender,
+                    timestamp: message.timestamp,
+                    timestampType: typeof message.timestamp,
+                    fullMessage: message
+                  });
+                  return null;
+                })()}
+                <MarkdownRenderer content={
+                  (() => {
+                    // Enhanced content extraction logic
+                    let content = message.content;
+                    
+                    // If content is an object, try to extract the actual text
+                    if (typeof content === 'object' && content !== null) {
+                      // Check common object structures for content
+                      if (content.content) {
+                        content = content.content;
+                      } else if (content.text) {
+                        content = content.text;
+                      } else if (content.message) {
+                        content = content.message;
+                      } else {
+                        // Fallback to JSON string representation
+                        content = JSON.stringify(content);
+                      }
+                    }
+                    
+                    // Ensure we always return a string
+                    const finalContent = typeof content === 'string' ? content : String(content || '');
+                    console.log('🐛 [SharedConversationMessages] Final content for rendering:', finalContent);
+                    return finalContent;
+                  })()
+                } />
               </>
             )}
             

@@ -3259,8 +3259,37 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           user?.displayName || user?.email || 'Anonymous User',
           messageToSend
         );
+        
+        // Clear input immediately for user feedback
         setMessageInput('');
         setAttachedFiles([]);
+        
+        // Check if we should trigger AI agent responses in shared conversation
+        if (selectedChatbot && !customMessage) {
+          console.log('🤖 [SharedConversation] Triggering AI agent response for shared conversation');
+          
+          // Set loading states for AI response
+          setChatLoading(true);
+          setIsTyping(true);
+          
+          // Set smart thinking indicator
+          const respondingAgent = getRespondingAgent();
+          const activityStatus = getActivityStatus(messageToSend);
+          setCurrentRespondingAgent(respondingAgent);
+          setCurrentActivity(activityStatus);
+          
+          try {
+            // Trigger AI agent response in shared conversation context
+            await handleSharedConversationAIResponse(messageToSend, activeSharedConversation);
+          } catch (error) {
+            console.error('❌ [SharedConversation] Failed to get AI response:', error);
+          } finally {
+            setChatLoading(false);
+            setIsTyping(false);
+            clearSmartThinkingIndicator();
+          }
+        }
+        
         return;
       } catch (error) {
         console.error('Failed to send message to shared conversation:', error);
@@ -3983,6 +4012,85 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setCurrentAction(null);
       setActionStartTime(null);
       clearSmartThinkingIndicator();
+    }
+  };
+
+  // Handle AI agent responses in shared conversations
+  const handleSharedConversationAIResponse = async (userMessage: string, conversationId: string) => {
+    if (!selectedChatbot || !user?.uid) {
+      console.error('❌ [SharedConversationAI] Missing required data:', { selectedChatbot: !!selectedChatbot, user: !!user?.uid });
+      return;
+    }
+
+    try {
+      console.log('🤖 [SharedConversationAI] Processing AI response for shared conversation:', conversationId);
+      
+      // Get the shared conversation to access the host chat session
+      const sharedConversation = await sharedConversationService.getSharedConversation(conversationId);
+      if (!sharedConversation?.hostChatSessionId) {
+        console.error('❌ [SharedConversationAI] No host chat session found for shared conversation');
+        return;
+      }
+
+      // Load the host chat session to get conversation context
+      const hostChatSession = await chatHistoryService.getChatSessionById(sharedConversation.hostChatSessionId);
+      if (!hostChatSession) {
+        console.error('❌ [SharedConversationAI] Host chat session not found:', sharedConversation.hostChatSessionId);
+        return;
+      }
+
+      // Prepare conversation history for AI context
+      const conversationHistory = hostChatSession.messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+        content: msg.content,
+        timestamp: msg.timestamp
+      }));
+
+      console.log('📚 [SharedConversationAI] Using conversation history with', conversationHistory.length, 'messages');
+
+      // Get AI response using the selected chatbot
+      const chatbotService = getChatbotService(selectedChatbot);
+      if (!chatbotService) {
+        console.error('❌ [SharedConversationAI] No chatbot service available for:', selectedChatbot.name);
+        return;
+      }
+
+      // Create the AI response request
+      const response = await chatbotService.sendMessage(userMessage, {
+        conversationHistory: conversationHistory,
+        context: `This is a shared conversation with multiple participants. The user "${user.displayName || user.email || 'User'}" just sent: "${userMessage}"`
+      });
+
+      if (response?.content) {
+        console.log('✅ [SharedConversationAI] Received AI response, adding to shared conversation');
+        
+        // Add AI response to the shared conversation
+        await sharedConversationService.sendMessageToSharedConversation(
+          conversationId,
+          selectedChatbot.id,
+          selectedChatbot.name,
+          response.content
+        );
+
+        console.log('✅ [SharedConversationAI] AI response added to shared conversation successfully');
+      } else {
+        console.warn('⚠️ [SharedConversationAI] No response content received from AI');
+      }
+
+    } catch (error) {
+      console.error('❌ [SharedConversationAI] Failed to get AI response:', error);
+      
+      // Add error message to shared conversation
+      try {
+        await sharedConversationService.sendMessageToSharedConversation(
+          conversationId,
+          selectedChatbot.id,
+          selectedChatbot.name,
+          "I apologize, but I'm having trouble responding right now. Please try again."
+        );
+      } catch (errorMsgError) {
+        console.error('❌ [SharedConversationAI] Failed to send error message:', errorMsgError);
+      }
     }
   };
 
