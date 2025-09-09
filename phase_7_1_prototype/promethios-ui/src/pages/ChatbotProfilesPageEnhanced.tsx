@@ -3220,23 +3220,101 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (!isInSharedMode || !activeSharedConversation) return;
     
     try {
+      // Enhanced message content validation (same as handleSendMessage)
+      let messageToSend: string;
+      
+      if (typeof message === 'string') {
+        messageToSend = message.trim();
+      } else if (message && typeof message === 'object') {
+        // Handle case where message might be an object
+        console.warn('⚠️ [handleMentionMessage] message is an object, converting to string:', message);
+        messageToSend = JSON.stringify(message);
+      } else {
+        messageToSend = String(message || '').trim();
+      }
+      
+      // Final validation - ensure we have a non-empty string
+      if (!messageToSend || typeof messageToSend !== 'string') {
+        console.warn('⚠️ [handleMentionMessage] Invalid message content:', { messageToSend, type: typeof messageToSend });
+        return;
+      }
+      
+      console.log('✅ [handleMentionMessage] Validated message content:', { messageToSend, type: typeof messageToSend, length: messageToSend.length });
+
       // Send message to shared conversation with mention context
       await sharedConversationService.sendMessageToSharedConversation(
         activeSharedConversation,
         user?.uid || 'anonymous',
         user?.displayName || user?.email || 'Anonymous User',
-        message,
+        messageToSend,
         mentionedParticipants // Pass mentioned participants for targeted messaging
       );
       
+      // Clear input after successful send
+      setMessageInput('');
+      
       console.log('📧 [MentionMessage] Sent with mentions:', {
-        message,
+        message: messageToSend,
         mentionedParticipants,
         conversationId: activeSharedConversation
       });
+
+      // Check if we should trigger AI agent responses in shared conversation
+      // Only respond if the agent is explicitly selected as the target AND it's actually an AI agent
+      const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot?.id;
+      
+      // Additional check: ensure the selected target is an AI agent, not a human user
+      const isSelectedTargetAIAgent = selectedTarget && (
+        selectedTarget.startsWith('chatbot-') || 
+        selectedTarget.includes('agent') || 
+        selectedTarget.includes('ai-') ||
+        selectedTarget === selectedChatbot?.id
+      );
+      
+      if (selectedChatbot && isAgentExplicitlySelected && isSelectedTargetAIAgent) {
+        console.log('🤖 [MentionMessage] AI Agent explicitly selected - triggering AI response:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot.id,
+          isExplicitlySelected: isAgentExplicitlySelected,
+          isSelectedTargetAIAgent: isSelectedTargetAIAgent
+        });
+        
+        // Set loading states for AI response
+        setChatLoading(true);
+        setIsTyping(true);
+        
+        // Set smart thinking indicator
+        const respondingAgent = getRespondingAgent();
+        const activityStatus = getActivityStatus(messageToSend);
+        setCurrentRespondingAgent(respondingAgent);
+        setCurrentActivity(activityStatus);
+        
+        try {
+          // Trigger AI agent response in shared conversation context
+          await handleSharedConversationAIResponse(messageToSend, activeSharedConversation);
+        } catch (error) {
+          console.error('❌ [MentionMessage] Failed to get AI response:', error);
+        } finally {
+          setChatLoading(false);
+          setIsTyping(false);
+          clearSmartThinkingIndicator();
+        }
+      } else if (selectedChatbot && selectedTarget && !isSelectedTargetAIAgent) {
+        console.log('🤖 [MentionMessage] Human user selected - skipping AI response:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot.id,
+          message: 'Selected target is a human user, not an AI agent'
+        });
+      } else if (selectedChatbot && !isAgentExplicitlySelected) {
+        console.log('🤖 [MentionMessage] Agent not explicitly selected - skipping AI response:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot?.id,
+          message: 'AI will only respond when explicitly selected in shared conversations'
+        });
+      }
       
     } catch (error) {
-      console.error('Failed to send mention message:', error);
+      console.error('❌ [MentionMessage] Failed to send mention message:', error);
     }
   };
 
