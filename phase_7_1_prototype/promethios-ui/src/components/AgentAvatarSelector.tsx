@@ -20,6 +20,7 @@ export interface AgentInfo {
   avatar?: string;
   color: string;
   hotkey?: string;
+  type?: 'human' | 'ai_agent'; // Add type to distinguish between humans and AI agents
 }
 
 export interface TeamMember {
@@ -111,7 +112,8 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         name: participant.name,
         avatar: participant.avatar,
         color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
-        hotkey: undefined
+        hotkey: undefined,
+        type: participant.type // Preserve the type for proper labeling
       }))
     : hideHostAgent 
       ? guestAgents 
@@ -318,7 +320,8 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
                 {agent.name}
               </Box>
               <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
-                {agent.id === hostAgent.id ? '👑 Host Agent' : '🤖 Guest Agent'}
+                {agent.id === hostAgent.id ? '👑 Host Agent' : 
+                 agent.type === 'human' ? '👤 Guest User' : '🤖 Guest Agent'}
               </Box>
               <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1.5, textAlign: 'center' }}>
                 {selectedAgents.includes(agent.id) ? 'Selected for messaging' : 'Click to select for messaging'}

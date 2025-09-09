@@ -3299,14 +3299,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         setAttachedFiles([]);
         
         // Check if we should trigger AI agent responses in shared conversation
-        // Only respond if the agent is explicitly selected as the target
+        // Only respond if the agent is explicitly selected as the target AND it's actually an AI agent
         const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot.id;
         
-        if (selectedChatbot && !customMessage && isAgentExplicitlySelected) {
-          console.log('🤖 [SharedConversation] Agent explicitly selected - triggering AI response:', {
+        // Additional check: ensure the selected target is an AI agent, not a human user
+        const isSelectedTargetAIAgent = selectedTarget && (
+          selectedTarget.startsWith('chatbot-') || 
+          selectedTarget.includes('agent') || 
+          selectedTarget.includes('ai-') ||
+          selectedTarget === selectedChatbot.id
+        );
+        
+        if (selectedChatbot && !customMessage && isAgentExplicitlySelected && isSelectedTargetAIAgent) {
+          console.log('🤖 [SharedConversation] AI Agent explicitly selected - triggering AI response:', {
             selectedTarget,
             selectedChatbotId: selectedChatbot.id,
-            isExplicitlySelected: isAgentExplicitlySelected
+            isExplicitlySelected: isAgentExplicitlySelected,
+            isSelectedTargetAIAgent: isSelectedTargetAIAgent
           });
           
           // Set loading states for AI response
@@ -3329,6 +3338,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             setIsTyping(false);
             clearSmartThinkingIndicator();
           }
+        } else if (selectedChatbot && !customMessage && selectedTarget && !isSelectedTargetAIAgent) {
+          console.log('🤖 [SharedConversation] Human user selected - skipping AI response:', {
+            selectedTarget,
+            selectedChatbotId: selectedChatbot.id,
+            message: 'Selected target is a human user, not an AI agent'
+          });
         } else if (selectedChatbot && !customMessage && !isAgentExplicitlySelected) {
           console.log('🤖 [SharedConversation] Agent not explicitly selected - skipping AI response:', {
             selectedTarget,
