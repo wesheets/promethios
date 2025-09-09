@@ -413,61 +413,7 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
         )}
       </Box>
 
-      {/* Message input */}
-      <Box sx={{ 
-        p: 2, 
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        bgcolor: 'rgba(0, 0, 0, 0.2)'
-      }}>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-          <TextField
-            fullWidth
-            multiline
-            maxRows={4}
-            placeholder="Type your message... (or use @agent-name or @human-name)"
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={sending}
-            variant="outlined"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: 'white',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                '& fieldset': {
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
-                },
-                '&:hover fieldset': {
-                  borderColor: 'rgba(255, 255, 255, 0.3)',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#3b82f6',
-                },
-              },
-              '& .MuiInputBase-input::placeholder': {
-                color: 'rgba(255, 255, 255, 0.5)',
-                opacity: 1,
-              },
-            }}
-          />
-          <IconButton
-            onClick={handleSendMessage}
-            disabled={!messageInput.trim() || sending}
-            sx={{
-              color: messageInput.trim() ? '#3b82f6' : 'rgba(255, 255, 255, 0.3)',
-              '&:hover': { 
-                color: '#2563eb', 
-                bgcolor: 'rgba(59, 130, 246, 0.1)' 
-              },
-              '&.Mui-disabled': {
-                color: 'rgba(255, 255, 255, 0.2)'
-              }
-            }}
-          >
-            {sending ? <CircularProgress size={20} /> : <SendIcon />}
-          </IconButton>
-        </Box>
-      </Box>
+      {/* Message input handled by main chat interface */}
     </Box>
   );
 };

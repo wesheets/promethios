@@ -4527,23 +4527,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             />
                           )}
                           
-                          {/* Send Button - only show for personal chats (shared conversations handle sending internally) */}
-                          {!isInSharedMode && (
-                            <IconButton
-                              onClick={handleSendMessage}
-                              disabled={!messageInput.trim() || chatLoading}
-                              sx={{
-                                color: messageInput.trim() ? '#3b82f6' : '#6b7280',
-                                '&:hover': { 
-                                  color: '#2563eb', 
-                                  bgcolor: 'rgba(59, 130, 246, 0.1)' 
-                                },
-                                mr: 1
-                              }}
-                            >
-                              {chatLoading ? <CircularProgress size={20} /> : <Send sx={{ fontSize: 20 }} />}
-                            </IconButton>
-                          )}
+                          {/* Send Button - show for both personal and shared chats */}
+                          <IconButton
+                            onClick={handleSendMessage}
+                            disabled={!messageInput.trim() || chatLoading}
+                            sx={{
+                              color: messageInput.trim() ? '#3b82f6' : '#6b7280',
+                              '&:hover': { 
+                                color: '#2563eb', 
+                                bgcolor: 'rgba(59, 130, 246, 0.1)' 
+                              },
+                              mr: 1
+                            }}
+                          >
+                            {chatLoading ? <CircularProgress size={20} /> : <Send sx={{ fontSize: 20 }} />}
+                          </IconButton>
                         </Box>
                       </Box>
                     </Box>
