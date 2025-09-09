@@ -288,59 +288,19 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
               hasManager: !!unifiedChat.manager
             });
             
-            // Check if unified chat is already initialized
+            // SIMPLE FIX: Ensure unified chat is initialized
             if (!unifiedChat.isInitialized) {
-              console.log('🔄 [CollaborationModal] Initializing unified chat with invitation context...');
-              try {
-                // Initialize with invitation-specific parameters
-                const sessionId = `invitation_${invitation.id}`;
-                const agentId = invitation.metadata?.agentId || 'default';
-                
-                console.log('🔧 [CollaborationModal] Initializing with:', { sessionId, agentId, user: effectiveUser });
-                
-                await unifiedChat.initialize(effectiveUser, {
-                  sessionId,
-                  agentId,
-                  sessionName: invitation.metadata?.conversationName || 'Shared Chat'
-                });
-                
-                console.log('✅ [CollaborationModal] Unified chat initialization completed');
-              } catch (initError) {
-                console.error('❌ [CollaborationModal] Unified chat initialization failed:', initError);
-                setError('Failed to initialize unified chat system. Please try again.');
-                setResponding(false);
-                return;
-              }
-            } else {
-              console.log('✅ [CollaborationModal] Unified chat already initialized');
+              console.log('🔄 [CollaborationModal] Initializing unified chat...');
+              await unifiedChat.initialize(effectiveUser);
             }
             
-            // Check initialization status and manager availability immediately
-            console.log('🔍 [CollaborationModal] Post-initialization state:', {
-              isEnabled: unifiedChat.isEnabled,
-              isInitialized: unifiedChat.isInitialized,
-              hasManager: unifiedChat.hasManager,
-              managerType: typeof unifiedChat.manager,
-              hookReference: unifiedChat
-            });
-            
-            // Verify both initialization and manager availability
-            if (!unifiedChat.isInitialized || !unifiedChat.hasManager || !unifiedChat.manager) {
-              console.error('❌ [CollaborationModal] Unified chat system not properly initialized');
-              console.log('🔍 [CollaborationModal] Detailed state:', {
-                isEnabled: unifiedChat.isEnabled,
-                isInitialized: unifiedChat.isInitialized,
-                hasManager: unifiedChat.hasManager,
-                manager: unifiedChat.manager,
-                managerType: typeof unifiedChat.manager,
-                hookReference: unifiedChat
-              });
-              setError('Unified chat system not available. Please try again.');
+            // Simple check - if not ready, show clear error
+            if (!unifiedChat.manager) {
+              console.error('❌ [CollaborationModal] Unified chat manager not available');
+              setError('Chat system not ready. Please refresh the page and try again.');
               setResponding(false);
               return;
             }
-            
-            console.log('✅ [CollaborationModal] Unified chat system ready');
             
             // Create unified session ID based on the invitation ID (matching ChatInvitationService)
             const unifiedSessionId = `unified_invitation_${invitation.id}`;
