@@ -4059,41 +4059,28 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     try {
       console.log('🤖 [SharedConversationAI] Processing AI response for shared conversation:', conversationId);
       
-      // Get the shared conversation to access the host chat session
-      const sharedConversation = await sharedConversationService.getSharedConversation(conversationId);
-      if (!sharedConversation?.hostChatSessionId) {
-        console.error('❌ [SharedConversationAI] No host chat session found for shared conversation');
+      // Get the current bot state to access the active session
+      const selectedChatbotId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+      const currentBotState = botStates.get(selectedChatbotId);
+      
+      if (!currentBotState?.activeSession) {
+        console.error('❌ [SharedConversationAI] No active session found for chatbot:', selectedChatbotId);
         return;
       }
 
-      // Load the host chat session to get conversation context
-      const hostChatSession = await chatHistoryService.getChatSessionById(sharedConversation.hostChatSessionId);
-      if (!hostChatSession) {
-        console.error('❌ [SharedConversationAI] Host chat session not found:', sharedConversation.hostChatSessionId);
-        return;
-      }
+      // Get user's display name for personalized response
+      const userName = user.displayName || user.email || 'User';
+      
+      // Create personalized context for the AI
+      const personalizedMessage = `In this shared conversation, ${userName} asked: "${userMessage}". Please address ${userName} directly in your response.`;
 
-      // Prepare conversation history for AI context
-      const conversationHistory = hostChatSession.messages.map(msg => ({
-        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
-        content: msg.content,
-        timestamp: msg.timestamp
-      }));
+      console.log('🤖 [SharedConversationAI] Sending personalized message to governance service:', personalizedMessage);
 
-      console.log('📚 [SharedConversationAI] Using conversation history with', conversationHistory.length, 'messages');
-
-      // Get AI response using the selected chatbot
-      const chatbotService = getChatbotService(selectedChatbot);
-      if (!chatbotService) {
-        console.error('❌ [SharedConversationAI] No chatbot service available for:', selectedChatbot.name);
-        return;
-      }
-
-      // Create the AI response request
-      const response = await chatbotService.sendMessage(userMessage, {
-        conversationHistory: conversationHistory,
-        context: `This is a shared conversation with multiple participants. The user "${user.displayName || user.email || 'User'}" just sent: "${userMessage}"`
-      });
+      // Use the same governance service that single conversations use
+      const response = await chatPanelGovernanceService.sendMessage(
+        currentBotState.activeSession.sessionId, 
+        personalizedMessage
+      );
 
       if (response?.content) {
         console.log('✅ [SharedConversationAI] Received AI response, adding to shared conversation');
@@ -4116,11 +4103,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       // Add error message to shared conversation
       try {
+        const userName = user?.displayName || user?.email || 'User';
         await sharedConversationService.sendMessageToSharedConversation(
           conversationId,
           selectedChatbot.id,
           selectedChatbot.name,
-          "I apologize, but I'm having trouble responding right now. Please try again."
+          `Hi ${userName}, I apologize, but I'm having trouble responding right now. Please try again.`
         );
       } catch (errorMsgError) {
         console.error('❌ [SharedConversationAI] Failed to send error message:', errorMsgError);
