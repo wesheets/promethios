@@ -170,8 +170,8 @@ export class UnifiedChatManager {
       await this.addParticipant(sessionId, participantId, 'participant');
     }
     
-    // Persist session to Firebase so other users can find it
-    await this.persistence.updateSession(session);
+    // Persist session to Firebase so other users can find it (use saveSession for new sessions)
+    await this.persistence.saveSession(session);
     console.log('💾 [UnifiedChatManager] Session persisted to Firebase:', sessionId);
   }
 
