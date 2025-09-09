@@ -119,7 +119,7 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
 
     // Set up Firebase listener for the chat session
     const unsubscribe = onSnapshot(
-      doc(db, 'chatSessions', chatSession.id),
+      doc(db, 'chats', `session_${chatSession.id}`),
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
@@ -127,8 +127,13 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
           
           // Update messages if they've changed
           if (data.messages && Array.isArray(data.messages)) {
-            setMessages(data.messages);
-            console.log('✅ [SharedConversationMessages] Updated messages from real-time listener:', data.messages.length);
+            // Deserialize messages to ensure proper Date objects
+            const deserializedMessages = data.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+            }));
+            setMessages(deserializedMessages);
+            console.log('✅ [SharedConversationMessages] Updated messages from real-time listener:', deserializedMessages.length);
           }
         }
       },
@@ -289,14 +294,39 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
               {getSenderName()}
             </Typography>
             <Typography variant="caption" sx={{ color: '#64748b' }}>
-              {new Date(message.timestamp).toLocaleTimeString()}
+              {(() => {
+                try {
+                  const timestamp = message.timestamp;
+                  if (timestamp instanceof Date) {
+                    return timestamp.toLocaleTimeString();
+                  } else if (typeof timestamp === 'string') {
+                    return new Date(timestamp).toLocaleTimeString();
+                  } else {
+                    return 'Unknown time';
+                  }
+                } catch (error) {
+                  console.error('❌ [SharedConversationMessages] Error formatting timestamp:', error);
+                  return 'Invalid time';
+                }
+              })()}
             </Typography>
           </Box>
           
           {/* Message content */}
           <Box>
             {message.content && (
-              <MarkdownRenderer content={message.content} />
+              <>
+                {/* Debug logging */}
+                {console.log('🐛 [SharedConversationMessages] Rendering message:', {
+                  id: message.id,
+                  content: message.content,
+                  contentType: typeof message.content,
+                  sender: message.sender,
+                  timestamp: message.timestamp,
+                  timestampType: typeof message.timestamp
+                })}
+                <MarkdownRenderer content={typeof message.content === 'string' ? message.content : JSON.stringify(message.content)} />
+              </>
             )}
             
             {/* Attachments */}

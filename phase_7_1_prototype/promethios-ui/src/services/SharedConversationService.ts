@@ -1029,7 +1029,7 @@ class SharedConversationService {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         content: messageContent,
         sender: 'user',
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
         attachments: [],
         metadata: {
           sharedConversationSender: {
