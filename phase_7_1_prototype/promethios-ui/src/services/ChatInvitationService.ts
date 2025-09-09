@@ -150,38 +150,13 @@ class ChatInvitationService {
           // Initialize UnifiedChatManager
           const unifiedChatManager = await this.ensureUnifiedChatManager(fromUserInfo);
           
-          // Create unified session
-          const unifiedSession = await unifiedChatManager.createSession({
-            id: unifiedSessionId,
-            name: request.conversationName || 'Collaboration Session',
-            mode: 'shared' as const,
-            hostUserId: request.fromUserId,
-            participants: [
-              {
-                userId: request.fromUserId,
-                name: fromUserInfo.displayName || fromUserInfo.email || 'Host',
-                role: 'host',
-                isOnline: true,
-                joinedAt: new Date(),
-                permissions: []
-              },
-              {
-                userId: request.toUserId,
-                name: toUserInfo?.displayName || toUserInfo?.email || request.toUserName || 'Guest',
-                role: 'participant',
-                isOnline: false,
-                joinedAt: new Date(),
-                permissions: []
-              }
-            ],
-            metadata: {
-              isPrivate: false,
-              allowInvites: true,
-              originalConversationId: request.conversationId,
-              invitationId: result.interactionId,
-              agentName: request.agentName
-            }
-          });
+          // Create unified session using the correct method
+          const unifiedSession = await unifiedChatManager.createOrGetSession(
+            unifiedSessionId,
+            request.conversationName || 'Collaboration Session',
+            request.conversationId, // agentId
+            [request.toUserId] // initialParticipants
+          );
           
           console.log('✅ [ChatInvitationService] Unified session created:', unifiedSession.id);
           console.log('✅ [ChatInvitationService] Original conversation ID preserved:', request.conversationId);
