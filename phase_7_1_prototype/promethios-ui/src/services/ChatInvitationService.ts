@@ -60,7 +60,7 @@ class ChatInvitationService {
   /**
    * Initialize UnifiedChatManager if not already initialized
    */
-  private async ensureUnifiedChatManager(user: any): Promise<UnifiedChatManager> {
+  private async ensureUnifiedChatManager(user: import('firebase/auth').User): Promise<UnifiedChatManager> {
     if (!this.unifiedChatManager) {
       this.unifiedChatManager = UnifiedChatManager.getInstance({});
       await this.unifiedChatManager.initialize(user);
@@ -135,20 +135,23 @@ class ChatInvitationService {
         // Create unified session immediately when invitation is sent (pure unified approach)
         console.log('🔄 [ChatInvitationService] Creating unified session for invitation...');
         try {
-          // Get user info for session creation
-          const fromUserInfo = await userInteractionRegistry.getUserInfo(request.fromUserId);
-          const toUserInfo = await userInteractionRegistry.getUserInfo(request.toUserId);
+          // Get current authenticated user from Firebase Auth
+          const { getAuth } = await import('firebase/auth');
+          const auth = getAuth();
+          const currentUser = auth.currentUser;
           
-          if (!fromUserInfo) {
-            console.error('❌ [ChatInvitationService] From user info not found');
-            throw new Error('From user information not available');
+          if (!currentUser) {
+            console.error('❌ [ChatInvitationService] No authenticated user found');
+            throw new Error('User must be authenticated to create unified session');
           }
+          
+          console.log('✅ [ChatInvitationService] Using authenticated user:', currentUser.uid);
           
           // Create unified session ID based on the original conversation
           const unifiedSessionId = `unified_invitation_${result.interactionId}`;
           
-          // Initialize UnifiedChatManager
-          const unifiedChatManager = await this.ensureUnifiedChatManager(fromUserInfo);
+          // Initialize UnifiedChatManager with proper Firebase User
+          const unifiedChatManager = await this.ensureUnifiedChatManager(currentUser);
           
           // Create unified session using the correct method
           const unifiedSession = await unifiedChatManager.createOrGetSession(
