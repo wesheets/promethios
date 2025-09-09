@@ -30,13 +30,26 @@ export const UnifiedChatProvider: React.FC<UnifiedChatProviderProps> = ({
   
   // Initialize the hook when user becomes available
   useEffect(() => {
+    console.log('🔄 [UnifiedChatProvider] useEffect triggered:', {
+      user: user?.uid,
+      authLoading,
+      isInitialized: unifiedChat.isInitialized,
+      hasInitializeFunction: typeof unifiedChat.initialize === 'function'
+    });
+    
     if (user && !authLoading && !unifiedChat.isInitialized) {
       console.log('🔄 [UnifiedChatProvider] Initializing unified chat with user:', user.uid);
       unifiedChat.initialize(user).catch(error => {
         console.error('❌ [UnifiedChatProvider] Failed to initialize unified chat:', error);
       });
+    } else {
+      console.log('🔍 [UnifiedChatProvider] Skipping initialization:', {
+        hasUser: !!user,
+        authLoading,
+        alreadyInitialized: unifiedChat.isInitialized
+      });
     }
-  }, [user, authLoading, unifiedChat.isInitialized, unifiedChat.initialize]);
+  }, [user?.uid, authLoading, unifiedChat.isInitialized]); // Removed unifiedChat.initialize from deps
   
   console.log('🏗️ [UnifiedChatProvider] Hook state:', {
     isInitialized: unifiedChat.isInitialized,
