@@ -246,6 +246,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         console.log('🔍 [CollaborationModal] Host conversation ID:', hostConversationId);
         console.log('🔍 [CollaborationModal] Full invitation metadata:', invitation.metadata);
         
+        // Variable to track the session/conversation ID for navigation
+        let sessionId: string | null = null;
+        
         // Use SharedConversationBridge to handle the invitation acceptance
         console.log('🔗 [CollaborationModal] Using SharedConversationBridge for invitation acceptance...');
         
@@ -321,6 +324,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             
             console.log('✅ [CollaborationModal] Found unified session:', unifiedSession.id);
             
+            // Set sessionId for navigation
+            sessionId = unifiedSession.id;
+            
             // Add current user as participant if not already present
             const isParticipant = unifiedSession.participants.some(p => p.userId === effectiveUser.uid);
             if (!isParticipant) {
@@ -385,6 +391,9 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             
             console.log('🎯 [CollaborationModal] Joined shared conversation:', sharedConversation);
             
+            // Set sessionId for navigation
+            sessionId = sharedConversation.id;
+            
             // Wait a moment for Firebase to persist the data
             await new Promise(resolve => setTimeout(resolve, 1000));
             
@@ -403,8 +412,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         }
         
         // Trigger a custom event to notify the context
-        window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
-          detail: { conversationId: sharedConversation.id }
+        window.dispatchEvent(new CustomEvent('collaborationAccepted', {
+          detail: { conversationId: sessionId }
         }));
         
         // Route to command center - the shared conversation tab will be visible
@@ -503,8 +512,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           return;
         }
         
-        // Navigate to command center with agent and shared conversation
-        const commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sharedConversation.id}`;
+        // Navigate to command center with agent and session
+        const commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sessionId}`;
         console.log('🎯 [CollaborationModal] Navigating to command center with agent:', userAgent);
         console.log('🚀 [CollaborationModal] Attempting navigation to:', commandCenterUrl);
         
