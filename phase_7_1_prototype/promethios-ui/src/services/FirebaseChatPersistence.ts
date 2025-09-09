@@ -249,8 +249,8 @@ export class FirebaseChatPersistence {
         participants: [], // Will be loaded separately
         hostUserId: data.hostUserId,
         agentId: data.agentId,
-        createdAt: data.createdAt.toDate(),
-        lastActivity: data.lastActivity.toDate(),
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+        lastActivity: data.lastActivity?.toDate ? data.lastActivity.toDate() : new Date(data.lastActivity),
         metadata: data.metadata
       };
 

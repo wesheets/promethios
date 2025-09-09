@@ -173,6 +173,8 @@ export class UnifiedChatManager {
     for (const participantId of initialParticipants) {
       await this.addParticipant(sessionId, participantId, 'participant');
     }
+    
+    return session;
   }
 
   /**
