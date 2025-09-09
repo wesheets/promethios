@@ -490,18 +490,60 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   
   // Listen for collaboration invitation acceptance events
   useEffect(() => {
-    const handleCollaborationAccepted = (event: CustomEvent) => {
+    const handleCollaborationAccepted = async (event: CustomEvent) => {
       const { conversationId } = event.detail;
-      console.log('🎯 [CollaborationEvent] Collaboration accepted, adding to header:', conversationId);
+      console.log('🎯 [CollaborationEvent] Collaboration accepted, processing:', conversationId);
       
-      // Add the conversation to active header conversations
-      setActiveHeaderConversations(prev => {
-        if (!prev.includes(conversationId)) {
-          console.log('🔄 [CollaborationEvent] Adding conversation to header tabs:', conversationId);
-          return [...prev, conversationId];
+      try {
+        // Check if this is a unified session
+        if (conversationId.startsWith('unified_invitation_')) {
+          console.log('🔄 [CollaborationEvent] Processing unified session:', conversationId);
+          
+          // Get the unified session from the manager
+          const session = await unifiedChat?.manager?.getSession(conversationId);
+          if (session) {
+            console.log('✅ [CollaborationEvent] Found unified session:', session.name);
+            
+            // Convert to shared conversation format
+            const sharedConversation = convertUnifiedSessionToSharedConversation(session);
+            
+            // Add to shared conversations context
+            addSharedConversation(sharedConversation);
+            
+            // Add to active header conversations
+            setActiveHeaderConversations(prev => {
+              if (!prev.includes(conversationId)) {
+                console.log('🔄 [CollaborationEvent] Adding unified session to header tabs:', conversationId);
+                return [...prev, conversationId];
+              }
+              return prev;
+            });
+            
+            // Activate the shared conversation
+            console.log('🎯 [CollaborationEvent] Activating shared conversation:', conversationId);
+            handleSharedConversationSelect(conversationId);
+            
+          } else {
+            console.warn('❌ [CollaborationEvent] Unified session not found:', conversationId);
+          }
+        } else {
+          console.log('🔄 [CollaborationEvent] Processing regular shared conversation:', conversationId);
+          
+          // Add the conversation to active header conversations
+          setActiveHeaderConversations(prev => {
+            if (!prev.includes(conversationId)) {
+              console.log('🔄 [CollaborationEvent] Adding conversation to header tabs:', conversationId);
+              return [...prev, conversationId];
+            }
+            return prev;
+          });
+          
+          // Activate the shared conversation
+          handleSharedConversationSelect(conversationId);
         }
-        return prev;
-      });
+      } catch (error) {
+        console.error('❌ [CollaborationEvent] Error processing collaboration acceptance:', error);
+      }
     };
 
     window.addEventListener('collaborationAccepted', handleCollaborationAccepted as EventListener);
