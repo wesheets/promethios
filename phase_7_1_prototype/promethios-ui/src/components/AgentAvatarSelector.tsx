@@ -219,9 +219,14 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       if (selectedAgents.length === 1 && selectedAgents[0] === agentId) {
         // If only this agent is selected, deselect (default to host)
         onSelectionChange([hostAgent.id]);
+        // 🔧 FIX: Also clear the messaging target when deselecting
+        onTargetChange?.('');
       } else {
         // Select only this agent
         onSelectionChange([agentId]);
+        // 🔧 FIX: Also set this agent as the messaging target for shared conversations
+        onTargetChange?.(agentId);
+        console.log('🎯 [AgentAvatarSelector] Set messaging target to agent:', agentId);
       }
     }
   };
