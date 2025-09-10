@@ -99,25 +99,23 @@ class ChatInvitationService {
       if (result.success) {
         console.log('✅ [ChatInvitationService] Collaboration invitation sent successfully');
         
-        // Create shared conversation immediately when invitation is sent
-        console.log('🔄 [ChatInvitationService] Creating shared conversation for invitation...');
+        // Add pending participant to host's conversation (unified approach)
+        console.log('🔄 [ChatInvitationService] Adding pending participant to host conversation...');
         try {
-          const sharedConversation = await this.sharedConversationService.createSharedConversationFromInvitation({
-            invitationId: result.interactionId!,
-            conversationId: request.conversationId, // This is the host's chat session ID
-            conversationName: request.conversationName,
-            agentName: request.agentName || 'AI Assistant',
-            fromUserId: request.fromUserId,
-            fromUserName: request.fromUserName,
-            toUserId: request.toUserId,
-            includeHistory: true
+          // Instead of creating a separate shared conversation, add the invited user
+          // as a pending participant to the host's existing chat context
+          await this.addPendingParticipantToHostConversation({
+            hostUserId: request.fromUserId,
+            conversationId: request.conversationId,
+            participantId: request.toUserId,
+            participantName: request.toUserName,
+            invitationId: result.interactionId!
           });
           
-          console.log('✅ [ChatInvitationService] Shared conversation created:', sharedConversation.id);
-          console.log('✅ [ChatInvitationService] Host chat session ID set to:', request.conversationId);
+          console.log('✅ [ChatInvitationService] Pending participant added to host conversation');
           
-        } catch (sharedConvError) {
-          console.error('❌ [ChatInvitationService] Failed to create shared conversation:', sharedConvError);
+        } catch (participantError) {
+          console.error('❌ [ChatInvitationService] Failed to add pending participant:', participantError);
           // Don't fail the invitation if shared conversation creation fails
           // The invitation can still be sent, and we can retry conversation creation later
         }
@@ -176,11 +174,11 @@ class ChatInvitationService {
         // Get the interaction to access conversation details
         const interaction = await userInteractionRegistry.getInteraction(invitationId);
         if (interaction?.metadata.conversationId) {
-          // Update user status in shared conversation
-          await this.sharedConversationService.addUserToConversation(
+          // Activate pending participant in host's conversation (unified approach)
+          await this.activateParticipantInHostConversation(
+            interaction.fromUserId, // Host user ID
             interaction.metadata.conversationId,
-            userId,
-            'active'
+            userId // Participant who accepted
           );
         }
 
@@ -394,4 +392,114 @@ class ChatInvitationService {
 // Export singleton instance
 export const chatInvitationService = ChatInvitationService.getInstance();
 export default chatInvitationService;
+
+
+
+  /**
+   * Add pending participant to host's conversation (unified approach)
+   */
+  private async addPendingParticipantToHostConversation(params: {
+    hostUserId: string;
+    conversationId: string;
+    participantId: string;
+    participantName: string;
+    invitationId: string;
+  }): Promise<void> {
+    try {
+      console.log('🔄 [ChatInvitationService] Adding pending participant to host conversation:', params);
+      
+      // Import Firebase functions
+      const { doc, updateDoc, arrayUnion, getDoc, setDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase/config');
+      
+      // Create participant object
+      const participant = {
+        id: params.participantId,
+        name: params.participantName,
+        avatar: '', // Can be populated later
+        type: 'human' as const,
+        status: 'pending' as const,
+        addedAt: new Date(),
+        addedBy: params.hostUserId,
+        invitationId: params.invitationId
+      };
+      
+      // Store in a host-specific document that the main chat component can listen to
+      const hostParticipantsRef = doc(db, 'host_participants', params.hostUserId);
+      const hostDoc = await getDoc(hostParticipantsRef);
+      
+      if (hostDoc.exists()) {
+        // Update existing document
+        await updateDoc(hostParticipantsRef, {
+          [`conversations.${params.conversationId}.guestParticipants`]: arrayUnion(participant)
+        });
+      } else {
+        // Create new document
+        await setDoc(hostParticipantsRef, {
+          conversations: {
+            [params.conversationId]: {
+              guestParticipants: [participant]
+            }
+          }
+        });
+      }
+      
+      console.log('✅ [ChatInvitationService] Pending participant added to Firebase');
+      
+    } catch (error) {
+      console.error('❌ [ChatInvitationService] Failed to add pending participant:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Activate participant in host's conversation (unified approach)
+   */
+  private async activateParticipantInHostConversation(
+    hostUserId: string,
+    conversationId: string,
+    participantId: string
+  ): Promise<void> {
+    try {
+      console.log('🔄 [ChatInvitationService] Activating participant in host conversation:', {
+        hostUserId,
+        conversationId,
+        participantId
+      });
+      
+      // Import Firebase functions
+      const { doc, getDoc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase/config');
+      
+      // Get the host's participants document
+      const hostParticipantsRef = doc(db, 'host_participants', hostUserId);
+      const hostDoc = await getDoc(hostParticipantsRef);
+      
+      if (hostDoc.exists()) {
+        const data = hostDoc.data();
+        const conversationData = data.conversations?.[conversationId];
+        
+        if (conversationData?.guestParticipants) {
+          // Find and update the participant's status
+          const updatedParticipants = conversationData.guestParticipants.map((p: any) => {
+            if (p.id === participantId) {
+              return { ...p, status: 'active', activatedAt: new Date() };
+            }
+            return p;
+          });
+          
+          // Update the document
+          await updateDoc(hostParticipantsRef, {
+            [`conversations.${conversationId}.guestParticipants`]: updatedParticipants
+          });
+          
+          console.log('✅ [ChatInvitationService] Participant activated in Firebase');
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ [ChatInvitationService] Failed to activate participant:', error);
+      throw error;
+    }
+  }
 

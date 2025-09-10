@@ -1,14 +1,16 @@
 /**
  * SharedConversationContext - Global context for managing shared conversations
- * Ensures shared chat tabs appear across all command centers for a user
+ * Now uses unified approach - guests access host conversations directly via invitations
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '../context/AuthContext';
 import SharedConversationService, { SharedConversation } from '../services/SharedConversationService';
+import UnifiedGuestChatService, { GuestConversationAccess } from '../services/UnifiedGuestChatService';
 
 interface SharedConversationContextType {
   sharedConversations: SharedConversation[];
+  guestConversationAccess: GuestConversationAccess[]; // New unified approach
   activeSharedConversation: string | null;
   isInSharedMode: boolean;
   setActiveSharedConversation: (conversationId: string | null) => void;
@@ -37,9 +39,11 @@ interface SharedConversationProviderProps {
 export const SharedConversationProvider: React.FC<SharedConversationProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [sharedConversations, setSharedConversations] = useState<SharedConversation[]>([]);
+  const [guestConversationAccess, setGuestConversationAccess] = useState<GuestConversationAccess[]>([]);
   const [activeSharedConversation, setActiveSharedConversation] = useState<string | null>(null);
   const [isInSharedMode, setIsInSharedMode] = useState(false);
   const sharedConversationService = SharedConversationService.getInstance();
+  const unifiedGuestChatService = UnifiedGuestChatService.getInstance();
 
   // Helper functions for managing closed conversations
   const getClosedConversationsKey = (userId: string) => `closedSharedConversations_${userId}`;
@@ -100,24 +104,35 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
           console.log('🌐 [SharedConversationContext] SharedConversationService instance:', sharedConversationService);
           console.log('🌐 [SharedConversationContext] About to call getUserSharedConversations...');
           
-          const conversations = await sharedConversationService.getUserSharedConversations(currentUser.uid);
+          // Load both old shared conversations (for backward compatibility) and new unified guest access
+          const [conversations, guestAccess] = await Promise.all([
+            sharedConversationService.getUserSharedConversations(currentUser.uid),
+            unifiedGuestChatService.getGuestConversationAccess(currentUser.uid)
+          ]);
           
           console.log('🌐 [SharedConversationContext] getUserSharedConversations returned:', conversations);
+          console.log('🌐 [SharedConversationContext] getGuestConversationAccess returned:', guestAccess);
           console.log('🌐 [SharedConversationContext] Conversations count:', conversations?.length || 0);
+          console.log('🌐 [SharedConversationContext] Guest access count:', guestAccess?.length || 0);
           
           // Filter out conversations that the user has closed
           const closedConversationIds = getClosedConversations(currentUser.uid);
           const filteredConversations = conversations.filter(conv => !closedConversationIds.includes(conv.id));
+          const filteredGuestAccess = guestAccess.filter(access => !closedConversationIds.includes(access.id));
           
           console.log('🌐 [SharedConversationContext] Closed conversation IDs:', closedConversationIds);
           console.log('🌐 [SharedConversationContext] Filtered conversations count:', filteredConversations.length);
+          console.log('🌐 [SharedConversationContext] Filtered guest access count:', filteredGuestAccess.length);
           console.log('🌐 [SharedConversationContext] Conversations details:', filteredConversations);
+          console.log('🌐 [SharedConversationContext] Guest access details:', filteredGuestAccess);
           
           setSharedConversations(filteredConversations);
-          console.log('🌐 [SharedConversationContext] setSharedConversations called with', filteredConversations.length, 'conversations');
+          setGuestConversationAccess(filteredGuestAccess);
+          console.log('🌐 [SharedConversationContext] State updated with conversations and guest access');
         } else {
           console.log('🌐 [SharedConversationContext] No user available, clearing conversations');
           setSharedConversations([]);
+          setGuestConversationAccess([]);
           setActiveSharedConversation(null);
           setIsInSharedMode(false);
         }
@@ -300,6 +315,7 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
 
   const value: SharedConversationContextType = {
     sharedConversations,
+    guestConversationAccess,
     activeSharedConversation,
     isInSharedMode,
     setActiveSharedConversation,

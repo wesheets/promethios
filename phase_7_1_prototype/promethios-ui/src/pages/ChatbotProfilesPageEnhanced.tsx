@@ -21,6 +21,7 @@ import SharedChatTabs, { SharedConversation } from '../components/collaboration/
 import CompactSharedChatTabs from '../components/collaboration/CompactSharedChatTabs';
 import SharedConversationService from '../services/SharedConversationService';
 import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
+import UnifiedSharedMessages from '../components/collaboration/UnifiedSharedMessages';
 import ChatInvitationModal from '../components/collaboration/ChatInvitationModal';
 import MentionInput, { MentionParticipant } from '../components/collaboration/MentionInput';
 import { useSharedConversations } from '../contexts/SharedConversationContext';
@@ -203,6 +204,21 @@ interface ChatContext {
     avatar?: string;
     addedAt: Date;
   }>;
+  // Unified participant support (replaces separate SharedConversation system)
+  guestParticipants?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    type: 'ai_agent' | 'human';
+    status: 'active' | 'pending' | 'declined';
+    addedAt: Date;
+    addedBy?: string;
+    invitationId?: string;
+  }>;
+  // Conversation sharing metadata
+  isSharedConversation?: boolean;
+  sharedConversationId?: string; // For guests to reference the host's conversation
+  hostUserId?: string; // For guests to know who the host is
 }
 
 interface MultiChatState {
@@ -235,6 +251,17 @@ interface BotState {
   activeSession: any;
   isWorkspaceMode: boolean;
   chatHistoryRefreshTrigger: number;
+  // Unified participant support
+  guestParticipants?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    type: 'ai_agent' | 'human';
+    status: 'active' | 'pending' | 'declined';
+    addedAt: Date;
+    addedBy?: string;
+    invitationId?: string;
+  }>;
 }
 
 // Global mounting guard to prevent multiple instances across the entire app
@@ -442,6 +469,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Shared conversation state (now global)
   const {
     sharedConversations,
+    guestConversationAccess,
     activeSharedConversation,
     isInSharedMode,
     setActiveSharedConversation,
@@ -1561,6 +1589,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Set up real-time listeners
       setupTeamCollaborationListeners();
       
+      // Set up unified participants listener
+      setupHostParticipantsListener();
+      
       console.log('✅ [Team] Team collaboration initialized successfully');
     } catch (error) {
       console.error('❌ [Team] Failed to initialize team collaboration:', error);
@@ -1608,6 +1639,54 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Note: humanChatService.onMessage() doesn't exist
     // Message listening is handled by SharedConversationService and real-time Firebase listeners
     console.log('🔍 [Team] Message listening handled by SharedConversationService');
+  };
+
+  // Set up Firebase listener for host participants (unified approach)
+  const setupHostParticipantsListener = () => {
+    if (!user?.uid) return;
+    
+    console.log('🔧 [Unified] Setting up host participants listener for user:', user.uid);
+    
+    // Import Firebase functions dynamically
+    import('firebase/firestore').then(({ doc, onSnapshot }) => {
+      import('../firebase/config').then(({ db }) => {
+        const hostParticipantsRef = doc(db, 'host_participants', user.uid);
+        
+        const unsubscribe = onSnapshot(hostParticipantsRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const data = docSnapshot.data();
+            console.log('🔄 [Unified] Host participants updated:', data);
+            
+            // Update bot states with the new participant data
+            if (data.conversations) {
+              Object.entries(data.conversations).forEach(([conversationId, convData]: [string, any]) => {
+                if (convData.guestParticipants) {
+                  // Find the bot that matches this conversation
+                  const matchingBot = Array.from(botStates.entries()).find(([botId, state]) => {
+                    // Match by conversation ID or bot ID
+                    return conversationId.includes(botId) || botId === conversationId;
+                  });
+                  
+                  if (matchingBot) {
+                    const [botId, currentState] = matchingBot;
+                    console.log('🔄 [Unified] Updating bot state for:', botId, 'with participants:', convData.guestParticipants);
+                    
+                    updateBotState(botId, {
+                      guestParticipants: convData.guestParticipants
+                    });
+                  }
+                }
+              });
+            }
+          }
+        }, (error) => {
+          console.error('❌ [Unified] Error listening to host participants:', error);
+        });
+        
+        // Store unsubscribe function for cleanup
+        return () => unsubscribe();
+      });
+    });
   };
 
    // URL restoration effect - restore state from URL parameters
@@ -4944,24 +5023,48 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 })() ? (
                   /* Shared Conversation Interface */
                   <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    {/* Shared Conversation Messages */}
+                    {/* Unified Shared Conversation Messages */}
                     <Box sx={{ flex: 1 }}>
-                      <SharedConversationMessages
-                        conversationId={activeSharedConversation}
-                        currentUserId={user?.uid || 'anonymous'}
-                        onSendMessage={async (message: string) => {
-                          try {
-                            await sharedConversationService.sendMessageToSharedConversation(
-                              activeSharedConversation,
-                              user?.uid || 'anonymous',
-                              user?.displayName || user?.email || 'Anonymous User',
-                              message
-                            );
-                          } catch (error) {
-                            console.error('Failed to send message to shared conversation:', error);
-                          }
-                        }}
-                      />
+                      {(() => {
+                        // Check if this is a unified guest access conversation
+                        const guestAccess = guestConversationAccess.find(access => 
+                          access.id === activeSharedConversation || 
+                          access.conversationId === activeSharedConversation
+                        );
+                        
+                        if (guestAccess) {
+                          // Use unified approach for guest access
+                          return (
+                            <UnifiedSharedMessages
+                              conversationId={activeSharedConversation}
+                              currentUserId={user?.uid || 'anonymous'}
+                              guestAccess={guestAccess}
+                              isUnifiedMode={true}
+                            />
+                          );
+                        } else {
+                          // Use legacy approach for backward compatibility
+                          return (
+                            <UnifiedSharedMessages
+                              conversationId={activeSharedConversation}
+                              currentUserId={user?.uid || 'anonymous'}
+                              isUnifiedMode={false}
+                              onSendMessage={async (message: string) => {
+                                try {
+                                  await sharedConversationService.sendMessageToSharedConversation(
+                                    activeSharedConversation,
+                                    user?.uid || 'anonymous',
+                                    user?.displayName || user?.email || 'Anonymous User',
+                                    message
+                                  );
+                                } catch (error) {
+                                  console.error('Failed to send message to shared conversation:', error);
+                                }
+                              }}
+                            />
+                          );
+                        }
+                      })()}
                     </Box>
                   </Box>
                 ) : (
@@ -5718,6 +5821,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           ? sharedConversations.find(c => c.id === activeSharedConversation)?.participants || []
                                           : []
                                       }
+                                      // Unified participants (new system)
+                                      unifiedParticipants={currentBotState?.guestParticipants || []}
                                       // New unified invitation props
                                       chatSession={currentBotState?.currentChatSession ? {
                                         id: currentBotState.currentChatSession.id,

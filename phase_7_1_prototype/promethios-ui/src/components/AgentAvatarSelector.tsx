@@ -70,6 +70,17 @@ export interface AgentAvatarSelectorProps {
     avatar?: string;
     status?: 'online' | 'offline';
   }>;
+  // Unified participant support (replaces sharedConversationParticipants)
+  unifiedParticipants?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    type: 'ai_agent' | 'human';
+    status: 'active' | 'pending' | 'declined';
+    addedAt: Date;
+    addedBy?: string;
+    invitationId?: string;
+  }>;
   // New props for unified invitation functionality
   chatSession?: {
     id: string;
@@ -109,13 +120,13 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   
   // Determine which agents/participants to show
   const allAgents = isSharedMode 
-    ? sharedConversationParticipants.map(participant => ({
+    ? (unifiedParticipants || sharedConversationParticipants).map(participant => ({
         id: participant.id,
         name: participant.name,
         avatar: participant.avatar,
         color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
         hotkey: undefined,
-        type: participant.type, // Preserve the type for proper labeling
+        type: participant.type === 'ai' ? 'ai_agent' : participant.type, // Normalize type
         status: participant.status, // Include status for pending/active distinction
         isPending: participant.status === 'pending' // Flag for visual styling
       }))
