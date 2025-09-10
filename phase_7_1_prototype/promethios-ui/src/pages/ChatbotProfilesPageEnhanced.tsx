@@ -685,6 +685,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       activeSession: null,
       isWorkspaceMode: false,
       chatHistoryRefreshTrigger: 0,
+      guestParticipants: [], // Initialize unified participants as empty array
     };
   };
 
