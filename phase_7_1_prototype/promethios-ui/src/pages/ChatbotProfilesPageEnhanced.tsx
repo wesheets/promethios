@@ -3320,21 +3320,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Enhanced multi-agent message handling
   const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
-    // IMMEDIATE FIX: Ensure customMessage is always a string
-    if (customMessage !== undefined && typeof customMessage !== 'string') {
-      console.error('❌ [handleSendMessage] customMessage is not a string, converting:', customMessage);
-      // Try to extract text from common object properties
-      if (customMessage && typeof customMessage === 'object') {
-        customMessage = (customMessage as any).value || 
-                       (customMessage as any).text || 
-                       (customMessage as any).content || 
-                       String(customMessage);
-      } else {
-        customMessage = String(customMessage);
-      }
-      console.log('✅ [handleSendMessage] Converted customMessage to:', customMessage);
-    }
-
     // COMPREHENSIVE DEBUGGING - Let's see exactly what we're dealing with
     // Safe JSON stringification to avoid circular reference errors
     const safeStringify = (obj: any) => {
