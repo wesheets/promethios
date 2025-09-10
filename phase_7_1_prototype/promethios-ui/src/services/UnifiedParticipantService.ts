@@ -464,7 +464,22 @@ class UnifiedParticipantService {
     const participantsDoc = await getDoc(participantsRef);
 
     if (!participantsDoc.exists()) {
-      throw new Error('Conversation participants not found');
+      console.log('⚠️ [UnifiedParticipant] Conversation participants document not found, creating it...');
+      
+      // Create the conversation participants document with the new participant
+      await setDoc(participantsRef, {
+        hostUserId: participant.addedBy, // The person adding this participant becomes the host
+        participants: [{
+          ...participant,
+          addedAt: Timestamp.fromDate(participant.addedAt)
+        }],
+        createdAt: Timestamp.now(),
+        lastUpdated: Timestamp.now(),
+        version: 1
+      });
+      
+      console.log('✅ [UnifiedParticipant] Created conversation participants document with participant');
+      return;
     }
 
     const data = participantsDoc.data() as any;
@@ -475,7 +490,8 @@ class UnifiedParticipantService {
 
     // Check if participant already exists
     if (existingParticipants.some(p => p.id === participant.id)) {
-      throw new Error('Participant already exists in conversation');
+      console.log('⚠️ [UnifiedParticipant] Participant already exists in conversation:', participant.id);
+      return; // Don't throw error, just skip adding
     }
 
     const updatedParticipants = [...existingParticipants, participant];
@@ -488,6 +504,8 @@ class UnifiedParticipantService {
       lastUpdated: Timestamp.now(),
       version: data.version + 1
     });
+    
+    console.log('✅ [UnifiedParticipant] Added participant to existing conversation');
   }
 
   /**
