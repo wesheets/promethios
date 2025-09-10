@@ -20,7 +20,9 @@ export interface AgentInfo {
   avatar?: string;
   color: string;
   hotkey?: string;
-  type?: 'human' | 'ai_agent'; // Add type to distinguish between humans and AI agents
+  type?: 'human' | 'ai_agent'; // Add type property
+  status?: 'active' | 'pending' | 'declined'; // Add status property
+  isPending?: boolean; // Add isPending flag
 }
 
 export interface TeamMember {
@@ -113,7 +115,9 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         avatar: participant.avatar,
         color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
         hotkey: undefined,
-        type: participant.type // Preserve the type for proper labeling
+        type: participant.type, // Preserve the type for proper labeling
+        status: participant.status, // Include status for pending/active distinction
+        isPending: participant.status === 'pending' // Flag for visual styling
       }))
     : hideHostAgent 
       ? guestAgents 
@@ -192,6 +196,13 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
 
   // Handle agent selection toggle
   const handleAgentClick = (agentId: string, event: React.MouseEvent) => {
+    // Find the agent to check if it's pending
+    const agent = allAgents.find(a => a.id === agentId);
+    if ((agent as any)?.isPending) {
+      console.log('🔒 [AgentAvatarSelector] Cannot select pending participant:', agentId);
+      return; // Don't allow selection of pending participants
+    }
+    
     const isCtrlClick = event.ctrlKey || event.metaKey;
     
     if (isCtrlClick) {
@@ -235,28 +246,24 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [allAgents, selectedAgents, onSelectionChange]);
 
-  // Get agent color based on selection state
+  // Get agent color based on selection state and pending status
   const getAgentStyle = (agent: AgentInfo) => {
     const isSelected = selectedAgents.includes(agent.id);
+    const isPending = (agent as any).isPending; // Type assertion for pending status
     
     return {
       width: 32,
       height: 32,
-      bgcolor: isSelected ? agent.color : '#64748b',
+      bgcolor: isPending ? '#6b7280' : (isSelected ? agent.color : '#64748b'), // Grey for pending
       color: 'white',
       fontSize: '0.8rem',
       fontWeight: 600,
-      border: isSelected ? `2px solid ${agent.color}` : '2px solid transparent',
-      opacity: isSelected ? 1 : 0.5,
-      filter: isSelected ? 'none' : 'grayscale(100%)',
-      transition: 'all 0.2s ease',
-      cursor: 'pointer',
-      '&:hover': {
-        opacity: 1,
-        filter: 'none',
-        transform: 'scale(1.1)',
-        boxShadow: `0 0 8px ${agent.color}40`
-      }
+      border: isPending 
+        ? '2px dashed #9ca3af' // Dashed border for pending
+        : (isSelected ? `2px solid ${agent.color}` : '2px solid transparent'),
+      opacity: isPending ? 0.6 : 1, // Reduced opacity for pending
+      cursor: isPending ? 'default' : 'pointer', // Different cursor for pending
+      transition: 'all 0.2s ease'
     };
   };
 
@@ -321,7 +328,9 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
               </Box>
               <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
                 {agent.id === hostAgent.id ? '👑 Host Agent' : 
-                 agent.type === 'human' ? '👤 Guest User' : '🤖 Guest Agent'}
+                 agent.type === 'human' ? 
+                   ((agent as any).isPending ? '⏳ Guest User (Pending)' : '👤 Guest User') : 
+                   ((agent as any).isPending ? '⏳ Guest Agent (Pending)' : '🤖 Guest Agent')}
               </Box>
               <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1.5, textAlign: 'center' }}>
                 {selectedAgents.includes(agent.id) ? 'Selected for messaging' : 'Click to select for messaging'}
