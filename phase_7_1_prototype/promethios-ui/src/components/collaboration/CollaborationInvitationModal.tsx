@@ -49,7 +49,13 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { acceptInteraction, declineInteraction } = useUserInteractions();
-  const { refreshSharedConversations, addSharedConversation, handleSharedConversationSelect } = useSharedConversations();
+  const { 
+    refreshSharedConversations, 
+    addSharedConversation, 
+    handleSharedConversationSelect,
+    setActiveSharedConversation,
+    setIsInSharedMode
+  } = useSharedConversations();
   const [responding, setResponding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
@@ -189,6 +195,30 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         
         // Wait a moment for the context to update
         await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Activate the shared conversation - create a guest access object to match the old system
+        const guestAccess = {
+          id: invitation.id,
+          hostUserId: invitation.fromUserId,
+          hostUserName: invitation.fromUserName || 'Host',
+          conversationId: hostConversationId,
+          conversationName: invitation.metadata?.conversationName || 'Shared Chat',
+          agentName: invitation.metadata?.agentName,
+          lastActivity: new Date(),
+          unreadCount: 0,
+          status: 'active' as const
+        };
+        
+        console.log('🎯 [CollaborationModal] Activating shared conversation:', guestAccess);
+        
+        // Trigger the navigation event to activate the shared tab (same as old system)
+        window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
+          detail: { conversationId: guestAccess.id }
+        }));
+        
+        // Set the active shared conversation in the context
+        setActiveSharedConversation(guestAccess.id);
+        setIsInSharedMode(true);
         
         console.log('🎯 [CollaborationModal] Invitation acceptance complete - unified system active');
         

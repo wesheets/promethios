@@ -8340,11 +8340,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               console.log('📨 Sending invitations to:', pendingHumanInvites);
               
               try {
-                // Get current conversation info
-                const currentConversationId = selectedChatbot?.id || 'default-conversation';
+                // Get current conversation info - use actual session ID instead of chatbot ID
+                const currentConversationId = activeSession?.sessionId || currentMultiAgentSession || `session_${selectedChatbot?.id}_${Date.now()}`;
                 const currentConversationName = selectedChatbot?.identity?.name || 'AI Conversation';
                 const currentUserId = user?.uid || 'unknown-user'; // Use real authenticated user ID
                 const currentUserName = user?.displayName || user?.email || 'Current User'; // Use real user name
+                
+                console.log('📨 [Invitation] Using conversation ID:', currentConversationId);
+                console.log('📨 [Invitation] Active session:', activeSession?.sessionId);
+                console.log('📨 [Invitation] Multi-agent session:', currentMultiAgentSession);
                 
                 // Create invitation requests for each pending human
                 const invitationRequests: AICollaborationInvitationRequest[] = pendingHumanInvites.map(human => ({
