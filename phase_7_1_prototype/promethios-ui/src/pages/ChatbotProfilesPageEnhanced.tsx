@@ -4837,7 +4837,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           
                           {/* Send Button - show for both personal and shared chats */}
                           <IconButton
-                            onClick={handleSendMessage}
+                            onClick={() => handleSendMessage()}
                             disabled={!messageInput.trim() || chatLoading}
                             sx={{
                               color: messageInput.trim() ? '#3b82f6' : '#6b7280',
@@ -5611,7 +5611,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   
                   <Button
                     variant="contained"
-                    onClick={handleSendMessage}
+                    onClick={() => handleSendMessage()}
                     disabled={(!messageInput.trim() && attachedFiles.length === 0) || chatLoading}
                     sx={{
                       bgcolor: '#3b82f6',
