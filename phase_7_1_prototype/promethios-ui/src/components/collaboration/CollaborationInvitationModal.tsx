@@ -285,10 +285,11 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           return;
         }
         
-        // Navigate to command center with agent and shared conversation
-        const commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}&shared=${sharedConversation.id}`;
+        // Navigate to command center with agent - unified system will show shared conversations in the "Shared" tab
+        const commandCenterUrl = `/ui/chat/chatbots?agent=${userAgent}`;
         console.log('🎯 [CollaborationModal] Navigating to command center with agent:', userAgent);
         console.log('🚀 [CollaborationModal] Attempting navigation to:', commandCenterUrl);
+        console.log('✅ [CollaborationModal] Unified system will show host conversation in Shared tab');
         
         try {
           navigate(commandCenterUrl);
