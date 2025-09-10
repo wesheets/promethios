@@ -2370,7 +2370,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     setSelectedTarget(targetId);
     console.log('🎯 [handleTargetChange] Set selectedTarget to:', targetId);
     
-    // 🔧 DEBUG: Check if we need to update selectedChatbot when target changes
+    // 🔧 CRITICAL FIX: Update selectedChatbot when target changes to an AI agent
     if (targetId && targetId !== selectedChatbot?.id) {
       console.log('🔍 [handleTargetChange] Target differs from selectedChatbot, investigating...');
       console.log('🔍 [handleTargetChange] Available chatbots:', chatbots?.map(bot => ({ id: bot.id, name: bot.name })));
@@ -2379,11 +2379,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const matchingChatbot = chatbots?.find(bot => bot.id === targetId);
       if (matchingChatbot) {
         console.log('🔍 [handleTargetChange] Found matching chatbot:', matchingChatbot.id, matchingChatbot.name);
-        console.log('🔍 [handleTargetChange] Should we update selectedChatbot? Current logic may need this.');
+        console.log('🔧 [handleTargetChange] UPDATING selectedChatbot to match target');
+        setSelectedChatbot(matchingChatbot);
+        console.log('✅ [handleTargetChange] selectedChatbot updated to:', matchingChatbot.id, matchingChatbot.name);
       } else {
         console.log('🔍 [handleTargetChange] No matching chatbot found for targetId:', targetId);
-        console.log('🔍 [handleTargetChange] This might be why selectedChatbot is undefined in AI response logic');
+        console.log('🔍 [handleTargetChange] This might be a human participant or invalid agent ID');
+        
+        // If target is not a chatbot, clear selectedChatbot
+        if (selectedChatbot) {
+          console.log('🔧 [handleTargetChange] Clearing selectedChatbot since target is not an AI agent');
+          setSelectedChatbot(null);
+        }
       }
+    } else if (!targetId && selectedChatbot) {
+      // Clear selectedChatbot if target is cleared
+      console.log('🔧 [handleTargetChange] Clearing selectedChatbot since target is cleared');
+      setSelectedChatbot(null);
     }
     
     console.log('🎯 Messaging target changed to:', targetId);
