@@ -3321,13 +3321,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Enhanced multi-agent message handling
   const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
     // COMPREHENSIVE DEBUGGING - Let's see exactly what we're dealing with
+    // Safe JSON stringification to avoid circular reference errors
+    const safeStringify = (obj: any) => {
+      try {
+        return JSON.stringify(obj, (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            // Handle circular references and DOM elements
+            if (value.constructor && (value.constructor.name.includes('Element') || value.constructor.name.includes('Node'))) {
+              return `[${value.constructor.name}]`;
+            }
+          }
+          return value;
+        });
+      } catch (error) {
+        return `[Unstringifiable: ${error.message}]`;
+      }
+    };
+
     console.log('🔍 [handleSendMessage] RAW INPUTS:', {
       customMessage: customMessage,
       customMessageType: typeof customMessage,
-      customMessageStringified: JSON.stringify(customMessage),
+      customMessageStringified: safeStringify(customMessage),
       messageInput: messageInput,
       messageInputType: typeof messageInput,
-      messageInputStringified: JSON.stringify(messageInput),
+      messageInputStringified: safeStringify(messageInput),
+      messageInputConstructor: messageInput?.constructor?.name || 'N/A',
       messageInputKeys: messageInput && typeof messageInput === 'object' ? Object.keys(messageInput) : 'N/A'
     });
 
@@ -3342,7 +3360,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         console.warn('⚠️ [handleSendMessage] customMessage is not a string:', {
           value: customMessage,
           type: typeof customMessage,
-          stringified: JSON.stringify(customMessage)
+          constructor: customMessage?.constructor?.name,
+          stringified: safeStringify(customMessage)
         });
         messageToSend = String(customMessage || '');
       }
@@ -3352,21 +3371,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log('🔍 [handleSendMessage] Processing messageInput:', {
         rawInput: rawInput,
         type: typeof rawInput,
-        stringified: JSON.stringify(rawInput),
+        constructor: rawInput?.constructor?.name,
+        stringified: safeStringify(rawInput),
         isObject: typeof rawInput === 'object',
+        isDOMElement: rawInput?.constructor?.name?.includes('Element'),
         keys: rawInput && typeof rawInput === 'object' ? Object.keys(rawInput) : 'N/A'
       });
       
       if (typeof rawInput === 'string') {
         messageToSend = rawInput.trim();
       } else if (rawInput && typeof rawInput === 'object') {
-        // Handle case where messageInput might be an object
+        // Handle case where messageInput might be an object or DOM element
         console.warn('⚠️ [handleSendMessage] messageInput is an object, details:', {
           object: rawInput,
+          constructor: rawInput.constructor?.name,
+          isDOMElement: rawInput.constructor?.name?.includes('Element'),
           keys: Object.keys(rawInput),
-          values: Object.values(rawInput),
-          stringified: JSON.stringify(rawInput)
+          stringified: safeStringify(rawInput)
         });
+        
+        // If it's a DOM element, this is a bug - messageInput should never be a DOM element
+        if (rawInput.constructor?.name?.includes('Element')) {
+          console.error('❌ [handleSendMessage] CRITICAL: messageInput is a DOM element! This should never happen.');
+          console.error('❌ [handleSendMessage] Resetting messageInput to empty string');
+          setMessageInput('');
+          return;
+        }
+        
         // Try to extract text content from object
         if (rawInput.text) {
           messageToSend = String(rawInput.text);
@@ -3375,7 +3406,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         } else if (rawInput.content) {
           messageToSend = String(rawInput.content);
         } else {
-          messageToSend = JSON.stringify(rawInput);
+          messageToSend = safeStringify(rawInput);
         }
       } else {
         messageToSend = String(rawInput || '').trim();
