@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ask</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #4F46E5, #06B6D4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: bold;
+        }
+        .gradient-box {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(6, 182, 212, 0.2));
+            border: 1px solid rgba(79, 70, 229, 0.3);
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(6, 182, 212, 0.15));
+            border-left: 4px solid #4F46E5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="min-h-[720px] w-full p-10 flex flex-col">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-4xl font-bold">The Ask</h1>
+                <p class="text-gray-400 mt-1">Funding to Scale the Future of Human-AI Collaboration</p>
+            </div>
+            <div class="bg-indigo-600 rounded-full h-16 w-16 flex items-center justify-center">
+                <span class="text-3xl font-bold">P</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-2 gap-8 flex-grow">
+            <!-- Left Column -->
+            <div class="flex flex-col justify-between">
+                <div class="gradient-box rounded-lg p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-4 gradient-text">Seed Round: $10-15M</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-gray-400 mb-1">Pre-money Valuation</p>
+                            <p class="text-2xl font-bold">$50-75M</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 mb-1">Use of Funds</p>
+                            <p class="text-xl">18-24 Month Runway</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="highlight-box rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-3">Capital Allocation</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="mb-2">
+                            <p class="text-gray-400">Engineering</p>
+                            <p class="text-lg font-bold">60%</p>
+                        </div>
+                        <div class="mb-2">
+                            <p class="text-gray-400">Go-to-Market</p>
+                            <p class="text-lg font-bold">25%</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">Operations</p>
+                            <p class="text-lg font-bold">10%</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400">R&D</p>
+                            <p class="text-lg font-bold">5%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="flex flex-col">
+                <div class="highlight-box rounded-lg p-6 mb-6">
+                    <h3 class="text-xl font-bold mb-3">12-Month Milestones</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <div class="bg-indigo-600 rounded-full h-5 w-5 flex items-center justify-center mt-1 mr-2">
+                                <span class="text-xs">1</span>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Enterprise-Ready Spark Platform</p>
+                                <p class="text-gray-400 text-sm">Full multi-agent collaboration with governance</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="bg-indigo-600 rounded-full h-5 w-5 flex items-center justify-center mt-1 mr-2">
+                                <span class="text-xs">2</span>
+                            </div>
+                            <div>
+                                <p class="font-semibold">10 Enterprise Pilot Customers</p>
+                                <p class="text-gray-400 text-sm">$1M+ ARR from early adopters</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <div class="bg-indigo-600 rounded-full h-5 w-5 flex items-center justify-center mt-1 mr-2">
+                                <span class="text-xs">3</span>
+                            </div>
+                            <div>
+                                <p class="font-semibold">Core Team of 15-20</p>
+                                <p class="text-gray-400 text-sm">Engineering, product, and go-to-market</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="gradient-box rounded-lg p-6">
+                    <h3 class="text-xl font-bold mb-3">Series A Target</h3>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-gray-400 mb-1">Timeline</p>
+                            <p class="text-lg font-bold">Q4 2026</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 mb-1">Target Raise</p>
+                            <p class="text-lg font-bold">$30-50M</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 mb-1">Valuation</p>
+                            <p class="text-lg font-bold">$200-300M</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-8 text-center">
+            <p class="text-gray-400 text-sm">Contact: <span class="text-white">founder@promethios.ai</span> | <span class="text-white">www.promethios.ai</span></p>
+        </div>
+    </div>
+</body>
+</html>
+

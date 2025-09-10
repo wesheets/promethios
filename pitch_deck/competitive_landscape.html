@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitive Landscape</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: #1a1a1a;
+            margin: 0 auto;
+            padding: 40px 60px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .slide-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .slide-number {
+            background: #4A90E2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #4A90E2;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            flex: 1;
+        }
+        
+        .matrix-container {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .matrix-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .competitor-box {
+            background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+        
+        .competitor-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .competitor-description {
+            font-size: 14px;
+            color: #cccccc;
+            line-height: 1.5;
+        }
+        
+        .competitor-strengths {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .strength-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+        
+        .strength-icon {
+            color: #7ED321;
+            margin-right: 8px;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+        
+        .weakness-icon {
+            color: #F5A623;
+            margin-right: 8px;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+        
+        .matrix-legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+            font-size: 12px;
+            color: #cccccc;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .data-source {
+            font-size: 12px;
+            color: #888888;
+            text-align: right;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="slide-header">
+            <h1 class="slide-title">🏆 Competitive Landscape: Creating a New Category</h1>
+            <div class="slide-number">8</div>
+        </div>
+        
+        <p class="subtitle">
+            Positioned at the intersection of collaboration tools and AI infrastructure
+        </p>
+        
+        <div class="content-grid">
+            <div class="matrix-container">
+                <h3 class="matrix-title">Competitive Positioning Matrix</h3>
+                <div style="height: 450px;">
+                    <svg id="positioningMatrix" width="100%" height="100%"></svg>
+                </div>
+                <div class="matrix-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #7ED321;"></div>
+                        <span>Promethios</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4A90E2;"></div>
+                        <span>Collaboration Tools</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #9013FE;"></div>
+                        <span>AI Platforms</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #F5A623;"></div>
+                        <span>Enterprise Software</span>
+                    </div>
+                </div>
+                <p class="data-source">Source: Internal analysis based on public product capabilities, 2024</p>
+            </div>
+            
+            <div>
+                <div class="competitor-box" style="border-left-color: #7ED321;">
+                    <div class="competitor-name" style="color: #7ED321;">Promethios Advantage</div>
+                    <p class="competitor-description">
+                        We're creating a new category at the intersection of collaboration tools, AI platforms, and enterprise governance.
+                    </p>
+                    <div class="competitor-strengths">
+                        <div class="strength-item">
+                            <i class="fas fa-check-circle strength-icon"></i>
+                            <span>Multi-agent, multi-human collaboration in real-time</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-check-circle strength-icon"></i>
+                            <span>Model-agnostic with universal governance adapter</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-check-circle strength-icon"></i>
+                            <span>Enterprise-grade governance and compliance</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-check-circle strength-icon"></i>
+                            <span>Network effects through professional community</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="competitor-box" style="border-left-color: #4A90E2;">
+                    <div class="competitor-name" style="color: #4A90E2;">Collaboration Tools (Slack, Teams)</div>
+                    <div class="competitor-strengths">
+                        <div class="strength-item">
+                            <i class="fas fa-check-circle strength-icon"></i>
+                            <span>Strong human-to-human collaboration</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-times-circle weakness-icon"></i>
+                            <span>Limited AI integration (basic chatbots only)</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-times-circle weakness-icon"></i>
+                            <span>No multi-agent orchestration</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-times-circle weakness-icon"></i>
+                            <span>Weak AI governance capabilities</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="competitor-box" style="border-left-color: #9013FE;">
+                    <div class="competitor-name" style="color: #9013FE;">AI Platforms (OpenAI, Anthropic)</div>
+                    <div class="competitor-strengths">
+                        <div class="strength-item">
+                            <i class="fas fa-check-circle strength-icon"></i>
+                            <span>Advanced AI models and capabilities</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-times-circle weakness-icon"></i>
+                            <span>Single-agent focus (no multi-agent collaboration)</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-times-circle weakness-icon"></i>
+                            <span>Limited human collaboration features</span>
+                        </div>
+                        <div class="strength-item">
+                            <i class="fas fa-times-circle weakness-icon"></i>
+                            <span>Model-specific (vendor lock-in)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Positioning matrix using D3.js
+            const svg = d3.select("#positioningMatrix");
+            const width = svg.node().getBoundingClientRect().width;
+            const height = svg.node().getBoundingClientRect().height;
+            const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+            
+            // Create the main group element
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left}, ${margin.top})`);
+            
+            // Define axes
+            g.append("line")
+                .attr("x1", 0)
+                .attr("y1", innerHeight / 2)
+                .attr("x2", innerWidth)
+                .attr("y2", innerHeight / 2)
+                .attr("stroke", "white")
+                .attr("stroke-width", 1)
+                .attr("stroke-dasharray", "5,5");
+                
+            g.append("line")
+                .attr("x1", innerWidth / 2)
+                .attr("y1", 0)
+                .attr("x2", innerWidth / 2)
+                .attr("y2", innerHeight)
+                .attr("stroke", "white")
+                .attr("stroke-width", 1)
+                .attr("stroke-dasharray", "5,5");
+            
+            // Add axis labels
+            g.append("text")
+                .attr("x", innerWidth)
+                .attr("y", innerHeight / 2 - 10)
+                .attr("text-anchor", "end")
+                .attr("fill", "white")
+                .text("AI Capabilities →");
+                
+            g.append("text")
+                .attr("x", 0)
+                .attr("y", innerHeight / 2 - 10)
+                .attr("text-anchor", "start")
+                .attr("fill", "white")
+                .text("← Human Collaboration");
+                
+            g.append("text")
+                .attr("x", innerWidth / 2)
+                .attr("y", 0)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "hanging")
+                .attr("fill", "white")
+                .text("Enterprise Governance ↑");
+                
+            g.append("text")
+                .attr("x", innerWidth / 2)
+                .attr("y", innerHeight)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "text-before-edge")
+                .attr("fill", "white")
+                .text("Consumer Focus ↓");
+            
+            // Define competitors data
+            const competitors = [
+                { name: "Promethios", x: 0.75, y: 0.8, radius: 25, color: "#7ED321" },
+                { name: "Slack", x: 0.2, y: 0.4, radius: 20, color: "#4A90E2" },
+                { name: "Microsoft Teams", x: 0.3, y: 0.6, radius: 20, color: "#4A90E2" },
+                { name: "Discord", x: 0.15, y: 0.2, radius: 15, color: "#4A90E2" },
+                { name: "OpenAI", x: 0.8, y: 0.3, radius: 20, color: "#9013FE" },
+                { name: "Anthropic", x: 0.85, y: 0.25, radius: 18, color: "#9013FE" },
+                { name: "Salesforce", x: 0.4, y: 0.7, radius: 18, color: "#F5A623" },
+                { name: "SAP", x: 0.5, y: 0.75, radius: 16, color: "#F5A623" },
+                { name: "Google Workspace", x: 0.6, y: 0.4, radius: 18, color: "#4A90E2" }
+            ];
+            
+            // Plot competitors
+            g.selectAll("circle")
+                .data(competitors)
+                .enter()
+                .append("circle")
+                .attr("cx", d => d.x * innerWidth)
+                .attr("cy", d => (1 - d.y) * innerHeight) // Invert y-axis
+                .attr("r", d => d.radius)
+                .attr("fill", d => d.color)
+                .attr("opacity", 0.8)
+                .attr("stroke", "white")
+                .attr("stroke-width", 1);
+                
+            // Add competitor labels
+            g.selectAll("text.competitor")
+                .data(competitors)
+                .enter()
+                .append("text")
+                .attr("class", "competitor")
+                .attr("x", d => d.x * innerWidth)
+                .attr("y", d => (1 - d.y) * innerHeight - d.radius - 5)
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .attr("font-size", d => d.name === "Promethios" ? "14px" : "12px")
+                .attr("font-weight", d => d.name === "Promethios" ? "bold" : "normal")
+                .text(d => d.name);
+                
+            // Add quadrant labels
+            g.append("text")
+                .attr("x", innerWidth * 0.25)
+                .attr("y", innerHeight * 0.25)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#aaaaaa")
+                .attr("font-size", "12px")
+                .text("Human Collaboration Tools");
+                
+            g.append("text")
+                .attr("x", innerWidth * 0.75)
+                .attr("y", innerHeight * 0.25)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#aaaaaa")
+                .attr("font-size", "12px")
+                .text("AI Platforms");
+                
+            g.append("text")
+                .attr("x", innerWidth * 0.25)
+                .attr("y", innerHeight * 0.75)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#aaaaaa")
+                .attr("font-size", "12px")
+                .text("Consumer Collaboration");
+                
+            g.append("text")
+                .attr("x", innerWidth * 0.75)
+                .attr("y", innerHeight * 0.75)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#aaaaaa")
+                .attr("font-size", "12px")
+                .text("Enterprise AI Governance");
+        });
+    </script>
+</body>
+</html>
+

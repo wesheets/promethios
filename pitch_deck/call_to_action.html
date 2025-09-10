@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call to Action</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            margin: 0;
+            padding: 40px;
+            min-height: 720px;
+            box-sizing: border-box;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-gap: 30px;
+            height: 100%;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 42px;
+            margin: 0;
+            background: linear-gradient(90deg, #4a6bff, #9e54ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+        .subtitle {
+            font-size: 24px;
+            color: #9e9e9e;
+            margin-top: 10px;
+        }
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 40px;
+        }
+        .opportunity-box {
+            background: linear-gradient(135deg, rgba(74, 107, 255, 0.1) 0%, rgba(158, 84, 255, 0.1) 100%);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid rgba(158, 84, 255, 0.3);
+        }
+        .opportunity-title {
+            font-size: 28px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        .opportunity-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .opportunity-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+        }
+        .opportunity-list li:before {
+            content: "✓";
+            color: #4a6bff;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        .contact-box {
+            background: linear-gradient(135deg, rgba(74, 107, 255, 0.15) 0%, rgba(158, 84, 255, 0.15) 100%);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid rgba(158, 84, 255, 0.3);
+        }
+        .contact-title {
+            font-size: 28px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        .contact-info {
+            margin-bottom: 25px;
+        }
+        .contact-label {
+            font-size: 16px;
+            color: #9e9e9e;
+            margin-bottom: 5px;
+        }
+        .contact-value {
+            font-size: 20px;
+            color: #ffffff;
+        }
+        .next-steps {
+            margin-top: 30px;
+        }
+        .next-steps-title {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+        .steps-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            counter-reset: step-counter;
+        }
+        .steps-list li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+        }
+        .steps-list li:before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            background: linear-gradient(135deg, #4a6bff 0%, #9e54ff 100%);
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a6bff 0%, #9e54ff 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 107, 255, 0.4);
+        }
+        .logo {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4a6bff 0%, #9e54ff 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">P</div>
+    <div class="container">
+        <div class="header">
+            <h1>Join Us in Redefining Human-AI Collaboration</h1>
+            <div class="subtitle">The opportunity to build the infrastructure for the AI economy</div>
+        </div>
+        
+        <div class="content">
+            <div class="opportunity-box">
+                <h2 class="opportunity-title">The Opportunity</h2>
+                <ul class="opportunity-list">
+                    <li>First mover in $150B+ market at perfect convergence moment</li>
+                    <li>Platform approach with multiple revenue streams</li>
+                    <li>Network effects create winner-take-all dynamics</li>
+                    <li>Technical moats with 2-3 year competitive advantage</li>
+                    <li>Proven execution with working multi-agent collaboration</li>
+                    <li>Clear path to $100M ARR within 3 years</li>
+                </ul>
+                
+                <div class="next-steps">
+                    <h3 class="next-steps-title">Next Steps</h3>
+                    <ul class="steps-list">
+                        <li>Schedule technical deep-dive session</li>
+                        <li>Arrange live demo with your team</li>
+                        <li>Review detailed financial projections</li>
+                        <li>Discuss partnership opportunities</li>
+                    </ul>
+                </div>
+                
+                <a href="mailto:founder@promethios.ai" class="cta-button">Schedule a Demo</a>
+            </div>
+            
+            <div class="contact-box">
+                <h2 class="contact-title">Contact Information</h2>
+                
+                <div class="contact-info">
+                    <div class="contact-label">Founder</div>
+                    <div class="contact-value">[Your Name]</div>
+                </div>
+                
+                <div class="contact-info">
+                    <div class="contact-label">Email</div>
+                    <div class="contact-value">founder@promethios.ai</div>
+                </div>
+                
+                <div class="contact-info">
+                    <div class="contact-label">Phone</div>
+                    <div class="contact-value">(555) 123-4567</div>
+                </div>
+                
+                <div class="contact-info">
+                    <div class="contact-label">Website</div>
+                    <div class="contact-value">www.promethios.ai</div>
+                </div>
+                
+                <div class="contact-info">
+                    <div class="contact-label">Headquarters</div>
+                    <div class="contact-value">San Francisco, CA</div>
+                </div>
+                
+                <div class="contact-info">
+                    <div class="contact-label">Seeking</div>
+                    <div class="contact-value">$10-15M Seed Round</div>
+                </div>
+                
+                <div class="contact-info">
+                    <div class="contact-label">Pre-Money Valuation</div>
+                    <div class="contact-value">$50-75M</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

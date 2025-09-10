@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenue Streams</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <style>
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: #1a1a1a;
+            margin: 0 auto;
+            padding: 40px 60px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .slide-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .slide-number {
+            background: #4A90E2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #4A90E2;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            flex: 1;
+        }
+        
+        .revenue-stream {
+            background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+        
+        .stream-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stream-icon {
+            margin-right: 10px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .stream-description {
+            font-size: 14px;
+            color: #cccccc;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .stream-metrics {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #F5A623;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #aaaaaa;
+        }
+        
+        .chart-container {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .data-source {
+            font-size: 12px;
+            color: #888888;
+            text-align: right;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="slide-header">
+            <h1 class="slide-title">💰 Revenue Streams: Multiple Paths to Profitability</h1>
+            <div class="slide-number">7</div>
+        </div>
+        
+        <p class="subtitle">
+            Three-tiered revenue strategy with diversified income sources
+        </p>
+        
+        <div class="content-grid">
+            <div>
+                <div class="revenue-stream" style="border-left-color: #7ED321;">
+                    <div class="stream-title">
+                        <div class="stream-icon" style="background: #7ED321;">
+                            <i class="fas fa-cloud"></i>
+                        </div>
+                        SaaS Subscriptions
+                    </div>
+                    <p class="stream-description">
+                        Tiered subscription model for SPARK collaboration platform with per-seat pricing for enterprises and teams.
+                    </p>
+                    <div class="stream-metrics">
+                        <div class="metric">
+                            <div class="metric-value">$20-100</div>
+                            <div class="metric-label">Per Seat/Month</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">85%</div>
+                            <div class="metric-label">Gross Margin</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">60%</div>
+                            <div class="metric-label">Year 1 Revenue</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="revenue-stream" style="border-left-color: #4A90E2;">
+                    <div class="stream-title">
+                        <div class="stream-icon" style="background: #4A90E2;">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        Marketplace Transactions
+                    </div>
+                    <p class="stream-description">
+                        15-30% commission on AI agent sales, customizations, and premium features in the agent marketplace.
+                    </p>
+                    <div class="stream-metrics">
+                        <div class="metric">
+                            <div class="metric-value">15-30%</div>
+                            <div class="metric-label">Commission</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">95%</div>
+                            <div class="metric-label">Gross Margin</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">25%</div>
+                            <div class="metric-label">Year 1 Revenue</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="revenue-stream" style="border-left-color: #9013FE;">
+                    <div class="stream-title">
+                        <div class="stream-icon" style="background: #9013FE;">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        Enterprise Licensing
+                    </div>
+                    <p class="stream-description">
+                        Custom enterprise deployments of PROMETHIOS governance infrastructure with annual licensing fees.
+                    </p>
+                    <div class="stream-metrics">
+                        <div class="metric">
+                            <div class="metric-value">$250K+</div>
+                            <div class="metric-label">Annual License</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">70%</div>
+                            <div class="metric-label">Gross Margin</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value">15%</div>
+                            <div class="metric-label">Year 1 Revenue</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Projected Revenue Growth by Stream (2025-2028)</h3>
+                    <div style="height: 350px;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <p class="data-source">Source: Internal projections based on market analysis and comparable SaaS/marketplace growth curves</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Revenue projection chart
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['2025', '2026', '2027', '2028'],
+                datasets: [
+                    {
+                        label: 'SaaS Subscriptions',
+                        data: [6, 18, 45, 90],
+                        borderColor: '#7ED321',
+                        backgroundColor: 'rgba(126, 211, 33, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Marketplace Transactions',
+                        data: [2.5, 12, 40, 120],
+                        borderColor: '#4A90E2',
+                        backgroundColor: 'rgba(74, 144, 226, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Enterprise Licensing',
+                        data: [1.5, 8, 25, 60],
+                        borderColor: '#9013FE',
+                        backgroundColor: 'rgba(144, 19, 254, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Total Revenue',
+                        data: [10, 38, 110, 270],
+                        borderColor: '#F5A623',
+                        backgroundColor: 'rgba(245, 166, 35, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Revenue ($ Millions)',
+                            color: '#ffffff'
+                        },
+                        ticks: {
+                            color: '#cccccc'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#cccccc'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#ffffff',
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyleWidth: 10
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#cccccc',
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': $' + context.raw + 'M';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -13,6 +13,8 @@ import {
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import GuestSelectorPopup from './GuestSelectorPopup';
+import { unifiedParticipantService, UnifiedParticipant } from '../services/UnifiedParticipantService';
+import { useUnifiedParticipantsOptional } from '../contexts/UnifiedParticipantContext';
 
 export interface AgentInfo {
   id: string;
@@ -89,6 +91,19 @@ export interface AgentAvatarSelectorProps {
   };
   agentId?: string;
   user?: any; // Firebase user object
+  // Enhanced unified participant management
+  useUnifiedParticipants?: boolean; // Flag to enable unified participant system
+  onAddAIAgent?: (agentConfig: {
+    id: string;
+    name: string;
+    provider?: string;
+    model?: string;
+    systemPrompt?: string;
+    color?: string;
+    hotkey?: string;
+    avatar?: string;
+  }) => void;
+  onRemoveParticipant?: (participantId: string) => void;
 }
 
 export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
@@ -115,25 +130,64 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   unifiedParticipants = [], // Add the missing prop destructuring
   chatSession,
   agentId,
-  user
+  user,
+  useUnifiedParticipants = false,
+  onAddAIAgent,
+  onRemoveParticipant
 }) => {
   const [guestSelectorOpen, setGuestSelectorOpen] = useState(false);
+  const [realTimeParticipants, setRealTimeParticipants] = useState<UnifiedParticipant[]>([]);
+  
+  // Use unified participant context if available
+  const participantContext = useUnifiedParticipantsOptional();
+  
+  // Subscribe to real-time participant updates when using unified system
+  useEffect(() => {
+    if (useUnifiedParticipants && conversationId && !participantContext) {
+      console.log('🔔 [AgentAvatarSelector] Setting up unified participant subscription for:', conversationId);
+      
+      const unsubscribe = unifiedParticipantService.subscribeToParticipants(
+        conversationId,
+        (participants) => {
+          console.log('🔔 [AgentAvatarSelector] Received participant update:', participants.length);
+          setRealTimeParticipants(participants);
+        }
+      );
+      
+      return () => {
+        console.log('🔕 [AgentAvatarSelector] Cleaning up participant subscription');
+        unsubscribe();
+      };
+    }
+  }, [useUnifiedParticipants, conversationId, participantContext]);
   
   // Determine which agents/participants to show
-  const allAgents = isSharedMode 
-    ? (unifiedParticipants || sharedConversationParticipants).map(participant => ({
+  const allAgents = useUnifiedParticipants 
+    ? (participantContext?.participants || realTimeParticipants).map(participant => ({
         id: participant.id,
         name: participant.name,
-        avatar: participant.avatar,
-        color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
-        hotkey: undefined,
-        type: participant.type === 'ai' ? 'ai_agent' : participant.type, // Normalize type
-        status: participant.status, // Include status for pending/active distinction
-        isPending: participant.status === 'pending' // Flag for visual styling
+        avatar: participant.avatar || participant.agentConfig?.avatar,
+        color: participant.agentConfig?.color || (participant.type === 'human' ? '#3b82f6' : '#8b5cf6'),
+        hotkey: participant.agentConfig?.hotkey,
+        type: participant.type === 'ai_agent' ? 'ai_agent' : 'human',
+        status: participant.status,
+        isPending: participant.status === 'pending',
+        permissions: participant.permissions
       }))
-    : hideHostAgent 
-      ? guestAgents 
-      : [hostAgent, ...guestAgents];
+    : isSharedMode 
+      ? (unifiedParticipants || sharedConversationParticipants).map(participant => ({
+          id: participant.id,
+          name: participant.name,
+          avatar: participant.avatar,
+          color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
+          hotkey: undefined,
+          type: participant.type === 'ai' ? 'ai_agent' : participant.type, // Normalize type
+          status: participant.status, // Include status for pending/active distinction
+          isPending: participant.status === 'pending' // Flag for visual styling
+        }))
+      : hideHostAgent 
+        ? guestAgents 
+        : [hostAgent, ...guestAgents];
 
   // Debug logging to see what props are received
   console.log('🔍 [AgentAvatarSelector] Props received:');
@@ -201,6 +255,85 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   const handleGuestsAdded = (guests: TeamMember[]) => {
     onAddGuests?.(guests);
     setGuestSelectorOpen(false);
+  };
+
+  // Handle adding AI agent in unified system
+  const handleAddAIAgent = async (agentConfig: {
+    id: string;
+    name: string;
+    provider?: string;
+    model?: string;
+    systemPrompt?: string;
+    color?: string;
+    hotkey?: string;
+    avatar?: string;
+  }) => {
+    // Use context if available, otherwise use service directly
+    if (participantContext) {
+      try {
+        console.log('🤖 [AgentAvatarSelector] Adding AI agent via context:', agentConfig);
+        await participantContext.addAIAgent(agentConfig);
+        console.log('✅ [AgentAvatarSelector] AI agent added via context');
+        onAddAIAgent?.(agentConfig);
+      } catch (error) {
+        console.error('❌ [AgentAvatarSelector] Failed to add AI agent via context:', error);
+      }
+    } else if (useUnifiedParticipants && conversationId && currentUserId) {
+      try {
+        console.log('🤖 [AgentAvatarSelector] Adding AI agent via unified system:', agentConfig);
+        
+        await unifiedParticipantService.addAIAgentParticipant(
+          conversationId,
+          agentConfig.id,
+          agentConfig.name,
+          currentUserId,
+          agentConfig
+        );
+        
+        console.log('✅ [AgentAvatarSelector] AI agent added successfully');
+        onAddAIAgent?.(agentConfig);
+        
+      } catch (error) {
+        console.error('❌ [AgentAvatarSelector] Failed to add AI agent:', error);
+      }
+    } else {
+      // Fallback to parent callback
+      onAddAIAgent?.(agentConfig);
+    }
+  };
+
+  // Handle removing participant in unified system
+  const handleRemoveParticipant = async (participantId: string) => {
+    // Use context if available, otherwise use service directly
+    if (participantContext) {
+      try {
+        console.log('🗑️ [AgentAvatarSelector] Removing participant via context:', participantId);
+        await participantContext.removeParticipant(participantId);
+        console.log('✅ [AgentAvatarSelector] Participant removed via context');
+        onRemoveParticipant?.(participantId);
+      } catch (error) {
+        console.error('❌ [AgentAvatarSelector] Failed to remove participant via context:', error);
+      }
+    } else if (useUnifiedParticipants && conversationId && currentUserId) {
+      try {
+        console.log('🗑️ [AgentAvatarSelector] Removing participant via unified system:', participantId);
+        
+        await unifiedParticipantService.removeParticipant(
+          conversationId,
+          participantId,
+          currentUserId
+        );
+        
+        console.log('✅ [AgentAvatarSelector] Participant removed successfully');
+        onRemoveParticipant?.(participantId);
+        
+      } catch (error) {
+        console.error('❌ [AgentAvatarSelector] Failed to remove participant:', error);
+      }
+    } else {
+      // Fallback to parent callback
+      onRemoveParticipant?.(participantId);
+    }
   };
 
   // Get current participant IDs for guest selector
@@ -421,6 +554,37 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
                   ))}
                 </Box>
               </Box>
+              
+              {/* Remove Participant Section (for unified system) */}
+              {useUnifiedParticipants && (
+                (participantContext?.canRemoveParticipant(agent.id) || (agent as any).permissions?.canRemove)
+              ) && (
+                <Box sx={{ borderTop: '1px solid #374151', pt: 1, mt: 1 }}>
+                  <Box
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveParticipant(agent.id);
+                    }}
+                    sx={{
+                      px: 1,
+                      py: 0.5,
+                      bgcolor: 'rgba(239, 68, 68, 0.1)',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      fontSize: '0.7rem',
+                      color: '#ef4444',
+                      border: '1px solid #ef444440',
+                      textAlign: 'center',
+                      '&:hover': {
+                        bgcolor: '#ef444420',
+                        borderColor: '#ef444460'
+                      }
+                    }}
+                  >
+                    🗑️ Remove {agent.type === 'human' ? 'Participant' : 'Agent'}
+                  </Box>
+                </Box>
+              )}
             </Box>
           }
           placement="top"

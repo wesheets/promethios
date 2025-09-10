@@ -8,6 +8,7 @@
 import { userInteractionRegistry, InteractionMetadata } from './UserInteractionRegistry';
 import { ConnectionService } from './ConnectionService';
 import SharedConversationService from './SharedConversationService';
+import { unifiedParticipantService } from './UnifiedParticipantService';
 
 export interface AICollaborationInvitationRequest {
   fromUserId: string;
@@ -423,45 +424,19 @@ class ChatInvitationService {
     invitationId: string;
   }): Promise<void> {
     try {
-      console.log('🔄 [ChatInvitationService] Adding pending participant to host conversation:', params);
+      console.log('🔄 [ChatInvitationService] Adding pending participant via UnifiedParticipantService:', params);
       
-      // Import Firebase functions
-      const { doc, updateDoc, arrayUnion, getDoc, setDoc } = await import('firebase/firestore');
-      const { db } = await import('../firebase/config');
+      // Use the unified participant service to add the pending human participant
+      await unifiedParticipantService.addHumanParticipant(
+        params.conversationId,
+        params.participantId,
+        params.participantName,
+        params.hostUserId,
+        params.invitationId,
+        'pending'
+      );
       
-      // Create participant object
-      const participant = {
-        id: params.participantId,
-        name: params.participantName,
-        avatar: '', // Can be populated later
-        type: 'human' as const,
-        status: 'pending' as const,
-        addedAt: new Date(),
-        addedBy: params.hostUserId,
-        invitationId: params.invitationId
-      };
-      
-      // Store in a host-specific document that the main chat component can listen to
-      const hostParticipantsRef = doc(db, 'host_participants', params.hostUserId);
-      const hostDoc = await getDoc(hostParticipantsRef);
-      
-      if (hostDoc.exists()) {
-        // Update existing document
-        await updateDoc(hostParticipantsRef, {
-          [`conversations.${params.conversationId}.guestParticipants`]: arrayUnion(participant)
-        });
-      } else {
-        // Create new document
-        await setDoc(hostParticipantsRef, {
-          conversations: {
-            [params.conversationId]: {
-              guestParticipants: [participant]
-            }
-          }
-        });
-      }
-      
-      console.log('✅ [ChatInvitationService] Pending participant added to Firebase');
+      console.log('✅ [ChatInvitationService] Pending participant added via UnifiedParticipantService');
       
     } catch (error) {
       console.error('❌ [ChatInvitationService] Failed to add pending participant:', error);
@@ -478,41 +453,16 @@ class ChatInvitationService {
     participantId: string
   ): Promise<void> {
     try {
-      console.log('🔄 [ChatInvitationService] Activating participant in host conversation:', {
+      console.log('🔄 [ChatInvitationService] Activating participant via UnifiedParticipantService:', {
         hostUserId,
         conversationId,
         participantId
       });
       
-      // Import Firebase functions
-      const { doc, getDoc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('../firebase/config');
+      // Use the unified participant service to activate the participant
+      await unifiedParticipantService.activateParticipant(conversationId, participantId);
       
-      // Get the host's participants document
-      const hostParticipantsRef = doc(db, 'host_participants', hostUserId);
-      const hostDoc = await getDoc(hostParticipantsRef);
-      
-      if (hostDoc.exists()) {
-        const data = hostDoc.data();
-        const conversationData = data.conversations?.[conversationId];
-        
-        if (conversationData?.guestParticipants) {
-          // Find and update the participant's status
-          const updatedParticipants = conversationData.guestParticipants.map((p: any) => {
-            if (p.id === participantId) {
-              return { ...p, status: 'active', activatedAt: new Date() };
-            }
-            return p;
-          });
-          
-          // Update the document
-          await updateDoc(hostParticipantsRef, {
-            [`conversations.${conversationId}.guestParticipants`]: updatedParticipants
-          });
-          
-          console.log('✅ [ChatInvitationService] Participant activated in Firebase');
-        }
-      }
+      console.log('✅ [ChatInvitationService] Participant activated via UnifiedParticipantService');
       
     } catch (error) {
       console.error('❌ [ChatInvitationService] Failed to activate participant:', error);

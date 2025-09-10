@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Problem</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <style>
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            max-height: 720px;
+            background: #1a1a1a;
+            margin: 0 auto;
+            padding: 40px 60px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .slide-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .slide-number {
+            background: #4A90E2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #4A90E2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            flex: 1;
+        }
+        
+        .problem-stat {
+            background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #F5A623;
+        }
+        
+        .stat-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #F5A623;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #ffffff;
+            line-height: 1.4;
+        }
+        
+        .problem-box {
+            background: linear-gradient(135deg, #9013FE, #4A90E2);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .problem-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .problem-description {
+            font-size: 14px;
+            color: white;
+            line-height: 1.5;
+        }
+        
+        .pain-point {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .pain-icon {
+            color: #F5A623;
+            margin-right: 12px;
+            font-size: 16px;
+            margin-top: 2px;
+        }
+        
+        .pain-text {
+            font-size: 14px;
+            color: #cccccc;
+            line-height: 1.4;
+        }
+        
+        .chart-container {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="slide-header">
+            <h1 class="slide-title">🔍 The Problem: Collaboration is Broken in the AI Era</h1>
+            <div class="slide-number">3</div>
+        </div>
+        
+        <p class="subtitle">
+            Current tools weren't designed for human-AI collaboration
+        </p>
+        
+        <div class="content-grid">
+            <div>
+                <div class="problem-box">
+                    <h3 class="problem-title">The Fragmentation Problem</h3>
+                    <p class="problem-description">
+                        Today's collaboration tools were built for human-to-human interaction. As AI becomes essential to workflows, teams are forced to use disconnected tools, creating inefficiency and governance gaps.
+                    </p>
+                </div>
+                
+                <div class="chart-container">
+                    <h4 class="chart-title">Time Wasted on Tool Switching (Hours/Week)</h4>
+                    <div style="height: 200px;">
+                        <canvas id="fragmentationChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="problem-stat">
+                    <div class="stat-number">78%</div>
+                    <div class="stat-label">
+                        of enterprise teams report using 3+ separate tools when collaborating with AI systems
+                        <br><span style="font-size: 12px; color: #999;">Source: Forrester Research, 2024</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="pain-point">
+                    <i class="fas fa-exclamation-triangle pain-icon"></i>
+                    <div class="pain-text">
+                        <strong>Siloed Conversations</strong>: AI interactions happen in isolation from team collaboration, creating knowledge gaps and redundant work
+                    </div>
+                </div>
+                
+                <div class="pain-point">
+                    <i class="fas fa-exclamation-triangle pain-icon"></i>
+                    <div class="pain-text">
+                        <strong>Governance Blindspots</strong>: No unified tracking of AI interactions across teams, creating compliance and security risks
+                    </div>
+                </div>
+                
+                <div class="pain-point">
+                    <i class="fas fa-exclamation-triangle pain-icon"></i>
+                    <div class="pain-text">
+                        <strong>Model Lock-in</strong>: Teams forced to choose a single AI provider, limiting access to specialized capabilities
+                    </div>
+                </div>
+                
+                <div class="pain-point">
+                    <i class="fas fa-exclamation-triangle pain-icon"></i>
+                    <div class="pain-text">
+                        <strong>Context Switching</strong>: Moving between collaboration tools and AI interfaces disrupts workflow and reduces productivity
+                    </div>
+                </div>
+                
+                <div class="problem-stat">
+                    <div class="stat-number">63%</div>
+                    <div class="stat-label">
+                        of enterprises cite "lack of integrated AI collaboration tools" as a major barrier to AI adoption
+                        <br><span style="font-size: 12px; color: #999;">Source: McKinsey Global Survey, 2024</span>
+                    </div>
+                </div>
+                
+                <div class="problem-stat">
+                    <div class="stat-number">$8,200</div>
+                    <div class="stat-label">
+                        Annual cost per knowledge worker due to inefficient AI collaboration workflows
+                        <br><span style="font-size: 12px; color: #999;">Source: IDC Workplace Productivity Report, 2024</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Chart for fragmentation data
+        const ctx = document.getElementById('fragmentationChart').getContext('2d');
+        const fragmentationChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Traditional Teams', 'AI-Augmented Teams', 'Promethios Users'],
+                datasets: [{
+                    label: 'Hours per Week',
+                    data: [3.2, 7.8, 1.5],
+                    backgroundColor: [
+                        '#4A90E2',
+                        '#F5A623',
+                        '#7ED321'
+                    ],
+                    borderColor: [
+                        '#4A90E2',
+                        '#F5A623',
+                        '#7ED321'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            footer: function(tooltipItems) {
+                                return 'Source: Internal Research, 2024';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#cccccc'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#cccccc'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

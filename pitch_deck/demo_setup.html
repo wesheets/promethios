@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Demo Setup</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: #1a1a1a;
+            margin: 0 auto;
+            padding: 40px 60px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .slide-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .slide-number {
+            background: #4A90E2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .demo-subtitle {
+            font-size: 20px;
+            color: #4A90E2;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            flex: 1;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .metric-box {
+            background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #4A90E2;
+        }
+        
+        .metric-number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #7ED321;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #cccccc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .demo-scenario {
+            background: linear-gradient(135deg, #9013FE, #4A90E2);
+            padding: 25px;
+            border-radius: 20px;
+        }
+        
+        .scenario-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 12px;
+        }
+        
+        .scenario-description {
+            font-size: 14px;
+            color: white;
+            line-height: 1.5;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        .feature-icon {
+            color: #7ED321;
+            margin-right: 12px;
+            font-size: 16px;
+            width: 20px;
+        }
+        
+        .magic-moment {
+            background: linear-gradient(135deg, #7ED321, #4A90E2);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .magic-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+        
+        .magic-text {
+            font-size: 14px;
+            color: white;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="slide-header">
+            <h1 class="slide-title">🎬 Live Demo: The Future of Collaboration</h1>
+            <div class="slide-number">2</div>
+        </div>
+        
+        <p class="demo-subtitle">
+            In the next 3 minutes, you'll see the future of human-AI collaboration in action
+        </p>
+        
+        <div class="content-grid">
+            <div>
+                <div class="metrics-grid">
+                    <div class="metric-box">
+                        <div class="metric-number">3</div>
+                        <div class="metric-label">AI Agents</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-number">5</div>
+                        <div class="metric-label">Human Users</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-number">100ms</div>
+                        <div class="metric-label">Response Time</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-number">99.9%</div>
+                        <div class="metric-label">Uptime</div>
+                    </div>
+                </div>
+                
+                <div class="demo-scenario">
+                    <h3 class="scenario-title">Demo Scenario: Crisis Management</h3>
+                    <p class="scenario-description">
+                        A product launch crisis unfolds in real-time. Watch as humans and AI agents collaborate seamlessly to resolve the issue.
+                    </p>
+                </div>
+            </div>
+            
+            <div>
+                <h3 style="font-size: 18px; color: #4A90E2; margin-bottom: 15px;">What You'll See:</h3>
+                
+                <ul class="feature-list">
+                    <li class="feature-item">
+                        <i class="fas fa-users feature-icon"></i>
+                        Multiple humans joining shared conversation
+                    </li>
+                    <li class="feature-item">
+                        <i class="fas fa-robot feature-icon"></i>
+                        AI agents with different expertise responding instantly
+                    </li>
+                    <li class="feature-item">
+                        <i class="fas fa-comments feature-icon"></i>
+                        Real-time collaboration with @ mentions
+                    </li>
+                    <li class="feature-item">
+                        <i class="fas fa-shield-alt feature-icon"></i>
+                        Full governance and audit trails
+                    </li>
+                    <li class="feature-item">
+                        <i class="fas fa-lightning-bolt feature-icon"></i>
+                        Instant AI responses via avatar selection
+                    </li>
+                    <li class="feature-item">
+                        <i class="fas fa-sync feature-icon"></i>
+                        Seamless human judgment + AI insights
+                    </li>
+                </ul>
+                
+                <div class="magic-moment">
+                    <h4 class="magic-title">The Magic Moment</h4>
+                    <p class="magic-text">
+                        When you see humans and AI working together as true collaborators, you'll understand why this changes everything.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

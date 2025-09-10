@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Opportunity</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+    <style>
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background: #1a1a1a;
+            margin: 0 auto;
+            padding: 40px 60px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .slide-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .slide-number {
+            background: #4A90E2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 20px;
+            color: #4A90E2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            flex: 1;
+        }
+        
+        .market-total {
+            background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid #7ED321;
+        }
+        
+        .total-number {
+            font-size: 42px;
+            font-weight: 800;
+            color: #7ED321;
+            margin-bottom: 5px;
+        }
+        
+        .total-label {
+            font-size: 16px;
+            color: #cccccc;
+        }
+        
+        .market-segment {
+            background: linear-gradient(135deg, #2d2d2d, #3d3d3d);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .segment-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .segment-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #F5A623;
+        }
+        
+        .segment-source {
+            font-size: 11px;
+            color: #999999;
+            font-style: italic;
+            margin-top: 3px;
+        }
+        
+        .chart-container {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #4A90E2;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="slide-header">
+            <h1 class="slide-title">📊 Market Opportunity: $150B+ Converging Markets</h1>
+            <div class="slide-number">6</div>
+        </div>
+        
+        <p class="subtitle">
+            Three massive markets converging into one platform opportunity
+        </p>
+        
+        <div class="content-grid">
+            <div>
+                <div class="market-total">
+                    <div class="total-number">$150B+</div>
+                    <div class="total-label">Total Addressable Market by 2027</div>
+                </div>
+                
+                <div class="market-segment">
+                    <div>
+                        <div class="segment-name">Enterprise Collaboration</div>
+                        <div class="segment-source">Source: Grand View Research, 2024</div>
+                    </div>
+                    <div class="segment-value">$27B</div>
+                </div>
+                
+                <div class="market-segment">
+                    <div>
+                        <div class="segment-name">AI Infrastructure</div>
+                        <div class="segment-source">Source: McKinsey Global Institute, 2023</div>
+                    </div>
+                    <div class="segment-value">$45B</div>
+                </div>
+                
+                <div class="market-segment">
+                    <div>
+                        <div class="segment-name">Enterprise AI Software</div>
+                        <div class="segment-source">Source: Gartner, 2024</div>
+                    </div>
+                    <div class="segment-value">$62B</div>
+                </div>
+                
+                <div class="market-segment">
+                    <div>
+                        <div class="segment-name">AI Marketplace Platforms</div>
+                        <div class="segment-source">Source: IDC, 2024</div>
+                    </div>
+                    <div class="segment-value">$18B</div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Market Composition</h3>
+                    <div style="height: 220px;">
+                        <canvas id="marketPieChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-container">
+                    <h3 class="chart-title">Enterprise AI Growth Trajectory</h3>
+                    <div style="height: 220px;">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Market Pie Chart
+        const pieCtx = document.getElementById('marketPieChart').getContext('2d');
+        const marketPieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Enterprise Collaboration', 'AI Infrastructure', 'Enterprise AI Software', 'AI Marketplace Platforms'],
+                datasets: [{
+                    data: [27, 45, 62, 18],
+                    backgroundColor: [
+                        '#4A90E2',
+                        '#7ED321',
+                        '#9013FE',
+                        '#F5A623'
+                    ],
+                    borderColor: '#1a1a1a',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: $${context.raw}B`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Growth Chart
+        const growthCtx = document.getElementById('growthChart').getContext('2d');
+        const growthChart = new Chart(growthCtx, {
+            type: 'line',
+            data: {
+                labels: ['2023', '2024', '2025', '2026', '2027'],
+                datasets: [{
+                    label: 'Enterprise AI Market (Billions $)',
+                    data: [25, 62, 98, 145, 190],
+                    borderColor: '#7ED321',
+                    backgroundColor: 'rgba(126, 211, 33, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#cccccc',
+                            callback: function(value) {
+                                return '$' + value + 'B';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        },
+                        ticks: {
+                            color: '#cccccc'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#ffffff',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `$${context.raw}B`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
