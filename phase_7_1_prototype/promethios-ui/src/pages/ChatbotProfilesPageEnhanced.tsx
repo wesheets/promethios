@@ -3451,6 +3451,47 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       preview: messageToSend.substring(0, 50) + (messageToSend.length > 50 ? '...' : '')
     });
 
+    // 🔧 NEW: Parse message for @mentions in shared conversations
+    let parsedMessage: ParsedMessage | null = null;
+    let mentionedAgents: string[] = [];
+    
+    if (isInSharedMode && activeSharedConversation) {
+      // Get available agents for mention parsing
+      const availableAgents = [
+        // Include the current selected chatbot
+        ...(selectedChatbot ? [{
+          id: selectedChatbot.id,
+          name: selectedChatbot.name
+        }] : []),
+        // Include guest agents from multi-chat state
+        ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).map(agent => ({
+          id: agent.agentId,
+          name: agent.name
+        }))
+      ];
+
+      console.log('🔍 [Mentions] Available agents for parsing:', availableAgents);
+      
+      // Parse the message for mentions
+      parsedMessage = messageParser.parseMessage(messageToSend, availableAgents);
+      
+      console.log('🔍 [Mentions] Parsed message result:', {
+        hasAgentMentions: parsedMessage.hasAgentMentions,
+        mentions: parsedMessage.mentions,
+        shouldRouteToAllAgents: parsedMessage.shouldRouteToAllAgents,
+        cleanMessage: parsedMessage.cleanMessage
+      });
+      
+      // Extract mentioned agent IDs
+      mentionedAgents = parsedMessage.mentions.map(mention => mention.agentId);
+      
+      if (parsedMessage.shouldRouteToAllAgents) {
+        // @all or @everyone mentioned - add all available agents
+        mentionedAgents = availableAgents.map(agent => agent.id);
+        console.log('🔍 [Mentions] @all/@everyone detected, targeting all agents:', mentionedAgents);
+      }
+    }
+
     // Route to shared conversation if in shared mode
     if (isInSharedMode && activeSharedConversation) {
       try {
@@ -3480,23 +3521,40 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         setAttachedFiles([]);
         
         // Check if we should trigger AI agent responses in shared conversation
-        // Only respond if the agent is explicitly selected as the target AND it's actually an AI agent
-        const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot.id;
+        // Trigger AI response if:
+        // 1. Agent is explicitly selected as target, OR
+        // 2. Agent is mentioned in the message, OR  
+        // 3. @all/@everyone is used
+        const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot?.id;
+        const isAgentMentioned = mentionedAgents.includes(selectedChatbot?.id || '');
+        const isAllAgentsMentioned = parsedMessage?.shouldRouteToAllAgents || false;
         
         // Additional check: ensure the selected target is an AI agent, not a human user
         const isSelectedTargetAIAgent = selectedTarget && (
           selectedTarget.startsWith('chatbot-') || 
           selectedTarget.includes('agent') || 
           selectedTarget.includes('ai-') ||
-          selectedTarget === selectedChatbot.id
+          selectedTarget === selectedChatbot?.id
         );
         
-        if (selectedChatbot && !customMessage && isAgentExplicitlySelected && isSelectedTargetAIAgent) {
-          console.log('🤖 [SharedConversation] AI Agent explicitly selected - triggering AI response:', {
+        const shouldTriggerAIResponse = selectedChatbot && !customMessage && (
+          (isAgentExplicitlySelected && isSelectedTargetAIAgent) ||
+          isAgentMentioned ||
+          isAllAgentsMentioned
+        );
+        
+        if (shouldTriggerAIResponse) {
+          console.log('🤖 [SharedConversation] AI Agent should respond - triggering AI response:', {
             selectedTarget,
-            selectedChatbotId: selectedChatbot.id,
+            selectedChatbotId: selectedChatbot?.id,
             isExplicitlySelected: isAgentExplicitlySelected,
-            isSelectedTargetAIAgent: isSelectedTargetAIAgent
+            isSelectedTargetAIAgent: isSelectedTargetAIAgent,
+            isAgentMentioned: isAgentMentioned,
+            isAllAgentsMentioned: isAllAgentsMentioned,
+            mentionedAgents: mentionedAgents,
+            triggerReason: isAgentExplicitlySelected ? 'explicitly_selected' : 
+                          isAgentMentioned ? 'mentioned' : 
+                          isAllAgentsMentioned ? 'all_mentioned' : 'unknown'
           });
           
           // Set loading states for AI response
