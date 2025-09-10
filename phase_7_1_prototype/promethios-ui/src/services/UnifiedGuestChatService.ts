@@ -40,6 +40,7 @@ class UnifiedGuestChatService {
       console.log('🔍 [UnifiedGuestChat] Loading guest conversation access for:', guestUserId);
       
       // Get all accepted invitations for this user
+      console.log('🔍 [UnifiedGuestChat] Calling userInteractionRegistry.getUserInteractions...');
       const acceptedInvitations = await userInteractionRegistry.getUserInteractions(
         guestUserId,
         'collaboration_invitation',
@@ -47,10 +48,15 @@ class UnifiedGuestChatService {
       );
       
       console.log('🔍 [UnifiedGuestChat] Found accepted invitations:', acceptedInvitations.length);
+      console.log('🔍 [UnifiedGuestChat] Accepted invitations details:', acceptedInvitations);
       
       const guestAccess: GuestConversationAccess[] = [];
       
       for (const invitation of acceptedInvitations) {
+        console.log('🔍 [UnifiedGuestChat] Processing invitation:', invitation.id);
+        console.log('🔍 [UnifiedGuestChat] Invitation metadata:', invitation.metadata);
+        console.log('🔍 [UnifiedGuestChat] Conversation ID:', invitation.metadata?.conversationId);
+        
         if (invitation.metadata?.conversationId) {
           const access: GuestConversationAccess = {
             id: invitation.id,
@@ -64,15 +70,20 @@ class UnifiedGuestChatService {
             status: 'active'
           };
           
+          console.log('✅ [UnifiedGuestChat] Created guest access entry:', access);
           guestAccess.push(access);
+        } else {
+          console.log('⚠️ [UnifiedGuestChat] Skipping invitation without conversationId:', invitation.id);
         }
       }
       
-      console.log('✅ [UnifiedGuestChat] Loaded guest access:', guestAccess.length);
+      console.log('✅ [UnifiedGuestChat] Final guest access array:', guestAccess);
+      console.log('✅ [UnifiedGuestChat] Loaded guest access count:', guestAccess.length);
       return guestAccess;
       
     } catch (error) {
       console.error('❌ [UnifiedGuestChat] Error loading guest conversation access:', error);
+      console.error('❌ [UnifiedGuestChat] Error details:', error);
       return [];
     }
   }
