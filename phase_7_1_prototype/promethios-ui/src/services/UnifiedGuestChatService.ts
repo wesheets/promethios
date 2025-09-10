@@ -150,24 +150,6 @@ class UnifiedGuestChatService {
       throw error;
     }
   }
-
-  /**
-   * Set up real-time listener for host's conversation messages
-   */
-  setupHostConversationListener(
-    conversationId: string,
-    onMessagesUpdate: (messages: any[]) => void
-  ): () => void {
-    console.log('🔍 [UnifiedGuestChat] Setting up host conversation listener:', conversationId);
-    
-    // Listen to the host's chat session for real-time updates
-    return chatHistoryService.subscribeToSession(conversationId, (session) => {
-      if (session?.messages) {
-        console.log('🔄 [UnifiedGuestChat] Host conversation messages updated:', session.messages.length);
-        onMessagesUpdate(session.messages);
-      }
-    });
-  }
 }
 
 export default UnifiedGuestChatService;
