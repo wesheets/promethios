@@ -157,17 +157,29 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
         // If Firebase user is different from useAuth user, reload conversations
         if (firebaseUser?.uid && firebaseUser.uid !== user?.uid) {
           console.log('🌐 [SharedConversationContext] Firebase user differs from useAuth user, reloading...');
-          sharedConversationService.getUserSharedConversations(firebaseUser.uid).then(conversations => {
+          
+          // Load both old shared conversations and new unified guest access (same as main function)
+          Promise.all([
+            sharedConversationService.getUserSharedConversations(firebaseUser.uid),
+            unifiedGuestChatService.getGuestConversationAccess(firebaseUser.uid)
+          ]).then(([conversations, guestAccess]) => {
             console.log('🌐 [SharedConversationContext] Loaded conversations from Firebase auth:', conversations.length);
+            console.log('🌐 [SharedConversationContext] Loaded guest access from Firebase auth:', guestAccess.length);
             
             // Filter out closed conversations
             const closedConversationIds = getClosedConversations(firebaseUser.uid);
             const filteredConversations = conversations.filter(conv => !closedConversationIds.includes(conv.id));
+            const filteredGuestAccess = guestAccess.filter(access => !closedConversationIds.includes(access.id));
             
             console.log('🌐 [SharedConversationContext] Firebase auth - Closed IDs:', closedConversationIds);
-            console.log('🌐 [SharedConversationContext] Firebase auth - Filtered count:', filteredConversations.length);
+            console.log('🌐 [SharedConversationContext] Firebase auth - Filtered conversations count:', filteredConversations.length);
+            console.log('🌐 [SharedConversationContext] Firebase auth - Filtered guest access count:', filteredGuestAccess.length);
             
             setSharedConversations(filteredConversations);
+            setGuestConversationAccess(filteredGuestAccess);
+            console.log('🌐 [SharedConversationContext] Firebase auth - State updated with both conversation types');
+          }).catch(error => {
+            console.error('🌐 [SharedConversationContext] Firebase auth - Error loading conversations:', error);
           });
         }
       });
@@ -212,17 +224,29 @@ export const SharedConversationProvider: React.FC<SharedConversationProviderProp
       
       if (currentUser?.uid) {
         console.log('🔄 [Global Shared Conversations] Refreshing conversations for user:', currentUser.uid);
-        const conversations = await sharedConversationService.getUserSharedConversations(currentUser.uid);
+        
+        // Load both old shared conversations and new unified guest access (same as main function)
+        const [conversations, guestAccess] = await Promise.all([
+          sharedConversationService.getUserSharedConversations(currentUser.uid),
+          unifiedGuestChatService.getGuestConversationAccess(currentUser.uid)
+        ]);
+        
         console.log('🔄 [Global Shared Conversations] Refresh loaded:', conversations.length, 'conversations');
+        console.log('🔄 [Global Shared Conversations] Refresh loaded:', guestAccess.length, 'guest access entries');
         
         // Filter out closed conversations
         const closedConversationIds = getClosedConversations(currentUser.uid);
         const filteredConversations = conversations.filter(conv => !closedConversationIds.includes(conv.id));
+        const filteredGuestAccess = guestAccess.filter(access => !closedConversationIds.includes(access.id));
         
         console.log('🔄 [Global Shared Conversations] Refresh - Closed IDs:', closedConversationIds);
-        console.log('🔄 [Global Shared Conversations] Refresh - Filtered count:', filteredConversations.length);
+        console.log('🔄 [Global Shared Conversations] Refresh - Filtered conversations count:', filteredConversations.length);
+        console.log('🔄 [Global Shared Conversations] Refresh - Filtered guest access count:', filteredGuestAccess.length);
+        console.log('🔄 [Global Shared Conversations] Guest access details:', filteredGuestAccess);
         
         setSharedConversations(filteredConversations);
+        setGuestConversationAccess(filteredGuestAccess);
+        console.log('🔄 [Global Shared Conversations] Refresh - State updated with both conversation types');
       }
     } catch (error) {
       console.error('🔄 [Global Shared Conversations] Error refreshing conversations:', error);
