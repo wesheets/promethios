@@ -3320,21 +3320,63 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Enhanced multi-agent message handling
   const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
+    // COMPREHENSIVE DEBUGGING - Let's see exactly what we're dealing with
+    console.log('🔍 [handleSendMessage] RAW INPUTS:', {
+      customMessage: customMessage,
+      customMessageType: typeof customMessage,
+      customMessageStringified: JSON.stringify(customMessage),
+      messageInput: messageInput,
+      messageInputType: typeof messageInput,
+      messageInputStringified: JSON.stringify(messageInput),
+      messageInputKeys: messageInput && typeof messageInput === 'object' ? Object.keys(messageInput) : 'N/A'
+    });
+
     // Enhanced message content validation
     let messageToSend: string;
     
     if (customMessage) {
       // Ensure customMessage is always a string
-      messageToSend = typeof customMessage === 'string' ? customMessage : String(customMessage || '');
+      if (typeof customMessage === 'string') {
+        messageToSend = customMessage;
+      } else {
+        console.warn('⚠️ [handleSendMessage] customMessage is not a string:', {
+          value: customMessage,
+          type: typeof customMessage,
+          stringified: JSON.stringify(customMessage)
+        });
+        messageToSend = String(customMessage || '');
+      }
     } else {
       // Ensure messageInput is always a string
       const rawInput = messageInput;
+      console.log('🔍 [handleSendMessage] Processing messageInput:', {
+        rawInput: rawInput,
+        type: typeof rawInput,
+        stringified: JSON.stringify(rawInput),
+        isObject: typeof rawInput === 'object',
+        keys: rawInput && typeof rawInput === 'object' ? Object.keys(rawInput) : 'N/A'
+      });
+      
       if (typeof rawInput === 'string') {
         messageToSend = rawInput.trim();
       } else if (rawInput && typeof rawInput === 'object') {
         // Handle case where messageInput might be an object
-        console.warn('⚠️ [handleSendMessage] messageInput is an object, converting to string:', rawInput);
-        messageToSend = JSON.stringify(rawInput);
+        console.warn('⚠️ [handleSendMessage] messageInput is an object, details:', {
+          object: rawInput,
+          keys: Object.keys(rawInput),
+          values: Object.values(rawInput),
+          stringified: JSON.stringify(rawInput)
+        });
+        // Try to extract text content from object
+        if (rawInput.text) {
+          messageToSend = String(rawInput.text);
+        } else if (rawInput.value) {
+          messageToSend = String(rawInput.value);
+        } else if (rawInput.content) {
+          messageToSend = String(rawInput.content);
+        } else {
+          messageToSend = JSON.stringify(rawInput);
+        }
       } else {
         messageToSend = String(rawInput || '').trim();
       }
@@ -3342,11 +3384,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     
     // Final validation - ensure we have a non-empty string
     if (!messageToSend || typeof messageToSend !== 'string' || chatLoading) {
-      console.warn('⚠️ [handleSendMessage] Invalid message content:', { messageToSend, type: typeof messageToSend, chatLoading });
+      console.warn('⚠️ [handleSendMessage] Invalid message content:', { 
+        messageToSend, 
+        type: typeof messageToSend, 
+        chatLoading,
+        length: messageToSend ? messageToSend.length : 0
+      });
       return;
     }
     
-    console.log('✅ [handleSendMessage] Validated message content:', { messageToSend, type: typeof messageToSend, length: messageToSend.length });
+    console.log('✅ [handleSendMessage] Validated message content:', { 
+      messageToSend: messageToSend, 
+      type: typeof messageToSend, 
+      length: messageToSend.length,
+      preview: messageToSend.substring(0, 50) + (messageToSend.length > 50 ? '...' : '')
+    });
 
     // Route to shared conversation if in shared mode
     if (isInSharedMode && activeSharedConversation) {
