@@ -2271,7 +2271,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Handle adding guests from the selector popup
-  const handleAddGuests = (guests: any[]) => {
+  const handleAddGuests = async (guests: any[]) => {
     console.log('🤖 Adding guests to conversation:', guests);
     
     // Add AI agents to the conversation
@@ -2279,6 +2279,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     const humanGuests = guests.filter(guest => guest.type === 'human');
     
     if (aiGuests.length > 0) {
+      // 🔧 FIX: Add AI agents to shared conversation if in shared mode
+      if (activeSharedConversation) {
+        try {
+          console.log('🔄 [SharedConversation] Adding AI agents to shared conversation:', activeSharedConversation);
+          for (const agent of aiGuests) {
+            await sharedConversationService.addAIAgent(
+              activeSharedConversation,
+              agent.id,
+              agent.name,
+              user?.uid || 'unknown'
+            );
+            console.log('✅ [SharedConversation] Added AI agent to shared conversation:', agent.name, agent.id);
+          }
+        } catch (error) {
+          console.error('❌ [SharedConversation] Failed to add AI agents to shared conversation:', error);
+          // Continue with local state update even if shared conversation sync fails
+        }
+      }
+      
       // Add AI agents to multi-agent context immediately (no confirmation needed)
       setMultiChatState(prev => {
         const activeContext = prev.contexts.find(c => c.isActive);
