@@ -387,13 +387,6 @@ class ChatInvitationService {
       failedInvitations
     };
   }
-}
-
-// Export singleton instance
-export const chatInvitationService = ChatInvitationService.getInstance();
-export default chatInvitationService;
-
-
 
   /**
    * Add pending participant to host's conversation (unified approach)
@@ -502,4 +495,9 @@ export default chatInvitationService;
       throw error;
     }
   }
+}
+
+// Export singleton instance
+export const chatInvitationService = ChatInvitationService.getInstance();
+export default chatInvitationService;
 
