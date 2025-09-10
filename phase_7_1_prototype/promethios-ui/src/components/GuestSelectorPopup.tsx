@@ -201,41 +201,74 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   }
 
   const handleToggleSelection = (memberId: string) => {
+    console.log('🔍 [GuestSelector] handleToggleSelection called for memberId:', memberId);
+    console.log('🔍 [GuestSelector] Current selectedGuests before toggle:', Array.from(selectedGuests));
+    
     const newSelection = new Set(selectedGuests);
-    if (newSelection.has(memberId)) {
+    const wasSelected = newSelection.has(memberId);
+    
+    if (wasSelected) {
+      console.log('🔍 [GuestSelector] Removing member from selection:', memberId);
       newSelection.delete(memberId);
     } else {
+      console.log('🔍 [GuestSelector] Adding member to selection:', memberId);
       newSelection.add(memberId);
     }
+    
+    console.log('🔍 [GuestSelector] New selectedGuests after toggle:', Array.from(newSelection));
+    console.log('🔍 [GuestSelector] Selection size changed from', selectedGuests.size, 'to', newSelection.size);
+    
     setSelectedGuests(newSelection);
   };
 
   const handleAddSelected = async () => {
+    console.log('🔍 [GuestSelector] handleAddSelected called');
+    console.log('🔍 [GuestSelector] selectedGuests Set:', selectedGuests);
+    console.log('🔍 [GuestSelector] selectedGuests size:', selectedGuests.size);
+    console.log('🔍 [GuestSelector] selectedGuests array:', Array.from(selectedGuests));
+    
     const allMembers = [...teamMembers, ...aiAgents];
+    console.log('🔍 [GuestSelector] allMembers length:', allMembers.length);
+    console.log('🔍 [GuestSelector] allMembers:', allMembers.map(m => ({ id: m.id, name: m.name, type: m.type })));
+    
     const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
+    console.log('🔍 [GuestSelector] selectedMembers after filtering:', selectedMembers);
+    console.log('🔍 [GuestSelector] selectedMembers length:', selectedMembers.length);
+    console.log('🔍 [GuestSelector] selectedMembers details:', selectedMembers.map(m => ({ id: m.id, name: m.name, type: m.type })));
     
     // Separate humans and AI agents
     const selectedHumans = selectedMembers.filter(member => member.type === 'human');
     const selectedAIAgents = selectedMembers.filter(member => member.type === 'ai_agent');
     
+    console.log('🔍 [GuestSelector] selectedHumans:', selectedHumans.length, selectedHumans.map(h => h.name));
+    console.log('🔍 [GuestSelector] selectedAIAgents:', selectedAIAgents.length, selectedAIAgents.map(a => a.name));
+    
     if (selectedAIAgents.length > 0) {
       // If AI agents are selected, show configuration popup
+      console.log('🔍 [GuestSelector] AI agents selected, showing configuration popup');
       setSelectedAIAgents(selectedAIAgents);
       setShowConfigPopup(true);
     } else if (selectedHumans.length > 0) {
       // Show invitation dialog for humans
+      console.log('🔍 [GuestSelector] Humans selected, showing invitation dialog');
       setSelectedHumansForInvitation(selectedHumans);
       setShowInvitationDialog(true);
     } else {
       // No selections, just close
+      console.log('🔍 [GuestSelector] No valid selections, closing popup');
       onClose();
     }
   };
 
   const handleConfigureAgents = async (configurations: any[]) => {
+    console.log('🔍 [GuestSelector] handleConfigureAgents called');
+    console.log('🔍 [GuestSelector] configurations received:', configurations);
+    console.log('🔍 [GuestSelector] configurations length:', configurations.length);
+    
     try {
       // Use the same session ID format as the multi-agent system
       const sessionId = `conv_${Date.now()}`;
+      console.log('🔍 [GuestSelector] Generated sessionId:', sessionId);
       
       // Convert configurations to temporary role assignments
       const assignments: TemporaryRoleAssignment[] = configurations.map(config => ({
@@ -245,25 +278,41 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
         behavior: config.behavior,
         sessionId: sessionId
       }));
+      console.log('🔍 [GuestSelector] Created assignments:', assignments);
 
       // Assign temporary roles using the service
       await temporaryRoleService.assignTemporaryRoles(sessionId, assignments);
+      console.log('✅ [GuestSelector] Temporary roles assigned successfully');
       
       // Add all selected members (humans + configured AI agents)
       const allMembers = [...teamMembers, ...aiAgents];
       const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
+      
+      console.log('🔍 [GuestSelector] Final selectedMembers for onAddGuests:', selectedMembers);
+      console.log('🔍 [GuestSelector] Final selectedMembers length:', selectedMembers.length);
+      console.log('🔍 [GuestSelector] Final selectedMembers details:', selectedMembers.map(m => ({ id: m.id, name: m.name, type: m.type })));
+      console.log('🔍 [GuestSelector] About to call onAddGuests with:', selectedMembers);
+      
       onAddGuests(selectedMembers);
+      console.log('✅ [GuestSelector] onAddGuests called successfully');
       
       // Close both popups
       setShowConfigPopup(false);
       onClose();
       
     } catch (error) {
-      console.error('Failed to configure agents:', error);
+      console.error('❌ [GuestSelector] Failed to configure agents:', error);
       // Still add the agents even if configuration fails
       const allMembers = [...teamMembers, ...aiAgents];
       const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
+      
+      console.log('🔍 [GuestSelector] FALLBACK: selectedMembers for onAddGuests:', selectedMembers);
+      console.log('🔍 [GuestSelector] FALLBACK: selectedMembers length:', selectedMembers.length);
+      console.log('🔍 [GuestSelector] FALLBACK: About to call onAddGuests with:', selectedMembers);
+      
       onAddGuests(selectedMembers);
+      console.log('✅ [GuestSelector] FALLBACK: onAddGuests called');
+      
       setShowConfigPopup(false);
       onClose();
     }
