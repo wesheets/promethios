@@ -2781,13 +2781,60 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Trigger the agent response with behavioral context
     await handleHoverTriggeredResponse(agentId, agent.name || agentId, trigger, prompt);
   };
-
-  // Initialize selected agents with host agent
+  // Initialize selected agents when chatbot changes and restore unified participants
   useEffect(() => {
-    const hostAgent = getHostAgent();
-    if (hostAgent && selectedAgents.length === 0) {
-      setSelectedAgents([hostAgent.id]);
-    }
+    const restoreConversationParticipants = async () => {
+      const hostAgent = getHostAgent();
+      
+      if (!hostAgent) return;
+      
+      // Always start with the host agent
+      let agentsToSelect = [hostAgent.id];
+      
+      // If we have a conversation ID, try to restore unified participants
+      if (selectedChatbot?.id) {
+        try {
+          console.log('🔄 [Participant Restore] Checking for unified participants in conversation:', selectedChatbot.id);
+          
+          // Import the unified participant service
+          const { unifiedParticipantService } = await import('../services/UnifiedParticipantService');
+          
+          // Get conversation participants
+          const participants = await unifiedParticipantService.getConversationParticipants(selectedChatbot.id);
+          
+          if (participants.length > 0) {
+            console.log('🔄 [Participant Restore] Found', participants.length, 'unified participants');
+            
+            // Extract AI agent IDs from participants
+            const aiAgentIds = participants
+              .filter(p => p.type === 'ai_agent' && p.status === 'active')
+              .map(p => p.id);
+            
+            if (aiAgentIds.length > 0) {
+              // Add the AI agents to the selection, avoiding duplicates
+              const uniqueAgents = [...new Set([...agentsToSelect, ...aiAgentIds])];
+              agentsToSelect = uniqueAgents;
+              console.log('✅ [Participant Restore] Restored AI agents:', aiAgentIds);
+            }
+          } else {
+            console.log('ℹ️ [Participant Restore] No unified participants found for conversation');
+          }
+        } catch (error) {
+          console.log('⚠️ [Participant Restore] Could not restore unified participants:', error);
+          // Continue with just the host agent
+        }
+      }
+      
+      // Only update if we have agents to select and current selection is empty or different
+      if (agentsToSelect.length > 0 && (selectedAgents.length === 0 || 
+          JSON.stringify(selectedAgents.sort()) !== JSON.stringify(agentsToSelect.sort()))) {
+        console.log('🔄 [Participant Restore] Setting selected agents:', agentsToSelect);
+        setSelectedAgents(agentsToSelect);
+        setTargetAgents(agentsToSelect);
+      }
+    };
+    
+    restoreConversationParticipants();
   }, [selectedChatbot]);
 
   // Handle agent selection change
