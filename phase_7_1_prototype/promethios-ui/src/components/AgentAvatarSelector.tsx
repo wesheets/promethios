@@ -112,6 +112,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   hideHostAgent = false,
   isSharedMode = false,
   sharedConversationParticipants = [],
+  unifiedParticipants = [], // Add the missing prop destructuring
   chatSession,
   agentId,
   user
