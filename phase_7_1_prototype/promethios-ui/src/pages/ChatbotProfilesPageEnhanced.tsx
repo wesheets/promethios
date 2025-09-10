@@ -166,6 +166,7 @@ import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
+import { universalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
 import { ChatSharingService } from '../services/ChatSharingService';
 import { ReceiptSharingService } from '../services/ReceiptSharingService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
@@ -4248,43 +4249,53 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     try {
       console.log('🤖 [SharedConversationAI] Processing AI response for shared conversation:', conversationId);
       
-      // Get the current bot state to access the active session
+      // Get agent ID consistently
       const selectedChatbotId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
-      const currentBotState = botStates.get(selectedChatbotId);
       
-      if (!currentBotState?.activeSession) {
-        console.error('❌ [SharedConversationAI] No active session found for chatbot:', selectedChatbotId);
-        return;
-      }
-
       // Get user's display name for personalized response
       const userName = user.displayName || user.email || 'User';
       
       // Create personalized context for the AI
       const personalizedMessage = `In this shared conversation, ${userName} asked: "${userMessage}". Please address ${userName} directly in your response.`;
 
-      console.log('🤖 [SharedConversationAI] Sending personalized message to governance service:', personalizedMessage);
+      console.log('🤖 [SharedConversationAI] Sending personalized message to Universal Governance Adapter:', personalizedMessage);
 
-      // Use the same governance service that single conversations use
-      const response = await chatPanelGovernanceService.sendMessage(
-        currentBotState.activeSession.sessionId, 
-        personalizedMessage
-      );
+      // 🔧 FIX: Use UniversalGovernanceAdapter directly (same as single agent chat)
+      // This bypasses the session dependency issue and uses the proven working architecture
+      const response = await universalGovernanceAdapter.sendMessage({
+        agentId: selectedChatbotId,
+        message: personalizedMessage,
+        sessionId: `shared_${conversationId}_${selectedChatbotId}`, // Generate unique session ID for shared conversation
+        userId: user.uid,
+        conversationHistory: [], // TODO: Could add shared conversation history here if needed
+        provider: selectedChatbot.provider,
+        model: selectedChatbot.model
+      });
 
-      if (response?.content) {
-        console.log('✅ [SharedConversationAI] Received AI response, adding to shared conversation');
+      console.log('✅ [SharedConversationAI] Received response from Universal Governance Adapter:', response);
+
+      if (response?.response) {
+        console.log('✅ [SharedConversationAI] Adding AI response to shared conversation');
         
         // Add AI response to the shared conversation
         await sharedConversationService.sendMessageToSharedConversation(
           conversationId,
           selectedChatbot.id,
           selectedChatbot.name,
-          response.content
+          response.response
         );
 
         console.log('✅ [SharedConversationAI] AI response added to shared conversation successfully');
       } else {
         console.warn('⚠️ [SharedConversationAI] No response content received from AI');
+        
+        // Add fallback message
+        await sharedConversationService.sendMessageToSharedConversation(
+          conversationId,
+          selectedChatbot.id,
+          selectedChatbot.name,
+          `Hi ${userName}, I received your message but I'm having trouble generating a response right now. Please try again.`
+        );
       }
 
     } catch (error) {
@@ -4297,7 +4308,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           conversationId,
           selectedChatbot.id,
           selectedChatbot.name,
-          `Hi ${userName}, I apologize, but I'm having trouble responding right now. Please try again.`
+          `Hi ${userName}, I apologize, but I'm having trouble responding right now. Please try again. Error: ${error.message}`
         );
       } catch (errorMsgError) {
         console.error('❌ [SharedConversationAI] Failed to send error message:', errorMsgError);
