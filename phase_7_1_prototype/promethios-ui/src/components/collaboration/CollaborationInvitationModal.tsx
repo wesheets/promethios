@@ -149,9 +149,10 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
       const success = await acceptInteraction(invitation.id);
       
       if (success) {
-        console.log('✅ [CollaborationModal] Invitation accepted, joining existing shared conversation');
+        console.log('✅ [CollaborationModal] Invitation accepted successfully');
+        console.log('🔄 [CollaborationModal] Using unified approach - no separate shared conversation needed');
         
-        // Get the full interaction data using the interactionId from metadata
+        // Get the conversation ID from the invitation metadata
         let hostConversationId = invitation.metadata?.conversationId;
         
         if (!hostConversationId && invitation.metadata?.interactionId) {
@@ -180,72 +181,19 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         }
         
         console.log('🔍 [CollaborationModal] Host conversation ID:', hostConversationId);
+        console.log('✅ [CollaborationModal] Unified system will handle access to host conversation');
         
-        // Find the existing shared conversation that was created when the invitation was sent
-        // The shared conversation should have the hostChatSessionId set to the host's conversation ID
-        const userSharedConversations = await sharedConversationService.getUserSharedConversations(currentUserId);
-        console.log('🔍 [CollaborationModal] User shared conversations:', userSharedConversations);
+        // Refresh the shared conversations context to load the new unified guest access
+        console.log('🔄 [CollaborationModal] Refreshing shared conversations to load unified guest access');
+        await refreshSharedConversations();
         
-        // Look for a shared conversation that matches the host's conversation ID
-        let sharedConversation = userSharedConversations.find(conv => 
-          conv.hostChatSessionId === hostConversationId || 
-          conv.conversationId === hostConversationId
-        );
-        
-        if (!sharedConversation) {
-          console.log('🔍 [CollaborationModal] No existing shared conversation found, looking for one created by the sender...');
-          
-          // Alternative: look for shared conversations created by the sender
-          const allSharedConversations = await sharedConversationService.getUserSharedConversations(invitation.fromUserId);
-          sharedConversation = allSharedConversations.find(conv => 
-            conv.hostChatSessionId === hostConversationId || 
-            conv.conversationId === hostConversationId
-          );
-          
-          if (sharedConversation) {
-            console.log('🔍 [CollaborationModal] Found shared conversation created by sender:', sharedConversation.id);
-            
-            // Add the recipient as a participant to the existing shared conversation
-            await sharedConversationService.addParticipant(
-              sharedConversation.id,
-              currentUserId,
-              invitation.fromUserId,
-              user?.displayName || user?.email || 'Unknown User'
-            );
-            
-            console.log('✅ [CollaborationModal] Added recipient to existing shared conversation');
-          }
-        }
-        
-        if (!sharedConversation) {
-          console.error('❌ [CollaborationModal] Could not find or create shared conversation');
-          setError('Unable to join the conversation. Please try again.');
-          setResponding(false);
-          return;
-        }
-        
-        console.log('🎯 [CollaborationModal] Joined shared conversation:', sharedConversation);
-        
-        // Wait a moment for Firebase to persist the data
+        // Wait a moment for the context to update
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // Add the specific conversation to the list instead of refreshing all
-        addSharedConversation(sharedConversation);
+        console.log('🎯 [CollaborationModal] Invitation acceptance complete - unified system active');
         
-        // Select the new conversation as active
-        handleSharedConversationSelect(sharedConversation.id);
-        console.log('🔄 [CollaborationModal] Selected new conversation:', sharedConversation.id);
-        
-        // Trigger a custom event to notify the context
-        window.dispatchEvent(new CustomEvent('navigateToSharedConversation', {
-          detail: { conversationId: sharedConversation.id }
-        }));
-        
-        // Route to command center - the shared conversation tab will be visible
-        // Works for users with/without agents - limited command center for those without
-        
+        // Route to command center - the unified "Shared" tab will show the host's conversation
         // Get user's primary agent to navigate to their command center
-        // First check if user is already on an agent page (most reliable)
         let userAgent = null;
         const currentUrl = window.location.href;
         const urlParams = new URLSearchParams(window.location.search);

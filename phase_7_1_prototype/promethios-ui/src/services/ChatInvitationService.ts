@@ -172,18 +172,42 @@ class ChatInvitationService {
         console.log('✅ [ChatInvitationService] Invitation accepted successfully');
         
         // Get the interaction to access conversation details
+        console.log('🔍 [ChatInvitationService] Getting interaction details for:', invitationId);
         const interaction = await userInteractionRegistry.getInteraction(invitationId);
+        console.log('🔍 [ChatInvitationService] Interaction retrieved:', interaction);
+        console.log('🔍 [ChatInvitationService] Interaction metadata:', interaction?.metadata);
+        console.log('🔍 [ChatInvitationService] Conversation ID:', interaction?.metadata?.conversationId);
+        
         if (interaction?.metadata.conversationId) {
-          // Activate pending participant in host's conversation (unified approach)
-          await this.activateParticipantInHostConversation(
-            interaction.fromUserId, // Host user ID
-            interaction.metadata.conversationId,
-            userId // Participant who accepted
-          );
+          console.log('🔄 [ChatInvitationService] Activating participant in unified system');
+          console.log('🔄 [ChatInvitationService] Host user ID:', interaction.fromUserId);
+          console.log('🔄 [ChatInvitationService] Conversation ID:', interaction.metadata.conversationId);
+          console.log('🔄 [ChatInvitationService] Participant ID:', userId);
+          
+          try {
+            // Activate pending participant in host's conversation (unified approach)
+            await this.activateParticipantInHostConversation(
+              interaction.fromUserId, // Host user ID
+              interaction.metadata.conversationId,
+              userId // Participant who accepted
+            );
+            console.log('✅ [ChatInvitationService] Participant activated successfully in unified system');
+          } catch (error) {
+            console.error('❌ [ChatInvitationService] Failed to activate participant in unified system:', error);
+            throw error;
+          }
+        } else {
+          console.error('❌ [ChatInvitationService] No conversation ID found in interaction metadata');
+          console.error('❌ [ChatInvitationService] Cannot activate participant without conversation ID');
+          return {
+            success: false,
+            error: 'Invalid invitation data - missing conversation ID'
+          };
         }
 
         return { success: true };
       } else {
+        console.error('❌ [ChatInvitationService] Failed to accept invitation:', result.error);
         return {
           success: false,
           error: result.error || 'Failed to accept invitation'
