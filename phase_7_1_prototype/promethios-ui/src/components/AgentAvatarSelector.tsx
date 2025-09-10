@@ -196,39 +196,63 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
 
   // Handle agent selection toggle
   const handleAgentClick = (agentId: string, event: React.MouseEvent) => {
+    console.log('🔍 [AgentAvatarSelector] handleAgentClick called:', {
+      agentId,
+      eventType: event.type,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey
+    });
+    
     // Find the agent to check if it's pending
     const agent = allAgents.find(a => a.id === agentId);
+    console.log('🔍 [AgentAvatarSelector] Found agent:', agent);
+    
     if ((agent as any)?.isPending) {
       console.log('🔒 [AgentAvatarSelector] Cannot select pending participant:', agentId);
       return; // Don't allow selection of pending participants
     }
     
     const isCtrlClick = event.ctrlKey || event.metaKey;
+    console.log('🔍 [AgentAvatarSelector] Click type:', { isCtrlClick });
     
     if (isCtrlClick) {
       // Multi-select mode
+      console.log('🔍 [AgentAvatarSelector] Multi-select mode');
       if (selectedAgents.includes(agentId)) {
         // Remove from selection
+        console.log('🔍 [AgentAvatarSelector] Removing from selection:', agentId);
         onSelectionChange(selectedAgents.filter(id => id !== agentId));
       } else {
         // Add to selection
+        console.log('🔍 [AgentAvatarSelector] Adding to selection:', agentId);
         onSelectionChange([...selectedAgents, agentId]);
       }
     } else {
       // Single select mode
+      console.log('🔍 [AgentAvatarSelector] Single select mode');
       if (selectedAgents.length === 1 && selectedAgents[0] === agentId) {
         // If only this agent is selected, deselect (default to host)
+        console.log('🔍 [AgentAvatarSelector] Deselecting agent, defaulting to host:', hostAgent.id);
         onSelectionChange([hostAgent.id]);
         // 🔧 FIX: Also clear the messaging target when deselecting
         onTargetChange?.('');
+        console.log('🎯 [AgentAvatarSelector] Cleared messaging target');
       } else {
         // Select only this agent
+        console.log('🔍 [AgentAvatarSelector] Selecting agent:', agentId);
         onSelectionChange([agentId]);
         // 🔧 FIX: Also set this agent as the messaging target for shared conversations
         onTargetChange?.(agentId);
         console.log('🎯 [AgentAvatarSelector] Set messaging target to agent:', agentId);
       }
     }
+    
+    console.log('🔍 [AgentAvatarSelector] handleAgentClick completed:', {
+      agentId,
+      selectedAgents: selectedAgents,
+      onSelectionChangeProvided: !!onSelectionChange,
+      onTargetChangeProvided: !!onTargetChange
+    });
   };
 
   // Handle keyboard shortcuts

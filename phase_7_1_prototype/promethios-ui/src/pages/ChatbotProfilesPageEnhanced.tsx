@@ -2363,7 +2363,29 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Handle target change for messaging
   const handleTargetChange = (targetId: string) => {
+    console.log('🎯 [handleTargetChange] Called with targetId:', targetId);
+    console.log('🎯 [handleTargetChange] Previous selectedTarget:', selectedTarget);
+    console.log('🎯 [handleTargetChange] Current selectedChatbot:', selectedChatbot?.id, selectedChatbot?.name);
+    
     setSelectedTarget(targetId);
+    console.log('🎯 [handleTargetChange] Set selectedTarget to:', targetId);
+    
+    // 🔧 DEBUG: Check if we need to update selectedChatbot when target changes
+    if (targetId && targetId !== selectedChatbot?.id) {
+      console.log('🔍 [handleTargetChange] Target differs from selectedChatbot, investigating...');
+      console.log('🔍 [handleTargetChange] Available chatbots:', chatbots?.map(bot => ({ id: bot.id, name: bot.name })));
+      
+      // Find the chatbot that matches the target
+      const matchingChatbot = chatbots?.find(bot => bot.id === targetId);
+      if (matchingChatbot) {
+        console.log('🔍 [handleTargetChange] Found matching chatbot:', matchingChatbot.id, matchingChatbot.name);
+        console.log('🔍 [handleTargetChange] Should we update selectedChatbot? Current logic may need this.');
+      } else {
+        console.log('🔍 [handleTargetChange] No matching chatbot found for targetId:', targetId);
+        console.log('🔍 [handleTargetChange] This might be why selectedChatbot is undefined in AI response logic');
+      }
+    }
+    
     console.log('🎯 Messaging target changed to:', targetId);
   };
 
@@ -3525,9 +3547,29 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         // 1. Agent is explicitly selected as target, OR
         // 2. Agent is mentioned in the message, OR  
         // 3. @all/@everyone is used
+        
+        console.log('🔍 [AI Response Check] Starting AI response evaluation:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot?.id,
+          selectedChatbotName: selectedChatbot?.name,
+          selectedChatbotExists: !!selectedChatbot,
+          customMessage,
+          mentionedAgents,
+          parsedMessageExists: !!parsedMessage
+        });
+        
         const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot?.id;
         const isAgentMentioned = mentionedAgents.includes(selectedChatbot?.id || '');
         const isAllAgentsMentioned = parsedMessage?.shouldRouteToAllAgents || false;
+        
+        console.log('🔍 [AI Response Check] Condition evaluation:', {
+          isAgentExplicitlySelected,
+          isAgentMentioned,
+          isAllAgentsMentioned,
+          selectedTargetValue: selectedTarget,
+          selectedChatbotIdValue: selectedChatbot?.id,
+          targetMatchesChatbot: selectedTarget === selectedChatbot?.id
+        });
         
         // Additional check: ensure the selected target is an AI agent, not a human user
         const isSelectedTargetAIAgent = selectedTarget && (
@@ -3537,11 +3579,28 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           selectedTarget === selectedChatbot?.id
         );
         
+        console.log('🔍 [AI Response Check] Target validation:', {
+          isSelectedTargetAIAgent,
+          selectedTargetStartsWithChatbot: selectedTarget?.startsWith('chatbot-'),
+          selectedTargetIncludesAgent: selectedTarget?.includes('agent'),
+          selectedTargetIncludesAI: selectedTarget?.includes('ai-'),
+          selectedTargetMatchesChatbot: selectedTarget === selectedChatbot?.id
+        });
+        
         const shouldTriggerAIResponse = selectedChatbot && !customMessage && (
           (isAgentExplicitlySelected && isSelectedTargetAIAgent) ||
           isAgentMentioned ||
           isAllAgentsMentioned
         );
+        
+        console.log('🔍 [AI Response Check] Final decision:', {
+          shouldTriggerAIResponse,
+          selectedChatbotExists: !!selectedChatbot,
+          noCustomMessage: !customMessage,
+          explicitSelectionAndAIAgent: (isAgentExplicitlySelected && isSelectedTargetAIAgent),
+          mentionedCondition: isAgentMentioned,
+          allMentionedCondition: isAllAgentsMentioned
+        });
         
         if (shouldTriggerAIResponse) {
           console.log('🤖 [SharedConversation] AI Agent should respond - triggering AI response:', {
