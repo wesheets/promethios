@@ -513,6 +513,66 @@ class UserInteractionRegistry {
   }
 
   /**
+   * Get user interactions by type and status
+   */
+  async getUserInteractions(userId: string, type?: InteractionType, status?: InteractionStatus): Promise<UserInteraction[]> {
+    try {
+      console.log(`🔍 [UserRegistry] Getting interactions for user: ${userId}, type: ${type}, status: ${status}`);
+
+      // Build query with filters
+      let q = query(
+        collection(db, this.INTERACTIONS_COLLECTION),
+        where('toUserId', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+
+      // Add type filter if provided
+      if (type) {
+        q = query(
+          collection(db, this.INTERACTIONS_COLLECTION),
+          where('toUserId', '==', userId),
+          where('type', '==', type),
+          orderBy('createdAt', 'desc')
+        );
+      }
+
+      // Add status filter if provided
+      if (status) {
+        if (type) {
+          q = query(
+            collection(db, this.INTERACTIONS_COLLECTION),
+            where('toUserId', '==', userId),
+            where('type', '==', type),
+            where('status', '==', status),
+            orderBy('createdAt', 'desc')
+          );
+        } else {
+          q = query(
+            collection(db, this.INTERACTIONS_COLLECTION),
+            where('toUserId', '==', userId),
+            where('status', '==', status),
+            orderBy('createdAt', 'desc')
+          );
+        }
+      }
+
+      const querySnapshot = await getDocs(q);
+      const interactions: UserInteraction[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        interactions.push({ id: doc.id, ...doc.data() } as UserInteraction);
+      });
+
+      console.log(`✅ [UserRegistry] Found ${interactions.length} interactions for user: ${userId}`);
+      return interactions;
+    } catch (error) {
+      console.error('❌ [UserRegistry] Error getting user interactions:', error);
+      console.error('❌ [UserRegistry] Error details:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get relationships for a user
    */
   async getRelationships(userId: string): Promise<UserRelationship[]> {
