@@ -3560,18 +3560,54 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         // 2. Agent is mentioned in the message, OR  
         // 3. @all/@everyone is used
         
+        // 🔧 CRITICAL FIX: Find the target agent from available agents instead of relying on selectedChatbot
+        // In shared conversations, selectedChatbot may be undefined, but we can find the agent by selectedTarget
+        const allAvailableAgents = [
+          // Include chatbots from the main list
+          ...(chatbots || []),
+          // Include guest agents from multi-chat state
+          ...getGuestAgents(),
+          // Include agents from shared conversation participants
+          ...(activeSharedConversation?.participants?.filter(p => p.type === 'ai_agent').map(p => ({
+            id: p.id,
+            name: p.name || p.id,
+            identity: { id: p.id, name: p.name || p.id }
+          })) || [])
+        ];
+        
+        // Find the target agent by selectedTarget
+        const targetAgent = selectedTarget ? allAvailableAgents.find(agent => 
+          agent.id === selectedTarget || 
+          agent.identity?.id === selectedTarget ||
+          agent.key === selectedTarget
+        ) : null;
+        
+        // Use targetAgent if found, otherwise fall back to selectedChatbot
+        const effectiveAgent = targetAgent || selectedChatbot;
+        
         console.log('🔍 [AI Response Check] Starting AI response evaluation:', {
           selectedTarget,
           selectedChatbotId: selectedChatbot?.id,
           selectedChatbotName: selectedChatbot?.name,
           selectedChatbotExists: !!selectedChatbot,
+          targetAgentId: targetAgent?.id,
+          targetAgentName: targetAgent?.name,
+          targetAgentExists: !!targetAgent,
+          effectiveAgentId: effectiveAgent?.id,
+          effectiveAgentName: effectiveAgent?.name,
+          allAvailableAgentsCount: allAvailableAgents.length,
           customMessage,
           mentionedAgents,
           parsedMessageExists: !!parsedMessage
         });
         
-        const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot?.id;
-        const isAgentMentioned = mentionedAgents.includes(selectedChatbot?.id || '');
+        // 🔧 FIXED: Use effectiveAgent instead of selectedChatbot for all checks
+        const isAgentExplicitlySelected = selectedTarget && effectiveAgent && (
+          selectedTarget === effectiveAgent.id || 
+          selectedTarget === effectiveAgent.identity?.id ||
+          selectedTarget === effectiveAgent.key
+        );
+        const isAgentMentioned = mentionedAgents.includes(effectiveAgent?.id || '');
         const isAllAgentsMentioned = parsedMessage?.shouldRouteToAllAgents || false;
         
         console.log('🔍 [AI Response Check] Condition evaluation:', {
@@ -3579,8 +3615,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           isAgentMentioned,
           isAllAgentsMentioned,
           selectedTargetValue: selectedTarget,
-          selectedChatbotIdValue: selectedChatbot?.id,
-          targetMatchesChatbot: selectedTarget === selectedChatbot?.id
+          effectiveAgentId: effectiveAgent?.id,
+          targetMatchesAgent: selectedTarget === effectiveAgent?.id
         });
         
         // Additional check: ensure the selected target is an AI agent, not a human user
@@ -3588,7 +3624,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           selectedTarget.startsWith('chatbot-') || 
           selectedTarget.includes('agent') || 
           selectedTarget.includes('ai-') ||
-          selectedTarget === selectedChatbot?.id
+          selectedTarget === effectiveAgent?.id
         );
         
         console.log('🔍 [AI Response Check] Target validation:', {
@@ -3596,10 +3632,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           selectedTargetStartsWithChatbot: selectedTarget?.startsWith('chatbot-'),
           selectedTargetIncludesAgent: selectedTarget?.includes('agent'),
           selectedTargetIncludesAI: selectedTarget?.includes('ai-'),
-          selectedTargetMatchesChatbot: selectedTarget === selectedChatbot?.id
+          selectedTargetMatchesAgent: selectedTarget === effectiveAgent?.id
         });
         
-        const shouldTriggerAIResponse = selectedChatbot && !customMessage && (
+        // 🔧 FIXED: Use effectiveAgent instead of selectedChatbot
+        const shouldTriggerAIResponse = effectiveAgent && !customMessage && (
           (isAgentExplicitlySelected && isSelectedTargetAIAgent) ||
           isAgentMentioned ||
           isAllAgentsMentioned
@@ -3607,7 +3644,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         
         console.log('🔍 [AI Response Check] Final decision:', {
           shouldTriggerAIResponse,
-          selectedChatbotExists: !!selectedChatbot,
+          effectiveAgentExists: !!effectiveAgent,
           noCustomMessage: !customMessage,
           explicitSelectionAndAIAgent: (isAgentExplicitlySelected && isSelectedTargetAIAgent),
           mentionedCondition: isAgentMentioned,
@@ -3618,6 +3655,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           console.log('🤖 [SharedConversation] AI Agent should respond - triggering AI response:', {
             selectedTarget,
             selectedChatbotId: selectedChatbot?.id,
+            effectiveAgentId: effectiveAgent?.id,
+            effectiveAgentName: effectiveAgent?.name,
             isExplicitlySelected: isAgentExplicitlySelected,
             isSelectedTargetAIAgent: isSelectedTargetAIAgent,
             isAgentMentioned: isAgentMentioned,
@@ -3639,8 +3678,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           setCurrentActivity(activityStatus);
           
           try {
-            // Trigger AI agent response in shared conversation context
-            await handleSharedConversationAIResponse(messageToSend, activeSharedConversation);
+            // 🔧 FIXED: Pass effectiveAgent to handleSharedConversationAIResponse
+            await handleSharedConversationAIResponse(messageToSend, activeSharedConversation, effectiveAgent);
           } catch (error) {
             console.error('❌ [SharedConversation] Failed to get AI response:', error);
           } finally {
@@ -3648,17 +3687,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             setIsTyping(false);
             clearSmartThinkingIndicator();
           }
-        } else if (selectedChatbot && !customMessage && selectedTarget && !isSelectedTargetAIAgent) {
+        } else if (effectiveAgent && !customMessage && selectedTarget && !isSelectedTargetAIAgent) {
           console.log('🤖 [SharedConversation] Human user selected - skipping AI response:', {
             selectedTarget,
-            selectedChatbotId: selectedChatbot.id,
+            effectiveAgentId: effectiveAgent.id,
             message: 'Selected target is a human user, not an AI agent'
           });
-        } else if (selectedChatbot && !customMessage && !isAgentExplicitlySelected) {
+        } else if (effectiveAgent && !customMessage && !isAgentExplicitlySelected) {
           console.log('🤖 [SharedConversation] Agent not explicitly selected - skipping AI response:', {
             selectedTarget,
-            selectedChatbotId: selectedChatbot.id,
+            effectiveAgentId: effectiveAgent.id,
             message: 'AI will only respond when explicitly selected in shared conversations'
+          });
+        } else {
+          console.log('🤖 [SharedConversation] No AI response triggered:', {
+            selectedTarget,
+            effectiveAgentExists: !!effectiveAgent,
+            customMessage: !!customMessage,
+            isAgentExplicitlySelected,
+            isSelectedTargetAIAgent,
+            message: 'Conditions not met for AI response'
           });
         }
         
@@ -4388,17 +4436,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Handle AI agent responses in shared conversations
-  const handleSharedConversationAIResponse = async (userMessage: string, conversationId: string) => {
-    if (!selectedChatbot || !user?.uid) {
-      console.error('❌ [SharedConversationAI] Missing required data:', { selectedChatbot: !!selectedChatbot, user: !!user?.uid });
+  const handleSharedConversationAIResponse = async (userMessage: string, conversationId: string, targetAgent?: any) => {
+    // 🔧 FIXED: Use targetAgent if provided, otherwise fall back to selectedChatbot
+    const agentToUse = targetAgent || selectedChatbot;
+    
+    if (!agentToUse || !user?.uid) {
+      console.error('❌ [SharedConversationAI] Missing required data:', { 
+        targetAgent: !!targetAgent, 
+        selectedChatbot: !!selectedChatbot, 
+        agentToUse: !!agentToUse,
+        user: !!user?.uid 
+      });
       return;
     }
 
     try {
-      console.log('🤖 [SharedConversationAI] Processing AI response for shared conversation:', conversationId);
+      console.log('🤖 [SharedConversationAI] Processing AI response for shared conversation:', {
+        conversationId,
+        targetAgentId: targetAgent?.id,
+        selectedChatbotId: selectedChatbot?.id,
+        agentToUseId: agentToUse?.id,
+        agentToUseName: agentToUse?.name
+      });
       
       // Get agent ID consistently
-      const selectedChatbotId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+      const agentId = agentToUse.identity?.id || agentToUse.key || agentToUse.id;
       
       // Get user's display name for personalized response
       const userName = user.displayName || user.email || 'User';
@@ -4406,18 +4468,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Create personalized context for the AI
       const personalizedMessage = `In this shared conversation, ${userName} asked: "${userMessage}". Please address ${userName} directly in your response.`;
 
-      console.log('🤖 [SharedConversationAI] Sending personalized message to Universal Governance Adapter:', personalizedMessage);
+      console.log('🤖 [SharedConversationAI] Sending personalized message to Universal Governance Adapter:', {
+        agentId,
+        personalizedMessage,
+        agentName: agentToUse.name
+      });
 
       // 🔧 FIX: Use UniversalGovernanceAdapter directly (same as single agent chat)
       // This bypasses the session dependency issue and uses the proven working architecture
       const response = await universalGovernanceAdapter.sendMessage({
-        agentId: selectedChatbotId,
+        agentId: agentId,
         message: personalizedMessage,
-        sessionId: `shared_${conversationId}_${selectedChatbotId}`, // Generate unique session ID for shared conversation
+        sessionId: `shared_${conversationId}_${agentId}`, // Generate unique session ID for shared conversation
         userId: user.uid,
         conversationHistory: [], // TODO: Could add shared conversation history here if needed
-        provider: selectedChatbot.provider,
-        model: selectedChatbot.model
+        provider: agentToUse.provider,
+        model: agentToUse.model
       });
 
       console.log('✅ [SharedConversationAI] Received response from Universal Governance Adapter:', response);
@@ -4428,8 +4494,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         // Add AI response to the shared conversation
         await sharedConversationService.sendMessageToSharedConversation(
           conversationId,
-          selectedChatbot.id,
-          selectedChatbot.name,
+          agentToUse.id,
+          agentToUse.name,
           response.response
         );
 
@@ -4440,8 +4506,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         // Add fallback message
         await sharedConversationService.sendMessageToSharedConversation(
           conversationId,
-          selectedChatbot.id,
-          selectedChatbot.name,
+          agentToUse.id,
+          agentToUse.name,
           `Hi ${userName}, I received your message but I'm having trouble generating a response right now. Please try again.`
         );
       }
