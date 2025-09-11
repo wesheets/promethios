@@ -4028,10 +4028,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
       // Create or use existing multi-agent session ID
       let sessionId = currentMultiAgentSession;
+      console.log('🔍 [MultiAgent] Current session state:', currentMultiAgentSession);
       if (!sessionId) {
         sessionId = `conv_${Date.now()}`;
         setCurrentMultiAgentSession(sessionId);
         console.log('🆕 [MultiAgent] Created new session ID:', sessionId);
+      } else {
+        console.log('🔄 [MultiAgent] Using existing session ID:', sessionId);
       }
 
       // Create routing context with conversation history
