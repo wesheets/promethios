@@ -2499,6 +2499,40 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
     
     if (humanGuests.length > 0) {
+      // 🔧 NEW: Persist guest humans to chat session with pending status
+      const currentChatSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+      
+      if (currentChatSession?.id) {
+        try {
+          console.log('👤 [ChatHistory] Persisting guest humans to chat session:', currentChatSession.id);
+          console.log('👤 [ChatHistory] Guest humans to persist:', humanGuests.map(h => ({ id: h.id, name: h.name, email: h.email })));
+          
+          for (const human of humanGuests) {
+            console.log(`👤 [ChatHistory] Adding guest human: ${human.name} (${human.id}) - Status: pending`);
+            await chatHistoryService.addGuestHumanToSession(currentChatSession.id, {
+              id: human.id,
+              name: human.name,
+              avatar: human.avatar,
+              email: human.email,
+              status: 'pending', // Default to pending for invited humans
+            });
+            console.log(`✅ [ChatHistory] Successfully added guest human: ${human.name} with pending status`);
+          }
+          console.log('✅ [ChatHistory] Successfully persisted all guest humans to chat session');
+          
+          // 🚀 NEW: Trigger real-time chat history panel update
+          console.log('🔄 [RealTime] Triggering chat history panel update after guest human addition');
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+          
+        } catch (error) {
+          console.error('❌ [ChatHistory] Failed to persist guest humans to chat session:', error);
+          console.error('❌ [ChatHistory] Error details:', error.message, error.stack);
+          // Continue with invitation flow - don't break the process
+        }
+      } else {
+        console.warn('⚠️ [ChatHistory] No current chat session found, guest humans not persisted');
+      }
+      
       // Show confirmation dialog for human invitations
       console.log('👥 Requesting confirmation to invite human guests:', humanGuests);
       setPendingHumanInvites(humanGuests);
@@ -4230,6 +4264,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             const updatedSession = await chatHistoryService.getChatSessionById(currentSession.id);
             if (updatedSession && selectedChatbot) {
               const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+              
+              // Extract guest participants from session for avatar display
+              const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+                id: guest.id,
+                name: guest.name,
+                avatar: guest.avatar,
+                type: guest.type,
+                status: guest.status || 'active',
+                addedAt: guest.joinedAt,
+                addedBy: undefined, // Not tracked in current session structure
+                invitationId: undefined // Not tracked in current session structure
+              })) || [];
+              
               setBotStates(prev => {
                 const newStates = new Map(prev);
                 const currentState = newStates.get(botId);
@@ -4237,11 +4284,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   newStates.set(botId, {
                     ...currentState,
                     currentChatSession: updatedSession,
-                    activeSession: updatedSession
+                    activeSession: updatedSession,
+                    guestParticipants: guestParticipants // Update guest participants for avatar display
                   });
                 }
                 return newStates;
               });
+              
+              console.log('✅ [ChatSession] Updated session with guest participants:', guestParticipants);
             }
             
           } catch (error) {
@@ -4397,10 +4447,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           // Update bot state with new message count immediately
           const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
           if (updatedSession) {
+            // Extract guest participants from session for avatar display
+            const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+              id: guest.id,
+              name: guest.name,
+              avatar: guest.avatar,
+              type: guest.type,
+              status: guest.status || 'active',
+              addedAt: guest.joinedAt,
+              addedBy: undefined,
+              invitationId: undefined
+            })) || [];
+            
             updateBotState(selectedChatbot.id, {
               currentChatSession: updatedSession,
-              currentChatName: updatedSession.name
+              currentChatName: updatedSession.name,
+              guestParticipants: guestParticipants
             });
+            
+            console.log('✅ [ChatSession] Updated session with guest participants:', guestParticipants);
           }
           
           // Trigger chat history panel refresh after adding messages
@@ -4737,10 +4802,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           // Update bot state with new message count immediately
           const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
           if (updatedSession) {
+            // Extract guest participants from session for avatar display
+            const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+              id: guest.id,
+              name: guest.name,
+              avatar: guest.avatar,
+              type: guest.type,
+              status: guest.status || 'active',
+              addedAt: guest.joinedAt,
+              addedBy: undefined,
+              invitationId: undefined
+            })) || [];
+            
             updateBotState(selectedChatbot.id, {
               currentChatSession: updatedSession,
-              currentChatName: updatedSession.name
+              currentChatName: updatedSession.name,
+              guestParticipants: guestParticipants
             });
+            
+            console.log('✅ [ChatSession] Updated session with guest participants:', guestParticipants);
           }
           
           // Trigger chat history panel refresh after adding messages

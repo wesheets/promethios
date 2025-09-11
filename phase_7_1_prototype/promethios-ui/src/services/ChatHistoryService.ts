@@ -20,6 +20,8 @@ export interface ChatParticipant {
   messageCount: number;
   lastActive: Date;
   avatar?: string;
+  status?: 'pending' | 'active' | 'declined'; // For human guests
+  email?: string; // For human guests
 }
 
 export interface ChatSession {
@@ -710,6 +712,96 @@ export class ChatHistoryService {
     await this.saveChatSession(session);
 
     console.log(`✅ [ChatHistory] Removed guest agent ${guestAgentId} from session ${sessionId}`);
+  }
+
+  /**
+   * Add guest human to chat session with pending status
+   */
+  async addGuestHumanToSession(
+    sessionId: string,
+    guestHuman: {
+      id: string;
+      name: string;
+      avatar?: string;
+      email?: string;
+      status?: 'pending' | 'active' | 'declined';
+    }
+  ): Promise<void> {
+    console.log(`👤 [ChatHistory] Adding guest human to session ${sessionId}:`, guestHuman);
+    
+    const session = await this.getChatSession(sessionId);
+    if (!session) {
+      throw new Error(`Chat session not found: ${sessionId}`);
+    }
+
+    // Check if human is already in session
+    const existingHuman = session.participants.guests.find(g => g.id === guestHuman.id);
+    if (existingHuman) {
+      console.log(`👤 [ChatHistory] Guest human ${guestHuman.name} already in session`);
+      return;
+    }
+
+    // Create guest participant entry
+    const guestParticipant: ChatParticipant = {
+      id: guestHuman.id,
+      name: guestHuman.name,
+      type: 'human',
+      joinedAt: new Date(),
+      messageCount: 0,
+      lastActive: new Date(),
+      avatar: guestHuman.avatar,
+      status: guestHuman.status || 'pending', // Default to pending for humans
+      email: guestHuman.email,
+    };
+
+    session.participants.guests.push(guestParticipant);
+    session.metadata.isMultiAgent = true;
+    session.metadata.hasHumanGuests = true; // Track human guests separately
+    session.lastUpdated = new Date();
+    session.metadata.lastActivity = new Date();
+
+    // Save updated session
+    await this.saveChatSession(session);
+
+    console.log(`✅ [ChatHistory] Added guest human ${guestHuman.name} to session ${sessionId} with status: ${guestHuman.status || 'pending'}`);
+  }
+
+  /**
+   * Update guest human status (pending -> active -> declined)
+   */
+  async updateGuestHumanStatus(
+    sessionId: string,
+    guestHumanId: string,
+    newStatus: 'pending' | 'active' | 'declined'
+  ): Promise<void> {
+    console.log(`👤 [ChatHistory] Updating guest human ${guestHumanId} status to ${newStatus} in session ${sessionId}`);
+    
+    const session = await this.getChatSession(sessionId);
+    if (!session) {
+      throw new Error(`Chat session not found: ${sessionId}`);
+    }
+
+    // Find and update guest human
+    const guestHuman = session.participants.guests.find(g => g.id === guestHumanId && g.type === 'human');
+    if (!guestHuman) {
+      throw new Error(`Guest human not found: ${guestHumanId}`);
+    }
+
+    guestHuman.status = newStatus;
+    guestHuman.lastActive = new Date();
+    
+    // If accepting, update joinedAt timestamp
+    if (newStatus === 'active') {
+      guestHuman.joinedAt = new Date();
+    }
+
+    session.lastUpdated = new Date();
+    session.metadata.lastActivity = new Date();
+
+    // Save updated session
+    await this.saveChatSession(session);
+
+    console.log(`✅ [ChatHistory] Updated guest human ${guestHumanId} status to ${newStatus}`);
   }
 
   /**

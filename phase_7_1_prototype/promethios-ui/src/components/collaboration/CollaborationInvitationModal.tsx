@@ -32,6 +32,8 @@ import { useSharedConversations } from '../../contexts/SharedConversationContext
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService from '../../services/ChatbotStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
+import { ChatHistoryService } from '../../services/ChatHistoryService';
+import AIWelcomeService from '../../services/AIWelcomeService';
 
 interface CollaborationInvitationModalProps {
   open: boolean;
@@ -60,6 +62,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
   const [error, setError] = useState<string | null>(null);
   const sharedConversationService = SharedConversationService.getInstance();
   const chatbotService = ChatbotStorageService.getInstance();
+  const chatHistoryService = ChatHistoryService.getInstance();
+  const aiWelcomeService = AIWelcomeService.getInstance();
   console.log('🎯 [CollaborationInvitationModal] Rendering modal:', {
     open,
     invitation: invitation ? {
@@ -188,6 +192,36 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         
         console.log('🔍 [CollaborationModal] Host conversation ID:', hostConversationId);
         console.log('✅ [CollaborationModal] Unified system will handle access to host conversation');
+        
+        // Update guest human status to active and generate welcome message
+        try {
+          console.log('🤖 [CollaborationModal] Updating guest status and generating welcome message...');
+          
+          // Update guest human status to active
+          await chatHistoryService.updateGuestHumanStatus(
+            hostConversationId,
+            currentUserId,
+            'active'
+          );
+          
+          // Get session to find host agent info for welcome message
+          const session = await chatHistoryService.getChatSessionById(hostConversationId);
+          if (session) {
+            // Generate and add welcome message
+            await aiWelcomeService.handleGuestAcceptance(
+              hostConversationId,
+              currentUserId,
+              session.participants.host.id,
+              session.participants.host.name
+            );
+            console.log('✅ [CollaborationModal] Welcome message generated and added');
+          } else {
+            console.warn('⚠️ [CollaborationModal] Could not find session for welcome message');
+          }
+        } catch (welcomeError) {
+          console.error('❌ [CollaborationModal] Error with guest status/welcome:', welcomeError);
+          // Don't fail the acceptance flow for welcome message issues
+        }
         
         // Refresh the shared conversations context to load the new unified guest access
         console.log('🔄 [CollaborationModal] Refreshing shared conversations to load unified guest access');
