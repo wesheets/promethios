@@ -674,6 +674,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [actionStartTime, setActionStartTime] = useState<Date | null>(null);
 
+  // 🔧 CLEANUP: Clear message input when switching between chatbots
+  // This prevents state contamination where old messages appear in new chats
+  useEffect(() => {
+    console.log(`🧹 [StateCleanup] Chatbot changed to: ${selectedChatbotId}`);
+    setMessageInput('');
+    setAttachedFiles([]);
+    // Clear any other shared state that shouldn't persist between chats
+    setCurrentAction(null);
+    setActionStartTime(null);
+  }, [selectedChatbotId]);
+
   // Bot state helper functions
   const initializeBotState = (botId: string): BotState => {
     return {
