@@ -279,8 +279,6 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
         <div ref={messagesEndRef} />
       </Box>
 
-          </Box>
-
       {/* Message Input - Hidden for guest users */}
       {!hideInputBar && (
         <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
