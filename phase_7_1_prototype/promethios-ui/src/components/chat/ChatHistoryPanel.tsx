@@ -30,6 +30,7 @@ import {
   Stack,
   InputAdornment,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Add,
@@ -74,6 +75,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [loading, setLoading] = useState(true); // Add loading state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'shared' | 'recent'>('all');
   
@@ -105,9 +107,14 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 
   // Load chat sessions
   const loadChatSessions = useCallback(async () => {
-    if (!currentUser?.uid) return;
+    if (!currentUser?.uid) {
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true); // Set loading to true when starting to load
+      
       const filter: ChatHistoryFilter = {
         agentId: agentId,
       };
@@ -132,6 +139,8 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     } catch (error) {
       console.error('Failed to load chat sessions:', error);
       // Don't clear sessions on error - keep showing what we have
+    } finally {
+      setLoading(false); // Always set loading to false when done
     }
   }, [currentUser?.uid, agentId, selectedFilter, searchTerm]);
 
@@ -458,7 +467,14 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 
       {/* Chat List */}
       <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#0f172a' }}>
-        {chatSessions.length === 0 ? (
+        {loading ? (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <CircularProgress size={24} sx={{ color: '#3b82f6', mb: 2 }} />
+            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+              Loading chat history...
+            </Typography>
+          </Box>
+        ) : chatSessions.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
               {searchTerm 
