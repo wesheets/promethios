@@ -288,22 +288,47 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       
       // 🔧 CRITICAL: Verify role assignments were stored correctly
       console.log('🔍 [GuestSelector] Verifying role assignments...');
-      for (const assignment of assignments) {
-        const storedConfig = temporaryRoleService.getAgentConfig(sessionId, assignment.agentId);
-        if (storedConfig) {
-          console.log(`✅ [GuestSelector] Verified role for ${assignment.agentName}:`, {
-            careerRole: storedConfig.careerRole?.label || 'None',
-            behavior: storedConfig.behavior.label,
-            sessionId: storedConfig.sessionId
-          });
+      let allRolesVerified = false;
+      let verificationAttempts = 0;
+      const maxVerificationAttempts = 5;
+      
+      while (!allRolesVerified && verificationAttempts < maxVerificationAttempts) {
+        verificationAttempts++;
+        console.log(`🔄 [GuestSelector] Verification attempt ${verificationAttempts}/${maxVerificationAttempts}`);
+        
+        let successCount = 0;
+        for (const assignment of assignments) {
+          const storedConfig = temporaryRoleService.getAgentConfig(sessionId, assignment.agentId);
+          if (storedConfig) {
+            console.log(`✅ [GuestSelector] Verified role for ${assignment.agentName}:`, {
+              careerRole: storedConfig.careerRole?.label || 'None',
+              behavior: storedConfig.behavior.label,
+              sessionId: storedConfig.sessionId
+            });
+            successCount++;
+          } else {
+            console.warn(`⚠️ [GuestSelector] Role not yet stored for ${assignment.agentName} (attempt ${verificationAttempts})`);
+          }
+        }
+        
+        if (successCount === assignments.length) {
+          allRolesVerified = true;
+          console.log(`✅ [GuestSelector] All ${assignments.length} role assignments verified successfully!`);
         } else {
-          console.error(`❌ [GuestSelector] FAILED to verify role for ${assignment.agentName} in session ${sessionId}`);
+          console.log(`⏳ [GuestSelector] Only ${successCount}/${assignments.length} roles verified, waiting 100ms...`);
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       }
       
-      // Add a small delay to ensure everything is properly stored
-      await new Promise(resolve => setTimeout(resolve, 200));
-      console.log('🔍 [GuestSelector] Role assignment verification complete');
+      if (!allRolesVerified) {
+        console.error(`❌ [GuestSelector] Failed to verify all role assignments after ${maxVerificationAttempts} attempts`);
+        // Continue anyway - don't block the user flow
+      }
+      
+      // Add additional delay to ensure everything is properly stored and accessible
+      console.log('⏳ [GuestSelector] Adding final synchronization delay...');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      console.log('✅ [GuestSelector] Role assignment process complete');
       
       // Add all selected members (humans + configured AI agents)
       const allMembers = [...teamMembers, ...aiAgents];

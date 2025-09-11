@@ -317,6 +317,75 @@ class TemporaryRoleService {
     console.log(`🎭 [TemporaryRole] Enhanced system prompt created for ${agentId}`);
     return enhancedPrompt;
   }
+
+  /**
+   * Get enhanced system prompt with retry logic for timing issues
+   * This async version helps handle race conditions between role assignment and retrieval
+   */
+  async getEnhancedSystemPromptWithRetry(
+    agentId: string, 
+    sessionId: string, 
+    basePrompt: string = '',
+    maxRetries: number = 3,
+    retryDelayMs: number = 100
+  ): Promise<string> {
+    console.log(`🎭 [TemporaryRole] Getting enhanced system prompt with retry for agent: ${agentId} in session: ${sessionId}`);
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`🔄 [TemporaryRole] Attempt ${attempt}/${maxRetries} for agent: ${agentId}`);
+      
+      const sessionConfigs = this.sessionConfigs.get(sessionId);
+      if (!sessionConfigs) {
+        console.log(`🎭 [TemporaryRole] No session configs found for session: ${sessionId} (attempt ${attempt})`);
+        
+        if (attempt < maxRetries) {
+          console.log(`⏳ [TemporaryRole] Waiting ${retryDelayMs}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+          continue;
+        }
+        
+        console.log(`❌ [TemporaryRole] Max retries reached, returning base prompt for agent: ${agentId}`);
+        return basePrompt;
+      }
+
+      const agentConfig = sessionConfigs.get(agentId);
+      if (!agentConfig) {
+        console.log(`🎭 [TemporaryRole] No agent config found for agent: ${agentId} (attempt ${attempt})`);
+        
+        if (attempt < maxRetries) {
+          console.log(`⏳ [TemporaryRole] Waiting ${retryDelayMs}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+          continue;
+        }
+        
+        console.log(`❌ [TemporaryRole] Max retries reached, returning base prompt for agent: ${agentId}`);
+        return basePrompt;
+      }
+
+      // Success! Build enhanced prompt
+      const careerRolePrompt = agentConfig.careerRole 
+        ? `\n\n🎯 CAREER ROLE: You are acting as a ${agentConfig.careerRole.label} (${agentConfig.careerRole.icon}). ${agentConfig.careerRole.description || ''}`
+        : '';
+
+      const behaviorPrompt = agentConfig.behavior
+        ? `\n\n🎭 BEHAVIORAL DIRECTIVE: ${agentConfig.behavior.systemPrompt}`
+        : '';
+
+      const enhancedPrompt = `${basePrompt}${careerRolePrompt}${behaviorPrompt}
+
+🔄 TEMPORARY ROLE CONTEXT:
+- This role assignment is temporary for this conversation session
+- Maintain your core capabilities while embodying this role
+- Be authentic to both your AI nature and the assigned role
+- If the role conflicts with your capabilities, acknowledge the limitation gracefully`;
+
+      console.log(`✅ [TemporaryRole] Enhanced system prompt created for ${agentId} on attempt ${attempt}`);
+      return enhancedPrompt;
+    }
+
+    // This should never be reached, but just in case
+    return basePrompt;
+  }
 }
 
 // Export singleton instance

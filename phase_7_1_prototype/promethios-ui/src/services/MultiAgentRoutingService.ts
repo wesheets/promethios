@@ -352,7 +352,17 @@ export class MultiAgentRoutingService {
       
       try {
         const sessionId = context.conversationId; // Use conversation ID as session ID
-        const enhancedPrompt = await temporaryRoleService.getEnhancedSystemPrompt(agentId, sessionId);
+        
+        // 🔧 NEW: Use retry logic to handle race conditions between role assignment and retrieval
+        // This is especially important for the first guest agent which might be processed
+        // before its role assignment is fully stored
+        const enhancedPrompt = await temporaryRoleService.getEnhancedSystemPromptWithRetry(
+          agentId, 
+          sessionId,
+          '', // base prompt (empty since we're adding to existing message)
+          3,  // max retries
+          150 // retry delay in ms
+        );
         
         if (enhancedPrompt) {
           console.log('🎭 [MultiAgentRouting] Found temporary role assignment for agent:', agentId);
