@@ -423,6 +423,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]); // For avatar selector
   
+  // 🔧 CRITICAL FIX: Use a ref to store session ID immediately without React state timing issues
+  const multiAgentSessionRef = useRef<string | null>(null);
+  
   // Enhanced smart thinking indicator state
   const [currentRespondingAgent, setCurrentRespondingAgent] = useState<{
     id: string;
@@ -2419,12 +2422,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       // 🔧 CRITICAL FIX: Set the multi-agent session ID when guests are added
       // This ensures the same session ID is used for both role assignment and message routing
-      if (!currentMultiAgentSession) {
+      if (!currentMultiAgentSession && !multiAgentSessionRef.current) {
         const sessionId = `conv_${Date.now()}`;
         setCurrentMultiAgentSession(sessionId);
+        multiAgentSessionRef.current = sessionId; // Store immediately in ref
         console.log('🆕 [MultiAgent] Set session ID when adding guests:', sessionId);
       } else {
-        console.log('🔄 [MultiAgent] Using existing session ID:', currentMultiAgentSession);
+        const existingSessionId = currentMultiAgentSession || multiAgentSessionRef.current;
+        multiAgentSessionRef.current = existingSessionId; // Ensure ref is synced
+        console.log('🔄 [MultiAgent] Using existing session ID:', existingSessionId);
       }
     }
     
@@ -4027,11 +4033,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
 
       // Create or use existing multi-agent session ID
-      let sessionId = currentMultiAgentSession;
+      let sessionId = multiAgentSessionRef.current || currentMultiAgentSession;
       console.log('🔍 [MultiAgent] Current session state:', currentMultiAgentSession);
+      console.log('🔍 [MultiAgent] Current session ref:', multiAgentSessionRef.current);
       if (!sessionId) {
         sessionId = `conv_${Date.now()}`;
         setCurrentMultiAgentSession(sessionId);
+        multiAgentSessionRef.current = sessionId; // Store in both state and ref
         console.log('🆕 [MultiAgent] Created new session ID:', sessionId);
       } else {
         console.log('🔄 [MultiAgent] Using existing session ID:', sessionId);
@@ -5930,7 +5938,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       onBehaviorPrompt={handleBehaviorPrompt}
                                       currentUserId={user?.uid}
                                       currentUserName={user?.displayName || 'User'}
-                                      conversationId={currentMultiAgentSession || `conv_${Date.now()}`}
+                                      conversationId={multiAgentSessionRef.current || currentMultiAgentSession || `conv_${Date.now()}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
                                       hideHostAgent={isInSharedMode && activeSharedConversation}
                                       // Shared conversation context
