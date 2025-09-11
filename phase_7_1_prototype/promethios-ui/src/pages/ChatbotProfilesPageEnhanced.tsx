@@ -2416,6 +2416,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const newAgentIds = aiGuests.map(guest => guest.id);
       setSelectedAgents(prev => [...prev, ...newAgentIds]);
       setTargetAgents(prev => [...prev, ...newAgentIds]);
+      
+      // 🔧 CRITICAL FIX: Set the multi-agent session ID when guests are added
+      // This ensures the same session ID is used for both role assignment and message routing
+      if (!currentMultiAgentSession) {
+        const sessionId = `conv_${Date.now()}`;
+        setCurrentMultiAgentSession(sessionId);
+        console.log('🆕 [MultiAgent] Set session ID when adding guests:', sessionId);
+      } else {
+        console.log('🔄 [MultiAgent] Using existing session ID:', currentMultiAgentSession);
+      }
     }
     
     if (humanGuests.length > 0) {
