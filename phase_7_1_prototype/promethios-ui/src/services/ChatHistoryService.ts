@@ -956,7 +956,20 @@ export class ChatHistoryService {
   private matchesFilter(session: ChatSession, filter?: ChatHistoryFilter): boolean {
     if (!filter) return true;
 
-    if (filter.agentId && session.agentId !== filter.agentId) return false;
+    if (filter.agentId) {
+      // Check if the agent is either the host agent OR a guest agent in this session
+      const isHostAgent = session.agentId === filter.agentId;
+      const isGuestAgent = session.participants?.guests?.some(guest => guest.id === filter.agentId) || false;
+      
+      if (!isHostAgent && !isGuestAgent) {
+        console.log(`🔍 [ChatHistory] Session ${session.id} filtered out - agent ${filter.agentId} is neither host nor guest`);
+        console.log(`🔍 [ChatHistory] - Host agent: ${session.agentId}`);
+        console.log(`🔍 [ChatHistory] - Guest agents:`, session.participants?.guests?.map(g => g.id) || []);
+        return false;
+      } else {
+        console.log(`🔍 [ChatHistory] Session ${session.id} matches filter - agent ${filter.agentId} is ${isHostAgent ? 'host' : 'guest'}`);
+      }
+    }
     
     if (filter.dateRange) {
       const sessionDate = session.lastUpdated;

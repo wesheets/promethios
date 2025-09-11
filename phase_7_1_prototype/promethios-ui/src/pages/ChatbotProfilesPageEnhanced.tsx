@@ -2438,23 +2438,43 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       
       // 🔧 NEW: Persist guest agents to chat session
       const currentChatSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+      console.log('🔍 [ChatHistory] Current bot state:', currentBotState);
+      console.log('🔍 [ChatHistory] Current chat session:', currentChatSession);
+      
       if (currentChatSession?.id) {
         try {
           console.log('💾 [ChatHistory] Persisting guest agents to chat session:', currentChatSession.id);
+          console.log('💾 [ChatHistory] Guest agents to persist:', aiGuests.map(a => ({ id: a.id, name: a.name })));
+          
           for (const agent of aiGuests) {
+            console.log(`💾 [ChatHistory] Adding guest agent: ${agent.name} (${agent.id})`);
             await chatHistoryService.addGuestAgentToSession(currentChatSession.id, {
               id: agent.id,
               name: agent.name,
               avatar: agent.avatar,
             });
+            console.log(`✅ [ChatHistory] Successfully added guest agent: ${agent.name}`);
           }
-          console.log('✅ [ChatHistory] Successfully persisted guest agents to chat session');
+          console.log('✅ [ChatHistory] Successfully persisted all guest agents to chat session');
+          
+          // 🔧 NEW: Immediately verify the persistence worked
+          console.log('🔍 [ChatHistory] Verifying guest agent persistence...');
+          const updatedSession = await chatHistoryService.getChatSession(currentChatSession.id);
+          if (updatedSession) {
+            console.log('🔍 [ChatHistory] Updated session participants:', updatedSession.participants);
+            console.log('🔍 [ChatHistory] Guest agents in session:', updatedSession.participants?.guests?.map(g => ({ id: g.id, name: g.name })) || []);
+          } else {
+            console.error('❌ [ChatHistory] Could not retrieve updated session for verification');
+          }
+          
         } catch (error) {
           console.error('❌ [ChatHistory] Failed to persist guest agents to chat session:', error);
+          console.error('❌ [ChatHistory] Error details:', error.message, error.stack);
           // Continue with local state - don't break the flow
         }
       } else {
         console.warn('⚠️ [ChatHistory] No current chat session found, guest agents not persisted');
+        console.warn('⚠️ [ChatHistory] currentBotState keys:', Object.keys(currentBotState || {}));
       }
       
       // 🔧 CRITICAL FIX: Set the multi-agent session ID when guests are added
