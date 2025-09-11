@@ -286,6 +286,25 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
       await temporaryRoleService.assignTemporaryRoles(sessionId, assignments);
       console.log('✅ [GuestSelector] Temporary roles assigned successfully');
       
+      // 🔧 CRITICAL: Verify role assignments were stored correctly
+      console.log('🔍 [GuestSelector] Verifying role assignments...');
+      for (const assignment of assignments) {
+        const storedConfig = temporaryRoleService.getAgentConfig(sessionId, assignment.agentId);
+        if (storedConfig) {
+          console.log(`✅ [GuestSelector] Verified role for ${assignment.agentName}:`, {
+            careerRole: storedConfig.careerRole?.label || 'None',
+            behavior: storedConfig.behavior.label,
+            sessionId: storedConfig.sessionId
+          });
+        } else {
+          console.error(`❌ [GuestSelector] FAILED to verify role for ${assignment.agentName} in session ${sessionId}`);
+        }
+      }
+      
+      // Add a small delay to ensure everything is properly stored
+      await new Promise(resolve => setTimeout(resolve, 200));
+      console.log('🔍 [GuestSelector] Role assignment verification complete');
+      
       // Add all selected members (humans + configured AI agents)
       const allMembers = [...teamMembers, ...aiAgents];
       const selectedMembers = allMembers.filter(member => selectedGuests.has(member.id));
