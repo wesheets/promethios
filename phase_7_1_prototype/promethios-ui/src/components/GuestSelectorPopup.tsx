@@ -266,9 +266,11 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
     console.log('🔍 [GuestSelector] configurations length:', configurations.length);
     
     try {
-      // Use the same session ID format as the multi-agent system
-      const sessionId = `conv_${Date.now()}`;
-      console.log('🔍 [GuestSelector] Generated sessionId:', sessionId);
+      // 🔧 CRITICAL FIX: Use the passed conversationId instead of generating a new one
+      // This ensures role assignments and role retrieval use the same session ID
+      const sessionId = conversationId || `conv_${Date.now()}`;
+      console.log('🔍 [GuestSelector] Using sessionId:', sessionId);
+      console.log('🔍 [GuestSelector] conversationId prop:', conversationId);
       
       // Convert configurations to temporary role assignments
       const assignments: TemporaryRoleAssignment[] = configurations.map(config => ({

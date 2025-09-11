@@ -5917,7 +5917,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       onBehaviorPrompt={handleBehaviorPrompt}
                                       currentUserId={user?.uid}
                                       currentUserName={user?.displayName || 'User'}
-                                      conversationId={`conv_${selectedChatbot?.id || 'default'}`}
+                                      conversationId={currentMultiAgentSession || `conv_${Date.now()}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
                                       hideHostAgent={isInSharedMode && activeSharedConversation}
                                       // Shared conversation context
