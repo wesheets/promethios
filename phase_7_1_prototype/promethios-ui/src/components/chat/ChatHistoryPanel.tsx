@@ -392,7 +392,10 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       display: 'flex', 
       flexDirection: 'column',
       bgcolor: '#0f172a', // Dark background to match chat interface
-      color: 'white'
+      color: 'white',
+      pb: 0, // Remove any bottom padding
+      mb: 0, // Remove any bottom margin
+      overflow: 'hidden' // Ensure no overflow
     }}>
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: '1px solid #334155', flexShrink: 0, bgcolor: '#0f172a' }}>

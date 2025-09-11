@@ -6593,7 +6593,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               </Box>
 
               {/* Panel Content */}
-              <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ 
+                flex: 1, 
+                overflow: 'hidden', 
+                display: 'flex', 
+                flexDirection: 'column',
+                height: '100%', // Ensure full height
+                pb: 0, // Remove any bottom padding
+                mb: 0  // Remove any bottom margin
+              }}>
                 {rightPanelType === 'team' && (
                   <TeamPanel 
                     currentUserId={user?.uid} 
