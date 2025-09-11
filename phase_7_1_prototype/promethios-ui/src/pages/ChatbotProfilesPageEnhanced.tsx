@@ -2590,11 +2590,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log('🔍 [PersonAdd] No active chat session, creating new one...');
       // No active chat session - create a new one
       try {
+        // 🔧 FIX: Use selectedChatbotId to avoid race condition
+        const agentId = selectedChatbotId || selectedChatbot?.id;
+        const agentName = selectedChatbot?.identity?.name || selectedChatbot?.name || `Agent ${agentId}`;
+        
         const newChatSession = await chatHistoryService.createChatSession(
           user!.uid,
-          selectedChatbot.id,
-          `Chat with ${selectedChatbot.identity?.name}`,
-          selectedChatbot.identity?.name || 'AI Assistant'
+          agentId,
+          `Chat with ${agentName}`,
+          agentName
         );
 
         console.log('🔍 [PersonAdd] Created new chat session:', newChatSession.id);
@@ -4095,15 +4099,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           ? `${messageInput.trim().substring(0, 47)}...`
           : messageInput.trim();
         
+        // 🔧 FIX: Use selectedChatbotId to avoid race condition
+        const agentId = selectedChatbotId || selectedChatbot?.id;
+        const agentName = selectedChatbot?.name || `Agent ${agentId}`;
+        
         const newSession = await chatHistoryService.createChatSession(
-          selectedChatbot.id,
-          selectedChatbot.name,
+          agentId,
+          agentName,
           user.uid,
-          smartChatName || `Chat with ${selectedChatbot.name}`,
+          smartChatName || `Chat with ${agentName}`,
           getGuestAgents().length > 0 // Mark as multi-agent if there are guest agents
         );
         
-        updateBotState(selectedChatbot.id, {
+        updateBotState(agentId, {
           currentChatSession: newSession,
           currentChatName: newSession.name
         });
@@ -6438,8 +6446,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 
                 {rightPanelType === 'chats' && selectedChatbot && (
                   <ChatHistoryPanel
-                    agentId={selectedChatbot.id}
-                    agentName={selectedChatbot.name}
+                    agentId={selectedChatbotId || selectedChatbot?.id}
+                    agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
                     currentSessionId={currentBotState?.currentChatSession?.id}
                     refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0} // Use bot state refresh trigger
                     onChatSelect={(session) => {
