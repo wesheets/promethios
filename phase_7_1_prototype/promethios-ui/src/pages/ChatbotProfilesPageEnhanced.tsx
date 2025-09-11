@@ -4172,6 +4172,72 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             totalCost: 0
           }))
         );
+        
+        // 🔧 NEW: Persist multi-agent messages to chat history
+        console.log('💾 [MultiAgent] Persisting multi-agent messages to chat history...');
+        const currentBotState = selectedChatbot ? botStates.get(selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
+        const currentSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+        
+        if (currentSession?.id) {
+          try {
+            // Save user message first
+            const userMessage = {
+              id: `user_${Date.now()}`,
+              content: message,
+              sender: 'user' as const,
+              timestamp: new Date(),
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+            };
+            
+            console.log('💾 [MultiAgent] Saving user message to session:', currentSession.id);
+            await chatHistoryService.addMessageToSession(currentSession.id, userMessage);
+            
+            // Save each agent response with their specific agent ID and name
+            for (const response of result.responses) {
+              const agentMessage = {
+                id: `agent_${response.agentId}_${Date.now()}`,
+                content: response.response,
+                sender: 'assistant' as const,
+                timestamp: response.timestamp,
+                agentId: response.agentId,
+                agentName: response.agentName,
+                metadata: {
+                  isMultiAgent: true,
+                  processingTime: response.processingTime,
+                }
+              };
+              
+              console.log(`💾 [MultiAgent] Saving ${response.agentName} message to session:`, currentSession.id);
+              await chatHistoryService.addMessageToSession(currentSession.id, agentMessage);
+            }
+            
+            console.log('✅ [MultiAgent] Successfully persisted all multi-agent messages to chat history');
+            
+            // Update session message count
+            const updatedSession = await chatHistoryService.getChatSessionById(currentSession.id);
+            if (updatedSession && selectedChatbot) {
+              const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+              setBotStates(prev => {
+                const newStates = new Map(prev);
+                const currentState = newStates.get(botId);
+                if (currentState) {
+                  newStates.set(botId, {
+                    ...currentState,
+                    currentChatSession: updatedSession,
+                    activeSession: updatedSession
+                  });
+                }
+                return newStates;
+              });
+            }
+            
+          } catch (error) {
+            console.error('❌ [MultiAgent] Failed to persist messages to chat history:', error);
+          }
+        } else {
+          console.warn('⚠️ [MultiAgent] No current session found, messages not persisted to chat history');
+        }
       }
 
       // Clear input
