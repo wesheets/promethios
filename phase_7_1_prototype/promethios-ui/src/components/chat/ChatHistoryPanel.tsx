@@ -30,7 +30,6 @@ import {
   Stack,
   InputAdornment,
   Alert,
-  CircularProgress,
 } from '@mui/material';
 import {
   Add,
@@ -75,7 +74,6 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'shared' | 'recent'>('all');
   
@@ -110,8 +108,6 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     if (!currentUser?.uid) return;
 
     try {
-      setLoading(true);
-      
       const filter: ChatHistoryFilter = {
         agentId: agentId,
       };
@@ -135,8 +131,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       setChatSessions(sessions);
     } catch (error) {
       console.error('Failed to load chat sessions:', error);
-    } finally {
-      setLoading(false);
+      // Don't clear sessions on error - keep showing what we have
     }
   }, [currentUser?.uid, agentId, selectedFilter, searchTerm]);
 
@@ -159,6 +154,11 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       console.log('🆕 Creating new chat session...');
       
       const chatName = newChatName.trim() || undefined;
+      
+      // Close dialog immediately for better UX
+      setNewChatDialogOpen(false);
+      setNewChatName('');
+      
       const session = await chatHistoryService.createChatSession(
         agentId,
         agentName,
@@ -167,12 +167,9 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       );
 
       console.log(`✅ Created new chat session: ${session.name} (${session.id})`);
-
-      setNewChatDialogOpen(false);
-      setNewChatName('');
       
-      // Force refresh the list immediately
-      await loadChatSessions();
+      // Optimistically add to the list immediately
+      setChatSessions(prev => [session, ...prev]);
       
       // Select the new chat and notify parent
       onChatSelect(session);
@@ -181,6 +178,8 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       console.log('✅ New chat creation completed successfully');
     } catch (error) {
       console.error('❌ Failed to create new chat:', error);
+      // Refresh on error to get correct state
+      loadChatSessions();
     }
   };
 
@@ -189,16 +188,22 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     if (!renameSessionId || !renameChatName.trim()) return;
 
     try {
-      await chatHistoryService.renameChatSession(renameSessionId, renameChatName.trim());
+      // Optimistically update the UI immediately
+      setChatSessions(prev => prev.map(session => 
+        session.id === renameSessionId 
+          ? { ...session, name: renameChatName.trim() }
+          : session
+      ));
       
       setRenameDialogOpen(false);
       setRenameSessionId(null);
       setRenameChatName('');
       
-      // Refresh the list
-      await loadChatSessions();
+      await chatHistoryService.renameChatSession(renameSessionId, renameChatName.trim());
     } catch (error) {
       console.error('Failed to rename chat:', error);
+      // Refresh on error to get correct state
+      loadChatSessions();
     }
   };
 
@@ -212,14 +217,21 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     if (!editingSessionId || !editingName.trim()) return;
 
     try {
-      await chatHistoryService.renameChatSession(editingSessionId, editingName.trim());
+      // Optimistically update the UI immediately
+      setChatSessions(prev => prev.map(session => 
+        session.id === editingSessionId 
+          ? { ...session, name: editingName.trim() }
+          : session
+      ));
+      
       setEditingSessionId(null);
       setEditingName('');
       
-      // Refresh the list
-      await loadChatSessions();
+      await chatHistoryService.renameChatSession(editingSessionId, editingName.trim());
     } catch (error) {
       console.error('Failed to rename chat:', error);
+      // Refresh on error to get correct state
+      loadChatSessions();
     }
   };
 
@@ -238,22 +250,24 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 
   // Delete chat
   const handleDeleteChat = async (sessionId: string) => {
-    if (!window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
       return;
     }
 
     try {
-      await chatHistoryService.deleteChatSession(sessionId);
-      
-      // Refresh the list
-      await loadChatSessions();
+      // Optimistically remove from UI immediately
+      setChatSessions(prev => prev.filter(session => session.id !== sessionId));
       
       // If this was the current session, trigger new chat
       if (sessionId === currentSessionId) {
         onNewChat();
       }
+      
+      await chatHistoryService.deleteChatSession(sessionId);
     } catch (error) {
       console.error('Failed to delete chat:', error);
+      // Refresh on error to get correct state
+      loadChatSessions();
     }
   };
 
@@ -443,11 +457,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 
       {/* Chat List */}
       <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#0f172a' }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress size={24} sx={{ color: '#3b82f6' }} />
-          </Box>
-        ) : chatSessions.length === 0 ? (
+        {chatSessions.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
               {searchTerm 
@@ -705,9 +715,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                             },
                           }}
                         >
-                          {shareLoading === session.id ? (
-                            <CircularProgress size={16} sx={{ color: '#3b82f6' }} />
-                          ) : shareSuccess === session.id ? (
+                          {shareSuccess === session.id ? (
                             <CheckCircle sx={{ fontSize: 16, color: '#10b981' }} />
                           ) : (
                             <Share sx={{ fontSize: 16 }} />
