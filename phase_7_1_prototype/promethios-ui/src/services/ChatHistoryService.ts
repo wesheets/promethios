@@ -157,6 +157,18 @@ export class ChatHistoryService {
       lastUpdated: now,
       messageCount: 0,
       isShared: isMultiAgent || false,
+      // Initialize participants with host agent
+      participants: {
+        host: {
+          id: agentId,
+          name: agentName || 'Agent',
+          type: 'ai_agent',
+          joinedAt: now,
+          messageCount: 0,
+          lastActive: now,
+        },
+        guests: [], // Initialize empty guests array
+      },
       governanceMetrics: {
         overallTrustScore: 100,
         totalViolations: 0,
@@ -619,6 +631,99 @@ export class ChatHistoryService {
     return await this.getChatSession(context.sessionId);
   }
 
+  /**
+   * Add guest agent to chat session
+   */
+  async addGuestAgentToSession(
+    sessionId: string,
+    guestAgent: {
+      id: string;
+      name: string;
+      avatar?: string;
+    }
+  ): Promise<void> {
+    console.log(`🤖 [ChatHistory] Adding guest agent to session ${sessionId}:`, guestAgent);
+    
+    const session = await this.getChatSession(sessionId);
+    if (!session) {
+      throw new Error(`Chat session not found: ${sessionId}`);
+    }
+
+    // Check if guest agent already exists
+    const existingGuest = session.participants.guests.find(g => g.id === guestAgent.id);
+    if (existingGuest) {
+      console.log(`🤖 [ChatHistory] Guest agent ${guestAgent.name} already exists in session`);
+      return;
+    }
+
+    // Add guest agent to participants
+    const guestParticipant: ChatParticipant = {
+      id: guestAgent.id,
+      name: guestAgent.name,
+      type: 'ai_agent',
+      joinedAt: new Date(),
+      messageCount: 0,
+      lastActive: new Date(),
+      avatar: guestAgent.avatar,
+    };
+
+    session.participants.guests.push(guestParticipant);
+    session.metadata.isMultiAgent = true;
+    session.lastUpdated = new Date();
+    session.metadata.lastActivity = new Date();
+
+    // Save updated session
+    await this.saveChatSession(session);
+
+    console.log(`✅ [ChatHistory] Added guest agent ${guestAgent.name} to session ${sessionId}`);
+  }
+
+  /**
+   * Remove guest agent from chat session
+   */
+  async removeGuestAgentFromSession(
+    sessionId: string,
+    guestAgentId: string
+  ): Promise<void> {
+    console.log(`🤖 [ChatHistory] Removing guest agent ${guestAgentId} from session ${sessionId}`);
+    
+    const session = await this.getChatSession(sessionId);
+    if (!session) {
+      throw new Error(`Chat session not found: ${sessionId}`);
+    }
+
+    // Remove guest agent from participants
+    const initialGuestCount = session.participants.guests.length;
+    session.participants.guests = session.participants.guests.filter(g => g.id !== guestAgentId);
+    
+    if (session.participants.guests.length === initialGuestCount) {
+      console.log(`🤖 [ChatHistory] Guest agent ${guestAgentId} not found in session`);
+      return;
+    }
+
+    // Update multi-agent flag
+    session.metadata.isMultiAgent = session.participants.guests.length > 0;
+    session.lastUpdated = new Date();
+    session.metadata.lastActivity = new Date();
+
+    // Save updated session
+    await this.saveChatSession(session);
+
+    console.log(`✅ [ChatHistory] Removed guest agent ${guestAgentId} from session ${sessionId}`);
+  }
+
+  /**
+   * Get guest agents for a chat session
+   */
+  async getGuestAgentsForSession(sessionId: string): Promise<ChatParticipant[]> {
+    const session = await this.getChatSession(sessionId);
+    if (!session) {
+      return [];
+    }
+
+    return session.participants.guests || [];
+  }
+
   // Private helper methods
 
   private async getChatSession(sessionId: string): Promise<ChatSession | null> {
@@ -749,6 +854,19 @@ export class ChatHistoryService {
         ...session.metadata,
         lastActivity: session.metadata.lastActivity.toISOString(),
       },
+      // Serialize participants with Date objects
+      participants: {
+        host: {
+          ...session.participants.host,
+          joinedAt: session.participants.host.joinedAt.toISOString(),
+          lastActive: session.participants.host.lastActive.toISOString(),
+        },
+        guests: session.participants.guests.map(guest => ({
+          ...guest,
+          joinedAt: guest.joinedAt.toISOString(),
+          lastActive: guest.lastActive.toISOString(),
+        })),
+      },
       messages: session.messages.map(msg => ({
         ...msg,
         timestamp: msg.timestamp.toISOString(),
@@ -773,6 +891,30 @@ export class ChatHistoryService {
       metadata: {
         ...data.metadata,
         lastActivity: new Date(data.metadata.lastActivity),
+      },
+      // Deserialize participants with Date objects
+      participants: data.participants ? {
+        host: {
+          ...data.participants.host,
+          joinedAt: new Date(data.participants.host.joinedAt),
+          lastActive: new Date(data.participants.host.lastActive),
+        },
+        guests: data.participants.guests.map((guest: any) => ({
+          ...guest,
+          joinedAt: new Date(guest.joinedAt),
+          lastActive: new Date(guest.lastActive),
+        })),
+      } : {
+        // Fallback for sessions without participants field
+        host: {
+          id: data.agentId,
+          name: data.agentName,
+          type: 'ai_agent',
+          joinedAt: new Date(data.createdAt),
+          messageCount: 0,
+          lastActive: new Date(data.lastUpdated),
+        },
+        guests: [],
       },
       messages: data.messages.map((msg: any) => ({
         ...msg,

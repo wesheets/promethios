@@ -686,6 +686,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Clear any other shared state that shouldn't persist between chats
     setCurrentAction(null);
     setActionStartTime(null);
+    
+    // 🔧 NEW: Clear guest agents when switching between chatbots
+    // This ensures guest agents are session-specific and don't carry over
+    setMultiChatState(prev => ({
+      ...prev,
+      contexts: prev.contexts.map(context => ({
+        ...context,
+        guestAgents: [] // Clear guest agents for clean slate
+      }))
+    }));
+    
+    // Clear selected agents as well
+    setSelectedAgents([]);
+    setTargetAgents([]);
+    
+    console.log(`🧹 [StateCleanup] Cleared guest agents for chatbot switch`);
   }, [selectedChatbotId]);
 
   // Bot state helper functions
@@ -2419,6 +2435,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       const newAgentIds = aiGuests.map(guest => guest.id);
       setSelectedAgents(prev => [...prev, ...newAgentIds]);
       setTargetAgents(prev => [...prev, ...newAgentIds]);
+      
+      // 🔧 NEW: Persist guest agents to chat session
+      const currentChatSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+      if (currentChatSession?.id) {
+        try {
+          console.log('💾 [ChatHistory] Persisting guest agents to chat session:', currentChatSession.id);
+          for (const agent of aiGuests) {
+            await chatHistoryService.addGuestAgentToSession(currentChatSession.id, {
+              id: agent.id,
+              name: agent.name,
+              avatar: agent.avatar,
+            });
+          }
+          console.log('✅ [ChatHistory] Successfully persisted guest agents to chat session');
+        } catch (error) {
+          console.error('❌ [ChatHistory] Failed to persist guest agents to chat session:', error);
+          // Continue with local state - don't break the flow
+        }
+      } else {
+        console.warn('⚠️ [ChatHistory] No current chat session found, guest agents not persisted');
+      }
       
       // 🔧 CRITICAL FIX: Set the multi-agent session ID when guests are added
       // This ensures the same session ID is used for both role assignment and message routing
@@ -6521,7 +6558,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
                     currentSessionId={currentBotState?.currentChatSession?.id}
                     refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0} // Use bot state refresh trigger
-                    onChatSelect={(session) => {
+                    onChatSelect={async (session) => {
                       console.log(`🔄 [ChatHistory] Chat selected:`, session);
                       console.log(`🔄 [ChatHistory] Session has ${session.messages?.length || 0} messages`);
                       console.log(`🔄 [ChatHistory] Selected chatbot ID: ${selectedChatbotId}`);
@@ -6532,6 +6569,57 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           currentChatName: session.name || `Chat ${session.id.slice(-8)}`
                         });
                         console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
+                        
+                        // 🔧 NEW: Restore guest agents from chat session to multiChatState
+                        try {
+                          const guestAgents = await chatHistoryService.getGuestAgentsForSession(session.id);
+                          console.log(`🤖 [ChatHistory] Found ${guestAgents.length} guest agents in session:`, guestAgents);
+                          
+                          if (guestAgents.length > 0) {
+                            // Update multiChatState to include guest agents
+                            setMultiChatState(prev => {
+                              const activeContext = prev.contexts.find(c => c.isActive);
+                              if (!activeContext) return prev;
+                              
+                              const restoredGuestAgents = guestAgents.map(guest => ({
+                                agentId: guest.id,
+                                name: guest.name,
+                                avatar: guest.avatar,
+                                status: 'active' as const
+                              }));
+                              
+                              return {
+                                ...prev,
+                                contexts: prev.contexts.map(context => 
+                                  context.isActive 
+                                    ? {
+                                        ...context,
+                                        guestAgents: restoredGuestAgents
+                                      }
+                                    : context
+                                )
+                              };
+                            });
+                            
+                            // Update selected agents to include restored guest agents
+                            const guestAgentIds = guestAgents.map(guest => guest.id);
+                            setSelectedAgents(prev => {
+                              // Remove duplicates and add guest agents
+                              const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+                              return uniqueIds;
+                            });
+                            setTargetAgents(prev => {
+                              // Remove duplicates and add guest agents
+                              const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+                              return uniqueIds;
+                            });
+                            
+                            console.log(`✅ [ChatHistory] Restored ${guestAgents.length} guest agents to multiChatState`);
+                          }
+                        } catch (error) {
+                          console.error('❌ [ChatHistory] Failed to restore guest agents from session:', error);
+                          // Continue without guest agents - don't break the flow
+                        }
                       }
                       
                       // Load the chat messages into the current chat interface
