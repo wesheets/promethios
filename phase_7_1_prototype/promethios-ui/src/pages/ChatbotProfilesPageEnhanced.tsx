@@ -2381,6 +2381,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   // Handle adding guests from the selector popup
   const handleAddGuests = async (guests: any[]) => {
+    console.log('🚨🚨🚨 [CRITICAL] handleAddGuests CALLED! 🚨🚨🚨');
+    console.log('🚨🚨🚨 [CRITICAL] Guests received:', guests);
+    console.log('🚨🚨🚨 [CRITICAL] Number of guests:', guests?.length || 0);
     console.log('🤖 Adding guests to conversation:', guests);
     
     // Add AI agents to the conversation
