@@ -6765,6 +6765,32 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             chatMessages: []
                           });
                         }
+                        
+                        // 🔧 NEW: Clear guest agent state when creating new chat
+                        console.log('🧹 [NewChat] Clearing guest agent state for new chat session');
+                        
+                        // Clear multi-agent state
+                        setMultiChatState(prev => ({
+                          ...prev,
+                          contexts: prev.contexts.map(context => 
+                            context.isActive 
+                              ? {
+                                  ...context,
+                                  guestAgents: [] // Clear guest agents
+                                }
+                              : context
+                          )
+                        }));
+                        
+                        // Clear selected agents (keep only host agent)
+                        setSelectedAgents([]);
+                        setTargetAgents([]);
+                        
+                        // Clear multi-agent session state
+                        setCurrentMultiAgentSession(null);
+                        multiAgentSessionRef.current = null;
+                        
+                        console.log('✅ [NewChat] Guest agent state cleared for new chat session');
                       }
                       setMessageInput('');
                       setAttachedFiles([]);
