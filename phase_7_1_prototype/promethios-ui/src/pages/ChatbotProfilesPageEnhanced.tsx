@@ -119,7 +119,6 @@ import {
   CloudUpload,
   AutoAwesome,
   AccountBalanceWallet as WalletIcon,
-  Add,
   PersonAdd,
   Edit,
   Send,
@@ -3853,6 +3852,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     // 🔧 CRITICAL FIX: Create session BEFORE adding user message to UI
     // This ensures the first message is properly persisted
+    let createdSession: ChatSession | null = null;
     if (selectedChatbot && user?.uid) {
       const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
       const hasHistorySession = freshBotState?.currentChatSession;
@@ -3869,7 +3869,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           const agentId = selectedChatbotId || selectedChatbot?.id;
           const agentName = selectedChatbot?.name || `Agent ${agentId}`;
           
-          const newSession = await chatHistoryService.createChatSession(
+          createdSession = await chatHistoryService.createChatSession(
             agentId,
             agentName,
             user.uid,
@@ -3879,15 +3879,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           
           // Update bot state with new session
           updateBotState(agentId, {
-            currentChatSession: newSession,
-            currentChatName: newSession.name
+            currentChatSession: createdSession,
+            currentChatName: createdSession.name
           });
           
-          console.log(`✅ [PreMessage] Created session: ${newSession.name} (${newSession.id})`);
+          console.log(`✅ [PreMessage] Created session: ${createdSession.name} (${createdSession.id})`);
         } catch (sessionError) {
           console.error('❌ [PreMessage] Failed to create session:', sessionError);
           // Continue with message even if session creation fails
         }
+      } else {
+        // Use existing session
+        createdSession = hasHistorySession;
       }
     }
 
@@ -3943,7 +3946,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       }
       
       // Original single-agent message handling
-      await handleSingleAgentMessage(messageToSend, userMessage);
+      await handleSingleAgentMessage(messageToSend, userMessage, createdSession);
       
     } catch (error) {
       console.error('❌ [ChatPanel] Error sending message:', error);
@@ -4094,7 +4097,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Original single-agent message handling
-  const handleSingleAgentMessage = async (message?: string, existingUserMessage?: ChatMessage | null) => {
+  const handleSingleAgentMessage = async (message?: string, existingUserMessage?: ChatMessage | null, providedSession?: ChatSession | null) => {
     try {
       // Prepare the final message content - ensure it's always a string
       let finalMessageContent = typeof message === 'string' ? message : (message ? String(message) : messageInput.trim());
@@ -4191,9 +4194,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save to chat history - use existing session (should exist from proactive creation)
-      const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-      let sessionToUse = currentFreshBotState?.currentChatSession;
+      // Save to chat history - use provided session first, then fall back to bot state
+      let sessionToUse = providedSession;
+      
+      if (!sessionToUse) {
+        const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+        sessionToUse = currentFreshBotState?.currentChatSession;
+      }
       
       // Session should already exist from proactive creation above
       if (sessionToUse) {
@@ -4291,9 +4298,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           });
         }
         
-        // Save to chat history - use existing session (should exist from proactive creation)
-        const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-        let sessionToUse = currentBotState?.currentChatSession;
+        // Save to chat history - use provided session first, then fall back to bot state
+        let sessionToUse = providedSession;
+        
+        if (!sessionToUse) {
+          const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+          sessionToUse = currentBotState?.currentChatSession;
+        }
         
         // Session should already exist from proactive creation above
         if (sessionToUse) {
@@ -4503,11 +4514,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save to chat history - use existing session (should exist from proactive creation)
-      const mainFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-      let sessionToUse = mainFreshBotState?.currentChatSession;
+      // Save to chat history - use provided session first, then fall back to bot state
+      // This ensures first messages use the freshly created session directly
+      let sessionToUse = providedSession;
       
-      // Session should already exist from proactive creation above
+      if (!sessionToUse) {
+        // Fall back to retrieving from bot state (for subsequent messages)
+        const mainFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+        sessionToUse = mainFreshBotState?.currentChatSession;
+      }
+      
+      console.log('🔍 [SessionDebug] Session resolution:', {
+        providedSession: !!providedSession,
+        providedSessionId: providedSession?.id,
+        sessionFromState: !providedSession ? !!botStates.get(selectedChatbotId)?.currentChatSession : 'not_checked',
+        finalSessionId: sessionToUse?.id,
+        finalSessionExists: !!sessionToUse
+      });
+      
+      // Session should exist from proactive creation or be provided directly
       if (sessionToUse) {
         try {
           // Use existing user message if provided, otherwise create new one
@@ -4555,7 +4580,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           // Don't break the chat flow if history fails
         }
       } else {
-        console.warn('⚠️ [AutoSession] No session available for regular message storage');
+        console.warn('⚠️ [AutoSession] No session available for regular message storage', {
+          providedSession: !!providedSession,
+          providedSessionId: providedSession?.id,
+          selectedChatbotId,
+          botStateExists: !!botStates.get(selectedChatbotId),
+          sessionFromState: botStates.get(selectedChatbotId)?.currentChatSession?.id,
+          message: 'This indicates a session creation or state management issue'
+        });
       }
       
       setMessageInput('');
