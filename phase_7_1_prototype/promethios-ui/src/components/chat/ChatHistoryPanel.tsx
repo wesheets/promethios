@@ -139,9 +139,10 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     loadChatSessions();
   }, [loadChatSessions]);
 
-  // Refresh when refreshTrigger changes
+  // Refresh when refreshTrigger changes - optimized for real-time updates
   useEffect(() => {
-    if (refreshTrigger !== undefined) {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      console.log('🔄 [RealTime] Chat history panel refreshing due to trigger:', refreshTrigger);
       loadChatSessions();
     }
   }, [refreshTrigger, loadChatSessions]);

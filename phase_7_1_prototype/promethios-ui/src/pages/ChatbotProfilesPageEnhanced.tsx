@@ -2470,6 +2470,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             console.error('❌ [ChatHistory] Could not retrieve updated session for verification');
           }
           
+          // 🚀 NEW: Trigger real-time chat history panel update
+          console.log('🔄 [RealTime] Triggering chat history panel update after guest addition');
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+          
         } catch (error) {
           console.error('❌ [ChatHistory] Failed to persist guest agents to chat session:', error);
           console.error('❌ [ChatHistory] Error details:', error.message, error.stack);
@@ -3970,6 +3974,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             currentChatName: createdSession.name
           });
           
+          // 🚀 NEW: Trigger real-time chat history panel update
+          console.log('🔄 [RealTime] Triggering chat history panel update after session creation');
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+          
           console.log(`✅ [PreMessage] Created session: ${createdSession.name} (${createdSession.id})`);
         } catch (sessionError) {
           console.error('❌ [PreMessage] Failed to create session:', sessionError);
@@ -4213,6 +4221,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             }
             
             console.log('✅ [MultiAgent] Successfully persisted all multi-agent messages to chat history');
+            
+            // 🚀 NEW: Trigger real-time chat history panel update
+            console.log('🔄 [RealTime] Triggering chat history panel update after message persistence');
+            setChatHistoryRefreshTrigger(prev => prev + 1);
             
             // Update session message count
             const updatedSession = await chatHistoryService.getChatSessionById(currentSession.id);
@@ -6789,6 +6801,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         // Clear multi-agent session state
                         setCurrentMultiAgentSession(null);
                         multiAgentSessionRef.current = null;
+                        
+                        // 🚀 NEW: Trigger real-time chat history panel update
+                        console.log('🔄 [RealTime] Triggering chat history panel update after new chat creation');
+                        setChatHistoryRefreshTrigger(prev => prev + 1);
                         
                         console.log('✅ [NewChat] Guest agent state cleared for new chat session');
                       }
