@@ -5305,6 +5305,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               currentUserId={user?.uid || 'anonymous'}
                               guestAccess={guestAccess}
                               isUnifiedMode={true}
+                              hideInputBar={true} // Hide input bar for guest users
                             />
                           );
                         } else {
@@ -5314,6 +5315,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               conversationId={activeSharedConversation}
                               currentUserId={user?.uid || 'anonymous'}
                               isUnifiedMode={false}
+                              hideInputBar={true} // Hide input bar for guest users
                               onSendMessage={async (message: string) => {
                                 try {
                                   await sharedConversationService.sendMessageToSharedConversation(

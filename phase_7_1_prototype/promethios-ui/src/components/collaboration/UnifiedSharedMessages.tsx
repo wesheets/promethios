@@ -35,6 +35,8 @@ interface UnifiedSharedMessagesProps {
   // New props for unified approach
   guestAccess?: GuestConversationAccess;
   isUnifiedMode?: boolean;
+  // Hide the input bar for guest users (they should use the main input at bottom)
+  hideInputBar?: boolean;
 }
 
 const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
@@ -42,7 +44,8 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
   currentUserId,
   onSendMessage,
   guestAccess,
-  isUnifiedMode = false
+  isUnifiedMode = false,
+  hideInputBar = false
 }) => {
   const [chatSession, setChatSession] = useState<ChatSession | null>(null);
   const [sharedConversation, setSharedConversation] = useState<any>(null);
@@ -276,37 +279,40 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Message Input */}
-      <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <TextField
-            fullWidth
-            multiline
-            maxRows={4}
-            value={messageInput}
-            onChange={(e) => setMessageInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
-            variant="outlined"
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                bgcolor: '#1e293b',
-                color: '#f1f5f9',
-                '& fieldset': { borderColor: '#334155' },
-                '&:hover fieldset': { borderColor: '#475569' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-              }
-            }}
-          />
-          <IconButton
-            onClick={handleSendMessage}
-            disabled={!messageInput.trim() || sending}
-            sx={{ color: '#3b82f6' }}
-          >
-            {sending ? <CircularProgress size={24} /> : <SendIcon />}
-          </IconButton>
+          </Box>
+
+      {/* Message Input - Hidden for guest users */}
+      {!hideInputBar && (
+        <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              fullWidth
+              multiline
+              maxRows={4}
+              value={messageInput}
+              onChange={(e) => setMessageInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message..."
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#1e293b',
+                  '& fieldset': { borderColor: '#475569' },
+                  '&:hover fieldset': { borderColor: '#64748b' },
+                  '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                }
+              }}
+            />
+            <IconButton
+              onClick={handleSendMessage}
+              disabled={!messageInput.trim() || sending}
+              sx={{ color: '#3b82f6' }}
+            >
+              {sending ? <CircularProgress size={24} /> : <SendIcon />}
+            </IconButton>
+          </Box>
         </Box>
-      </Box>
+      )}
     </Box>
   );
 };
