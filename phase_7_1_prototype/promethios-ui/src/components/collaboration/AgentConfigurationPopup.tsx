@@ -56,6 +56,7 @@ const StyledFormControl = styled(FormControl)(({ theme }) => ({
 
 // Career roles (professional contexts)
 const CAREER_ROLES = [
+  { value: 'none', label: 'N/A', icon: '🤷' },
   { value: 'legal', label: 'Legal Counsel', icon: '⚖️' },
   { value: 'hr', label: 'HR Specialist', icon: '👥' },
   { value: 'customer_service', label: 'Customer Service', icon: '🎧' },
@@ -75,6 +76,7 @@ const CAREER_ROLES = [
 
 // Behaviors (interaction styles from MAS Collaboration)
 const BEHAVIORS = [
+  { value: 'none', label: 'N/A', description: 'No specific behavior assigned', color: '#6b7280' },
   { value: 'collaborative', label: 'Collaborative', description: 'Works cooperatively and builds on others\' ideas', color: '#10b981' },
   { value: 'devils_advocate', label: 'Devil\'s Advocate', description: 'Challenges ideas and asks tough questions', color: '#ef4444' },
   { value: 'expert', label: 'Expert', description: 'Provides deep domain knowledge and expertise', color: '#3b82f6' },
@@ -119,7 +121,7 @@ export const AgentConfigurationPopup: React.FC<AgentConfigurationPopupProps> = (
         agentId: agent.id,
         agentName: agent.name,
         careerRole: '',
-        behavior: 'collaborative' // Default to collaborative
+        behavior: 'none' // Default to none
       }))
     );
   }, [selectedAgents]);
@@ -148,22 +150,13 @@ export const AgentConfigurationPopup: React.FC<AgentConfigurationPopupProps> = (
 
   const handleConfigureAgents = () => {
     console.log('🎭 [AgentConfig] Configuring agents with:', configurations);
-    // Only include agents that have both career role and behavior selected
-    const validConfigurations = configurations.filter(config => 
-      config.careerRole && config.behavior
-    );
-    
-    if (validConfigurations.length === 0) {
-      console.warn('🎭 [AgentConfig] No valid configurations to submit');
-      return;
-    }
-    
-    onConfigureAgents(validConfigurations);
+    // Include all agents, even those without a specific role or behavior
+    onConfigureAgents(configurations);
     onClose();
   };
 
   const isConfigurationValid = () => {
-    return configurations.every(config => config.careerRole && config.behavior);
+    return true;
   };
 
   const getAgentAvatar = (agent: any) => {
