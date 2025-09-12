@@ -475,7 +475,6 @@ export class ChatHistoryService {
               console.warn(`Failed to load session chat_${i}:`, error);
             }
           }
-          }
         }
       }
     } catch (storageError) {
