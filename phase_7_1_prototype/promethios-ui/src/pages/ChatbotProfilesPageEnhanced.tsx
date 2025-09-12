@@ -5330,7 +5330,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           type: 'human' as const
                         };
                         
-                        const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'agent') || [];
+                        const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
                         const guestHumans = hostChatSession.participants?.guests?.filter(g => 
                           g.type === 'human' && g.id !== currentUserId // Exclude current guest user
                         ) || [];
@@ -6359,7 +6359,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                         if (isInSharedMode && guestConversationAccess?.length > 0) {
                                           // Use real guest agents from host chat session
                                           const hostChatSession = guestConversationAccess[0];
-                                          return hostChatSession.participants?.guests?.filter(g => g.type === 'agent').map(agent => ({
+                                          return hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent').map(agent => ({
                                             id: agent.id,
                                             name: agent.name,
                                             type: 'agent' as const,
