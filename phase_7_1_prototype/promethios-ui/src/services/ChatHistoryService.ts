@@ -417,8 +417,8 @@ export class ChatHistoryService {
           try {
             const sessionData = await unifiedStorage.get('chats', `user_${userId}_${sessionId}`);
             if (sessionData) {
-              // Use getChatSession to ensure participant merging happens
-              const session = await this.getChatSession(sessionId);
+              // Skip participant merging for performance when loading chat list
+              const session = await this.getChatSession(sessionId, true);
               
               // Apply filters
               if (session && this.matchesFilter(session, filter)) {
@@ -447,8 +447,8 @@ export class ChatHistoryService {
           for (const key of userSessionKeys) {
             try {
               const sessionId = key.replace('chats/', '').replace(`user_${userId}_`, '');
-              // Use getChatSession to ensure participant merging happens
-              const session = await this.getChatSession(sessionId);
+              // Skip participant merging for performance when loading chat list
+              const session = await this.getChatSession(sessionId, true);
               if (session && this.matchesFilter(session, filter)) {
                 sessions.push(session);
               }
@@ -816,7 +816,7 @@ export class ChatHistoryService {
 
   // Private helper methods
 
-  private async getChatSession(sessionId: string): Promise<ChatSession | null> {
+  private async getChatSession(sessionId: string, skipParticipantMerging: boolean = false): Promise<ChatSession | null> {
     // Check active sessions first
     if (this.activeSessions.has(sessionId)) {
       return this.activeSessions.get(sessionId)!;
@@ -829,8 +829,10 @@ export class ChatHistoryService {
       if (sessionData) {
         const session = this.deserializeChatSession(sessionData);
         
-        // 🚀 NEW: Merge guest participants from UnifiedParticipantService
-        await this.mergeUnifiedParticipants(session);
+        // 🚀 NEW: Merge guest participants from UnifiedParticipantService (only if not skipped)
+        if (!skipParticipantMerging) {
+          await this.mergeUnifiedParticipants(session);
+        }
         
         this.activeSessions.set(sessionId, session);
         return session;
