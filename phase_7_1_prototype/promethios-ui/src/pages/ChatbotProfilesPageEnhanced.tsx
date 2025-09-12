@@ -2060,13 +2060,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     const handleSessionRefresh = async (event: CustomEvent) => {
       const { sessionId } = event.detail;
       console.log('🔄 [SessionRefresh] Received session refresh event for:', sessionId);
+      console.log('🔄 [SessionRefresh] Debug - selectedChatbotId:', selectedChatbotId);
+      console.log('🔄 [SessionRefresh] Debug - currentBotState exists:', !!currentBotState);
+      console.log('🔄 [SessionRefresh] Debug - currentChatSession.id:', currentBotState?.currentChatSession?.id);
       
-      if (selectedChatbotId && currentBotState?.currentChatSession?.id === sessionId) {
+      // Check if we should refresh this session
+      const shouldRefresh = selectedChatbotId && currentBotState?.currentChatSession?.id === sessionId;
+      console.log('🔄 [SessionRefresh] Should refresh:', shouldRefresh);
+      
+      if (shouldRefresh) {
         try {
           console.log('🔄 [SessionRefresh] Refreshing current session data...');
           const updatedSession = await chatHistoryService.getChatSessionById(sessionId);
           
           if (updatedSession) {
+            console.log('🔄 [SessionRefresh] Got updated session with', updatedSession.messages.length, 'messages');
+            
             // Extract guest participants from session for avatar display
             const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
               id: guest.id,
@@ -2087,10 +2096,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             });
             
             console.log('✅ [SessionRefresh] Session data refreshed successfully');
+          } else {
+            console.warn('⚠️ [SessionRefresh] No updated session found for:', sessionId);
           }
         } catch (error) {
           console.error('❌ [SessionRefresh] Error refreshing session:', error);
         }
+      } else {
+        console.log('🔄 [SessionRefresh] Skipping refresh - condition not met');
       }
     };
     
@@ -5300,58 +5313,103 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     
                     {/* Participants Display */}
                     {(() => {
-                      // Shared conversation participants
-                      if (isInSharedMode && activeSharedConversation) {
+                      // Shared conversation participants - Get real data from host chat session
+                      if (isInSharedMode && activeSharedConversation && guestConversationAccess?.length > 0) {
+                        const hostChatSession = guestConversationAccess[0]; // Get the host chat session
+                        
+                        // Get real participants from host chat session
+                        const hostAgent = hostChatSession.agentId ? {
+                          id: hostChatSession.agentId,
+                          name: hostChatSession.agentName || 'Host Agent',
+                          type: 'agent' as const
+                        } : null;
+                        
+                        const hostUser = {
+                          id: hostChatSession.userId,
+                          name: hostChatSession.hostUserName || hostChatSession.userName || 'Host User',
+                          type: 'human' as const
+                        };
+                        
+                        const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'agent') || [];
+                        const guestHumans = hostChatSession.participants?.guests?.filter(g => 
+                          g.type === 'human' && g.id !== currentUserId // Exclude current guest user
+                        ) || [];
+                        
+                        const totalParticipants = [hostUser, hostAgent, ...guestAgents, ...guestHumans].filter(Boolean).length;
+                        
                         return (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
-                              👥 3 Participants {/* TODO: Get actual participant count */}
+                              👥 {totalParticipants} Participant{totalParticipants !== 1 ? 's' : ''}
                             </Typography>
                             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                               {/* Host User */}
-                              {(() => {
-                                const hostUser = activeSharedConversation?.participants?.find(p => 
-                                  p.type === 'human' && p.id === activeSharedConversation.createdBy
-                                );
-                                const hostName = hostUser?.name || 'Host User';
-                                return (
-                                  <Chip
-                                    avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#3b82f6' }}>
-                                      {hostName.charAt(0)}
-                                    </Avatar>}
-                                    label={`${hostName} (Host)`}
-                                    size="small"
-                                    sx={{
-                                      bgcolor: '#3b82f6',
-                                      color: 'white',
-                                      opacity: 0.9,
-                                      fontSize: '11px'
-                                    }}
-                                  />
-                                );
-                              })()}
                               <Chip
-                                avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#10b981' }}>G</Avatar>}
-                                label="You"
+                                avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#3b82f6' }}>
+                                  {hostUser.name.charAt(0)}
+                                </Avatar>}
+                                label={`${hostUser.name} (Host)`}
                                 size="small"
                                 sx={{
-                                  bgcolor: '#10b981',
+                                  bgcolor: '#3b82f6',
                                   color: 'white',
                                   opacity: 0.9,
                                   fontSize: '11px'
                                 }}
                               />
-                              <Chip
-                                avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
-                                label={`${selectedChatbot?.identity?.name || 'AI'} 🤖`}
-                                size="small"
-                                sx={{
-                                  bgcolor: '#8b5cf6',
-                                  color: 'white',
-                                  opacity: 0.9,
-                                  fontSize: '11px'
-                                }}
-                              />
+                              
+                              {/* Host Agent */}
+                              {hostAgent && (
+                                <Chip
+                                  avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#8b5cf6' }}>
+                                    🤖
+                                  </Avatar>}
+                                  label={hostAgent.name}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#8b5cf6',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                    fontSize: '11px'
+                                  }}
+                                />
+                              )}
+                              
+                              {/* Guest Agents */}
+                              {guestAgents.map((agent) => (
+                                <Chip
+                                  key={agent.id}
+                                  avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#10b981' }}>
+                                    🤖
+                                  </Avatar>}
+                                  label={`${agent.name} (Guest)`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#10b981',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                    fontSize: '11px'
+                                  }}
+                                />
+                              ))}
+                              
+                              {/* Guest Humans (excluding current user) */}
+                              {guestHumans.map((human) => (
+                                <Chip
+                                  key={human.id}
+                                  avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#f59e0b' }}>
+                                    {human.name?.charAt(0) || 'G'}
+                                  </Avatar>}
+                                  label={`${human.name} (Guest)`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#f59e0b',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                    fontSize: '11px'
+                                  }}
+                                />
+                              ))}
                               
                               {/* Add Participants Button */}
                               <IconButton
@@ -6284,24 +6342,77 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                   }}>
                                     {/* Agent Avatar Selector - Inside Input */}
                                     <AgentAvatarSelector
-                                      hostAgent={getHostAgent()}
-                                      guestAgents={getGuestAgents()}
+                                      hostAgent={(() => {
+                                        if (isInSharedMode && guestConversationAccess?.length > 0) {
+                                          // Use real host agent from host chat session
+                                          const hostChatSession = guestConversationAccess[0];
+                                          return hostChatSession.agentId ? {
+                                            id: hostChatSession.agentId,
+                                            name: hostChatSession.agentName || 'Host Agent',
+                                            type: 'agent' as const,
+                                            avatar: hostChatSession.agentAvatar || undefined
+                                          } : null;
+                                        }
+                                        return getHostAgent();
+                                      })()}
+                                      guestAgents={(() => {
+                                        if (isInSharedMode && guestConversationAccess?.length > 0) {
+                                          // Use real guest agents from host chat session
+                                          const hostChatSession = guestConversationAccess[0];
+                                          return hostChatSession.participants?.guests?.filter(g => g.type === 'agent').map(agent => ({
+                                            id: agent.id,
+                                            name: agent.name,
+                                            type: 'agent' as const,
+                                            avatar: agent.avatar,
+                                            status: agent.status || 'active'
+                                          })) || [];
+                                        }
+                                        return getGuestAgents();
+                                      })()}
                                       selectedAgents={selectedAgents}
                                       onSelectionChange={handleAgentSelectionChange}
                                       teamMembers={getTeamMembers()}
                                       aiAgents={getAIAgents()}
                                       connectionsLoading={connectionsLoading}
                                       onAddGuests={handleAddGuests}
-                                      humanParticipants={humanParticipants
-                                        .filter(h => h.userId !== user?.uid) // Exclude current user from participant selector
-                                        .map(h => ({
-                                        id: h.userId,
-                                        name: h.name,
-                                        type: 'human' as const,
-                                        role: h.role,
-                                        status: h.isOnline ? 'online' as const : 'offline' as const,
-                                        avatar: h.avatar
-                                      }))}
+                                      humanParticipants={(() => {
+                                        if (isInSharedMode && guestConversationAccess?.length > 0) {
+                                          // Use real human participants from host chat session (excluding current guest)
+                                          const hostChatSession = guestConversationAccess[0];
+                                          const hostUser = {
+                                            id: hostChatSession.userId,
+                                            name: hostChatSession.hostUserName || hostChatSession.userName || 'Host User',
+                                            type: 'human' as const,
+                                            role: 'host' as const,
+                                            status: 'online' as const,
+                                            avatar: undefined
+                                          };
+                                          
+                                          const guestHumans = hostChatSession.participants?.guests?.filter(g => 
+                                            g.type === 'human' && g.id !== user?.uid // Exclude current guest user
+                                          ).map(human => ({
+                                            id: human.id,
+                                            name: human.name,
+                                            type: 'human' as const,
+                                            role: 'guest' as const,
+                                            status: human.status || 'active' as const,
+                                            avatar: human.avatar
+                                          })) || [];
+                                          
+                                          return [hostUser, ...guestHumans];
+                                        }
+                                        
+                                        return humanParticipants
+                                          .filter(h => h.userId !== user?.uid) // Exclude current user from participant selector
+                                          .map(h => ({
+                                            id: h.userId,
+                                            name: h.name,
+                                            type: 'human' as const,
+                                            role: h.role,
+                                            status: h.isOnline ? 'online' as const : 'offline' as const,
+                                            avatar: h.avatar
+                                          }));
+                                      })()}
                                       selectedTarget={selectedTarget}
                                       onTargetChange={handleTargetChange}
                                       onBehaviorPrompt={handleBehaviorPrompt}
