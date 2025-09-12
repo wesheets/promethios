@@ -158,6 +158,7 @@ import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
 import ChatHistoryPanel from '../components/chat/ChatHistoryPanel';
 import ChatReferencePreview from '../components/chat/ChatReferencePreview';
 import { chatHistoryService, ChatSession as ChatHistorySession } from '../services/ChatHistoryService';
+import { aiWelcomeService } from '../services/AIWelcomeService';
 import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
 import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
 import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
@@ -2803,6 +2804,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (!user?.uid) return;
 
     try {
+      console.log('🤖 [InvitationAccept] Starting invitation acceptance process...');
+      console.log('🤖 [InvitationAccept] Notification ID:', notificationId);
+      console.log('🤖 [InvitationAccept] Current user ID:', user.uid);
+      
       // Use the new method that sets up participation automatically
       await sharedConversationService.acceptInvitationAndSetupParticipation(
         notificationId,
@@ -2813,7 +2818,60 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Refresh shared conversations
       await refreshSharedConversations();
 
-      console.log('✅ Accepted invitation and set up participation successfully');
+      console.log('✅ [InvitationAccept] Accepted invitation and set up participation successfully');
+      
+      // 🚀 NEW: Add guest status update and welcome message logic
+      try {
+        console.log('🤖 [InvitationAccept] Updating guest status and generating welcome message...');
+        
+        // Get the notification to extract conversation ID
+        const notification = activeNotifications.find(n => n.id === notificationId);
+        if (notification) {
+          console.log('🤖 [InvitationAccept] Found notification:', notification);
+          console.log('🤖 [InvitationAccept] Conversation ID:', notification.conversationId);
+          
+          // Update guest human status to active
+          await chatHistoryService.updateGuestHumanStatus(
+            notification.conversationId,
+            user.uid,
+            'active'
+          );
+          console.log('✅ [InvitationAccept] Guest status updated to active');
+          
+          // Get session to find host agent info for welcome message
+          const session = await chatHistoryService.getChatSessionById(notification.conversationId);
+          console.log('🔍 [InvitationAccept] Retrieved session for welcome message:', session ? 'found' : 'not found');
+          
+          if (session) {
+            console.log('🔍 [InvitationAccept] Session participants:', session.participants);
+            
+            // Generate and add welcome message
+            await aiWelcomeService.handleGuestAcceptance(
+              notification.conversationId,
+              user.uid,
+              session.participants.host.id,
+              session.participants.host.name
+            );
+            console.log('✅ [InvitationAccept] Welcome message generated and added');
+          } else {
+            console.warn('⚠️ [InvitationAccept] Could not find session for welcome message');
+          }
+          
+          // 🚀 NEW: Trigger session refresh to update guest participants in UI
+          console.log('🔄 [InvitationAccept] Triggering session refresh to update guest participants');
+          window.dispatchEvent(new CustomEvent('refreshChatSession', { 
+            detail: { sessionId: notification.conversationId } 
+          }));
+          
+        } else {
+          console.warn('⚠️ [InvitationAccept] Could not find notification for guest status update');
+        }
+        
+      } catch (welcomeError) {
+        console.error('❌ [InvitationAccept] Error with guest status/welcome:', welcomeError);
+        // Don't fail the acceptance flow for welcome message issues
+      }
+      
     } catch (error) {
       console.error('❌ Failed to accept invitation:', error);
       throw error;
