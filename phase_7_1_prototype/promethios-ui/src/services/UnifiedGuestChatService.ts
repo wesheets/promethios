@@ -131,7 +131,7 @@ class UnifiedGuestChatService {
       });
       
       // Add the message to the host's chat session
-      await chatHistoryService.addMessageToChatSession(conversationId, {
+      await chatHistoryService.addMessageToSession(conversationId, {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         content: message,
         sender: 'user',
