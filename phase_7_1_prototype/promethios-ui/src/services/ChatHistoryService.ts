@@ -852,11 +852,11 @@ export class ChatHistoryService {
       // Get participants from UnifiedParticipantService
       const unifiedParticipants = await unifiedParticipantService.getConversationParticipants(session.id);
       
-      if (unifiedParticipants && unifiedParticipants.participants) {
-        console.log(`🔗 [ChatHistory] Found ${unifiedParticipants.participants.length} unified participants`);
+      if (unifiedParticipants && Array.isArray(unifiedParticipants) && unifiedParticipants.length > 0) {
+        console.log(`🔗 [ChatHistory] Found ${unifiedParticipants.length} unified participants`);
         
         // Filter for human participants and convert to ChatParticipant format
-        const humanParticipants = unifiedParticipants.participants
+        const humanParticipants = unifiedParticipants
           .filter(p => p && p.type === 'human' && p.id && p.name) // Add validation
           .map(p => {
             try {
@@ -882,7 +882,7 @@ export class ChatHistoryService {
         }
         
         // Also merge AI agent participants if they exist
-        const aiAgentParticipants = unifiedParticipants.participants
+        const aiAgentParticipants = unifiedParticipants
           .filter(p => p && p.type === 'ai_agent' && p.id && p.name) // Add validation
           .map(p => {
             try {

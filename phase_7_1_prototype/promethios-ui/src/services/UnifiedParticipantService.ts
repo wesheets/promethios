@@ -171,7 +171,8 @@ class UnifiedParticipantService {
         participantId,
         participantName,
         addedBy,
-        status
+        status,
+        invitationId
       });
 
       const newParticipant: UnifiedParticipant = {
@@ -189,9 +190,10 @@ class UnifiedParticipantService {
         }
       };
 
+      console.log(`🔍 [UnifiedParticipant] Storing participant in conversation: ${conversationId}`);
       await this.addParticipantToConversation(conversationId, newParticipant);
 
-      console.log('✅ [UnifiedParticipant] Human participant added');
+      console.log('✅ [UnifiedParticipant] Human participant added successfully');
 
     } catch (error) {
       console.error('❌ [UnifiedParticipant] Error adding human participant:', error);
@@ -382,11 +384,44 @@ class UnifiedParticipantService {
    */
   async getConversationParticipants(conversationId: string): Promise<UnifiedParticipant[]> {
     try {
+      console.log(`🔍 [UnifiedParticipant] Getting participants for conversation: ${conversationId}`);
+      
       const participantsRef = doc(db, 'conversation_participants', conversationId);
       const participantsDoc = await getDoc(participantsRef);
 
       if (!participantsDoc.exists()) {
-        console.log('⚠️ [UnifiedParticipant] No participants found for conversation:', conversationId);
+        console.log(`⚠️ [UnifiedParticipant] No participants document found for conversation: ${conversationId}`);
+        console.log(`🔍 [UnifiedParticipant] Checking if document exists with different ID format...`);
+        
+        // Try alternative conversation ID formats
+        const alternativeIds = [
+          `chat_${conversationId}`,
+          conversationId.replace('chat_', ''),
+          `session_${conversationId}`,
+          conversationId.replace('session_', ''),
+          // Handle cross-prefix scenarios
+          conversationId.replace('chat_', 'session_'),
+          conversationId.replace('session_', 'chat_')
+        ];
+        
+        for (const altId of alternativeIds) {
+          if (altId !== conversationId) {
+            console.log(`🔍 [UnifiedParticipant] Trying alternative ID: ${altId}`);
+            const altRef = doc(db, 'conversation_participants', altId);
+            const altDoc = await getDoc(altRef);
+            if (altDoc.exists()) {
+              console.log(`✅ [UnifiedParticipant] Found participants with alternative ID: ${altId}`);
+              const data = altDoc.data() as any;
+              const participants = data.participants.map((p: any) => ({
+                ...p,
+                addedAt: p.addedAt.toDate()
+              })) as UnifiedParticipant[];
+              console.log(`📋 [UnifiedParticipant] Retrieved ${participants.length} participants with alt ID`);
+              return participants;
+            }
+          }
+        }
+        
         return [];
       }
 
@@ -396,11 +431,12 @@ class UnifiedParticipantService {
         addedAt: p.addedAt.toDate()
       })) as UnifiedParticipant[];
 
-      console.log('📋 [UnifiedParticipant] Retrieved participants:', participants.length);
+      console.log(`📋 [UnifiedParticipant] Retrieved ${participants.length} participants for conversation: ${conversationId}`);
+      console.log(`🔍 [UnifiedParticipant] Participants:`, participants.map(p => ({ id: p.id, name: p.name, type: p.type, status: p.status })));
       return participants;
 
     } catch (error) {
-      console.error('❌ [UnifiedParticipant] Error getting conversation participants:', error);
+      console.error(`❌ [UnifiedParticipant] Error getting conversation participants for ${conversationId}:`, error);
       return [];
     }
   }
@@ -460,14 +496,24 @@ class UnifiedParticipantService {
     conversationId: string,
     participant: UnifiedParticipant
   ): Promise<void> {
+    console.log(`🔍 [UnifiedParticipant] addParticipantToConversation called with:`, {
+      conversationId,
+      participantId: participant.id,
+      participantName: participant.name,
+      participantType: participant.type
+    });
+    
     const participantsRef = doc(db, 'conversation_participants', conversationId);
+    console.log(`🔍 [UnifiedParticipant] Firebase document path: conversation_participants/${conversationId}`);
+    
     const participantsDoc = await getDoc(participantsRef);
 
     if (!participantsDoc.exists()) {
       console.log('⚠️ [UnifiedParticipant] Conversation participants document not found, creating it...');
       
       // Create the conversation participants document with the new participant
-      await setDoc(participantsRef, {
+      const newDocData = {
+        conversationId,
         hostUserId: participant.addedBy, // The person adding this participant becomes the host
         participants: [{
           ...participant,
@@ -476,7 +522,10 @@ class UnifiedParticipantService {
         createdAt: Timestamp.now(),
         lastUpdated: Timestamp.now(),
         version: 1
-      });
+      };
+      
+      console.log(`🔍 [UnifiedParticipant] Creating new document with data:`, newDocData);
+      await setDoc(participantsRef, newDocData);
       
       console.log('✅ [UnifiedParticipant] Created conversation participants document with participant');
       return;
@@ -488,6 +537,8 @@ class UnifiedParticipantService {
       addedAt: p.addedAt.toDate()
     })) as UnifiedParticipant[];
 
+    console.log(`🔍 [UnifiedParticipant] Found existing document with ${existingParticipants.length} participants`);
+
     // Check if participant already exists
     if (existingParticipants.some(p => p.id === participant.id)) {
       console.log('⚠️ [UnifiedParticipant] Participant already exists in conversation:', participant.id);
@@ -495,6 +546,7 @@ class UnifiedParticipantService {
     }
 
     const updatedParticipants = [...existingParticipants, participant];
+    console.log(`🔍 [UnifiedParticipant] Updating document with ${updatedParticipants.length} participants`);
 
     await updateDoc(participantsRef, {
       participants: updatedParticipants.map(p => ({
