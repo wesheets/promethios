@@ -137,8 +137,54 @@ export class HumanParticipantService {
    */
   public async getConversationParticipants(conversationId: string): Promise<HumanParticipant[]> {
     try {
+      // First try to get participants from the legacy conversation context
       const context = await this.getConversationContext(conversationId);
-      return context?.participants || [];
+      let participants = context?.participants || [];
+      
+      // Also check the UnifiedParticipantService for guest participants
+      try {
+        const { unifiedParticipantService } = await import('./UnifiedParticipantService');
+        const unifiedParticipants = await unifiedParticipantService.getConversationParticipants(conversationId);
+        
+        console.log('🔗 [HumanParticipant] Found', unifiedParticipants.length, 'unified participants for conversation:', conversationId);
+        
+        // Convert unified participants to HumanParticipant format
+        const convertedParticipants = unifiedParticipants
+          .filter(p => p.type === 'human')
+          .map(p => ({
+            userId: p.id,
+            displayName: p.name,
+            avatar: p.avatar || '',
+            email: p.email || '',
+            jobTitle: p.jobTitle,
+            organization: p.organization,
+            department: p.department,
+            isOnline: p.status === 'active',
+            lastSeen: p.lastActive || p.addedAt,
+            role: p.role,
+            permissions: p.permissions || {
+              canInviteOthers: true,
+              canAddAIAgents: true,
+              canModifyConversation: false,
+              canViewHistory: true,
+              canExportData: false
+            },
+            joinedAt: p.addedAt
+          } as HumanParticipant));
+        
+        console.log('🔗 [HumanParticipant] Converted', convertedParticipants.length, 'unified participants to HumanParticipant format');
+        
+        // Merge participants, avoiding duplicates
+        const existingUserIds = new Set(participants.map(p => p.userId));
+        const newParticipants = convertedParticipants.filter(p => !existingUserIds.has(p.userId));
+        participants = [...participants, ...newParticipants];
+        
+        console.log('🔗 [HumanParticipant] Final participant count:', participants.length);
+      } catch (unifiedError) {
+        console.warn('🔗 [HumanParticipant] Could not load unified participants:', unifiedError);
+      }
+      
+      return participants;
     } catch (error) {
       console.error('Failed to get conversation participants:', error);
       return [];
