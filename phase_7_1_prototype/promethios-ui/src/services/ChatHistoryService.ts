@@ -1152,11 +1152,11 @@ export class ChatHistoryService {
       const isGuestAgent = session.participants?.guests?.some(guest => guest.id === filter.agentId) || false;
       
       if (!isHostAgent && !isGuestAgent) {
-        console.log(`🔍 [ChatHistory] Session ${session.id} filtered out - agent ${filter.agentId} is neither host nor guest`);
-        console.log(`🔍 [ChatHistory] - Host agent: ${session.agentId}`);
-        console.log(`🔍 [ChatHistory] - Guest agents:`, session.participants?.guests?.map(g => g.id) || []);
+        // Session doesn't match the agent filter - no logging needed for performance
         return false;
-      } else {
+      }
+      // Session matches - only log successful matches occasionally for debugging
+      if (Math.random() < 0.1) { // Log only 10% of matches to reduce spam
         console.log(`🔍 [ChatHistory] Session ${session.id} matches filter - agent ${filter.agentId} is ${isHostAgent ? 'host' : 'guest'}`);
       }
     }
