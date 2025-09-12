@@ -373,6 +373,87 @@ Promethios - The Future of Human-AI Collaboration
     this.userPreferences.set(userId, { ...current, ...preferences });
     console.log('⚙️ Updated notification preferences for user:', userId);
   }
+
+  /**
+   * Send notification when a user receives a message in a shared conversation
+   */
+  async sendMessageNotification(data: {
+    conversationId: string;
+    targetUserId: string;
+    senderName: string;
+    messageContent: string;
+    timestamp: Date;
+  }): Promise<void> {
+    try {
+      console.log('🔔 [ConversationNotification] Sending message notification:', {
+        conversationId: data.conversationId,
+        targetUserId: data.targetUserId,
+        senderName: data.senderName,
+        messagePreview: data.messageContent.substring(0, 50)
+      });
+
+      const preferences = this.getUserPreferences(data.targetUserId);
+      
+      // Create in-app notification
+      if (preferences.inAppNotifications) {
+        const notification: ConversationInvitationNotification = {
+          id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: 'message',
+          conversationId: data.conversationId,
+          fromUserId: 'system',
+          fromUserName: data.senderName,
+          message: `New message: ${data.messageContent.substring(0, 100)}${data.messageContent.length > 100 ? '...' : ''}`,
+          timestamp: data.timestamp,
+          status: 'pending'
+        };
+
+        this.activeNotifications.set(notification.id, notification);
+        this.notifyListeners();
+        
+        console.log('✅ [ConversationNotification] In-app notification created');
+      }
+
+      // Play notification sound if enabled
+      if (preferences.notificationSound) {
+        this.playNotificationSound();
+      }
+
+      // TODO: Add email notification for offline users
+      // TODO: Add push notification support
+
+      console.log('✅ [ConversationNotification] Message notification sent successfully');
+    } catch (error) {
+      console.error('❌ [ConversationNotification] Failed to send message notification:', error);
+    }
+  }
+
+  /**
+   * Play notification sound
+   */
+  private playNotificationSound(): void {
+    try {
+      // Create a simple notification sound
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+      
+      console.log('🔊 [ConversationNotification] Notification sound played');
+    } catch (error) {
+      console.warn('🔇 [ConversationNotification] Could not play notification sound:', error);
+    }
+  }
 }
 
 export default ConversationNotificationService;

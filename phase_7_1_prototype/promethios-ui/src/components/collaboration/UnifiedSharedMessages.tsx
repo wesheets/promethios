@@ -165,6 +165,45 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Presence tracking for smart notifications
+  useEffect(() => {
+    if (!conversationId || !currentUserId) return;
+    
+    console.log('👁️ [UnifiedSharedMessages] Starting presence tracking for conversation:', {
+      conversationId,
+      currentUserId
+    });
+    
+    // Mark user as viewing this conversation
+    sharedConversationService.markUserAsViewing(conversationId, currentUserId);
+    
+    // Set up heartbeat to maintain presence
+    const heartbeatInterval = setInterval(() => {
+      sharedConversationService.updatePresenceHeartbeat(conversationId, currentUserId);
+    }, 15000); // Update every 15 seconds
+    
+    // Handle page visibility changes
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('👁️ [UnifiedSharedMessages] Page hidden - stopping presence tracking');
+        sharedConversationService.markUserAsNotViewing(conversationId, currentUserId);
+      } else {
+        console.log('👁️ [UnifiedSharedMessages] Page visible - resuming presence tracking');
+        sharedConversationService.markUserAsViewing(conversationId, currentUserId);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup on unmount
+    return () => {
+      console.log('👁️ [UnifiedSharedMessages] Cleaning up presence tracking');
+      clearInterval(heartbeatInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      sharedConversationService.markUserAsNotViewing(conversationId, currentUserId);
+    };
+  }, [conversationId, currentUserId]);
+
   // Handle sending messages
   const handleSendMessage = async () => {
     if (!messageInput.trim() || sending) return;

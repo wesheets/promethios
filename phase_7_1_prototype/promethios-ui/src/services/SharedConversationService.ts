@@ -97,6 +97,10 @@ class SharedConversationService {
   private userConversations: Map<string, string[]> = new Map(); // userId -> conversationIds
   private invitations: Map<string, ConversationInvitation[]> = new Map(); // userId -> invitations
   
+  // Presence tracking for smart notifications
+  private activeViewers: Map<string, Set<string>> = new Map(); // conversationId -> Set<userId>
+  private presenceHeartbeats: Map<string, Date> = new Map(); // userId_conversationId -> lastHeartbeat
+  
   // Firebase collections
   private readonly CONVERSATIONS_COLLECTION = 'shared_conversations';
   private readonly USER_CONVERSATIONS_COLLECTION = 'user_shared_conversations';
@@ -1074,6 +1078,34 @@ class SharedConversationService {
       // Save the updated chat session
       await chatHistoryService.updateChatSession(chatSession);
 
+      // Send smart notifications to other participants (only if they're not actively viewing)
+      try {
+        const conversation = await this.getSharedConversation(conversationId);
+        if (conversation) {
+          const otherParticipants = conversation.participants.filter(p => 
+            p.id !== senderId && p.type === 'human' && p.status === 'active'
+          );
+          
+          console.log('🔔 [SharedConversation] Checking notifications for participants:', {
+            totalParticipants: conversation.participants.length,
+            otherHumanParticipants: otherParticipants.length,
+            senderName
+          });
+          
+          // Send notifications to each participant who isn't actively viewing
+          for (const participant of otherParticipants) {
+            await this.sendSmartNotification(
+              conversationId,
+              participant.id,
+              senderName,
+              messageContent
+            );
+          }
+        }
+      } catch (notificationError) {
+        console.warn('⚠️ [SharedConversation] Failed to send notifications:', notificationError);
+      }
+
       console.log('✅ [SharedConversation] Successfully sent message to shared conversation');
     } catch (error) {
       console.error('❌ [SharedConversation] Failed to send message to shared conversation:', error);
@@ -1326,4 +1358,124 @@ class SharedConversationService {
 }
 
 export default SharedConversationService;
+
+
+  /**
+   * Presence tracking for smart notifications
+   */
+  
+  /**
+   * Mark user as actively viewing a conversation
+   */
+  markUserAsViewing(conversationId: string, userId: string): void {
+    console.log('👁️ [SharedConversation] User started viewing conversation:', { conversationId, userId });
+    
+    if (!this.activeViewers.has(conversationId)) {
+      this.activeViewers.set(conversationId, new Set());
+    }
+    
+    this.activeViewers.get(conversationId)!.add(userId);
+    this.presenceHeartbeats.set(`${userId}_${conversationId}`, new Date());
+  }
+  
+  /**
+   * Mark user as no longer viewing a conversation
+   */
+  markUserAsNotViewing(conversationId: string, userId: string): void {
+    console.log('👁️ [SharedConversation] User stopped viewing conversation:', { conversationId, userId });
+    
+    const viewers = this.activeViewers.get(conversationId);
+    if (viewers) {
+      viewers.delete(userId);
+      if (viewers.size === 0) {
+        this.activeViewers.delete(conversationId);
+      }
+    }
+    
+    this.presenceHeartbeats.delete(`${userId}_${conversationId}`);
+  }
+  
+  /**
+   * Update presence heartbeat for a user viewing a conversation
+   */
+  updatePresenceHeartbeat(conversationId: string, userId: string): void {
+    const key = `${userId}_${conversationId}`;
+    if (this.presenceHeartbeats.has(key)) {
+      this.presenceHeartbeats.set(key, new Date());
+    }
+  }
+  
+  /**
+   * Check if user is actively viewing a conversation
+   */
+  isUserActivelyViewing(conversationId: string, userId: string): boolean {
+    const viewers = this.activeViewers.get(conversationId);
+    if (!viewers || !viewers.has(userId)) {
+      return false;
+    }
+    
+    // Check if heartbeat is recent (within last 30 seconds)
+    const heartbeat = this.presenceHeartbeats.get(`${userId}_${conversationId}`);
+    if (!heartbeat) {
+      return false;
+    }
+    
+    const now = new Date();
+    const timeSinceHeartbeat = now.getTime() - heartbeat.getTime();
+    const isRecent = timeSinceHeartbeat < 30000; // 30 seconds
+    
+    if (!isRecent) {
+      // Clean up stale presence
+      this.markUserAsNotViewing(conversationId, userId);
+      return false;
+    }
+    
+    return true;
+  }
+  
+  /**
+   * Send notification to user if they're not actively viewing the conversation
+   */
+  private async sendSmartNotification(
+    conversationId: string, 
+    targetUserId: string, 
+    senderName: string, 
+    messageContent: string
+  ): Promise<void> {
+    try {
+      // Check if user is actively viewing this conversation
+      const isActivelyViewing = this.isUserActivelyViewing(conversationId, targetUserId);
+      
+      console.log('🔔 [SharedConversation] Smart notification check:', {
+        conversationId,
+        targetUserId,
+        senderName,
+        isActivelyViewing,
+        messagePreview: messageContent.substring(0, 50)
+      });
+      
+      if (isActivelyViewing) {
+        console.log('🔕 [SharedConversation] User is actively viewing - skipping notification');
+        return;
+      }
+      
+      // User is not actively viewing, send notification
+      console.log('🔔 [SharedConversation] Sending notification to user');
+      
+      // Import notification service dynamically to avoid circular dependencies
+      const { conversationNotificationService } = await import('./ConversationNotificationService');
+      
+      await conversationNotificationService.sendMessageNotification({
+        conversationId,
+        targetUserId,
+        senderName,
+        messageContent: messageContent.substring(0, 100), // Truncate for notification
+        timestamp: new Date()
+      });
+      
+      console.log('✅ [SharedConversation] Smart notification sent successfully');
+    } catch (error) {
+      console.error('❌ [SharedConversation] Failed to send smart notification:', error);
+    }
+  }
 
