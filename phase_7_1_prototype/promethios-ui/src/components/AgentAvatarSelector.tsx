@@ -187,7 +187,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         }))
       : hideHostAgent 
         ? guestAgents 
-        : [hostAgent, ...guestAgents];
+        : hostAgent ? [hostAgent, ...guestAgents] : guestAgents;
 
   // Debug logging to see what props are received
   console.log('🔍 [AgentAvatarSelector] Props received:');
@@ -227,7 +227,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       // For humans, we need to:
       // 1. Clear agent selections (since we're targeting a human)
       // 2. Set the target to the human
-      onSelectionChange([hostAgent.id]); // Reset to just host agent
+      onSelectionChange(hostAgent ? [hostAgent.id] : []); // Reset to just host agent if available
       onTargetChange?.(targetId); // Set human as target
       
       console.log('👤 [AgentAvatarSelector] Human participant selected as target');
@@ -260,6 +260,34 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         filter: 'none',
         transform: 'scale(1.1)',
         boxShadow: isSelected ? '0 0 12px #3b82f680' : '0 0 8px #3b82f640'
+      }
+    };
+  };
+
+  // Get agent style based on selection state
+  const getAgentStyle = (agent: AgentInfo) => {
+    const isSelected = selectedAgents.includes(agent.id);
+    const isPending = (agent as any).isPending;
+    
+    return {
+      width: 32,
+      height: 32,
+      bgcolor: isPending ? '#6b7280' : (isSelected ? agent.color : '#64748b'),
+      color: 'white',
+      fontSize: '0.8rem',
+      fontWeight: 600,
+      border: isPending 
+        ? '2px dashed #9ca3af' // Dashed border for pending
+        : (isSelected ? `2px solid ${agent.color}` : '2px solid transparent'),
+      opacity: isPending ? 0.6 : 1,
+      filter: isPending ? 'grayscale(50%)' : (isSelected ? 'none' : 'grayscale(20%)'),
+      transition: 'all 0.2s ease',
+      cursor: isPending ? 'not-allowed' : 'pointer',
+      '&:hover': {
+        opacity: isPending ? 0.6 : 1,
+        filter: isPending ? 'grayscale(50%)' : 'none',
+        transform: isPending ? 'none' : 'scale(1.1)',
+        boxShadow: isPending ? 'none' : (isSelected ? `0 0 12px ${agent.color}80` : `0 0 8px ${agent.color}40`)
       }
     };
   };
@@ -400,9 +428,10 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       // Single select mode
       console.log('🔍 [AgentAvatarSelector] Single select mode');
       if (selectedAgents.length === 1 && selectedAgents[0] === agentId) {
-        // If only this agent is selected, deselect (default to host)
-        console.log('🔍 [AgentAvatarSelector] Deselecting agent, defaulting to host:', hostAgent.id);
-        onSelectionChange([hostAgent.id]);
+        // If only this agent is selected, deselect (default to host if available)
+        const defaultSelection = hostAgent ? [hostAgent.id] : [];
+        console.log('🔍 [AgentAvatarSelector] Deselecting agent, defaulting to host:', defaultSelection);
+        onSelectionChange(defaultSelection);
         // 🔧 FIX: Also clear the messaging target when deselecting
         onTargetChange?.('');
         console.log('🎯 [AgentAvatarSelector] Cleared messaging target');
@@ -443,27 +472,6 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [allAgents, selectedAgents, onSelectionChange]);
-
-  // Get agent color based on selection state and pending status
-  const getAgentStyle = (agent: AgentInfo) => {
-    const isSelected = selectedAgents.includes(agent.id);
-    const isPending = (agent as any).isPending; // Type assertion for pending status
-    
-    return {
-      width: 32,
-      height: 32,
-      bgcolor: isPending ? '#6b7280' : (isSelected ? agent.color : '#64748b'), // Grey for pending
-      color: 'white',
-      fontSize: '0.8rem',
-      fontWeight: 600,
-      border: isPending 
-        ? '2px dashed #9ca3af' // Dashed border for pending
-        : (isSelected ? `2px solid ${agent.color}` : '2px solid transparent'),
-      opacity: isPending ? 0.6 : 1, // Reduced opacity for pending
-      cursor: isPending ? 'default' : 'pointer', // Different cursor for pending
-      transition: 'all 0.2s ease'
-    };
-  };
 
   return (
     <Box sx={{ 
@@ -525,7 +533,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
                 {agent.name}
               </Box>
               <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
-                {agent.id === hostAgent.id ? '👑 Host Agent' : 
+                {hostAgent && agent.id === hostAgent.id ? '👑 Host Agent' : 
                  agent.type === 'human' ? 
                    ((agent as any).isPending ? '⏳ Guest User (Pending)' : '👤 Guest User') : 
                    ((agent as any).isPending ? '⏳ Guest Agent (Pending)' : '🤖 Guest Agent')}
@@ -723,7 +731,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         currentUserName={currentUserName}
         conversationId={conversationId}
         conversationName={conversationName}
-        agentName={hostAgent.name}
+        agentName={hostAgent?.name || 'No Agent'}
         connectionsLoading={connectionsLoading}
         // New unified functionality props
         chatSession={chatSession}

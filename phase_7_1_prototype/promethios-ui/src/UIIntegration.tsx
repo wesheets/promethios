@@ -48,6 +48,7 @@ import WorkingGovernancePage from './pages/WorkingGovernancePage';
 import MinimalGovernancePage from './pages/MinimalGovernancePage';
 import ReverseTestGovernancePage from './pages/ReverseTestGovernancePage';
 import IncrementalGovernancePage from './pages/IncrementalGovernancePage';
+import AgentAvatarSelectorTest from './components/test/AgentAvatarSelectorTest';
 import AgentToChatbotConverter from './components/chat/conversion/AgentToChatbotConverter';
 // Import Enhanced version instead of original
 import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOverviewPage';
@@ -188,6 +189,9 @@ const UIIntegration: React.FC = () => {
           <Route path="guided-steps" element={<OnboardingGuidedStepsProxy />} />
           <Route index element={<OnboardingWelcome />} />
         </Route>
+        
+        {/* Test Routes */}
+        <Route path="test/avatar-selector" element={<AgentAvatarSelectorTest />} />
         
         {/* Render the dashboard with MainLayout - protected by onboarding */}
         <Route path="dashboard" element={
