@@ -292,3 +292,6 @@ export class AIWelcomeService {
 
 export default AIWelcomeService;
 
+// Export a singleton instance for easy use
+export const aiWelcomeService = new AIWelcomeService();
+
