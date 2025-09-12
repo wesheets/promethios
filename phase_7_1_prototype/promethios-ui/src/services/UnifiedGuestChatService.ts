@@ -145,9 +145,32 @@ class UnifiedGuestChatService {
       
       console.log('✅ [UnifiedGuestChat] Message sent to host conversation');
       
+      // 🚀 NEW: Trigger real-time update on host side
+      this.triggerHostSessionRefresh(conversationId);
+      
     } catch (error) {
       console.error('❌ [UnifiedGuestChat] Error sending message to host conversation:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Trigger real-time session refresh on host side
+   */
+  private triggerHostSessionRefresh(sessionId: string): void {
+    try {
+      console.log('🔄 [UnifiedGuestChat] Triggering host session refresh for:', sessionId);
+      
+      // Dispatch custom event to trigger session refresh on host side
+      const refreshEvent = new CustomEvent('refreshChatSession', {
+        detail: { sessionId }
+      });
+      
+      window.dispatchEvent(refreshEvent);
+      console.log('✅ [UnifiedGuestChat] Host session refresh event dispatched');
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error triggering host session refresh:', error);
     }
   }
 }
