@@ -857,8 +857,16 @@ export class ChatHistoryService {
         
         // Filter for human participants and convert to ChatParticipant format
         const humanParticipants = unifiedParticipants.participants
-          .filter(p => p.type === 'human')
-          .map(p => this.convertUnifiedParticipantToChatParticipant(p));
+          .filter(p => p && p.type === 'human' && p.id && p.name) // Add validation
+          .map(p => {
+            try {
+              return this.convertUnifiedParticipantToChatParticipant(p);
+            } catch (conversionError) {
+              console.error(`❌ [ChatHistory] Error converting participant ${p.id}:`, conversionError);
+              return null;
+            }
+          })
+          .filter(p => p !== null); // Remove failed conversions
         
         console.log(`🔗 [ChatHistory] Converted ${humanParticipants.length} human participants`);
         
@@ -875,8 +883,16 @@ export class ChatHistoryService {
         
         // Also merge AI agent participants if they exist
         const aiAgentParticipants = unifiedParticipants.participants
-          .filter(p => p.type === 'ai_agent')
-          .map(p => this.convertUnifiedParticipantToChatParticipant(p));
+          .filter(p => p && p.type === 'ai_agent' && p.id && p.name) // Add validation
+          .map(p => {
+            try {
+              return this.convertUnifiedParticipantToChatParticipant(p);
+            } catch (conversionError) {
+              console.error(`❌ [ChatHistory] Error converting AI agent ${p.id}:`, conversionError);
+              return null;
+            }
+          })
+          .filter(p => p !== null); // Remove failed conversions
         
         if (aiAgentParticipants.length > 0) {
           const newAIGuests = aiAgentParticipants.filter(p => !existingGuestIds.has(p.id));
@@ -904,7 +920,7 @@ export class ChatHistoryService {
       id: unifiedParticipant.id,
       name: unifiedParticipant.name,
       type: unifiedParticipant.type === 'human' ? 'human' : 'ai_agent',
-      joinedAt: unifiedParticipant.addedAt,
+      joinedAt: unifiedParticipant.addedAt, // Use addedAt from UnifiedParticipant
       messageCount: 0, // We don't track this in UnifiedParticipant
       lastActive: unifiedParticipant.addedAt, // Use addedAt as fallback
       avatar: unifiedParticipant.avatar,
