@@ -20,6 +20,7 @@ import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestio
 import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
 import CompactSharedChatTabs from '../components/collaboration/CompactSharedChatTabs';
 import SharedConversationService from '../services/SharedConversationService';
+import UnifiedGuestChatService from '../services/UnifiedGuestChatService';
 import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
 import UnifiedSharedMessages from '../components/collaboration/UnifiedSharedMessages';
 import ChatInvitationModal from '../components/collaboration/ChatInvitationModal';
@@ -484,6 +485,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     refreshSharedConversations
   } = useSharedConversations();
   const sharedConversationService = SharedConversationService.getInstance();
+  const unifiedGuestChatService = UnifiedGuestChatService.getInstance();
   
   // Track which shared conversations are active in header (opened from drawer or notifications)
   const [activeHeaderConversations, setActiveHeaderConversations] = useState<string[]>([]);
@@ -3904,26 +3906,53 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Route to shared conversation if in shared mode
     if (isInSharedMode && activeSharedConversation) {
       try {
-        // Clear typing indicator before sending message
-        if (user?.uid) {
-          await sharedConversationService.clearTypingIndicator(activeSharedConversation, user.uid);
-        }
-        
-        console.log('📤 [SharedConversation] About to send message:', { 
-          conversationId: activeSharedConversation,
-          senderId: user?.uid,
-          senderName: user?.displayName || user?.email,
-          content: messageToSend,
-          contentType: typeof messageToSend,
-          contentLength: messageToSend.length
-        });
-        
-        await sharedConversationService.sendMessageToSharedConversation(
-          activeSharedConversation,
-          user?.uid || 'anonymous',
-          user?.displayName || user?.email || 'Anonymous User',
-          messageToSend
+        // Check if this is a guest access conversation
+        const guestAccess = guestConversationAccess.find(access => 
+          access.id === activeSharedConversation || 
+          access.conversationId === activeSharedConversation
         );
+        
+        if (guestAccess) {
+          // Use unified guest chat service for guest access
+          console.log('📤 [UnifiedGuestChat] Sending message via guest access:', { 
+            hostUserId: guestAccess.hostUserId,
+            conversationId: guestAccess.conversationId,
+            guestUserId: user?.uid,
+            content: messageToSend,
+            contentType: typeof messageToSend,
+            contentLength: messageToSend.length
+          });
+          
+          await unifiedGuestChatService.sendMessageToHostConversation(
+            guestAccess.hostUserId,
+            guestAccess.conversationId,
+            user?.uid || 'anonymous',
+            user?.displayName || user?.email || 'Guest User',
+            messageToSend
+          );
+        } else {
+          // Use legacy shared conversation service
+          // Clear typing indicator before sending message
+          if (user?.uid) {
+            await sharedConversationService.clearTypingIndicator(activeSharedConversation, user.uid);
+          }
+          
+          console.log('📤 [SharedConversation] About to send message:', { 
+            conversationId: activeSharedConversation,
+            senderId: user?.uid,
+            senderName: user?.displayName || user?.email,
+            content: messageToSend,
+            contentType: typeof messageToSend,
+            contentLength: messageToSend.length
+          });
+          
+          await sharedConversationService.sendMessageToSharedConversation(
+            activeSharedConversation,
+            user?.uid || 'anonymous',
+            user?.displayName || user?.email || 'Anonymous User',
+            messageToSend
+          );
+        }
         
         // Clear input immediately for user feedback
         setMessageInput('');
