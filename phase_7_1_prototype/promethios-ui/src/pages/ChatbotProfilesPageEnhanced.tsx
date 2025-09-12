@@ -1817,14 +1817,35 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     lastProcessedParamsRef.current = currentParams;
     
     // Handle shared conversation parameter
-    if (sharedParam && sharedConversations.length > 0) {
+    if (sharedParam) {
       console.log('🔄 [URL Restoration] Processing shared conversation:', sharedParam);
-      const sharedConversation = sharedConversations.find(conv => conv.id === sharedParam);
-      if (sharedConversation) {
-        console.log('✅ [URL Restoration] Found shared conversation, selecting:', sharedConversation.name);
-        handleSharedConversationSelect(sharedParam);
-      } else {
-        console.log('⚠️ [URL Restoration] Shared conversation not found:', sharedParam);
+      
+      // First check regular shared conversations
+      let foundConversation = false;
+      if (sharedConversations.length > 0) {
+        const sharedConversation = sharedConversations.find(conv => conv.id === sharedParam);
+        if (sharedConversation) {
+          console.log('✅ [URL Restoration] Found regular shared conversation, selecting:', sharedConversation.name);
+          handleSharedConversationSelect(sharedParam);
+          foundConversation = true;
+        }
+      }
+      
+      // If not found in regular shared conversations, check guest conversation access
+      if (!foundConversation && guestConversationAccess.length > 0) {
+        const guestAccess = guestConversationAccess.find(access => 
+          access.id === sharedParam || access.conversationId === sharedParam
+        );
+        if (guestAccess) {
+          console.log('✅ [URL Restoration] Found guest conversation access, selecting:', guestAccess.conversationName);
+          // Use the invitation ID as the active conversation for guest access
+          handleSharedConversationSelect(guestAccess.id);
+          foundConversation = true;
+        }
+      }
+      
+      if (!foundConversation) {
+        console.log('⚠️ [URL Restoration] Shared conversation not found in either regular or guest access:', sharedParam);
       }
     }
     
@@ -1833,7 +1854,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       isRestoringFromURLRef.current = false;
       console.log('🔍 [DEBUG] - URL restoration completed');
     }, 100);
-     }, [agentParam, panelParam, sharedParam, chatbotProfiles, sharedConversations, handleSharedConversationSelect]);
+     }, [agentParam, panelParam, sharedParam, chatbotProfiles, sharedConversations, guestConversationAccess, handleSharedConversationSelect]);
 
   // Load human participants for the current conversation
   useEffect(() => {
@@ -5480,7 +5501,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           // Use unified approach for guest access
                           return (
                             <UnifiedSharedMessages
-                              conversationId={activeSharedConversation}
+                              conversationId={guestAccess.conversationId}
                               currentUserId={user?.uid || 'anonymous'}
                               guestAccess={guestAccess}
                               isUnifiedMode={true}
