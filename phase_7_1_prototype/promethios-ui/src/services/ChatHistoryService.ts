@@ -11,7 +11,7 @@ import { universalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { unifiedStorage } from './UnifiedStorageService';
 import { ComprehensiveToolReceiptExtension } from '../extensions/ComprehensiveToolReceiptExtension';
 import { firebaseDebugger } from '../utils/firebaseDebugger';
-import UnifiedParticipantService, { UnifiedParticipant } from './UnifiedParticipantService';
+import { unifiedParticipantService, UnifiedParticipant } from './UnifiedParticipantService';
 
 export interface ChatParticipant {
   id: string;
@@ -105,7 +105,6 @@ export class ChatHistoryService {
   private static instance: ChatHistoryService;
   private receiptExtension: ComprehensiveToolReceiptExtension;
   private activeSessions: Map<string, ChatSession> = new Map();
-  private unifiedParticipantService: UnifiedParticipantService;
   
   // Add caching for chat history loading
   private loadingPromises = new Map<string, Promise<ChatSession[]>>();
@@ -114,7 +113,6 @@ export class ChatHistoryService {
   private readonly CACHE_DURATION = 30000; // 30 seconds cache
   private constructor() {
     this.receiptExtension = new ComprehensiveToolReceiptExtension();
-    this.unifiedParticipantService = new UnifiedParticipantService();
     // Initialize synchronously - no async initialization needed
     console.log('🗂️ ChatHistoryService initialized successfully');
   }
@@ -854,7 +852,7 @@ export class ChatHistoryService {
       console.log(`🔗 [ChatHistory] Merging unified participants for session: ${session.id}`);
       
       // Get participants from UnifiedParticipantService
-      const unifiedParticipants = await this.unifiedParticipantService.getConversationParticipants(session.id);
+      const unifiedParticipants = await unifiedParticipantService.getConversationParticipants(session.id);
       
       if (unifiedParticipants && unifiedParticipants.participants) {
         console.log(`🔗 [ChatHistory] Found ${unifiedParticipants.participants.length} unified participants`);
