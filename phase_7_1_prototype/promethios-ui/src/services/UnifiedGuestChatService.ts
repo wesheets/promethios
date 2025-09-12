@@ -100,6 +100,15 @@ class UnifiedGuestChatService {
       
       if (chatSession) {
         console.log('✅ [UnifiedGuestChat] Loaded host chat session:', chatSession.name);
+        console.log('🔍 [UnifiedGuestChat] Session participants:', {
+          host: chatSession.participants?.host,
+          guestCount: chatSession.participants?.guests?.length || 0,
+          guests: chatSession.participants?.guests?.map(g => ({ id: g.id, name: g.name, type: g.type }))
+        });
+        
+        // Ensure the host agent is included in participants if not already present
+        await this.ensureHostAgentInParticipants(chatSession);
+        
         return chatSession;
       } else {
         console.warn('⚠️ [UnifiedGuestChat] Host chat session not found:', conversationId);
@@ -109,6 +118,121 @@ class UnifiedGuestChatService {
     } catch (error) {
       console.error('❌ [UnifiedGuestChat] Error loading host chat session:', error);
       return null;
+    }
+  }
+
+  /**
+   * Ensure the host agent is properly included in the participants list
+   */
+  private async ensureHostAgentInParticipants(chatSession: ChatSession): Promise<void> {
+    try {
+      console.log('🔍 [UnifiedGuestChat] Ensuring host agent in participants for session:', chatSession.id);
+      
+      // Check if the host agent is already in the guests list
+      const hostAgentInGuests = chatSession.participants?.guests?.find(g => 
+        g.id === chatSession.agentId && g.type === 'ai_agent'
+      );
+      
+      if (!hostAgentInGuests && chatSession.agentId && chatSession.agentName) {
+        console.log('🔧 [UnifiedGuestChat] Adding host agent to participants.guests:', {
+          id: chatSession.agentId,
+          name: chatSession.agentName
+        });
+        
+        // Ensure participants structure exists
+        if (!chatSession.participants) {
+          chatSession.participants = {
+            host: {
+              id: chatSession.userId,
+              name: 'Host User',
+              type: 'human',
+              joinedAt: chatSession.createdAt,
+              lastActive: chatSession.lastUpdated,
+              messageCount: 0
+            },
+            guests: []
+          };
+        }
+        
+        if (!chatSession.participants.guests) {
+          chatSession.participants.guests = [];
+        }
+        
+        // Add the host agent as a guest participant
+        const hostAgentParticipant = {
+          id: chatSession.agentId,
+          name: chatSession.agentName,
+          type: 'ai_agent' as const,
+          joinedAt: chatSession.createdAt,
+          lastActive: chatSession.lastUpdated,
+          messageCount: chatSession.messages?.filter(m => m.sender === 'assistant').length || 0,
+          status: 'active' as const
+        };
+        
+        chatSession.participants.guests.push(hostAgentParticipant);
+        console.log('✅ [UnifiedGuestChat] Added host agent to participants.guests');
+      } else {
+        console.log('🔗 [UnifiedGuestChat] Host agent already in participants or missing agent info');
+      }
+      
+      // Also check for any other AI agents mentioned in messages that might not be in participants
+      await this.discoverAdditionalAIAgents(chatSession);
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error ensuring host agent in participants:', error);
+    }
+  }
+
+  /**
+   * Discover additional AI agents from message history that might not be in participants
+   */
+  private async discoverAdditionalAIAgents(chatSession: ChatSession): Promise<void> {
+    try {
+      console.log('🔍 [UnifiedGuestChat] Discovering additional AI agents from messages');
+      
+      // Look for messages with agent metadata that might indicate other AI participants
+      const agentMessages = chatSession.messages?.filter(m => 
+        m.sender === 'assistant' && m.metadata?.agentId && m.metadata?.agentName
+      ) || [];
+      
+      const discoveredAgents = new Map<string, { id: string; name: string }>();
+      
+      agentMessages.forEach(msg => {
+        if (msg.metadata?.agentId && msg.metadata?.agentName) {
+          discoveredAgents.set(msg.metadata.agentId, {
+            id: msg.metadata.agentId,
+            name: msg.metadata.agentName
+          });
+        }
+      });
+      
+      // Add any discovered agents that aren't already in participants
+      const existingAgentIds = new Set([
+        ...(chatSession.participants?.guests?.filter(g => g.type === 'ai_agent').map(g => g.id) || []),
+        chatSession.agentId
+      ]);
+      
+      for (const [agentId, agentInfo] of discoveredAgents) {
+        if (!existingAgentIds.has(agentId)) {
+          console.log('🔧 [UnifiedGuestChat] Adding discovered AI agent to participants:', agentInfo);
+          
+          const agentParticipant = {
+            id: agentInfo.id,
+            name: agentInfo.name,
+            type: 'ai_agent' as const,
+            joinedAt: chatSession.createdAt,
+            lastActive: chatSession.lastUpdated,
+            messageCount: agentMessages.filter(m => m.metadata?.agentId === agentId).length,
+            status: 'active' as const
+          };
+          
+          chatSession.participants.guests.push(agentParticipant);
+          console.log('✅ [UnifiedGuestChat] Added discovered AI agent to participants');
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error discovering additional AI agents:', error);
     }
   }
 
