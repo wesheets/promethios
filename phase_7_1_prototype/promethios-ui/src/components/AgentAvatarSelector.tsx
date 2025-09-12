@@ -207,10 +207,34 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   console.log('🔍 [AgentAvatarSelector] Button should be clickable:', shouldBeClickable);
   console.log('🔍 [AgentAvatarSelector] Reason: Always allow opening guest selector to invite people');
 
-  // Handle target selection (for messaging)
+  // Handle target selection (for messaging) - unified for both humans and agents
   const handleTargetClick = (targetId: string, event: React.MouseEvent) => {
     event.preventDefault();
-    onTargetChange?.(targetId);
+    event.stopPropagation();
+    
+    console.log('🎯 [AgentAvatarSelector] handleTargetClick called:', {
+      targetId,
+      currentSelectedTarget: selectedTarget,
+      currentSelectedAgents: selectedAgents
+    });
+    
+    // Check if this is a human participant
+    const isHuman = humanParticipants.some(h => h.id === targetId);
+    
+    if (isHuman) {
+      console.log('👤 [AgentAvatarSelector] Selecting human participant:', targetId);
+      
+      // For humans, we need to:
+      // 1. Clear agent selections (since we're targeting a human)
+      // 2. Set the target to the human
+      onSelectionChange([hostAgent.id]); // Reset to just host agent
+      onTargetChange?.(targetId); // Set human as target
+      
+      console.log('👤 [AgentAvatarSelector] Human participant selected as target');
+    } else {
+      console.log('🤖 [AgentAvatarSelector] Setting agent as target:', targetId);
+      onTargetChange?.(targetId);
+    }
   };
 
   // Get human style based on selection state
@@ -227,15 +251,15 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       fontSize: '0.8rem',
       fontWeight: 600,
       border: isSelected ? '2px solid #3b82f6' : '2px solid transparent',
-      opacity: isSelected ? 1 : 0.7,
-      filter: isSelected ? 'none' : 'grayscale(50%)',
+      opacity: 1, // Always full opacity for better visibility
+      filter: isSelected ? 'none' : 'grayscale(20%)', // Less grayscale when not selected
       transition: 'all 0.2s ease',
       cursor: 'pointer',
       '&:hover': {
         opacity: 1,
         filter: 'none',
         transform: 'scale(1.1)',
-        boxShadow: '0 0 8px #3b82f640'
+        boxShadow: isSelected ? '0 0 12px #3b82f680' : '0 0 8px #3b82f640'
       }
     };
   };
