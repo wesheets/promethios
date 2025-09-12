@@ -1355,10 +1355,6 @@ class SharedConversationService {
       this.clearTypingIndicator(conversationId, userId);
     }, 3000);
   }
-}
-
-export default SharedConversationService;
-
 
   /**
    * Presence tracking for smart notifications
@@ -1478,4 +1474,7 @@ export default SharedConversationService;
       console.error('❌ [SharedConversation] Failed to send smart notification:', error);
     }
   }
+}
+
+export default SharedConversationService;
 
