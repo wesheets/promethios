@@ -2032,8 +2032,49 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
     window.addEventListener('openChatInvitation', handleChatInvitation as EventListener);
     
+    // 🚀 NEW: Handle session refresh events from guest acceptance
+    const handleSessionRefresh = async (event: CustomEvent) => {
+      const { sessionId } = event.detail;
+      console.log('🔄 [SessionRefresh] Received session refresh event for:', sessionId);
+      
+      if (selectedChatbotId && currentBotState?.currentChatSession?.id === sessionId) {
+        try {
+          console.log('🔄 [SessionRefresh] Refreshing current session data...');
+          const updatedSession = await chatHistoryService.getChatSessionById(sessionId);
+          
+          if (updatedSession) {
+            // Extract guest participants from session for avatar display
+            const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+              id: guest.id,
+              name: guest.name,
+              avatar: guest.avatar,
+              type: guest.type,
+              status: guest.status || 'active',
+              email: guest.email,
+            })) || [];
+            
+            console.log('🔄 [SessionRefresh] Updated guest participants:', guestParticipants);
+            
+            // Update bot state with refreshed session and guest participants
+            updateBotState(selectedChatbotId, {
+              currentChatSession: updatedSession,
+              guestParticipants: guestParticipants,
+              chatHistoryRefreshTrigger: (currentBotState.chatHistoryRefreshTrigger || 0) + 1
+            });
+            
+            console.log('✅ [SessionRefresh] Session data refreshed successfully');
+          }
+        } catch (error) {
+          console.error('❌ [SessionRefresh] Error refreshing session:', error);
+        }
+      }
+    };
+    
+    window.addEventListener('refreshChatSession', handleSessionRefresh as EventListener);
+    
     return () => {
       window.removeEventListener('openChatInvitation', handleChatInvitation as EventListener);
+      window.removeEventListener('refreshChatSession', handleSessionRefresh as EventListener);
     };
   }, []);
 
@@ -8776,13 +8817,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               console.log('📨 Sending invitations to:', pendingHumanInvites);
               
               try {
-                // Get current conversation info - use actual session ID instead of chatbot ID
-                const currentConversationId = activeSession?.sessionId || currentMultiAgentSession || `session_${selectedChatbot?.id}_${Date.now()}`;
+                // Get current conversation info - use the SAME session ID that was used for guest human addition
+                const currentChatSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+                const currentConversationId = currentChatSession?.id || activeSession?.sessionId || currentMultiAgentSession || `session_${selectedChatbot?.id}_${Date.now()}`;
                 const currentConversationName = selectedChatbot?.identity?.name || 'AI Conversation';
                 const currentUserId = user?.uid || 'unknown-user'; // Use real authenticated user ID
                 const currentUserName = user?.displayName || user?.email || 'Current User'; // Use real user name
                 
                 console.log('📨 [Invitation] Using conversation ID:', currentConversationId);
+                console.log('📨 [Invitation] This should match the session where guest humans were added:', currentChatSession?.id);
                 console.log('📨 [Invitation] Active session:', activeSession?.sessionId);
                 console.log('📨 [Invitation] Multi-agent session:', currentMultiAgentSession);
                 

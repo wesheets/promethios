@@ -196,6 +196,8 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
         // Update guest human status to active and generate welcome message
         try {
           console.log('🤖 [CollaborationModal] Updating guest status and generating welcome message...');
+          console.log('🤖 [CollaborationModal] Using conversation ID:', hostConversationId);
+          console.log('🤖 [CollaborationModal] Current user ID:', currentUserId);
           
           // Update guest human status to active
           await chatHistoryService.updateGuestHumanStatus(
@@ -203,10 +205,15 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
             currentUserId,
             'active'
           );
+          console.log('✅ [CollaborationModal] Guest status updated to active');
           
           // Get session to find host agent info for welcome message
           const session = await chatHistoryService.getChatSessionById(hostConversationId);
+          console.log('🔍 [CollaborationModal] Retrieved session for welcome message:', session ? 'found' : 'not found');
+          
           if (session) {
+            console.log('🔍 [CollaborationModal] Session participants:', session.participants);
+            
             // Generate and add welcome message
             await aiWelcomeService.handleGuestAcceptance(
               hostConversationId,
@@ -218,6 +225,13 @@ const CollaborationInvitationModal: React.FC<CollaborationInvitationModalProps> 
           } else {
             console.warn('⚠️ [CollaborationModal] Could not find session for welcome message');
           }
+          
+          // 🚀 NEW: Trigger session refresh to update guest participants in UI
+          console.log('🔄 [CollaborationModal] Triggering session refresh to update guest participants');
+          window.dispatchEvent(new CustomEvent('refreshChatSession', { 
+            detail: { sessionId: hostConversationId } 
+          }));
+          
         } catch (welcomeError) {
           console.error('❌ [CollaborationModal] Error with guest status/welcome:', welcomeError);
           // Don't fail the acceptance flow for welcome message issues
