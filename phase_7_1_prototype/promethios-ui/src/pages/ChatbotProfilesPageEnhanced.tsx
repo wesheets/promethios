@@ -484,6 +484,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     handlePrivacyToggle,
     refreshSharedConversations
   } = useSharedConversations();
+  
+  // Debug logging for guestConversationAccess
+  console.log('🔍 [Context] guestConversationAccess from context:', guestConversationAccess);
+  console.log('🔍 [Context] guestConversationAccess length:', guestConversationAccess?.length);
+  console.log('🔍 [Context] isInSharedMode:', isInSharedMode);
+  console.log('🔍 [Context] activeSharedConversation:', activeSharedConversation);
+  console.log('🔍 [TEST] Simple test log to verify logging is working');
+  
+  // Test the condition directly
+  const conditionMet = isInSharedMode && activeSharedConversation && guestConversationAccess?.length > 0;
+  console.log('🔍 [TEST] Condition check:', {
+    isInSharedMode,
+    activeSharedConversation: !!activeSharedConversation,
+    guestConversationAccessLength: guestConversationAccess?.length,
+    conditionMet
+  });
   const sharedConversationService = SharedConversationService.getInstance();
   const unifiedGuestChatService = UnifiedGuestChatService.getInstance();
   
@@ -5315,6 +5331,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {(() => {
                       // Shared conversation participants - Get real data from host chat session
                       if (isInSharedMode && activeSharedConversation && guestConversationAccess?.length > 0) {
+                        console.log('🔍 [Header] Entering shared mode participant display');
+                        console.log('🔍 [Header] guestConversationAccess:', guestConversationAccess);
+                        console.log('🔍 [Header] guestConversationAccess.length:', guestConversationAccess?.length);
+                        
                         const hostChatSession = guestConversationAccess[0]; // Get the host chat session
                         
                         // Get real participants from host chat session
@@ -5334,6 +5354,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         const guestHumans = hostChatSession.participants?.guests?.filter(g => 
                           g.type === 'human' && g.id !== currentUserId // Exclude current guest user
                         ) || [];
+                        
+                        // Debug logging for header participants
+                        console.log('🔍 [Header] hostChatSession.participants:', hostChatSession.participants);
+                        console.log('🔍 [Header] All guests:', hostChatSession.participants?.guests);
+                        console.log('🔍 [Header] Filtered guestAgents:', guestAgents);
+                        console.log('🔍 [Header] Filtered guestHumans:', guestHumans);
                         
                         const totalParticipants = [hostUser, hostAgent, ...guestAgents, ...guestHumans].filter(Boolean).length;
                         
@@ -6357,15 +6383,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       })()}
                                       guestAgents={(() => {
                                         if (isInSharedMode && guestConversationAccess?.length > 0) {
+                                          console.log('🔍 [AvatarSelector] Entering shared mode agent selection');
+                                          console.log('🔍 [AvatarSelector] guestConversationAccess:', guestConversationAccess);
+                                          console.log('🔍 [AvatarSelector] guestConversationAccess.length:', guestConversationAccess?.length);
+                                          
                                           // Use real guest agents from host chat session
                                           const hostChatSession = guestConversationAccess[0];
-                                          return hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent').map(agent => ({
+                                          const filteredAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
+                                          
+                                          // Debug logging for avatar selector
+                                          console.log('🔍 [AvatarSelector] hostChatSession.participants:', hostChatSession.participants);
+                                          console.log('🔍 [AvatarSelector] All guests:', hostChatSession.participants?.guests);
+                                          console.log('🔍 [AvatarSelector] Filtered agents:', filteredAgents);
+                                          
+                                          return filteredAgents.map(agent => ({
                                             id: agent.id,
                                             name: agent.name,
                                             type: 'agent' as const,
                                             avatar: agent.avatar,
                                             status: agent.status || 'active'
-                                          })) || [];
+                                          }));
                                         }
                                         return getGuestAgents();
                                       })()}
