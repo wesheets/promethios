@@ -11,6 +11,7 @@ import { universalGovernanceAdapter } from './UniversalGovernanceAdapter';
 import { unifiedStorage } from './UnifiedStorageService';
 import { ComprehensiveToolReceiptExtension } from '../extensions/ComprehensiveToolReceiptExtension';
 import { firebaseDebugger } from '../utils/firebaseDebugger';
+import UnifiedParticipantService, { UnifiedParticipant } from './UnifiedParticipantService';
 
 export interface ChatParticipant {
   id: string;
@@ -104,15 +105,16 @@ export class ChatHistoryService {
   private static instance: ChatHistoryService;
   private receiptExtension: ComprehensiveToolReceiptExtension;
   private activeSessions: Map<string, ChatSession> = new Map();
+  private unifiedParticipantService: UnifiedParticipantService;
   
   // Add caching for chat history loading
   private loadingPromises = new Map<string, Promise<ChatSession[]>>();
   private cacheTimestamps = new Map<string, number>();
   private chatHistoryCache = new Map<string, ChatSession[]>();
   private readonly CACHE_DURATION = 30000; // 30 seconds cache
-
   private constructor() {
     this.receiptExtension = new ComprehensiveToolReceiptExtension();
+    this.unifiedParticipantService = new UnifiedParticipantService();
     // Initialize synchronously - no async initialization needed
     console.log('🗂️ ChatHistoryService initialized successfully');
   }
@@ -830,6 +832,10 @@ export class ChatHistoryService {
       
       if (sessionData) {
         const session = this.deserializeChatSession(sessionData);
+        
+        // 🚀 NEW: Merge guest participants from UnifiedParticipantService
+        await this.mergeUnifiedParticipants(session);
+        
         this.activeSessions.set(sessionId, session);
         return session;
       }
@@ -838,6 +844,77 @@ export class ChatHistoryService {
     }
 
     return null;
+  }
+
+  /**
+   * Merge guest participants from UnifiedParticipantService into ChatSession
+   */
+  private async mergeUnifiedParticipants(session: ChatSession): Promise<void> {
+    try {
+      console.log(`🔗 [ChatHistory] Merging unified participants for session: ${session.id}`);
+      
+      // Get participants from UnifiedParticipantService
+      const unifiedParticipants = await this.unifiedParticipantService.getConversationParticipants(session.id);
+      
+      if (unifiedParticipants && unifiedParticipants.participants) {
+        console.log(`🔗 [ChatHistory] Found ${unifiedParticipants.participants.length} unified participants`);
+        
+        // Filter for human participants and convert to ChatParticipant format
+        const humanParticipants = unifiedParticipants.participants
+          .filter(p => p.type === 'human')
+          .map(p => this.convertUnifiedParticipantToChatParticipant(p));
+        
+        console.log(`🔗 [ChatHistory] Converted ${humanParticipants.length} human participants`);
+        
+        // Merge with existing guests (avoid duplicates)
+        const existingGuestIds = new Set(session.participants.guests.map(g => g.id));
+        const newGuests = humanParticipants.filter(p => !existingGuestIds.has(p.id));
+        
+        if (newGuests.length > 0) {
+          session.participants.guests.push(...newGuests);
+          console.log(`✅ [ChatHistory] Added ${newGuests.length} new guest participants to session`);
+        } else {
+          console.log(`🔗 [ChatHistory] No new guest participants to add`);
+        }
+        
+        // Also merge AI agent participants if they exist
+        const aiAgentParticipants = unifiedParticipants.participants
+          .filter(p => p.type === 'ai_agent')
+          .map(p => this.convertUnifiedParticipantToChatParticipant(p));
+        
+        if (aiAgentParticipants.length > 0) {
+          const newAIGuests = aiAgentParticipants.filter(p => !existingGuestIds.has(p.id));
+          if (newAIGuests.length > 0) {
+            session.participants.guests.push(...newAIGuests);
+            console.log(`✅ [ChatHistory] Added ${newAIGuests.length} AI agent participants to session`);
+          }
+        }
+        
+      } else {
+        console.log(`🔗 [ChatHistory] No unified participants found for session: ${session.id}`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ [ChatHistory] Error merging unified participants for session ${session.id}:`, error);
+      // Don't throw - this shouldn't break session loading
+    }
+  }
+
+  /**
+   * Convert UnifiedParticipant to ChatParticipant format
+   */
+  private convertUnifiedParticipantToChatParticipant(unifiedParticipant: UnifiedParticipant): ChatParticipant {
+    return {
+      id: unifiedParticipant.id,
+      name: unifiedParticipant.name,
+      type: unifiedParticipant.type === 'human' ? 'human' : 'ai_agent',
+      joinedAt: unifiedParticipant.addedAt,
+      messageCount: 0, // We don't track this in UnifiedParticipant
+      lastActive: unifiedParticipant.addedAt, // Use addedAt as fallback
+      avatar: unifiedParticipant.avatar,
+      status: unifiedParticipant.status,
+      // Add email if it's available (would need to be added to UnifiedParticipant interface)
+    };
   }
 
   private async saveChatSession(session: ChatSession): Promise<void> {
