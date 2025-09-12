@@ -1075,15 +1075,22 @@ export class ChatHistoryService {
       },
       // Deserialize participants with Date objects
       participants: data.participants ? {
-        host: {
+        host: data.participants.host ? {
           ...data.participants.host,
-          joinedAt: new Date(data.participants.host.joinedAt),
-          lastActive: new Date(data.participants.host.lastActive),
+          joinedAt: new Date(data.participants.host.joinedAt || data.createdAt),
+          lastActive: new Date(data.participants.host.lastActive || data.participants.host.joinedAt || data.createdAt),
+        } : {
+          id: 'unknown',
+          name: 'Unknown Host',
+          type: 'human' as const,
+          joinedAt: new Date(data.createdAt),
+          lastActive: new Date(data.createdAt),
+          messageCount: 0
         },
-        guests: data.participants.guests.map((guest: any) => ({
+        guests: (data.participants.guests || []).map((guest: any) => ({
           ...guest,
-          joinedAt: new Date(guest.joinedAt),
-          lastActive: new Date(guest.lastActive),
+          joinedAt: new Date(guest.joinedAt || data.createdAt),
+          lastActive: new Date(guest.lastActive || guest.joinedAt || data.createdAt),
         })),
       } : {
         // Fallback for sessions without participants field
