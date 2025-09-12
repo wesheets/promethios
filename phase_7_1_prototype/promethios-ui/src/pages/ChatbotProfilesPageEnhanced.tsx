@@ -500,6 +500,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     guestConversationAccessLength: guestConversationAccess?.length,
     conditionMet
   });
+  
+  // Check if the URL conversation ID exists in guestConversationAccess
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlSharedParam = urlParams.get('shared');
+  console.log('🔍 [URL] URL shared param:', urlSharedParam);
+  console.log('🔍 [URL] Active shared conversation:', activeSharedConversation);
+  
+  if (guestConversationAccess?.length > 0) {
+    const matchingAccess = guestConversationAccess.find(access => 
+      access.id === urlSharedParam || access.id === activeSharedConversation
+    );
+    console.log('🔍 [URL] Matching guest access found:', !!matchingAccess);
+    if (matchingAccess) {
+      console.log('🔍 [URL] Matching access details:', matchingAccess);
+    } else {
+      console.log('🔍 [URL] Available guest access IDs:', guestConversationAccess.map(a => a.id));
+    }
+  }
   const sharedConversationService = SharedConversationService.getInstance();
   const unifiedGuestChatService = UnifiedGuestChatService.getInstance();
   
