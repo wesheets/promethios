@@ -417,10 +417,11 @@ export class ChatHistoryService {
           try {
             const sessionData = await unifiedStorage.get('chats', `user_${userId}_${sessionId}`);
             if (sessionData) {
-              const session = this.deserializeChatSession(sessionData);
+              // Use getChatSession to ensure participant merging happens
+              const session = await this.getChatSession(sessionId);
               
               // Apply filters
-              if (this.matchesFilter(session, filter)) {
+              if (session && this.matchesFilter(session, filter)) {
                 sessions.push(session);
               }
             }
@@ -445,12 +446,11 @@ export class ChatHistoryService {
           
           for (const key of userSessionKeys) {
             try {
-              const sessionData = await unifiedStorage.get('chats', key.replace('chats/', ''));
-              if (sessionData) {
-                const session = this.deserializeChatSession(sessionData);
-                if (this.matchesFilter(session, filter)) {
-                  sessions.push(session);
-                }
+              const sessionId = key.replace('chats/', '').replace(`user_${userId}_`, '');
+              // Use getChatSession to ensure participant merging happens
+              const session = await this.getChatSession(sessionId);
+              if (session && this.matchesFilter(session, filter)) {
+                sessions.push(session);
               }
             } catch (error) {
               console.warn(`Failed to load session from key ${key}:`, error);
@@ -462,20 +462,19 @@ export class ChatHistoryService {
           // Final fallback: try common session patterns (limited to prevent hanging)
           for (let i = 0; i < 10; i++) { // Reduced limit to prevent hanging
             try {
-              const sessionData = await unifiedStorage.get('chats', `user_${userId}_chat_${i}`);
-              if (sessionData) {
-                const session = this.deserializeChatSession(sessionData);
-                if (this.matchesFilter(session, filter)) {
-                  sessions.push(session);
-                }
-              } else {
+              const sessionId = `chat_${i}`;
+              // Use getChatSession to ensure participant merging happens
+              const session = await this.getChatSession(sessionId);
+              if (session && this.matchesFilter(session, filter)) {
+                sessions.push(session);
+              } else if (!session) {
                 // No more sessions found, break early
                 break;
               }
             } catch (error) {
-              // Session doesn't exist, break
-              break;
+              console.warn(`Failed to load session chat_${i}:`, error);
             }
+          }
           }
         }
       }
