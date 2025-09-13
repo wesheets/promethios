@@ -48,9 +48,14 @@ import {
   CheckCircle,
   Warning,
   PersonAdd,
+  Home as HostIcon,
+  PersonAdd as GuestIcon,
+  Tabs,
+  Tab,
 } from '@mui/icons-material';
 import { ChatHistoryService, ChatSession, ChatHistoryFilter } from '../../services/ChatHistoryService';
 import { ChatSharingService } from '../../services/ChatSharingService';
+import { SharedConversation } from '../../services/SharedConversationService';
 import { useAuth } from '../../context/AuthContext';
 import ChatInvitationModal from '../collaboration/ChatInvitationModal';
 
@@ -61,7 +66,9 @@ interface ChatHistoryPanelProps {
   onNewChat: (session?: ChatSession) => void;
   onShareChat?: (contextId: string) => void;
   currentSessionId?: string;
-  refreshTrigger?: number; // Add refresh trigger prop
+  refreshTrigger?: number;
+  sharedConversations?: SharedConversation[];
+  onSharedConversationSelect?: (conversationId: string) => void;
 }
 
 const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
@@ -71,13 +78,15 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   onNewChat,
   onShareChat,
   currentSessionId,
-  refreshTrigger, // Add refresh trigger prop
+  refreshTrigger,
+  sharedConversations = [],
+  onSharedConversationSelect,
 }) => {
   const { currentUser } = useAuth();
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'shared' | 'recent'>('all');
+  const [activeTab, setActiveTab] = useState(0); // 0: Host Chats, 1: Guest Chats
   
   // Dialog states
   const [newChatDialogOpen, setNewChatDialogOpen] = useState(false);
@@ -113,22 +122,11 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
     }
 
     try {
-      setLoading(true); // Set loading to true when starting to load
+      setLoading(true);
       
       const filter: ChatHistoryFilter = {
         agentId: agentId,
       };
-
-      if (selectedFilter === 'shared') {
-        filter.hasSharedContext = true;
-      } else if (selectedFilter === 'recent') {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        filter.dateRange = {
-          start: weekAgo,
-          end: new Date(),
-        };
-      }
 
       if (searchTerm.trim()) {
         filter.searchTerm = searchTerm.trim();
@@ -138,11 +136,10 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       setChatSessions(sessions);
     } catch (error) {
       console.error('Failed to load chat sessions:', error);
-      // Don't clear sessions on error - keep showing what we have
     } finally {
-      setLoading(false); // Always set loading to false when done
+      setLoading(false);
     }
-  }, [currentUser?.uid, agentId, selectedFilter, searchTerm]);
+  }, [currentUser?.uid, agentId, searchTerm]);
 
   useEffect(() => {
     loadChatSessions();
@@ -448,53 +445,87 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
           }}
         />
 
-        {/* Filter Chips */}
-        <Stack direction="row" spacing={1}>
-          {(['all', 'recent', 'shared'] as const).map((filter) => (
-            <Chip
-              key={filter}
-              label={filter === 'all' ? 'All' : filter === 'recent' ? 'Recent' : 'Shared'}
-              size="small"
-              onClick={() => setSelectedFilter(filter)}
-              sx={{
-                bgcolor: selectedFilter === filter ? '#3b82f6' : '#374151',
-                color: 'white',
-                '&:hover': {
-                  bgcolor: selectedFilter === filter ? '#2563eb' : '#4b5563',
-                },
-              }}
+        {/* Tabs */}
+        <Box sx={{ borderBottom: '1px solid #334155' }}>
+          <Tabs
+            value={activeTab}
+            onChange={(event, newValue) => setActiveTab(newValue)}
+            sx={{
+              '& .MuiTab-root': {
+                color: '#94a3b8',
+                textTransform: 'none',
+                fontWeight: 500,
+                minHeight: 48,
+                '&.Mui-selected': { color: '#3b82f6' }
+              },
+              '& .MuiTabs-indicator': { bgcolor: '#3b82f6' }
+            }}
+          >
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HostIcon sx={{ fontSize: 16 }} />
+                  <Typography variant="body2">Host Chats</Typography>
+                  <Chip
+                    label={chatSessions.length}
+                    size="small"
+                    sx={{ bgcolor: '#334155', color: '#94a3b8', height: 20 }}
+                  />
+                </Box>
+              }
             />
-          ))}
-        </Stack>
+            <Tab
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <GuestIcon sx={{ fontSize: 16 }} />
+                  <Typography variant="body2">Guest Chats</Typography>
+                  <Chip
+                    label={sharedConversations.length}
+                    size="small"
+                    sx={{ bgcolor: '#334155', color: '#94a3b8', height: 20 }}
+                  />
+                </Box>
+              }
+            />
+          </Tabs>
+        </Box>
       </Box>
 
       {/* Chat List */}
       <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#0f172a' }}>
-        {loading ? (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <CircularProgress size={24} sx={{ color: '#3b82f6', mb: 2 }} />
-            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-              Loading chat history...
-            </Typography>
-          </Box>
-        ) : chatSessions.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
-              {searchTerm 
-                ? 'No chats found matching your search.' 
-                : selectedFilter === 'shared' 
-                  ? 'No chats shared yet.'
-                  : selectedFilter === 'recent'
-                    ? 'No recent chats (last 7 days).'
-                    : 'No chat history yet.'
-              }
-            </Typography>
-            {selectedFilter !== 'shared' && (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Add />}
-                onClick={() => setNewChatDialogOpen(true)}
+        {activeTab === 0 ? (
+          // Host Chats Tab
+          <>
+            {loading ? (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <CircularProgress size={24} sx={{ color: '#3b82f6', mb: 2 }} />
+                <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                  Loading chat history...
+                </Typography>
+              </Box>
+            ) : chatSessions.length === 0 ? (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                  {searchTerm ? 'No chats found matching your search.' : 'No chat history yet.'}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Add />}
+                  onClick={() => setNewChatDialogOpen(true)}
+                  sx={{
+                    borderColor: '#334155',
+                    color: '#94a3b8',
+                    '&:hover': {
+                      borderColor: '#3b82f6',
+                      color: 'white',
+                    },
+                  }}
+                >
+                  Start New Chat
+                </Button>
+              </Box>
+            ) : (
                 sx={{
                   borderColor: '#334155',
                   color: '#94a3b8',
@@ -763,6 +794,89 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
               </React.Fragment>
             ))}
           </List>
+            )}
+          </>
+        ) : (
+          // Guest Chats Tab
+          <>
+            {sharedConversations.length === 0 ? (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                  {searchTerm ? 'No shared conversations found matching your search.' : 'No shared conversations yet'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Create or join a shared conversation to get started
+                </Typography>
+              </Box>
+            ) : (
+              <List sx={{ p: 0 }}>
+                {sharedConversations
+                  .filter(conv => 
+                    !searchTerm || 
+                    (conv.name || 'Shared Chat').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    conv.participants?.some(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  )
+                  .map((conversation, index) => (
+                    <React.Fragment key={conversation.id}>
+                      <ListItem
+                        button
+                        onClick={() => onSharedConversationSelect?.(conversation.id)}
+                        sx={{
+                          py: 1.5,
+                          px: 2,
+                          '&:hover': { bgcolor: '#1e293b' }
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 36 }}>
+                          <Box sx={{ position: 'relative' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                              {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
+                                <Avatar
+                                  key={participant.id}
+                                  sx={{
+                                    width: 24,
+                                    height: 24,
+                                    fontSize: '0.6rem',
+                                    bgcolor: participant.type === 'ai_agent' ? '#6366f1' : '#10b981',
+                                    border: '2px solid #0f172a',
+                                    ml: pIndex > 0 ? -0.75 : 0,
+                                    zIndex: 3 - pIndex
+                                  }}
+                                >
+                                  {participant.type === 'ai_agent' ? '🤖' : participant.name.charAt(0).toUpperCase()}
+                                </Avatar>
+                              ))}
+                            </Box>
+                          </Box>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                              {conversation.name || 'Shared Chat'}
+                            </Typography>
+                          }
+                          secondary={
+                            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                              {conversation.participants?.length || 0} participants • {conversation.messageCount || 0} messages
+                            </Typography>
+                          }
+                        />
+                        <ListItemSecondaryAction>
+                          <Chip
+                            label="Guest"
+                            size="small"
+                            sx={{ bgcolor: '#10b981', color: 'white', fontSize: '0.7rem' }}
+                          />
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                      {index < sharedConversations.length - 1 && (
+                        <Divider sx={{ bgcolor: '#334155', mx: 2 }} />
+                      )}
+                    </React.Fragment>
+                  ))}
+              </List>
+            )}
+          </>
         )}
       </Box>
 
