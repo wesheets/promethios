@@ -6669,7 +6669,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       selectedAgents={selectedAgents}
                                       onSelectionChange={handleAgentSelectionChange}
                                       teamMembers={getTeamMembers()}
-                                      aiAgents={getAIAgents()}
+                                      aiAgents={isInSharedMode && activeSharedConversation ? [] : getAIAgents()}
                                       connectionsLoading={connectionsLoading}
                                       onAddGuests={handleAddGuests}
                                       // Add unifiedParticipants for shared mode
