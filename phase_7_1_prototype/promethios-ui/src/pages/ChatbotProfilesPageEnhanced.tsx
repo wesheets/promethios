@@ -6606,8 +6606,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           ? sharedConversations.find(c => c.id === activeSharedConversation)?.participants || []
                                           : []
                                       }
-                                      // Unified participants (new system)
-                                      unifiedParticipants={currentBotState?.guestParticipants || []}
                                       // New unified invitation props
                                       chatSession={currentBotState?.currentChatSession ? {
                                         id: currentBotState.currentChatSession.id,
