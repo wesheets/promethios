@@ -3821,14 +3821,17 @@ To use a tool, call it using standard function calling format. The system will e
       isInSharedMode: sharedConversationContext.isInSharedMode,
       activeSharedConversation: sharedConversationContext.activeSharedConversation,
       guestConversationAccessLength: sharedConversationContext.guestConversationAccess?.length,
-      shouldEnterSharedMode: sharedConversationContext.isInSharedMode && sharedConversationContext.activeSharedConversation
+      shouldEnterSharedMode: sharedConversationContext.isInSharedMode && sharedConversationContext.activeSharedConversation,
+      selectedAgent: selectedAgent?.identity?.id,
+      selectedAgentName: selectedAgent?.identity?.name
     });
     
     if (sharedConversationContext.isInSharedMode && sharedConversationContext.activeSharedConversation) {
       try {
         console.log('🔄 [SharedChat] Sending message in shared mode:', {
           conversationId: sharedConversationContext.activeSharedConversation,
-          message: userMessage.content.substring(0, 50) + '...'
+          message: userMessage.content.substring(0, 50) + '...',
+          selectedAgent: selectedAgent?.identity?.id
         });
         
         // Find the guest access info for this conversation
@@ -3847,7 +3850,7 @@ To use a tool, call it using standard function calling format. The system will e
         });
         
         if (guestAccess) {
-          // Send message via unified guest chat service
+          // Send message via unified guest chat service (this adds it to the shared conversation)
           await unifiedGuestChatService.sendMessageToHostConversation(
             guestAccess.hostUserId,
             guestAccess.conversationId,
@@ -3856,7 +3859,47 @@ To use a tool, call it using standard function calling format. The system will e
             userMessage.content
           );
           
-          console.log('✅ [SharedChat] Message sent successfully in shared mode - RETURNING EARLY');
+          console.log('✅ [SharedChat] Message sent to shared conversation');
+          
+          // 🔄 NEW: Also trigger AI response if an agent is selected
+          if (selectedAgent && selectedAgent.identity) {
+            console.log('🤖 [SharedChat] Triggering AI response from selected agent:', selectedAgent.identity.name);
+            
+            try {
+              // Call the agent API to get a response
+              const agentResponse = await callAgentAPI(userMessage.content, selectedAgent, currentAttachments, messages);
+              
+              const agentMessage: ChatMessage = {
+                id: `msg_${Date.now()}_agent_${selectedAgent.identity.id}`,
+                content: agentResponse,
+                sender: 'agent',
+                timestamp: new Date(),
+                agentName: selectedAgent.identity.name,
+                agentId: selectedAgent.identity.id
+              };
+              
+              // Add the agent response to local messages
+              setMessages(prev => [...prev, agentMessage]);
+              setMessageCount(prev => prev + 1);
+              
+              // Also add the agent response to the shared conversation
+              await unifiedGuestChatService.sendMessageToHostConversation(
+                guestAccess.hostUserId,
+                guestAccess.conversationId,
+                selectedAgent.identity.id,
+                selectedAgent.identity.name,
+                agentResponse
+              );
+              
+              console.log('✅ [SharedChat] AI response sent to both local and shared conversation');
+              
+            } catch (agentError) {
+              console.error('❌ [SharedChat] Error getting AI response:', agentError);
+              setError('Failed to get AI response. Please try again.');
+            }
+          } else {
+            console.log('🔍 [SharedChat] No agent selected, message sent to shared conversation only');
+          }
           
           // Don't continue with normal agent processing in shared mode
           setIsTyping(false);
