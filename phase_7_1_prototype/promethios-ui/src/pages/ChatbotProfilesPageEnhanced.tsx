@@ -4015,8 +4015,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           console.log('✅ [SharedChat] Message sent to shared conversation');
           
           // 🔄 NEW: Also trigger AI response if an agent is selected
-          if (selectedTarget && selectedChatbot) {
-            console.log('🤖 [SharedChat] Triggering AI response from selected agent:', selectedChatbot.name);
+          if (selectedTarget) {
+            console.log('🤖 [SharedChat] Triggering AI response from selected agent:', selectedTarget);
             
             try {
               // Find the target agent
@@ -4053,7 +4053,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   console.warn('⚠️ [SharedChat] No response received from agent');
                 }
               } else {
-                console.warn('⚠️ [SharedChat] Target agent not found:', selectedTarget);
+                console.warn('⚠️ [SharedChat] Target agent not found in chatbotProfiles:', selectedTarget);
+                console.log('🔍 [SharedChat] Available chatbotProfiles:', chatbotProfiles.map(bot => ({ id: bot.id, name: bot.name })));
               }
               
             } catch (agentError) {
@@ -6734,7 +6735,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       currentUserName={user?.displayName || 'User'}
                                       conversationId={multiAgentSessionRef.current || currentMultiAgentSession || `conv_${Date.now()}`}
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
-                                      hideHostAgent={isInSharedMode && activeSharedConversation}
+                                      hideHostAgent={false} // Always show host agent in avatar selector for messaging
                                       // Shared conversation context
                                       isSharedMode={!!(isInSharedMode && activeSharedConversation)}
                                       sharedConversationParticipants={
