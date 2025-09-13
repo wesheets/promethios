@@ -3965,10 +3965,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       guestConversationAccessLength: guestConversationAccess?.length,
       shouldEnterSharedMode: isInSharedMode && activeSharedConversation,
       selectedTarget,
-      selectedChatbot: selectedChatbot?.id
+      selectedChatbot: selectedChatbot?.id,
+      typeOfIsInSharedMode: typeof isInSharedMode,
+      typeOfActiveSharedConversation: typeof activeSharedConversation,
+      booleanCheck: Boolean(isInSharedMode && activeSharedConversation)
+    });
+    
+    console.log('🔍 [SharedChat] EXPLICIT CONDITION TEST:', {
+      condition1: isInSharedMode,
+      condition2: activeSharedConversation,
+      bothTrue: isInSharedMode && activeSharedConversation,
+      willEnterIf: !!(isInSharedMode && activeSharedConversation)
     });
     
     if (isInSharedMode && activeSharedConversation) {
+      console.log('🎯 [SharedChat] ENTERING SHARED MODE HANDLING!');
       try {
         console.log('🔄 [SharedChat] Sending message in shared mode:', {
           conversationId: activeSharedConversation,
