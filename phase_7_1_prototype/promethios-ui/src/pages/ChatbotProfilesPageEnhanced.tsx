@@ -3958,6 +3958,119 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       preview: messageToSend.substring(0, 50) + (messageToSend.length > 50 ? '...' : '')
     });
 
+    // 🔄 SHARED CHAT MODE: Handle guest messaging in shared conversations
+    console.log('🔍 [SharedChat] Checking shared mode conditions:', {
+      isInSharedMode,
+      activeSharedConversation,
+      guestConversationAccessLength: guestConversationAccess?.length,
+      shouldEnterSharedMode: isInSharedMode && activeSharedConversation,
+      selectedTarget,
+      selectedChatbot: selectedChatbot?.id
+    });
+    
+    if (isInSharedMode && activeSharedConversation) {
+      try {
+        console.log('🔄 [SharedChat] Sending message in shared mode:', {
+          conversationId: activeSharedConversation,
+          message: messageToSend.substring(0, 50) + '...',
+          selectedTarget
+        });
+        
+        // Find the guest access info for this conversation
+        const guestAccess = guestConversationAccess.find(
+          access => access.id === activeSharedConversation
+        );
+        
+        console.log('🔍 [SharedChat] Guest access lookup:', {
+          searchingFor: activeSharedConversation,
+          foundAccess: !!guestAccess,
+          accessDetails: guestAccess ? {
+            id: guestAccess.id,
+            hostUserId: guestAccess.hostUserId,
+            conversationId: guestAccess.conversationId
+          } : null
+        });
+        
+        if (guestAccess) {
+          // Send message via unified guest chat service (this adds it to the shared conversation)
+          await unifiedGuestChatService.sendMessageToHostConversation(
+            guestAccess.hostUserId,
+            guestAccess.conversationId,
+            user?.uid || 'guest',
+            user?.displayName || 'Guest User',
+            messageToSend
+          );
+          
+          console.log('✅ [SharedChat] Message sent to shared conversation');
+          
+          // 🔄 NEW: Also trigger AI response if an agent is selected
+          if (selectedTarget && selectedChatbot) {
+            console.log('🤖 [SharedChat] Triggering AI response from selected agent:', selectedChatbot.name);
+            
+            try {
+              // Find the target agent
+              const targetAgent = chatbotProfiles.find(bot => bot.id === selectedTarget);
+              
+              if (targetAgent) {
+                console.log('🤖 [SharedChat] Calling universalGovernanceAdapter for agent:', targetAgent.name);
+                
+                // Call the agent API to get a response using universalGovernanceAdapter
+                const response = await universalGovernanceAdapter.sendMessage({
+                  agentId: targetAgent.id,
+                  message: messageToSend,
+                  sessionId: `shared_${activeSharedConversation}_${targetAgent.id}`,
+                  userId: user?.uid || 'guest',
+                  conversationHistory: [],
+                  provider: targetAgent.provider || 'openai',
+                  model: targetAgent.model || 'gpt-4'
+                });
+                
+                console.log('✅ [SharedChat] Received response from agent:', response);
+                
+                if (response?.response) {
+                  // Also add the agent response to the shared conversation
+                  await unifiedGuestChatService.sendMessageToHostConversation(
+                    guestAccess.hostUserId,
+                    guestAccess.conversationId,
+                    targetAgent.id,
+                    targetAgent.name,
+                    response.response
+                  );
+                  
+                  console.log('✅ [SharedChat] AI response sent to shared conversation');
+                } else {
+                  console.warn('⚠️ [SharedChat] No response received from agent');
+                }
+              } else {
+                console.warn('⚠️ [SharedChat] Target agent not found:', selectedTarget);
+              }
+              
+            } catch (agentError) {
+              console.error('❌ [SharedChat] Error getting AI response:', agentError);
+              setError('Failed to get AI response. Please try again.');
+            }
+          } else {
+            console.log('🔍 [SharedChat] No agent selected, message sent to shared conversation only');
+          }
+          
+          // Clear the message input and reset state
+          setMessageInput('');
+          setChatLoading(false);
+          return; // Don't continue with normal agent processing in shared mode
+          
+        } else {
+          console.warn('⚠️ [SharedChat] Guest access not found for active shared conversation');
+        }
+      } catch (error) {
+        console.error('❌ [SharedChat] Error sending message in shared mode:', error);
+        setError('Failed to send message in shared chat. Please try again.');
+        setChatLoading(false);
+        return;
+      }
+    } else {
+      console.log('🔍 [SharedChat] Not in shared mode, continuing with normal processing');
+    }
+
     // 🔧 NEW: Parse message for @mentions in shared conversations
     let parsedMessage: ParsedMessage | null = null;
     let mentionedAgents: string[] = [];
@@ -4064,7 +4177,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         // In shared conversations, selectedChatbot may be undefined, but we can find the agent by selectedTarget
         const allAvailableAgents = [
           // Include chatbots from the main list
-          ...(chatbots || []),
+          ...(chatbotProfiles || []),
           // Include guest agents from multi-chat state
           ...getGuestAgents(),
           // Include agents from shared conversation participants
@@ -6448,10 +6561,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                     {/* Agent Avatar Selector - Inside Input */}
                                     <AgentAvatarSelector
                                       hostAgent={(() => {
-                                        if (isInSharedMode && guestConversationAccess?.length > 0) {
-                                          // Use real host agent from host chat session
-                                          const hostChatSession = guestConversationAccess[0];
-                                          return hostChatSession.agentId ? {
+                                        if (isInSharedMode && loadedHostChatSession) {
+                                          // Use the actual host agent from the loaded session
+                                          const hostAgent = loadedHostChatSession.participants?.host;
+                                          console.log('🔍 [AvatarSelector] Host agent from loaded session:', hostAgent);
+                                          
+                                          if (hostAgent) {
+                                            return {
+                                              id: hostAgent.id,
+                                              name: hostAgent.name || 'Host Agent',
+                                              type: 'agent' as const,
+                                              avatar: hostAgent.avatar || undefined
+                                            };
+                                          }
+                                          
+                                          // Fallback to guest access data
+                                          const hostChatSession = guestConversationAccess?.[0];
+                                          return hostChatSession?.agentId ? {
                                             id: hostChatSession.agentId,
                                             name: hostChatSession.agentName || 'Host Agent',
                                             type: 'agent' as const,
