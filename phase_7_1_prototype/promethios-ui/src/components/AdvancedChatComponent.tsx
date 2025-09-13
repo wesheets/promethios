@@ -3817,6 +3817,13 @@ To use a tool, call it using standard function calling format. The system will e
     }
 
     // 🔄 SHARED CHAT MODE: Handle guest messaging in shared conversations
+    console.log('🔍 [SharedChat] Checking shared mode conditions:', {
+      isInSharedMode: sharedConversationContext.isInSharedMode,
+      activeSharedConversation: sharedConversationContext.activeSharedConversation,
+      guestConversationAccessLength: sharedConversationContext.guestConversationAccess?.length,
+      shouldEnterSharedMode: sharedConversationContext.isInSharedMode && sharedConversationContext.activeSharedConversation
+    });
+    
     if (sharedConversationContext.isInSharedMode && sharedConversationContext.activeSharedConversation) {
       try {
         console.log('🔄 [SharedChat] Sending message in shared mode:', {
@@ -3829,6 +3836,16 @@ To use a tool, call it using standard function calling format. The system will e
           access => access.id === sharedConversationContext.activeSharedConversation
         );
         
+        console.log('🔍 [SharedChat] Guest access lookup:', {
+          searchingFor: sharedConversationContext.activeSharedConversation,
+          foundAccess: !!guestAccess,
+          accessDetails: guestAccess ? {
+            id: guestAccess.id,
+            hostUserId: guestAccess.hostUserId,
+            conversationId: guestAccess.conversationId
+          } : null
+        });
+        
         if (guestAccess) {
           // Send message via unified guest chat service
           await unifiedGuestChatService.sendMessageToHostConversation(
@@ -3839,7 +3856,7 @@ To use a tool, call it using standard function calling format. The system will e
             userMessage.content
           );
           
-          console.log('✅ [SharedChat] Message sent successfully in shared mode');
+          console.log('✅ [SharedChat] Message sent successfully in shared mode - RETURNING EARLY');
           
           // Don't continue with normal agent processing in shared mode
           setIsTyping(false);
@@ -3853,6 +3870,8 @@ To use a tool, call it using standard function calling format. The system will e
         setIsTyping(false);
         return;
       }
+    } else {
+      console.log('🔍 [SharedChat] Not in shared mode, continuing with normal processing');
     }
 
     // Scroll to bottom after user message

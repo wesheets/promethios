@@ -211,6 +211,13 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       ? (unifiedParticipants || sharedConversationParticipants)
           .filter(participant => {
             // In shared mode, filter out the host agent if hideHostAgent is true
+            console.log('🔍 [AgentAvatarSelector] Filtering participant:', {
+              participantId: participant.id,
+              hideHostAgent,
+              hostAgentId: hostAgent?.id,
+              shouldFilter: hideHostAgent && hostAgent && participant.id === hostAgent.id
+            });
+            
             if (hideHostAgent && hostAgent && participant.id === hostAgent.id) {
               console.log('🔍 [AgentAvatarSelector] Filtering out host agent in shared mode:', participant.id);
               return false;
