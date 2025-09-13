@@ -549,26 +549,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     
     const loadHostChatSession = async () => {
       try {
-        // Find the matching conversation access
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlSharedParam = urlParams.get('shared');
-        console.log('🔍 [LoadSession] Looking for matching access:', { urlSharedParam, activeSharedConversation });
-        
-        const matchingAccess = guestConversationAccess?.find(access => 
-          access.id === urlSharedParam || access.id === activeSharedConversation
+        // Use the EXACT same pattern as the working chat interface
+        const guestAccess = guestConversationAccess?.find(access => 
+          access.id === activeSharedConversation || 
+          access.conversationId === activeSharedConversation
         );
         
-        console.log('🔍 [LoadSession] Matching access found:', !!matchingAccess);
-        if (matchingAccess) {
-          console.log('🔍 [LoadSession] Loading host chat session for:', matchingAccess.conversationId);
+        console.log('🔍 [LoadSession] Looking for guestAccess with pattern:', { 
+          activeSharedConversation,
+          foundAccess: !!guestAccess 
+        });
+        
+        if (guestAccess) {
+          console.log('🔍 [LoadSession] Found guestAccess, loading host chat session for:', guestAccess.conversationId);
           const session = await unifiedGuestChatService.getHostChatSession(
-            matchingAccess.hostUserId,
-            matchingAccess.conversationId
+            guestAccess.hostUserId,
+            guestAccess.conversationId
           );
           console.log('🔍 [LoadSession] Loaded host chat session:', session);
           setLoadedHostChatSession(session);
         } else {
-          console.log('🔍 [LoadSession] No matching access found');
+          console.log('🔍 [LoadSession] No guestAccess found');
           setLoadedHostChatSession(null);
         }
       } catch (error) {
@@ -5417,7 +5418,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         
                         const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
                         const guestHumans = hostChatSession.participants?.guests?.filter(g => 
-                          g.type === 'human' && g.id !== currentUserId // Exclude current guest user
+                          g.type === 'human' && g.id !== (user?.uid || 'anonymous') // Exclude current guest user
                         ) || [];
                         
                         // Debug logging for header participants
@@ -6447,19 +6448,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                         return getHostAgent();
                                       })()}
                                       guestAgents={(() => {
-                                        if (isInSharedMode && activeSharedConversation) {
-                                          // Find the specific conversation that matches the URL
-                                          const urlParams = new URLSearchParams(window.location.search);
-                                          const urlSharedParam = urlParams.get('shared');
-                                          const matchingAccess = guestConversationAccess?.find(access => 
-                                            access.id === urlSharedParam || access.id === activeSharedConversation
-                                          );
+                                        if (isInSharedMode && activeSharedConversation && loadedHostChatSession) {
+                                          console.log('🔍 [AvatarSelector] Using loaded host chat session for agents');
+                                          console.log('🔍 [AvatarSelector] Loaded session participants:', loadedHostChatSession.participants);
                                           
-                                          if (matchingAccess) {
-                                            console.log('🔍 [AvatarSelector] Found matching conversation, loading agents');
-                                            console.log('🔍 [AvatarSelector] Matching conversation:', matchingAccess);
-                                            
-                                            const hostChatSession = matchingAccess; // Use the matching conversation
+                                          const hostChatSession = loadedHostChatSession;
                                           const filteredAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
                                           
                                           // Debug logging for avatar selector
@@ -6474,7 +6467,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                             avatar: agent.avatar,
                                             status: agent.status || 'active'
                                           }));
-                                          }
                                         }
                                         return getGuestAgents();
                                       })()}
