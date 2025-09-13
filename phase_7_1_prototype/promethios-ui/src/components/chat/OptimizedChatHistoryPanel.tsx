@@ -43,6 +43,8 @@ import {
   LinearProgress,
   Fade,
   Skeleton,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Add,
@@ -62,8 +64,6 @@ import {
   PersonAdd,
   Home as HostIcon,
   PersonAdd as GuestIcon,
-  Tabs,
-  Tab,
   Message as DirectMessageIcon,
   Person as ProfileIcon,
   TrendingUp,
