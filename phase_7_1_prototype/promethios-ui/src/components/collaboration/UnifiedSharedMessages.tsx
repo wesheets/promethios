@@ -13,7 +13,8 @@ import {
   Alert,
   Chip,
   TextField,
-  IconButton
+  IconButton,
+  Stack
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -280,30 +281,56 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
         )}
       </Box>
 
-      {/* Messages */}
+      {/* Messages - Using Host Chat Format */}
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
-        {messages.map((message, index) => (
-          <Paper
-            key={message.id || index}
-            sx={{
-              p: 2,
-              mb: 2,
-              bgcolor: message.sender === 'user' ? '#1e293b' : '#0f172a',
-              border: '1px solid #334155'
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-              <Avatar sx={{ bgcolor: message.sender === 'user' ? '#3b82f6' : '#8b5cf6' }}>
-                {message.sender === 'user' ? <PersonIcon /> : <BotIcon />}
-              </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
-                  {message.metadata?.userName || (message.sender === 'user' ? 'User' : 'AI Assistant')}
-                  {message.metadata?.isGuestMessage && (
-                    <Chip label="Guest" size="small" sx={{ ml: 1, bgcolor: '#059669', color: 'white' }} />
-                  )}
-                </Typography>
-                <MarkdownRenderer content={message.content} />
+        <Stack spacing={2}>
+          {messages.map((message, index) => (
+            <Box
+              key={message.id || index}
+              sx={{
+                display: 'flex',
+                justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
+                position: 'relative'
+              }}
+            >
+              <Box
+                sx={{
+                  maxWidth: '75%',
+                  textAlign: message.sender === 'user' ? 'right' : 'left'
+                }}
+              >
+                {/* Message Header with User/Agent Info */}
+                {message.metadata?.userName && (
+                  <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: '#64748b',
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                      }}
+                    >
+                      {message.metadata.userName}
+                      {message.metadata?.isGuestMessage && (
+                        <Chip label="Guest" size="small" sx={{ ml: 1, bgcolor: '#059669', color: 'white', height: 20, fontSize: '0.65rem' }} />
+                      )}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {/* Message Content */}
+                <MarkdownRenderer 
+                  content={message.content}
+                  sx={{ 
+                    fontSize: '0.9rem',
+                    mb: 0.5
+                  }}
+                />
+                
+                {/* Attachments Display */}
                 {message.attachments && message.attachments.length > 0 && (
                   <Box sx={{ mt: 1 }}>
                     {message.attachments.map((attachment, idx) => (
@@ -311,10 +338,18 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                     ))}
                   </Box>
                 )}
+                
+                {/* Timestamp */}
+                <Typography variant="caption" sx={{ 
+                  color: '#94a3b8', 
+                  fontSize: '0.75rem'
+                }}>
+                  {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Now'}
+                </Typography>
               </Box>
             </Box>
-          </Paper>
-        ))}
+          ))}
+        </Stack>
         <div ref={messagesEndRef} />
       </Box>
 
