@@ -5470,22 +5470,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               )}
                               
                               {/* Guest Agents */}
-                              {guestAgents.map((agent) => (
-                                <Chip
-                                  key={agent.id}
-                                  avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#10b981' }}>
-                                    🤖
-                                  </Avatar>}
-                                  label={`${agent.name} (Guest)`}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: '#10b981',
-                                    color: 'white',
-                                    opacity: 0.9,
-                                    fontSize: '11px'
-                                  }}
-                                />
-                              ))}
+                              {guestAgents.map((agent) => {
+                                // Debug logging to see agent data structure
+                                console.log('🔍 [Header] Guest agent data:', agent);
+                                
+                                // Try to get a better display name
+                                const displayName = agent.agentConfig?.name || 
+                                                  agent.identity?.name || 
+                                                  agent.name || 
+                                                  'Guest Agent';
+                                
+                                return (
+                                  <Chip
+                                    key={agent.id}
+                                    avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#10b981' }}>
+                                      🤖
+                                    </Avatar>}
+                                    label={`${displayName} (Guest)`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#10b981',
+                                      color: 'white',
+                                      opacity: 0.9,
+                                      fontSize: '11px'
+                                    }}
+                                  />
+                                );
+                              })}
                               
                               {/* Guest Humans (excluding current user) */}
                               {guestHumans.map((human) => (
@@ -5527,7 +5538,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       const activeContext = multiChatState.contexts.find(c => c.isActive);
                       const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
                       
-                      if (multiChatState.activeContextId === 'ai_agent') {
+                      if (multiChatState.activeContextId === 'ai_agent' && !isInSharedMode) {
                         return (
                           <Box sx={{ mt: 1 }}>
                             <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
@@ -6517,13 +6528,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           
                                           // Add guest agents
                                           const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
-                                          participants.push(...guestAgents.map(agent => ({
-                                            id: agent.id,
-                                            name: agent.name,
-                                            type: 'ai_agent' as const,
-                                            avatar: agent.avatar,
-                                            status: agent.status || 'active'
-                                          })));
+                                          participants.push(...guestAgents.map(agent => {
+                                            // Debug logging to see agent data structure
+                                            console.log('🔍 [UnifiedParticipants] Guest agent data:', agent);
+                                            
+                                            // Try to get a better display name
+                                            const displayName = agent.agentConfig?.name || 
+                                                              agent.identity?.name || 
+                                                              agent.name || 
+                                                              'Guest Agent';
+                                            
+                                            return {
+                                              id: agent.id,
+                                              name: displayName,
+                                              type: 'ai_agent' as const,
+                                              avatar: agent.avatar,
+                                              status: agent.status || 'active'
+                                            };
+                                          }));
                                           
                                           console.log('🔍 [UnifiedParticipants] Final unified participants:', participants);
                                           return participants;
