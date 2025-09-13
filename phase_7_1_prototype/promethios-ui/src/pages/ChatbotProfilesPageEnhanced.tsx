@@ -6497,6 +6497,40 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       aiAgents={getAIAgents()}
                                       connectionsLoading={connectionsLoading}
                                       onAddGuests={handleAddGuests}
+                                      // Add unifiedParticipants for shared mode
+                                      unifiedParticipants={(() => {
+                                        if (isInSharedMode && activeSharedConversation && loadedHostChatSession) {
+                                          console.log('🔍 [UnifiedParticipants] Building unified participants for shared mode');
+                                          const hostChatSession = loadedHostChatSession;
+                                          const participants = [];
+                                          
+                                          // Add host agent if it exists
+                                          if (hostChatSession.agentId) {
+                                            participants.push({
+                                              id: hostChatSession.agentId,
+                                              name: hostChatSession.agentName || 'Host Agent',
+                                              type: 'ai_agent' as const,
+                                              avatar: hostChatSession.agentAvatar || undefined,
+                                              status: 'active'
+                                            });
+                                          }
+                                          
+                                          // Add guest agents
+                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
+                                          participants.push(...guestAgents.map(agent => ({
+                                            id: agent.id,
+                                            name: agent.name,
+                                            type: 'ai_agent' as const,
+                                            avatar: agent.avatar,
+                                            status: agent.status || 'active'
+                                          })));
+                                          
+                                          console.log('🔍 [UnifiedParticipants] Final unified participants:', participants);
+                                          return participants;
+                                        }
+                                        return [];
+                                      })()}
+                                      isSharedMode={isInSharedMode}
                                       humanParticipants={(() => {
                                         if (isInSharedMode && guestConversationAccess?.length > 0) {
                                           // Use real human participants from host chat session (excluding current guest)
