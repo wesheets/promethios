@@ -6600,7 +6600,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
                                       hideHostAgent={isInSharedMode && activeSharedConversation}
                                       // Shared conversation context
-                                      isSharedMode={isInSharedMode && activeSharedConversation}
+                                      isSharedMode={!!(isInSharedMode && activeSharedConversation)}
                                       sharedConversationParticipants={
                                         isInSharedMode && activeSharedConversation 
                                           ? sharedConversations.find(c => c.id === activeSharedConversation)?.participants || []
