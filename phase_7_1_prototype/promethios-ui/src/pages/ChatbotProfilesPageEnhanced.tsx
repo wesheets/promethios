@@ -6552,7 +6552,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                         }
                                         return [];
                                       })()}
-                                      isSharedMode={isInSharedMode}
                                       humanParticipants={(() => {
                                         if (isInSharedMode && guestConversationAccess?.length > 0) {
                                           // Use real human participants from host chat session (excluding current guest)

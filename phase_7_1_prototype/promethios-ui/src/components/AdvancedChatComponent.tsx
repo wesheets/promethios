@@ -48,6 +48,8 @@ import { ChatStorageService } from '../services/ChatStorageService';
 import { GovernanceService } from '../services/GovernanceService';
 import { RealGovernanceIntegration } from '../services/RealGovernanceIntegration';
 import { MultiAgentChatIntegration } from '../services/MultiAgentChatIntegration';
+import { useSharedConversations } from '../contexts/SharedConversationContext';
+import UnifiedGuestChatService from '../services/UnifiedGuestChatService';
 
 // Enhanced Action Indicator Component
 interface EnhancedActionIndicatorProps {
@@ -645,6 +647,10 @@ const AdvancedChatComponent: React.FC<AdvancedChatComponentProps> = ({
   const governanceService = useMemo(() => new GovernanceService(), []);
   const realGovernanceIntegration = useMemo(() => new RealGovernanceIntegration(), []);
   const toolIntegrationService = useMemo(() => new ToolIntegrationService(), []);
+  
+  // Shared conversation context for guest chat functionality
+  const sharedConversationContext = useSharedConversations();
+  const unifiedGuestChatService = useMemo(() => UnifiedGuestChatService.getInstance(), []);
 
   // 🔧 TOOL INTEGRATION: Fetch available tools from backend
   const [availableTools, setAvailableTools] = useState<any[]>([]);
@@ -3808,6 +3814,45 @@ To use a tool, call it using standard function calling format. The system will e
     } else if (chatMode === 'saved-systems' && selectedSystem) {
       ensureUserSet();
       await multiAgentChatIntegration.saveMessage(userMessage, selectedSystem.id);
+    }
+
+    // 🔄 SHARED CHAT MODE: Handle guest messaging in shared conversations
+    if (sharedConversationContext.isInSharedMode && sharedConversationContext.activeSharedConversation) {
+      try {
+        console.log('🔄 [SharedChat] Sending message in shared mode:', {
+          conversationId: sharedConversationContext.activeSharedConversation,
+          message: userMessage.content.substring(0, 50) + '...'
+        });
+        
+        // Find the guest access info for this conversation
+        const guestAccess = sharedConversationContext.guestConversationAccess.find(
+          access => access.id === sharedConversationContext.activeSharedConversation
+        );
+        
+        if (guestAccess) {
+          // Send message via unified guest chat service
+          await unifiedGuestChatService.sendMessageToHostConversation(
+            guestAccess.hostUserId,
+            guestAccess.conversationId,
+            currentUser?.uid || 'guest',
+            currentUser?.displayName || 'Guest User',
+            userMessage.content
+          );
+          
+          console.log('✅ [SharedChat] Message sent successfully in shared mode');
+          
+          // Don't continue with normal agent processing in shared mode
+          setIsTyping(false);
+          return;
+        } else {
+          console.warn('⚠️ [SharedChat] Guest access not found for active shared conversation');
+        }
+      } catch (error) {
+        console.error('❌ [SharedChat] Error sending message in shared mode:', error);
+        setError('Failed to send message in shared chat. Please try again.');
+        setIsTyping(false);
+        return;
+      }
     }
 
     // Scroll to bottom after user message

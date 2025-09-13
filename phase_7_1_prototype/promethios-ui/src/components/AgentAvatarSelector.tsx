@@ -161,11 +161,44 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     }
   }, [useUnifiedParticipants, conversationId, participantContext]);
   
+  // Helper function to get proper agent name
+  const getAgentDisplayName = (participant: any) => {
+    // If we have a proper name that's not just an ID, use it
+    if (participant.name && !participant.name.startsWith('Agent ') && !participant.name.includes('-')) {
+      return participant.name;
+    }
+    
+    // Check if there's a better name in agentConfig
+    if (participant.agentConfig?.name) {
+      return participant.agentConfig.name;
+    }
+    
+    // For AI agents, try to extract a meaningful name from the ID
+    if (participant.type === 'ai_agent' || participant.type === 'ai') {
+      // If the ID contains meaningful parts, try to extract them
+      if (participant.id.includes('claude')) {
+        return 'Claude Assistant';
+      } else if (participant.id.includes('gpt')) {
+        return 'GPT Assistant';
+      } else if (participant.id.includes('chatbot')) {
+        // Try to extract a number or identifier
+        const match = participant.id.match(/chatbot-(\d+)/);
+        if (match) {
+          return `AI Agent ${match[1]}`;
+        }
+        return 'AI Assistant';
+      }
+    }
+    
+    // Fallback to the original name or a generic name
+    return participant.name || (participant.type === 'human' ? 'Guest User' : 'AI Assistant');
+  };
+
   // Determine which agents/participants to show
   const allAgents = useUnifiedParticipants 
     ? (participantContext?.participants || realTimeParticipants).map(participant => ({
         id: participant.id,
-        name: participant.name,
+        name: getAgentDisplayName(participant),
         avatar: participant.avatar || participant.agentConfig?.avatar,
         color: participant.agentConfig?.color || (participant.type === 'human' ? '#3b82f6' : '#8b5cf6'),
         hotkey: participant.agentConfig?.hotkey,
@@ -175,16 +208,25 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         permissions: participant.permissions
       }))
     : isSharedMode 
-      ? (unifiedParticipants || sharedConversationParticipants).map(participant => ({
-          id: participant.id,
-          name: participant.name,
-          avatar: participant.avatar,
-          color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
-          hotkey: undefined,
-          type: participant.type === 'ai' ? 'ai_agent' : participant.type, // Normalize type
-          status: participant.status, // Include status for pending/active distinction
-          isPending: participant.status === 'pending' // Flag for visual styling
-        }))
+      ? (unifiedParticipants || sharedConversationParticipants)
+          .filter(participant => {
+            // In shared mode, filter out the host agent if hideHostAgent is true
+            if (hideHostAgent && hostAgent && participant.id === hostAgent.id) {
+              console.log('🔍 [AgentAvatarSelector] Filtering out host agent in shared mode:', participant.id);
+              return false;
+            }
+            return true;
+          })
+          .map(participant => ({
+            id: participant.id,
+            name: getAgentDisplayName(participant),
+            avatar: participant.avatar,
+            color: participant.type === 'human' ? '#3b82f6' : '#8b5cf6', // Blue for humans, purple for AI
+            hotkey: undefined,
+            type: participant.type === 'ai' ? 'ai_agent' : participant.type, // Normalize type
+            status: participant.status, // Include status for pending/active distinction
+            isPending: participant.status === 'pending' // Flag for visual styling
+          }))
       : hideHostAgent 
         ? guestAgents 
         : hostAgent ? [hostAgent, ...guestAgents] : guestAgents;
