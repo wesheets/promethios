@@ -468,6 +468,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [pendingHumanInvites, setPendingHumanInvites] = useState<any[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [selectedTarget, setSelectedTarget] = useState<string>(''); // Current messaging target (human or agent ID)
+  const [loadedHostChatSession, setLoadedHostChatSession] = useState<any>(null); // Store loaded host chat session with participants
   const humanParticipantService = HumanParticipantService.getInstance();
   
   // Shared conversation state (now global)
@@ -531,6 +532,53 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setActiveHeaderConversations(prev => [...prev, activeSharedConversation]);
     }
   }, [activeSharedConversation, activeHeaderConversations]);
+  
+  // Load host chat session data when active shared conversation changes
+  useEffect(() => {
+    console.log('🔍 [LoadSession] useEffect triggered:', {
+      isInSharedMode,
+      activeSharedConversation,
+      guestConversationAccessLength: guestConversationAccess?.length
+    });
+    
+    if (!isInSharedMode || !activeSharedConversation) {
+      console.log('🔍 [LoadSession] Clearing session - not in shared mode or no active conversation');
+      setLoadedHostChatSession(null);
+      return;
+    }
+    
+    const loadHostChatSession = async () => {
+      try {
+        // Find the matching conversation access
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlSharedParam = urlParams.get('shared');
+        console.log('🔍 [LoadSession] Looking for matching access:', { urlSharedParam, activeSharedConversation });
+        
+        const matchingAccess = guestConversationAccess?.find(access => 
+          access.id === urlSharedParam || access.id === activeSharedConversation
+        );
+        
+        console.log('🔍 [LoadSession] Matching access found:', !!matchingAccess);
+        if (matchingAccess) {
+          console.log('🔍 [LoadSession] Loading host chat session for:', matchingAccess.conversationId);
+          const session = await unifiedGuestChatService.getHostChatSession(
+            matchingAccess.hostUserId,
+            matchingAccess.conversationId
+          );
+          console.log('🔍 [LoadSession] Loaded host chat session:', session);
+          setLoadedHostChatSession(session);
+        } else {
+          console.log('🔍 [LoadSession] No matching access found');
+          setLoadedHostChatSession(null);
+        }
+      } catch (error) {
+        console.error('🔍 [LoadSession] Error loading host chat session:', error);
+        setLoadedHostChatSession(null);
+      }
+    };
+    
+    loadHostChatSession();
+  }, [isInSharedMode, activeSharedConversation, guestConversationAccess]);
   
   // Real-time listener for shared conversation participant updates
   useEffect(() => {
@@ -5348,23 +5396,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Participants Display */}
                     {(() => {
                       // Shared conversation participants - Get real data from host chat session
-                      if (isInSharedMode && activeSharedConversation) {
-                        // Find the specific conversation that matches the URL
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const urlSharedParam = urlParams.get('shared');
-                        const matchingAccess = guestConversationAccess?.find(access => 
-                          access.id === urlSharedParam || access.id === activeSharedConversation
-                        );
+                      if (isInSharedMode && activeSharedConversation && loadedHostChatSession) {
+                        console.log('🔍 [Header] Using loaded host chat session for participants');
+                        console.log('🔍 [Header] Loaded session participants:', loadedHostChatSession.participants);
                         
-                        if (matchingAccess) {
-                          console.log('🔍 [Header] Found matching conversation, loading participants');
-                          console.log('🔍 [Header] Matching conversation:', matchingAccess);
-                          console.log('🔍 [Header] Matching conversation structure:', Object.keys(matchingAccess));
-                          
-                          // Check if this access object has participant data loaded
-                          if (matchingAccess.participants) {
-                            console.log('🔍 [Header] Found participants in matching access:', matchingAccess.participants);
-                            const hostChatSession = matchingAccess;
+                        const hostChatSession = loadedHostChatSession;
                         
                             // Get real participants from host chat session
                             const hostAgent = hostChatSession.agentId ? {
@@ -5482,14 +5518,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             </Box>
                           </Box>
                         );
-                          } else {
-                            console.log('🔍 [Header] No participants data in matching access');
-                            return null;
-                          }
-                        } else {
-                          console.log('🔍 [Header] No matching conversation found');
-                          return null;
-                        }
                       }
                       
                       // Regular conversation participants
