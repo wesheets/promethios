@@ -156,7 +156,7 @@ import { useAuth } from '../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../services/ChatbotStorageService';
 import { connectedAppsService, ConnectedApp } from '../services/ConnectedAppsService';
 import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
-import ChatHistoryPanel from '../components/chat/ChatHistoryPanel';
+import OptimizedChatHistoryPanel from '../components/chat/OptimizedChatHistoryPanel';
 import ChatReferencePreview from '../components/chat/ChatReferencePreview';
 import { chatHistoryService, ChatSession as ChatHistorySession } from '../services/ChatHistoryService';
 import { aiWelcomeService } from '../services/AIWelcomeService';
@@ -7343,13 +7343,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
                 
                 {rightPanelType === 'chats' && selectedChatbot && (
-                  <ChatHistoryPanel
+                  <OptimizedChatHistoryPanel
                     agentId={selectedChatbotId || selectedChatbot?.id}
                     agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
                     currentSessionId={currentBotState?.currentChatSession?.id}
                     refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
                     sharedConversations={sharedConversations}
                     onSharedConversationSelect={handleCustomSharedConversationSelect}
+                    onDirectMessage={(userId, userName) => {
+                      // Integrate with existing direct message system
+                      console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
+                      // TODO: Integrate with your existing direct message functionality
+                      // This should open the bottom-right chat window like in the team panel
+                    }}
+                    onViewProfile={(userId) => {
+                      // Integrate with existing profile view system
+                      console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
+                      // TODO: Integrate with your existing profile view functionality
+                    }}
                     onChatSelect={async (session) => {
                       console.log(`🔄 [ChatHistory] Chat selected:`, session);
                       console.log(`🔄 [ChatHistory] Session has ${session.messages?.length || 0} messages`);
