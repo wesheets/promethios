@@ -615,7 +615,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
   const chatHistoryService = useMemo(() => ChatHistoryService.getInstance(), []);
   const chatSharingService = useMemo(() => ChatSharingService.getInstance(), []);
 
-  // Optimized load function with caching
+  // Optimized load function with caching and error handling
   const loadChatSessions = useCallback(async () => {
     if (!currentUser?.uid) {
       setLoading(false);
@@ -625,40 +625,66 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
     try {
       setLoading(true);
       
+      // Use a more efficient filter approach
       const filter: ChatHistoryFilter = {
         agentId: agentId,
       };
 
+      // Only add search filter if there's actually a search term
       if (searchTerm.trim()) {
         filter.searchTerm = searchTerm.trim();
       }
 
-      const sessions = await chatHistoryService.getChatSessions(currentUser.uid, filter);
-      setChatSessions(sessions);
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Chat loading timeout')), 10000)
+      );
+
+      const sessionsPromise = chatHistoryService.getChatSessions(currentUser.uid, filter);
+      
+      const sessions = await Promise.race([sessionsPromise, timeoutPromise]) as ChatSession[];
+      
+      // Validate the sessions data
+      const validSessions = sessions.filter(session => 
+        session && 
+        typeof session.id === 'string' && 
+        typeof session.name === 'string'
+      );
+      
+      setChatSessions(validSessions);
     } catch (error) {
       console.error('Failed to load chat sessions:', error);
+      // Don't clear existing sessions on error, just log it
+      if (chatSessions.length === 0) {
+        setChatSessions([]);
+      }
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.uid, agentId, searchTerm, chatHistoryService]);
+  }, [currentUser?.uid, agentId, searchTerm, chatHistoryService, chatSessions.length]);
 
-  // Debounced search for performance
+  // Debounced search for performance - only trigger if search actually changed
   const debouncedSearch = useMemo(() => {
     const timeoutId = setTimeout(() => {
-      loadChatSessions();
+      // Only load if we're not already loading and search term actually changed
+      if (!loading) {
+        loadChatSessions();
+      }
     }, 300);
     
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, loadChatSessions]);
+  }, [searchTerm, loadChatSessions, loading]);
 
   useEffect(() => {
     return debouncedSearch;
   }, [debouncedSearch]);
 
-  // Initial load
+  // Initial load - only when agentId or user changes, not on every render
   useEffect(() => {
-    loadChatSessions();
-  }, [agentId, currentUser?.uid]);
+    if (agentId && currentUser?.uid && !loading) {
+      loadChatSessions();
+    }
+  }, [agentId, currentUser?.uid]); // Removed loadChatSessions from deps to prevent loops
 
   // Real-time refresh optimization
   useEffect(() => {
@@ -856,11 +882,25 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
   // Filtered shared conversations for search
   const filteredSharedConversations = useMemo(() => {
-    return sharedConversations.filter(conv => 
-      !searchTerm || 
-      (conv.name || 'Shared Chat').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      conv.participants?.some(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    return sharedConversations.filter(conv => {
+      if (!searchTerm) return true;
+      
+      const searchLower = searchTerm.toLowerCase();
+      const convName = conv.name || 'Shared Chat';
+      
+      // Safe string conversion and toLowerCase
+      const nameMatch = typeof convName === 'string' 
+        ? convName.toLowerCase().includes(searchLower)
+        : String(convName).toLowerCase().includes(searchLower);
+      
+      const participantMatch = conv.participants?.some(p => 
+        typeof p.name === 'string' 
+          ? p.name.toLowerCase().includes(searchLower)
+          : String(p.name || '').toLowerCase().includes(searchLower)
+      );
+      
+      return nameMatch || participantMatch;
+    });
   }, [sharedConversations, searchTerm]);
 
   // Loading skeleton component
