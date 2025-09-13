@@ -5348,12 +5348,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Participants Display */}
                     {(() => {
                       // Shared conversation participants - Get real data from host chat session
-                      if (isInSharedMode && activeSharedConversation && guestConversationAccess?.length > 0) {
-                        console.log('🔍 [Header] Entering shared mode participant display');
-                        console.log('🔍 [Header] guestConversationAccess:', guestConversationAccess);
-                        console.log('🔍 [Header] guestConversationAccess.length:', guestConversationAccess?.length);
+                      if (isInSharedMode && activeSharedConversation) {
+                        // Find the specific conversation that matches the URL
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const urlSharedParam = urlParams.get('shared');
+                        const matchingAccess = guestConversationAccess?.find(access => 
+                          access.id === urlSharedParam || access.id === activeSharedConversation
+                        );
                         
-                        const hostChatSession = guestConversationAccess[0]; // Get the host chat session
+                        if (matchingAccess) {
+                          console.log('🔍 [Header] Found matching conversation, loading participants');
+                          console.log('🔍 [Header] Matching conversation:', matchingAccess);
+                          
+                          const hostChatSession = matchingAccess; // Use the matching conversation
                         
                         // Get real participants from host chat session
                         const hostAgent = hostChatSession.agentId ? {
@@ -6400,13 +6407,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                         return getHostAgent();
                                       })()}
                                       guestAgents={(() => {
-                                        if (isInSharedMode && guestConversationAccess?.length > 0) {
-                                          console.log('🔍 [AvatarSelector] Entering shared mode agent selection');
-                                          console.log('🔍 [AvatarSelector] guestConversationAccess:', guestConversationAccess);
-                                          console.log('🔍 [AvatarSelector] guestConversationAccess.length:', guestConversationAccess?.length);
+                                        if (isInSharedMode && activeSharedConversation) {
+                                          // Find the specific conversation that matches the URL
+                                          const urlParams = new URLSearchParams(window.location.search);
+                                          const urlSharedParam = urlParams.get('shared');
+                                          const matchingAccess = guestConversationAccess?.find(access => 
+                                            access.id === urlSharedParam || access.id === activeSharedConversation
+                                          );
                                           
-                                          // Use real guest agents from host chat session
-                                          const hostChatSession = guestConversationAccess[0];
+                                          if (matchingAccess) {
+                                            console.log('🔍 [AvatarSelector] Found matching conversation, loading agents');
+                                            console.log('🔍 [AvatarSelector] Matching conversation:', matchingAccess);
+                                            
+                                            const hostChatSession = matchingAccess; // Use the matching conversation
                                           const filteredAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
                                           
                                           // Debug logging for avatar selector
@@ -6421,6 +6434,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                             avatar: agent.avatar,
                                             status: agent.status || 'active'
                                           }));
+                                          }
                                         }
                                         return getGuestAgents();
                                       })()}
