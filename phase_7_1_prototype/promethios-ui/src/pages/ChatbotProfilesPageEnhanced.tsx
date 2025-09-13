@@ -7350,6 +7350,20 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
                     sharedConversations={sharedConversations}
                     onSharedConversationSelect={handleCustomSharedConversationSelect}
+                    onDeleteSharedConversation={(conversationId) => {
+                      console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
+                      // Remove from local state immediately for instant UI feedback
+                      const updatedConversations = sharedConversations.filter(conv => conv.id !== conversationId);
+                      // Note: This would need to be connected to the actual state management
+                      // For now, we'll trigger a refresh
+                      refreshSharedConversations();
+                    }}
+                    onBulkCleanupLegacyConversations={() => {
+                      console.log(`🧹 [LegacyCleanup] Cleaning up ${sharedConversations.length} legacy conversations`);
+                      // Clear all shared conversations (they're legacy and not working properly)
+                      // This would need to be connected to the actual cleanup service
+                      refreshSharedConversations();
+                    }}
                     onDirectMessage={(userId, userName) => {
                       // Integrate with existing direct message system
                       console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);

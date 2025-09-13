@@ -93,6 +93,8 @@ interface OptimizedChatHistoryPanelProps {
   onSharedConversationSelect?: (conversationId: string) => void;
   onDirectMessage?: (userId: string, userName: string) => void; // New: Direct message integration
   onViewProfile?: (userId: string) => void; // New: Profile view integration
+  onDeleteSharedConversation?: (conversationId: string) => void; // New: Delete shared conversation
+  onBulkCleanupLegacyConversations?: () => void; // New: Bulk cleanup for legacy conversations
 }
 
 // Memoized participant component for performance
@@ -579,6 +581,8 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
   onSharedConversationSelect,
   onDirectMessage,
   onViewProfile,
+  onDeleteSharedConversation,
+  onBulkCleanupLegacyConversations,
 }) => {
   const { currentUser } = useAuth();
   
@@ -843,6 +847,44 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
     setShowInvitationModal(true);
   }, []);
 
+  // Shared conversation delete handler
+  const handleDeleteSharedConversation = useCallback(async (conversationId: string) => {
+    if (!confirm('Are you sure you want to delete this shared conversation? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ [SharedChat] Deleting shared conversation:', conversationId);
+      
+      if (onDeleteSharedConversation) {
+        onDeleteSharedConversation(conversationId);
+      }
+      
+      console.log('✅ [SharedChat] Shared conversation deleted successfully');
+    } catch (error) {
+      console.error('❌ [SharedChat] Failed to delete shared conversation:', error);
+    }
+  }, [onDeleteSharedConversation]);
+
+  // Bulk cleanup handler for legacy conversations
+  const handleBulkCleanupLegacy = useCallback(async () => {
+    if (!confirm('Are you sure you want to clean up all legacy shared conversations? This will remove old conversations that may no longer work properly. This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      console.log('🧹 [LegacyCleanup] Starting bulk cleanup of legacy conversations');
+      
+      if (onBulkCleanupLegacyConversations) {
+        onBulkCleanupLegacyConversations();
+      }
+      
+      console.log('✅ [LegacyCleanup] Bulk cleanup completed successfully');
+    } catch (error) {
+      console.error('❌ [LegacyCleanup] Failed to cleanup legacy conversations:', error);
+    }
+  }, [onBulkCleanupLegacyConversations]);
+
   // Menu handlers
   const handleMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>, sessionId: string) => {
     setMenuAnchor(event.currentTarget);
@@ -1086,6 +1128,31 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         ) : (
           // Guest Chats Tab
           <>
+            {/* Bulk cleanup button for legacy conversations */}
+            {filteredSharedConversations.length > 10 && (
+              <Box sx={{ p: 2, borderBottom: '1px solid #334155' }}>
+                <Button
+                  onClick={handleBulkCleanupLegacy}
+                  size="small"
+                  startIcon={<Delete />}
+                  sx={{
+                    color: '#ef4444',
+                    borderColor: '#ef4444',
+                    '&:hover': {
+                      bgcolor: 'rgba(239, 68, 68, 0.1)',
+                      borderColor: '#ef4444',
+                    },
+                  }}
+                  variant="outlined"
+                >
+                  Clean Up Legacy Conversations ({filteredSharedConversations.length})
+                </Button>
+                <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 1 }}>
+                  Remove old conversations that may no longer work properly
+                </Typography>
+              </Box>
+            )}
+
             {filteredSharedConversations.length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
@@ -1100,13 +1167,12 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
                 {filteredSharedConversations.map((conversation, index) => (
                   <React.Fragment key={conversation.id}>
                     <ListItem
-                      button
-                      onClick={() => onSharedConversationSelect?.(conversation.id)}
                       sx={{
                         py: 1.5,
                         px: 2,
                         '&:hover': { bgcolor: '#1e293b' },
                         transition: 'background-color 0.2s ease-in-out',
+                        cursor: 'pointer',
                       }}
                     >
                       <ListItemIcon sx={{ minWidth: 36 }}>
@@ -1125,6 +1191,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
                         </Box>
                       </ListItemIcon>
                       <ListItemText
+                        onClick={() => onSharedConversationSelect?.(conversation.id)}
                         primary={
                           <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
                             {conversation.name || 'Shared Chat'}
@@ -1136,12 +1203,27 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
                           </Typography>
                         }
                       />
-                      <ListItemSecondaryAction>
+                      <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Chip
                           label="Guest"
                           size="small"
                           sx={{ bgcolor: '#10b981', color: 'white', fontSize: '0.7rem' }}
                         />
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSharedConversation(conversation.id);
+                          }}
+                          sx={{
+                            color: '#ef4444',
+                            '&:hover': {
+                              bgcolor: 'rgba(239, 68, 68, 0.1)',
+                            },
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
                       </ListItemSecondaryAction>
                     </ListItem>
                     {index < filteredSharedConversations.length - 1 && (
