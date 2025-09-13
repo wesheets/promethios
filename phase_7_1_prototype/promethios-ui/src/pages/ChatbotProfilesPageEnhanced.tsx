@@ -5359,11 +5359,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         if (matchingAccess) {
                           console.log('🔍 [Header] Found matching conversation, loading participants');
                           console.log('🔍 [Header] Matching conversation:', matchingAccess);
+                          console.log('🔍 [Header] Matching conversation structure:', Object.keys(matchingAccess));
                           
-                          const hostChatSession = matchingAccess; // Use the matching conversation
+                          // Check if this access object has participant data loaded
+                          if (matchingAccess.participants) {
+                            console.log('🔍 [Header] Found participants in matching access:', matchingAccess.participants);
+                            const hostChatSession = matchingAccess;
                         
-                        // Get real participants from host chat session
-                        const hostAgent = hostChatSession.agentId ? {
+                            // Get real participants from host chat session
+                            const hostAgent = hostChatSession.agentId ? {
                           id: hostChatSession.agentId,
                           name: hostChatSession.agentName || 'Host Agent',
                           type: 'agent' as const
@@ -5478,6 +5482,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             </Box>
                           </Box>
                         );
+                          } else {
+                            console.log('🔍 [Header] No participants data in matching access');
+                            return null;
+                          }
+                        } else {
+                          console.log('🔍 [Header] No matching conversation found');
+                          return null;
+                        }
                       }
                       
                       // Regular conversation participants
