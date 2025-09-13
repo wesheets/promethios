@@ -19,6 +19,7 @@ import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestio
 // Shared conversation imports
 import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
 import CompactSharedChatTabs from '../components/collaboration/CompactSharedChatTabs';
+import UnifiedHeaderTabs from '../components/collaboration/UnifiedHeaderTabs';
 import SharedConversationService from '../services/SharedConversationService';
 import UnifiedGuestChatService from '../services/UnifiedGuestChatService';
 import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
@@ -157,6 +158,7 @@ import ChatbotStorageService, { ChatbotProfile } from '../services/ChatbotStorag
 import { connectedAppsService, ConnectedApp } from '../services/ConnectedAppsService';
 import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
 import ChatHistoryPanel from '../components/chat/ChatHistoryPanel';
+import EnhancedChatHistoryPanel from '../components/chat/EnhancedChatHistoryPanel';
 import ChatReferencePreview from '../components/chat/ChatReferencePreview';
 import { chatHistoryService, ChatSession as ChatHistorySession } from '../services/ChatHistoryService';
 import { aiWelcomeService } from '../services/AIWelcomeService';
@@ -5473,7 +5475,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         maxWidth: { xs: 200, sm: 300, md: 400, lg: 500 }, // Responsive width
                         overflow: 'hidden'
                       }}>
-                        <CompactSharedChatTabs
+                        <UnifiedHeaderTabs
                           sharedConversations={sharedConversations.filter(conv => 
                             activeHeaderConversations.includes(conv.id)
                           )}
@@ -7343,11 +7345,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
                 
                 {rightPanelType === 'chats' && selectedChatbot && (
-                  <ChatHistoryPanel
+                  <EnhancedChatHistoryPanel
                     agentId={selectedChatbotId || selectedChatbot?.id}
                     agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
-                    currentSessionId={currentBotState?.currentChatSession?.id}
-                    refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0} // Use bot state refresh trigger
+                    currentUser={user}
+                    refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
+                    sharedConversations={sharedConversations}
+                    onSharedConversationSelect={handleCustomSharedConversationSelect}
                     onChatSelect={async (session) => {
                       console.log(`🔄 [ChatHistory] Chat selected:`, session);
                       console.log(`🔄 [ChatHistory] Session has ${session.messages?.length || 0} messages`);
