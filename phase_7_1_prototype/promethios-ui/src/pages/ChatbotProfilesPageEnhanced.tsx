@@ -5416,7 +5416,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           type: 'human' as const
                         };
                         
-                        const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
+                        const guestAgents = hostChatSession.participants?.guests?.filter(g => 
+                          g.type === 'ai_agent' && g.id !== hostChatSession.agentId // Exclude host agent from guests
+                        ) || [];
                         const guestHumans = hostChatSession.participants?.guests?.filter(g => 
                           g.type === 'human' && g.id !== (user?.uid || 'anonymous') // Exclude current guest user
                         ) || [];
@@ -6453,20 +6455,39 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           console.log('🔍 [AvatarSelector] Loaded session participants:', loadedHostChatSession.participants);
                                           
                                           const hostChatSession = loadedHostChatSession;
-                                          const filteredAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
                                           
-                                          // Debug logging for avatar selector
-                                          console.log('🔍 [AvatarSelector] hostChatSession.participants:', hostChatSession.participants);
-                                          console.log('🔍 [AvatarSelector] All guests:', hostChatSession.participants?.guests);
-                                          console.log('🔍 [AvatarSelector] Filtered agents:', filteredAgents);
+                                          // For avatar selector, include ALL agents (host + guests) for message targeting
+                                          const allAgents = [];
                                           
-                                          return filteredAgents.map(agent => ({
+                                          // Add host agent if it exists
+                                          if (hostChatSession.agentId) {
+                                            allAgents.push({
+                                              id: hostChatSession.agentId,
+                                              name: hostChatSession.agentName || 'Host Agent',
+                                              type: 'agent' as const,
+                                              avatar: undefined,
+                                              status: 'active'
+                                            });
+                                          }
+                                          
+                                          // Add guest agents
+                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
+                                          allAgents.push(...guestAgents.map(agent => ({
                                             id: agent.id,
                                             name: agent.name,
                                             type: 'agent' as const,
                                             avatar: agent.avatar,
                                             status: agent.status || 'active'
-                                          }));
+                                          })));
+                                          
+                                          // Debug logging for avatar selector
+                                          console.log('🔍 [AvatarSelector] hostChatSession.participants:', hostChatSession.participants);
+                                          console.log('🔍 [AvatarSelector] All guests:', hostChatSession.participants?.guests);
+                                          console.log('🔍 [AvatarSelector] Host agent:', hostChatSession.agentId);
+                                          console.log('🔍 [AvatarSelector] Guest agents:', guestAgents);
+                                          console.log('🔍 [AvatarSelector] All agents for selector:', allAgents);
+                                          
+                                          return allAgents;
                                         }
                                         return getGuestAgents();
                                       })()}
