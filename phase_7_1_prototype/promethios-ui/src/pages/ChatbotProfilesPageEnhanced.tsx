@@ -4019,8 +4019,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             console.log('🤖 [SharedChat] Triggering AI response from selected agent:', selectedTarget);
             
             try {
-              // Find the target agent
-              const targetAgent = chatbotProfiles.find(bot => bot.id === selectedTarget);
+              // In shared mode, look for the agent in shared conversation participants, not chatbotProfiles
+              let targetAgent = null;
+              
+              // First try to find in shared conversation participants
+              if (loadedHostChatSession?.participants) {
+                const allSharedAgents = [
+                  loadedHostChatSession.participants.host,
+                  ...(loadedHostChatSession.participants.guests || [])
+                ].filter(p => p && p.type === 'ai_agent');
+                
+                targetAgent = allSharedAgents.find(agent => agent.id === selectedTarget);
+                console.log('🔍 [SharedChat] Looking for agent in shared participants:', {
+                  selectedTarget,
+                  allSharedAgents: allSharedAgents.map(a => ({ id: a.id, name: a.name })),
+                  foundAgent: !!targetAgent
+                });
+              }
+              
+              // Fallback to chatbotProfiles if not found in shared participants
+              if (!targetAgent) {
+                targetAgent = chatbotProfiles.find(bot => bot.id === selectedTarget);
+                console.log('🔍 [SharedChat] Fallback to chatbotProfiles:', {
+                  selectedTarget,
+                  availableProfiles: chatbotProfiles.map(bot => ({ id: bot.id, name: bot.name })),
+                  foundAgent: !!targetAgent
+                });
+              }
               
               if (targetAgent) {
                 console.log('🤖 [SharedChat] Calling universalGovernanceAdapter for agent:', targetAgent.name);
@@ -4053,8 +4078,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   console.warn('⚠️ [SharedChat] No response received from agent');
                 }
               } else {
-                console.warn('⚠️ [SharedChat] Target agent not found in chatbotProfiles:', selectedTarget);
-                console.log('🔍 [SharedChat] Available chatbotProfiles:', chatbotProfiles.map(bot => ({ id: bot.id, name: bot.name })));
+                console.warn('⚠️ [SharedChat] Target agent not found in shared participants or chatbotProfiles:', selectedTarget);
               }
               
             } catch (agentError) {
@@ -6619,8 +6643,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                             });
                                           }
                                           
-                                          // Add guest agents
-                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
+                                          // Add guest agents (but exclude host agent to avoid duplicates)
+                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => 
+                                            g.type === 'ai_agent' && g.id !== hostChatSession.agentId
+                                          ) || [];
                                           allAgents.push(...guestAgents.map(agent => ({
                                             id: agent.id,
                                             name: agent.name,
@@ -6632,9 +6658,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           // Debug logging for avatar selector
                                           console.log('🔍 [AvatarSelector] hostChatSession.participants:', hostChatSession.participants);
                                           console.log('🔍 [AvatarSelector] All guests:', hostChatSession.participants?.guests);
-                                          console.log('🔍 [AvatarSelector] Host agent:', hostChatSession.agentId);
-                                          console.log('🔍 [AvatarSelector] Guest agents:', guestAgents);
-                                          console.log('🔍 [AvatarSelector] All agents for selector:', allAgents);
+                                          console.log('🔍 [AvatarSelector] Host agent ID:', hostChatSession.agentId);
+                                          console.log('🔍 [AvatarSelector] Guest agents (filtered):', guestAgents);
+                                          console.log('🔍 [AvatarSelector] All agents for selector (deduplicated):', allAgents);
                                           
                                           return allAgents;
                                         }
