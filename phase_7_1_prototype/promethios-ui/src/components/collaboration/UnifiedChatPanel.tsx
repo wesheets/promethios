@@ -31,8 +31,8 @@ import {
   Person as PersonIcon,
   SmartToy as AIIcon,
   Group as GroupIcon,
-  Schedule as RecentIcon,
-  Share as SharedIcon,
+  Home as HostIcon,
+  PersonAdd as GuestIcon,
   Add as AddIcon,
   Star as StarIcon,
   Archive as ArchiveIcon,
@@ -56,6 +56,7 @@ export interface ChatItem {
   isPrivateMode?: boolean;
   isPinned?: boolean;
   isArchived?: boolean;
+  isHost?: boolean; // True if user is the host/initiator of this chat
 }
 
 export interface UnifiedChatPanelProps {
@@ -77,7 +78,7 @@ export const UnifiedChatPanel: React.FC<UnifiedChatPanelProps> = ({
   searchQuery,
   onSearchChange
 }) => {
-  const [activeTab, setActiveTab] = useState(0); // 0: All, 1: Recent, 2: Shared
+  const [activeTab, setActiveTab] = useState(0); // 0: Host Chats, 1: Guest Chats
   const [menuAnchor, setMenuAnchor] = useState<{ element: HTMLElement; chatId: string } | null>(null);
 
   // Filter chats based on active tab
@@ -94,17 +95,16 @@ export const UnifiedChatPanel: React.FC<UnifiedChatPanelProps> = ({
 
     // Apply tab filter
     switch (activeTab) {
-      case 0: // All
-        return filtered.filter(chat => !chat.isArchived);
+      case 0: // Host Chats - conversations initiated by the user
+        return filtered.filter(chat => 
+          chat.type === 'solo' || // 1:1 chats with AI agents
+          (chat.type === 'shared' && chat.isHost) // Multi-participant chats hosted by user
+        ).filter(chat => !chat.isArchived);
       
-      case 1: // Recent
-        return filtered
-          .filter(chat => !chat.isArchived)
-          .sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime())
-          .slice(0, 20); // Show last 20 recent chats
-      
-      case 2: // Shared
-        return filtered.filter(chat => chat.type === 'shared' && !chat.isArchived);
+      case 1: // Guest Chats - conversations user was invited to
+        return filtered.filter(chat => 
+          chat.type === 'shared' && !chat.isHost // Shared chats where user is a guest
+        ).filter(chat => !chat.isArchived);
       
       default:
         return filtered;
@@ -248,9 +248,12 @@ export const UnifiedChatPanel: React.FC<UnifiedChatPanelProps> = ({
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2">All</Typography>
+                <HostIcon sx={{ fontSize: 16 }} />
+                <Typography variant="body2">Host Chats</Typography>
                 <Chip
-                  label={chats.filter(c => !c.isArchived).length}
+                  label={chats.filter(c => 
+                    (c.type === 'solo' || (c.type === 'shared' && c.isHost)) && !c.isArchived
+                  ).length}
                   size="small"
                   sx={{ bgcolor: '#334155', color: '#94a3b8', height: 20 }}
                 />
@@ -260,18 +263,10 @@ export const UnifiedChatPanel: React.FC<UnifiedChatPanelProps> = ({
           <Tab
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <RecentIcon sx={{ fontSize: 16 }} />
-                <Typography variant="body2">Recent</Typography>
-              </Box>
-            }
-          />
-          <Tab
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <SharedIcon sx={{ fontSize: 16 }} />
-                <Typography variant="body2">Shared</Typography>
+                <GuestIcon sx={{ fontSize: 16 }} />
+                <Typography variant="body2">Guest Chats</Typography>
                 <Chip
-                  label={chats.filter(c => c.type === 'shared' && !c.isArchived).length}
+                  label={chats.filter(c => c.type === 'shared' && !c.isHost && !c.isArchived).length}
                   size="small"
                   sx={{ bgcolor: '#334155', color: '#94a3b8', height: 20 }}
                 />
