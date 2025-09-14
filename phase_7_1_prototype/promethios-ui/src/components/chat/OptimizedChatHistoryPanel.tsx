@@ -686,15 +686,23 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
       console.log('🔍 [DEBUG] Filter:', filter);
 
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging - increased to 30 seconds for better reliability
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Chat loading timeout')), 10000)
+        setTimeout(() => reject(new Error('Chat loading timeout - service took longer than 30 seconds')), 30000)
       );
 
       const sessionsPromise = chatHistoryService.getChatSessions(currentUser.uid, filter);
       
       console.log('🔍 [DEBUG] Waiting for sessions...');
-      const sessions = await Promise.race([sessionsPromise, timeoutPromise]) as ChatSession[];
+      let sessions: ChatSession[];
+      
+      try {
+        sessions = await Promise.race([sessionsPromise, timeoutPromise]) as ChatSession[];
+      } catch (error) {
+        console.warn('⚠️ [DEBUG] Chat loading failed, using empty array as fallback:', error);
+        // Fallback to empty array if loading fails
+        sessions = [];
+      }
       
       console.log('🔍 [DEBUG] Raw sessions received:', {
         sessionsLength: sessions?.length || 0,
