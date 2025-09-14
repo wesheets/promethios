@@ -80,6 +80,9 @@ import { SharedConversation } from '../../services/SharedConversationService';
 import { useAuth } from '../../context/AuthContext';
 import ChatInvitationModal from '../collaboration/ChatInvitationModal';
 
+// Global cache that persists across component re-mounts
+const globalChatCache: {[key: string]: {sessions: ChatSession[], timestamp: number}} = {};
+
 // Performance-optimized interfaces
 interface OptimizedChatHistoryPanelProps {
   agentId: string;
@@ -592,8 +595,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   
-  // Cache for instant loading
-  const [cachedSessions, setCachedSessions] = useState<{[key: string]: {sessions: ChatSession[], timestamp: number}}>({});
+  // Background refresh state
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   
   // Dialog states
@@ -641,7 +643,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
     // Create cache key
     const cacheKey = `${currentUser.uid}_${agentId}_${searchTerm.trim()}`;
-    const cached = cachedSessions[cacheKey];
+    const cached = globalChatCache[cacheKey];  // Use global cache
     const now = Date.now();
     const CACHE_TTL = 2 * 60 * 1000; // 2 minutes cache
 
@@ -712,14 +714,11 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         validSessions: validSessions.slice(0, 3).map(s => ({ id: s.id, name: s.name, agentId: s.agentId }))
       });
       
-      // Update cache
-      setCachedSessions(prev => ({
-        ...prev,
-        [cacheKey]: {
-          sessions: validSessions,
-          timestamp: now
-        }
-      }));
+      // Update global cache
+      globalChatCache[cacheKey] = {
+        sessions: validSessions,
+        timestamp: now
+      };
       
       setChatSessions(validSessions);
       console.log('✅ [DEBUG] Chat sessions set successfully');
