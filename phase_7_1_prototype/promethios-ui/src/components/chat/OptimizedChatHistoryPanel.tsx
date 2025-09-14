@@ -1117,20 +1117,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
       },
       '& > *:last-child': {
         flexGrow: 1,   // Last child (chat list) should grow
-        flexShrink: 1  // But allow shrinking if needed
-      },
-      // CSS debugging - add visible border to see actual boundaries
-      border: '2px solid #ff0000',  // Red border for debugging
-      '&::before': {
-        content: '"DEBUG: OptimizedChatHistoryPanel Container"',
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        background: '#ff0000',
-        color: '#ffffff',
-        fontSize: '10px',
-        padding: '2px 4px',
-        zIndex: 9999
+        flexShrink: 1,  // But allow shrinking if needed
       }
     }}>
       {/* Header */}
@@ -1239,58 +1226,23 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         bgcolor: '#0f172a',
         display: 'flex',     // Make this a flex container
         flexDirection: 'column',  // Stack content vertically
-        // Force full height usage
-        height: '100%',
-        position: 'relative',
-        // CSS debugging - add visible border to see actual boundaries
-        border: '2px solid #00ff00',  // Green border for debugging
-        '&::before': {
-          content: '"DEBUG: Chat List Container"',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          background: '#00ff00',
-          color: '#000000',
-          fontSize: '10px',
-          padding: '2px 4px',
-          zIndex: 9999
-        }
+        // Aggressive height management
+        height: 0,  // Start with 0 and let flexGrow handle it
+        position: 'relative'
       }}>
         <Box sx={{
-          flexGrow: 1,
+          flex: '1 1 0',     // Aggressive flex: grow, shrink, basis 0
           minHeight: 0,      // Allow shrinking
-          maxHeight: '100%', // Don't exceed available space
           overflow: 'auto',  // Allow scrolling within this area
           height: '100%',    // Explicitly use full height
           // Force content to fill available space
           '& > *': {
             minHeight: 'fit-content'
-          },
-          // CSS debugging - add visible border to see actual boundaries
-          border: '2px solid #0000ff',  // Blue border for debugging
-          position: 'relative',
-          '&::before': {
-            content: '"DEBUG: Scrollable Area"',
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            background: '#0000ff',
-            color: '#ffffff',
-            fontSize: '10px',
-            padding: '2px 4px',
-            zIndex: 9999
           }
         }}>
         {activeTab === 0 ? (
           // Host Chats Tab
           <>
-            {/* Debug Info */}
-            <Box sx={{ p: 1, bgcolor: '#1e293b', borderBottom: '1px solid #334155' }}>
-              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                DEBUG: User: {currentUser?.uid || 'None'} | Agent: {agentId} | Sessions: {chatSessions.length} | Loading: {loading.toString()} | BG Refresh: {isBackgroundRefreshing.toString()}
-              </Typography>
-            </Box>
-            
             {loading ? (
               <LoadingSkeleton />
             ) : chatSessions.length === 0 ? (
