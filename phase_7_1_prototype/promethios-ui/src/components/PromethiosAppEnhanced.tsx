@@ -525,11 +525,19 @@ const PromethiosAppEnhanced: React.FC<PromethiosAppEnhancedProps> = ({
   );
 
   const renderMainContent = () => (
-    <Grid container sx={{ height: 'calc(100vh - 64px)' }}>
+    <Grid container sx={{ 
+      flexGrow: 1,  // Use flexGrow instead of fixed height
+      minHeight: 0  // Allow shrinking below content size
+    }}>
       {/* Left Panel - Enhanced Chat Interface */}
       <Grid item xs={12} md={rightPanelOpen ? 8 : 12}>
-        <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <Box sx={{ flexGrow: 1, p: 2 }}>
+        <Paper sx={{ 
+          height: '100%', 
+          display: 'flex', 
+          flexDirection: 'column',
+          minHeight: 0  // Allow shrinking
+        }}>
+          <Box sx={{ flexGrow: 1, p: 2, minHeight: 0 }}>
             <EnhancedChatInterface
               userId={userId}
               userName={userName}
@@ -582,7 +590,14 @@ const PromethiosAppEnhanced: React.FC<PromethiosAppEnhancedProps> = ({
       {/* Right Panel - Enhanced Control Panel */}
       {rightPanelOpen && (
         <Grid item xs={12} md={4}>
-          <Paper sx={{ height: '100%', borderLeft: 1, borderColor: 'divider' }}>
+          <Paper sx={{ 
+            height: '100%', 
+            borderLeft: 1, 
+            borderColor: 'divider',
+            display: 'flex',        // Add flex display
+            flexDirection: 'column', // Add flex direction
+            minHeight: 0            // Allow shrinking
+          }}>
             <RightPanelEnhanced
               userId={userId}
               userName={userName}

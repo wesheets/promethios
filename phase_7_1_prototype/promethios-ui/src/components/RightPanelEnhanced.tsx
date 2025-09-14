@@ -567,7 +567,13 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
   const tabConfigs = getVisibleTabConfigs();
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      minHeight: 0,  // Allow shrinking below content size
+      overflow: 'hidden'  // Prevent content from overflowing
+    }}>
       {/* Header */}
       <Box sx={{ 
         display: 'flex', 
@@ -575,7 +581,8 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         alignItems: 'center', 
         p: 1,
         borderBottom: 1,
-        borderColor: 'divider'
+        borderColor: 'divider',
+        flexShrink: 0  // Prevent header from shrinking
       }}>
         <Typography variant="h6" sx={{ fontSize: '1rem' }}>
           Promethios Control Panel
@@ -641,6 +648,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
           borderBottom: 1, 
           borderColor: 'divider',
           minHeight: 48,
+          flexShrink: 0,  // Prevent tabs from shrinking
           '& .MuiTab-root': {
             minWidth: 'auto',
             minHeight: 48,
@@ -665,8 +673,20 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
       </Tabs>
 
       {/* Tab Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        {renderActiveTabContent()}
+      <Box sx={{ 
+        flexGrow: 1,     // Take up remaining space
+        minHeight: 0,    // Allow shrinking below content size
+        overflow: 'hidden',  // Prevent overflow
+        display: 'flex',     // Make this a flex container
+        flexDirection: 'column'  // Stack content vertically
+      }}>
+        <Box sx={{
+          flexGrow: 1,
+          overflow: 'auto',  // Allow scrolling within this area
+          minHeight: 0       // Allow shrinking
+        }}>
+          {renderActiveTabContent()}
+        </Box>
       </Box>
 
       {/* Collaboration Status Bar */}

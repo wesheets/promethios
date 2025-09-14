@@ -621,13 +621,22 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
   // Optimized load function with caching and error handling
   const loadChatSessions = useCallback(async () => {
+    console.log('🔍 [DEBUG] loadChatSessions called:', {
+      currentUserUid: currentUser?.uid,
+      agentId,
+      searchTerm,
+      loading
+    });
+
     if (!currentUser?.uid) {
+      console.log('❌ [DEBUG] No current user UID, skipping load');
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      console.log('🔍 [DEBUG] Starting chat sessions load...');
       
       // Use a more efficient filter approach
       const filter: ChatHistoryFilter = {
@@ -639,6 +648,8 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         filter.searchTerm = searchTerm.trim();
       }
 
+      console.log('🔍 [DEBUG] Filter:', filter);
+
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Chat loading timeout')), 10000)
@@ -646,7 +657,13 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
       const sessionsPromise = chatHistoryService.getChatSessions(currentUser.uid, filter);
       
+      console.log('🔍 [DEBUG] Waiting for sessions...');
       const sessions = await Promise.race([sessionsPromise, timeoutPromise]) as ChatSession[];
+      
+      console.log('🔍 [DEBUG] Raw sessions received:', {
+        sessionsLength: sessions?.length || 0,
+        sessions: sessions?.slice(0, 3).map(s => ({ id: s?.id, name: s?.name, agentId: s?.agentId })) || []
+      });
       
       // Validate the sessions data
       const validSessions = sessions.filter(session => 
@@ -655,15 +672,31 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         typeof session.name === 'string'
       );
       
+      console.log('🔍 [DEBUG] Valid sessions after filtering:', {
+        validSessionsLength: validSessions.length,
+        originalLength: sessions?.length || 0,
+        validSessions: validSessions.slice(0, 3).map(s => ({ id: s.id, name: s.name, agentId: s.agentId }))
+      });
+      
       setChatSessions(validSessions);
+      console.log('✅ [DEBUG] Chat sessions set successfully');
     } catch (error) {
-      console.error('Failed to load chat sessions:', error);
+      console.error('❌ [DEBUG] Failed to load chat sessions:', error);
+      console.error('❌ [DEBUG] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        currentUserUid: currentUser?.uid,
+        agentId,
+        searchTerm
+      });
+      
       // Don't clear existing sessions on error, just log it
       if (chatSessions.length === 0) {
         setChatSessions([]);
       }
     } finally {
       setLoading(false);
+      console.log('🔍 [DEBUG] loadChatSessions completed');
     }
   }, [currentUser?.uid, agentId, searchTerm, chatHistoryService, chatSessions.length]);
 
@@ -1071,12 +1104,22 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         {activeTab === 0 ? (
           // Host Chats Tab
           <>
+            {/* Debug Info */}
+            <Box sx={{ p: 1, bgcolor: '#1e293b', borderBottom: '1px solid #334155' }}>
+              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                DEBUG: User: {currentUser?.uid || 'None'} | Agent: {agentId} | Sessions: {chatSessions.length} | Loading: {loading.toString()}
+              </Typography>
+            </Box>
+            
             {loading ? (
               <LoadingSkeleton />
             ) : chatSessions.length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
                   {searchTerm ? 'No chats found matching your search.' : 'No chat history yet.'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b', mb: 2, display: 'block' }}>
+                  DEBUG: User={currentUser?.uid}, Agent={agentId}, Filter={JSON.stringify({ agentId, searchTerm })}
                 </Typography>
                 <Button
                   variant="outlined"
