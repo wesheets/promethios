@@ -627,12 +627,15 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
   // Optimized load function with caching and error handling
   const loadChatSessions = useCallback(async (forceRefresh = false) => {
-    console.log('🔍 [DEBUG] loadChatSessions called:', {
+    const startTime = Date.now();
+    console.log('🚀 [DEBUG] === LOAD CHAT SESSIONS START ===', {
+      timestamp: new Date().toISOString(),
       currentUserUid: currentUser?.uid,
       agentId,
       searchTerm,
       loading,
-      forceRefresh
+      forceRefresh,
+      startTime
     });
 
     if (!currentUser?.uid) {
@@ -647,12 +650,22 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
     const now = Date.now();
     const CACHE_TTL = 2 * 60 * 1000; // 2 minutes cache
 
+    console.log('🔍 [DEBUG] Cache check:', {
+      cacheKey,
+      hasCached: !!cached,
+      cacheAge: cached ? now - cached.timestamp : 'N/A',
+      cacheTTL: CACHE_TTL,
+      forceRefresh
+    });
+
     // Check cache first for instant loading
     if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_TTL) {
+      const cacheLoadTime = Date.now() - startTime;
       console.log('⚡ [DEBUG] Using cached sessions for instant loading:', {
         cacheKey,
         sessionsCount: cached.sessions.length,
-        cacheAge: now - cached.timestamp
+        cacheAge: now - cached.timestamp,
+        loadTime: cacheLoadTime + 'ms'
       });
       
       setChatSessions(cached.sessions);
@@ -664,27 +677,33 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         setIsBackgroundRefreshing(true);
         setTimeout(() => loadChatSessions(true), 100);
       }
+      
+      console.log('✅ [DEBUG] === CACHED LOAD COMPLETE ===', {
+        totalTime: cacheLoadTime + 'ms'
+      });
       return;
     }
 
     try {
       // Only set loading to true if we're not using cached data
       if (!forceRefresh) {
+        console.log('🔄 [DEBUG] Setting loading to true');
         setLoading(true);
       }
-      console.log('🔍 [DEBUG] Starting chat sessions load...');
+      console.log('🔍 [DEBUG] Starting chat sessions load from service...');
       
       // Use a more efficient filter approach
       const filter: ChatHistoryFilter = {
         agentId: agentId,
+        limit: 50
       };
 
-      // Only add search filter if there's actually a search term
       if (searchTerm.trim()) {
         filter.searchTerm = searchTerm.trim();
       }
 
-      console.log('🔍 [DEBUG] Filter:', filter);
+      console.log('🔍 [DEBUG] Filter prepared:', filter);
+      const serviceCallStart = Date.now();
 
       // Add timeout to prevent hanging - increased to 30 seconds for better reliability
       const timeoutPromise = new Promise((_, reject) => 
@@ -693,13 +712,22 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
       const sessionsPromise = chatHistoryService.getChatSessions(currentUser.uid, filter);
       
-      console.log('🔍 [DEBUG] Waiting for sessions...');
+      console.log('🔍 [DEBUG] Waiting for ChatHistoryService response...');
       let sessions: ChatSession[];
       
       try {
         sessions = await Promise.race([sessionsPromise, timeoutPromise]) as ChatSession[];
+        const serviceCallTime = Date.now() - serviceCallStart;
+        console.log('✅ [DEBUG] ChatHistoryService responded:', {
+          responseTime: serviceCallTime + 'ms',
+          sessionsCount: sessions?.length || 0
+        });
       } catch (error) {
-        console.warn('⚠️ [DEBUG] Chat loading failed, using empty array as fallback:', error);
+        const serviceCallTime = Date.now() - serviceCallStart;
+        console.warn('⚠️ [DEBUG] Chat loading failed, using empty array as fallback:', {
+          error: error.message,
+          responseTime: serviceCallTime + 'ms'
+        });
         // Fallback to empty array if loading fails
         sessions = [];
       }
@@ -727,29 +755,42 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         sessions: validSessions,
         timestamp: now
       };
-      
-      setChatSessions(validSessions);
+            setChatSessions(validSessions);
       console.log('✅ [DEBUG] Chat sessions set successfully');
+      
+      const totalTime = Date.now() - startTime;
+      console.log('🎉 [DEBUG] === LOAD CHAT SESSIONS COMPLETE ===', {
+        totalTime: totalTime + 'ms',
+        validSessionsCount: validSessions.length,
+        cacheUpdated: true,
+        timestamp: new Date().toISOString()
+      });
+
     } catch (error) {
-      console.error('❌ [DEBUG] Failed to load chat sessions:', error);
-      console.error('❌ [DEBUG] Error details:', {
-        message: error.message,
+      const totalTime = Date.now() - startTime;
+      console.error('❌ [DEBUG] Failed to load chat sessions:', {
+        error: error.message,
         stack: error.stack,
         currentUserUid: currentUser?.uid,
         agentId,
-        searchTerm
+        searchTerm,
+        totalTime: totalTime + 'ms'
       });
-      
-      // Don't clear existing sessions on error, just log it
-      if (chatSessions.length === 0) {
-        setChatSessions([]);
-      }
     } finally {
+      console.log('🔄 [DEBUG] Setting loading states to false');
       setLoading(false);
       setIsBackgroundRefreshing(false);
-      console.log('🔍 [DEBUG] loadChatSessions completed');
+      
+      const finalTime = Date.now() - startTime;
+      console.log('🏁 [DEBUG] === LOAD CHAT SESSIONS FINALLY ===', {
+        finalTime: finalTime + 'ms',
+        loadingState: false,
+        backgroundRefreshState: false
+      });
     }
-  }, [currentUser?.uid, agentId, searchTerm, chatHistoryService, chatSessions.length]);
+
+    console.log('🔍 [DEBUG] loadChatSessions completed');
+  }, [currentUser?.uid, agentId, searchTerm, chatHistoryService]);
 
   // Debounced search for performance - only trigger if search actually changed
   const debouncedSearch = useMemo(() => {
@@ -1077,6 +1118,19 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
       '& > *:last-child': {
         flexGrow: 1,   // Last child (chat list) should grow
         flexShrink: 1  // But allow shrinking if needed
+      },
+      // CSS debugging - add visible border to see actual boundaries
+      border: '2px solid #ff0000',  // Red border for debugging
+      '&::before': {
+        content: '"DEBUG: OptimizedChatHistoryPanel Container"',
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        background: '#ff0000',
+        color: '#ffffff',
+        fontSize: '10px',
+        padding: '2px 4px',
+        zIndex: 9999
       }
     }}>
       {/* Header */}
@@ -1187,7 +1241,20 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         flexDirection: 'column',  // Stack content vertically
         // Force full height usage
         height: '100%',
-        position: 'relative'
+        position: 'relative',
+        // CSS debugging - add visible border to see actual boundaries
+        border: '2px solid #00ff00',  // Green border for debugging
+        '&::before': {
+          content: '"DEBUG: Chat List Container"',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          background: '#00ff00',
+          color: '#000000',
+          fontSize: '10px',
+          padding: '2px 4px',
+          zIndex: 9999
+        }
       }}>
         <Box sx={{
           flexGrow: 1,
@@ -1198,6 +1265,20 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
           // Force content to fill available space
           '& > *': {
             minHeight: 'fit-content'
+          },
+          // CSS debugging - add visible border to see actual boundaries
+          border: '2px solid #0000ff',  // Blue border for debugging
+          position: 'relative',
+          '&::before': {
+            content: '"DEBUG: Scrollable Area"',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            background: '#0000ff',
+            color: '#ffffff',
+            fontSize: '10px',
+            padding: '2px 4px',
+            zIndex: 9999
           }
         }}>
         {activeTab === 0 ? (
