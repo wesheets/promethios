@@ -1069,7 +1069,15 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
       bgcolor: '#0f172a',
       color: 'white',
       overflow: 'hidden',
-      position: 'relative'  // Ensure proper positioning
+      position: 'relative',  // Ensure proper positioning
+      // Force layout with explicit CSS
+      '& > *': {
+        flexShrink: 0  // Prevent children from shrinking unexpectedly
+      },
+      '& > *:last-child': {
+        flexGrow: 1,   // Last child (chat list) should grow
+        flexShrink: 1  // But allow shrinking if needed
+      }
     }}>
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: '1px solid #334155', flexShrink: 0, bgcolor: '#0f172a' }}>
@@ -1176,14 +1184,21 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         overflow: 'hidden',  // Prevent overflow
         bgcolor: '#0f172a',
         display: 'flex',     // Make this a flex container
-        flexDirection: 'column'  // Stack content vertically
+        flexDirection: 'column',  // Stack content vertically
+        // Force full height usage
+        height: '100%',
+        position: 'relative'
       }}>
         <Box sx={{
           flexGrow: 1,
           minHeight: 0,      // Allow shrinking
           maxHeight: '100%', // Don't exceed available space
           overflow: 'auto',  // Allow scrolling within this area
-          height: '100%'     // Explicitly use full height
+          height: '100%',    // Explicitly use full height
+          // Force content to fill available space
+          '& > *': {
+            minHeight: 'fit-content'
+          }
         }}>
         {activeTab === 0 ? (
           // Host Chats Tab
