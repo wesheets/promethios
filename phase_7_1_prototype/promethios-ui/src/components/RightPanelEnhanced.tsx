@@ -580,7 +580,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
       minHeight: 0,  // Allow shrinking below content size
       overflow: 'hidden',  // Prevent content from overflowing
       width: preferences.rightPanelCollapsed ? '60px' : '100%',
-      minWidth: preferences.rightPanelCollapsed ? '60px' : '300px',
+      minWidth: preferences.rightPanelCollapsed ? '60px' : '150px', // Reduced from 300px to 150px
       transition: 'width 0.3s ease-in-out, min-width 0.3s ease-in-out'
     }}>
       {/* Header */}
@@ -665,6 +665,70 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         <Alert severity="error" sx={{ m: 1 }} onClose={() => setError(null)}>
           {error}
         </Alert>
+      )}
+
+      {/* Collapsed Icon List */}
+      {preferences.rightPanelCollapsed && (
+        <Box sx={{ 
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          py: 1,
+          gap: 0.5,
+          overflow: 'auto'
+        }}>
+          {tabConfigs.map((config) => (
+            <Tooltip key={config.id} title={config.label} placement="left" arrow>
+              <IconButton
+                onClick={() => {
+                  setActiveTab(config.id);
+                  updateRightPanelState(false); // Expand panel when icon is clicked
+                }}
+                disabled={config.disabled}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  color: activeTab === config.id ? 'primary.main' : 'text.secondary',
+                  backgroundColor: activeTab === config.id ? 'action.selected' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                    color: 'primary.main'
+                  },
+                  '&.Mui-disabled': {
+                    opacity: 0.5
+                  },
+                  position: 'relative'
+                }}
+              >
+                {config.icon}
+                {/* Badge for notifications */}
+                {config.badgeCount && config.badgeCount > 0 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: 'error.main',
+                      fontSize: '0.6rem',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: config.badgeCount > 9 ? 16 : 8,
+                      px: config.badgeCount > 9 ? 0.5 : 0
+                    }}
+                  >
+                    {config.badgeCount > 99 ? '99+' : config.badgeCount > 9 ? config.badgeCount : ''}
+                  </Box>
+                )}
+              </IconButton>
+            </Tooltip>
+          ))}
+        </Box>
       )}
 
       {/* Tabs */}
