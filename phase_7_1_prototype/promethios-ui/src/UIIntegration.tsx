@@ -27,6 +27,7 @@ import ChatPage from './pages/ChatPage';
 import ModernChatPage from './pages/ModernChatPage';
 import EnhancedModernChatPage from './pages/EnhancedModernChatPage';
 import TestEnhancedChatPage from './pages/TestEnhancedChatPage';
+import CompleteEnhancedChatPage from './pages/CompleteEnhancedChatPage';
 import DeployPage from './pages/DeployPage';
 import RegistryPage from './pages/RegistryPage';
 import BenchmarksPage from './pages/BenchmarksPage';
@@ -371,6 +372,9 @@ const UIIntegration: React.FC = () => {
         
         {/* Test Enhanced Chat Page route - no authentication required */}
         <Route path="test-chat" element={<TestEnhancedChatPage />} />
+        
+        {/* Complete Enhanced Chat Page route - no authentication required */}
+        <Route path="complete-chat" element={<CompleteEnhancedChatPage />} />
         
         {/* Promethios Chat Routes */}
         <Route path="chat/dashboard" element={
