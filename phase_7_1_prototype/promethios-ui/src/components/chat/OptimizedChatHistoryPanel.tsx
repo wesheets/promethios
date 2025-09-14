@@ -1128,31 +1128,6 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         ) : (
           // Guest Chats Tab
           <>
-            {/* Bulk cleanup button for legacy conversations */}
-            {filteredSharedConversations.length > 10 && (
-              <Box sx={{ p: 2, borderBottom: '1px solid #334155' }}>
-                <Button
-                  onClick={handleBulkCleanupLegacy}
-                  size="small"
-                  startIcon={<Delete />}
-                  sx={{
-                    color: '#ef4444',
-                    borderColor: '#ef4444',
-                    '&:hover': {
-                      bgcolor: 'rgba(239, 68, 68, 0.1)',
-                      borderColor: '#ef4444',
-                    },
-                  }}
-                  variant="outlined"
-                >
-                  Clean Up Legacy Conversations ({filteredSharedConversations.length})
-                </Button>
-                <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 1 }}>
-                  Remove old conversations that may no longer work properly
-                </Typography>
-              </Box>
-            )}
-
             {filteredSharedConversations.length === 0 ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
@@ -1209,21 +1184,6 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
                           size="small"
                           sx={{ bgcolor: '#10b981', color: 'white', fontSize: '0.7rem' }}
                         />
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteSharedConversation(conversation.id);
-                          }}
-                          sx={{
-                            color: '#ef4444',
-                            '&:hover': {
-                              bgcolor: 'rgba(239, 68, 68, 0.1)',
-                            },
-                          }}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
                       </ListItemSecondaryAction>
                     </ListItem>
                     {index < filteredSharedConversations.length - 1 && (

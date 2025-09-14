@@ -18,7 +18,6 @@ import SmartSuggestionService, { AgentSuggestion } from '../services/SmartSugges
 import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestionIndicator';
 // Shared conversation imports
 import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
-import CompactSharedChatTabs from '../components/collaboration/CompactSharedChatTabs';
 import SharedConversationService from '../services/SharedConversationService';
 import UnifiedGuestChatService from '../services/UnifiedGuestChatService';
 import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
@@ -5468,23 +5467,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         <Chat sx={{ color: '#94a3b8', fontSize: 18 }} />
                       </Box>
                       
-                      <Box sx={{ 
-                        flex: '0 0 auto', 
-                        maxWidth: { xs: 200, sm: 300, md: 400, lg: 500 }, // Responsive width
-                        overflow: 'hidden'
-                      }}>
-                        <CompactSharedChatTabs
-                          sharedConversations={sharedConversations.filter(conv => 
-                            activeHeaderConversations.includes(conv.id)
-                          )}
-                          activeConversationId={activeSharedConversation}
-                          onConversationSelect={handleCustomSharedConversationSelect}
-                          onConversationClose={handleCustomSharedConversationClose}
-                          onPrivacyToggle={handlePrivacyToggle}
-                          currentUserId={user?.uid || ''}
-                          maxVisibleTabs={maxVisibleTabs}
-                        />
-                      </Box>
+                      {/* Removed CompactSharedChatTabs - redundant with chat history panel */}
                     </>
                   )}
                   
@@ -7348,19 +7331,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
                     currentSessionId={currentBotState?.currentChatSession?.id}
                     refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
-                    sharedConversations={sharedConversations}
+                    sharedConversations={guestConversationAccess.map(access => ({
+                      id: access.id,
+                      name: access.conversationName || 'Shared Chat',
+                      participants: access.participants || [],
+                      messageCount: access.messageCount || 0,
+                      createdAt: access.createdAt,
+                      updatedAt: access.updatedAt,
+                      isPrivate: false,
+                      createdBy: access.hostUserId || '',
+                    }))}
                     onSharedConversationSelect={handleCustomSharedConversationSelect}
                     onDeleteSharedConversation={(conversationId) => {
                       console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
                       // Remove from local state immediately for instant UI feedback
-                      const updatedConversations = sharedConversations.filter(conv => conv.id !== conversationId);
-                      // Note: This would need to be connected to the actual state management
-                      // For now, we'll trigger a refresh
+                      // This would need to be connected to the actual delete service
                       refreshSharedConversations();
                     }}
                     onBulkCleanupLegacyConversations={() => {
-                      console.log(`🧹 [LegacyCleanup] Cleaning up ${sharedConversations.length} legacy conversations`);
-                      // Clear all shared conversations (they're legacy and not working properly)
+                      console.log(`🧹 [LegacyCleanup] Cleaning up legacy conversations`);
                       // This would need to be connected to the actual cleanup service
                       refreshSharedConversations();
                     }}
