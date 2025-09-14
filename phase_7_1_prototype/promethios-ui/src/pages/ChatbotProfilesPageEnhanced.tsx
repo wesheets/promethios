@@ -179,6 +179,8 @@ import AgentManageModal from '../components/AgentManageModal';
 import DebugPanel from '../components/DebugPanel';
 import TeamPanel from '../components/team/TeamPanel';
 import CustomGPTTab from '../components/command-center/CustomGPTTab';
+import EnhancedHostChatInterface from '../components/modern/EnhancedHostChatInterface';
+import EnhancedChatWrapper from '../components/modern/EnhancedChatWrapper';
 
 // Right panel types
 type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | 'custom_gpt' | null;
@@ -5803,8 +5805,19 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 </Box>
               </Box>
 
-              {/* Chat Messages Area */}
-              <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
+              {/* Chat Messages Area - Enhanced */}
+              <EnhancedChatWrapper
+                chatMessages={chatMessages}
+                selectedChatbot={selectedChatbot}
+                user={user}
+                chatLoading={chatLoading}
+                enableEnhancedMode={true}
+                showLeftPanel={false} // Start as 1-on-1, show when needed
+                showRightPanel={false} // Start as 1-on-1, show when needed
+                aiAgents={[]} // TODO: Connect to real multi-agent data
+                humanParticipants={[]} // TODO: Connect to real human participants
+              >
+                <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
                 {(() => {
                   console.log(`🎨 [UI Render] Checking shared mode - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
                   console.log(`🎨 [UI Render] Condition result: ${isInSharedMode && activeSharedConversation}`);
@@ -6242,7 +6255,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
                   </>
                 )}
-              </Box>
+                </Box>
+              </EnhancedChatWrapper>
               
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>

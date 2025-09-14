@@ -7,7 +7,6 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import { EnhancedMessageWrapper } from './EnhancedMessageWrapper';
-import { useChatMode } from './ChatModeDetector';
 import { useModernChatContext } from './ModernChatProvider';
 import { ChatMessage } from '../../hooks/useModernChat';
 
@@ -24,7 +23,9 @@ export const AdaptiveMessageRenderer: React.FC<AdaptiveMessageRendererProps> = (
   className,
   sx
 }) => {
-  const { mode, features } = useChatMode();
+  // Mock chat mode for now (will be replaced with real implementation)
+  const mode = 'enhanced';
+  const features = { threading: true, reactions: true, collaboration: true };
   const modernChat = useModernChatContext();
   
   // If modern features are disabled, return original children
@@ -163,7 +164,8 @@ export const AdaptiveMessageRenderer: React.FC<AdaptiveMessageRendererProps> = (
 
 // Multi-agent specific overlay
 const MultiAgentOverlay: React.FC<{ message: ChatMessage }> = ({ message }) => {
-  const { participants } = useChatMode();
+  // Mock participants for now
+  const participants = [];
   const agents = participants.filter(p => p.type === 'ai');
   
   return (

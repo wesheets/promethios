@@ -48,8 +48,6 @@ import WorkingGovernancePage from './pages/WorkingGovernancePage';
 import MinimalGovernancePage from './pages/MinimalGovernancePage';
 import ReverseTestGovernancePage from './pages/ReverseTestGovernancePage';
 import IncrementalGovernancePage from './pages/IncrementalGovernancePage';
-import EnhancedModernChatPage from './pages/EnhancedModernChatPage';
-import StepByStepCompleteEnhancedChatPage from './pages/StepByStepCompleteEnhancedChatPage';
 import AgentAvatarSelectorTest from './components/test/AgentAvatarSelectorTest';
 import AgentToChatbotConverter from './components/chat/conversion/AgentToChatbotConverter';
 // Import Enhanced version instead of original
@@ -364,25 +362,7 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
-        {/* Enhanced Modern Chat Page - with advanced multi-agent features */}
-        <Route path="enhanced-chat" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <MainLayoutProxy>
-              <EnhancedModernChatPage />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
-        {/* Step-by-step Enhanced Chat - for testing and demonstration */}
-        <Route path="step-by-step-chat" element={
-          <ProtectedRoute requireOnboarding={false}>
-            <MainLayoutProxy>
-              <StepByStepCompleteEnhancedChatPage />
-            </MainLayoutProxy>
-          </ProtectedRoute>
-        } />
-        
-        {/* Promethios Chat Routes */}
+        {/* Agent Avatar Selector Test */}
         <Route path="chat/dashboard" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>

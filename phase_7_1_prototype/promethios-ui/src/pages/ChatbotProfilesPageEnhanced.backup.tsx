@@ -2,6 +2,63 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import AttachmentRenderer from '../components/AttachmentRenderer';
+// Enhanced team collaboration imports
+import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
+import { OrganizationManagementService, Organization } from '../services/OrganizationManagementService';
+import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '../services/HumanChatService';
+// Multi-agent collaboration imports
+import { MultiAgentRoutingService, AgentResponse } from '../services/MultiAgentRoutingService';
+import HumanParticipantService, { HumanParticipant } from '../services/HumanParticipantService';
+import { MultiAgentAuditLogger } from '../services/MultiAgentAuditLogger';
+import { MessageParser, ParsedMessage } from '../utils/MessageParser';
+import MultiAgentMentionInput from '../components/MultiAgentMentionInput';
+import AgentAvatarSelector from '../components/AgentAvatarSelector';
+import MASCollaborationPanel, { MASCollaborationSettings } from '../components/collaboration/MASCollaborationPanel';
+import SmartSuggestionService, { AgentSuggestion } from '../services/SmartSuggestionService';
+import AgentSuggestionIndicator from '../components/collaboration/AgentSuggestionIndicator';
+// Shared conversation imports
+import SharedChatTabs, { SharedConversation } from '../components/collaboration/SharedChatTabs';
+import SharedConversationService from '../services/SharedConversationService';
+import UnifiedGuestChatService from '../services/UnifiedGuestChatService';
+import SharedConversationMessages from '../components/collaboration/SharedConversationMessages';
+import UnifiedSharedMessages from '../components/collaboration/UnifiedSharedMessages';
+import ChatInvitationModal from '../components/collaboration/ChatInvitationModal';
+import MentionInput, { MentionParticipant } from '../components/collaboration/MentionInput';
+import { useSharedConversations } from '../contexts/SharedConversationContext';
+// Notification and invitation imports
+import ConversationInvitationDialog, { InvitationFormData } from '../components/collaboration/ConversationInvitationDialog';
+import UserDiscoveryDialog, { PromethiosUser } from '../components/collaboration/UserDiscoveryDialog';
+import InAppNotificationPopup, { ConversationInvitationNotification } from '../components/collaboration/InAppNotificationPopup';
+import ConversationNotificationService from '../services/ConversationNotificationService';
+import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../services/ChatInvitationService';
+import { useConnections } from '../hooks/useConnections';
+// Removed MultiAgentResponseIndicator - intrusive orange popup
+// Real-time collaboration imports
+import RealTimeConversationSync from '../services/RealTimeConversationSync';
+import AgentPermissionService, { PermissionNotification } from '../services/AgentPermissionService';
+import AgentPermissionRequestPopup from '../components/collaboration/AgentPermissionRequestPopup';
+import AIObservationService, { AIObservationState } from '../services/AIObservationService';
+import AIObservationToggle from '../components/collaboration/AIObservationToggle';
+// Token economics imports
+import { TokenEconomicsService } from '../services/TokenEconomicsService';
+import TokenBudgetWidget from '../components/TokenBudgetWidget';
+import TokenResponseIcon from '../components/TokenResponseIcon';
+import TokenEconomicsConfigPanel from '../components/TokenEconomicsConfigPanel';
+import TokenBudgetPopup from '../components/TokenBudgetPopup';
+// Autonomous systems imports
+import { AutonomousGovernanceExtension, AutonomousTaskPlan, AutonomousPhase, AutonomousExecutionState } from '../services/AutonomousGovernanceExtension';
+import { AutonomousTaskPlanningEngine } from '../services/AutonomousTaskPlanningEngine';
+import { AutonomousComplianceMonitor } from '../services/AutonomousComplianceMonitor';
+import { AutonomousRiskAssessment } from '../services/AutonomousRiskAssessment';
+import { AutonomousApprovalWorkflow } from '../services/AutonomousApprovalWorkflow';
+// Repository and workflow imports
+import { WorkflowRepositoryManager, WorkflowProject, ProjectTemplate } from '../services/WorkflowRepositoryManager';
+import { RepositoryVersionControl } from '../services/RepositoryVersionControl';
+import { RepositoryExtensionService } from '../services/RepositoryExtensionService';
+import RepositoryBrowser from '../components/workflow/RepositoryBrowser';
+// Behavioral orchestration imports
+import HoverOrchestrationTrigger, { ParticipantData } from '../components/collaboration/HoverOrchestrationTrigger';
+import { BehavioralSettings } from '../components/collaboration/BehavioralOrchestrationControls';
 import {
   Box,
   Container,
@@ -12,6 +69,7 @@ import {
   Button,
   Chip,
   Avatar,
+  AvatarGroup,
   IconButton,
   Paper,
   Slide,
@@ -33,12 +91,21 @@ import {
   Checkbox,
   TextField,
   InputAdornment,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
+  Add,
   Analytics,
   Palette,
   Psychology,
   Settings,
+  Close as CloseIcon,
   Close,
   Chat,
   Rocket,
@@ -51,7 +118,8 @@ import {
   Description,
   CloudUpload,
   AutoAwesome,
-  Add,
+  AccountBalanceWallet as WalletIcon,
+  PersonAdd,
   Edit,
   Send,
   Api,
@@ -80,24 +148,26 @@ import {
   Stop,
   Image as ImageIcon,
   Code as CodeIcon,
-  Insights as InsightsIcon
+  Insights as InsightsIcon,
+  People
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-import { ChatbotStorageService } from '../services/ChatbotStorageService';
+import ChatbotStorageService, { ChatbotProfile } from '../services/ChatbotStorageService';
 import { connectedAppsService, ConnectedApp } from '../services/ConnectedAppsService';
 import ConnectedAppsPanel from '../components/tools/ConnectedAppsPanel';
-import ChatHistoryPanel from '../components/chat/ChatHistoryPanel';
+import OptimizedChatHistoryPanel from '../components/chat/OptimizedChatHistoryPanel';
 import ChatReferencePreview from '../components/chat/ChatReferencePreview';
 import { chatHistoryService, ChatSession as ChatHistorySession } from '../services/ChatHistoryService';
+import { aiWelcomeService } from '../services/AIWelcomeService';
 import { AgentReceiptViewer } from '../components/receipts/AgentReceiptViewer';
 import { AgentMemoryViewer } from '../components/memory/AgentMemoryViewer';
 import { LiveAgentSandbox } from '../components/sandbox/LiveAgentSandbox';
 import { SimplifiedKnowledgeViewer } from '../components/knowledge/SimplifiedKnowledgeViewer';
-import { ChatbotProfile } from '../types/ChatbotTypes';
 import WidgetCustomizer from '../components/chat/customizer/WidgetCustomizer';
 import PersonalityEditor from '../components/chat/customizer/PersonalityEditor';
 import { WidgetCustomizerProvider, useWidgetCustomizer } from '../context/WidgetCustomizerContext';
 import { chatPanelGovernanceService, ChatSession, ChatMessage, ChatResponse } from '../services/ChatPanelGovernanceService';
+import { universalGovernanceAdapter } from '../services/UniversalGovernanceAdapter';
 import { ChatSharingService } from '../services/ChatSharingService';
 import { ReceiptSharingService } from '../services/ReceiptSharingService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
@@ -108,9 +178,58 @@ import { conversationalReceiptSearchService } from '../services/ConversationalRe
 import AgentManageModal from '../components/AgentManageModal';
 import DebugPanel from '../components/DebugPanel';
 import TeamPanel from '../components/team/TeamPanel';
+import CustomGPTTab from '../components/command-center/CustomGPTTab';
+import EnhancedHostChatInterface from '../components/modern/EnhancedHostChatInterface';
 
 // Right panel types
-type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | null;
+type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | 'custom_gpt' | null;
+
+// Multi-chat context types
+type ChatContextType = 'ai_agent' | 'human_chat' | 'team_channel';
+
+interface ChatContext {
+  id: string;
+  type: ChatContextType;
+  name: string;
+  avatar?: string;
+  isActive: boolean;
+  unreadCount: number;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  canClose: boolean; // AI agent can't be closed, humans/channels can
+  // Multi-agent support
+  hostAgentId?: string; // The main agent (command center owner)
+  guestAgents?: Array<{
+    agentId: string;
+    name: string;
+    avatar?: string;
+    addedAt: Date;
+  }>;
+  // Unified participant support (replaces separate SharedConversation system)
+  guestParticipants?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    type: 'ai_agent' | 'human';
+    status: 'active' | 'pending' | 'declined';
+    addedAt: Date;
+    addedBy?: string;
+    invitationId?: string;
+  }>;
+  // Conversation sharing metadata
+  isSharedConversation?: boolean;
+  sharedConversationId?: string; // For guests to reference the host's conversation
+  hostUserId?: string; // For guests to know who the host is
+}
+
+interface MultiChatState {
+  activeContextId: string;
+  contexts: ChatContext[];
+  sidePanel: {
+    isOpen: boolean;
+    selectedContactId?: string;
+  };
+}
 
 interface ChatbotMetrics {
   healthScore: number;
@@ -133,6 +252,17 @@ interface BotState {
   activeSession: any;
   isWorkspaceMode: boolean;
   chatHistoryRefreshTrigger: number;
+  // Unified participant support
+  guestParticipants?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    type: 'ai_agent' | 'human';
+    status: 'active' | 'pending' | 'declined';
+    addedAt: Date;
+    addedBy?: string;
+    invitationId?: string;
+  }>;
 }
 
 // Global mounting guard to prevent multiple instances across the entire app
@@ -155,6 +285,62 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     globalComponentInstance = componentId.current;
     console.log(`🔍 ChatbotProfilesPageEnhanced component mounting... (${componentId.current})`);
     
+    // Initialize autonomous systems
+    const initializeAutonomousSystems = async () => {
+      try {
+        console.log('🤖 [Autonomous] Initializing autonomous systems...');
+        
+        // Initialize autonomous governance
+        const governance = new AutonomousGovernanceExtension();
+        setAutonomousGovernance(governance);
+        
+        // Set up autonomous event listeners
+        governance.onTaskPlanCreated((taskPlan: AutonomousTaskPlan) => {
+          console.log('🤖 [Autonomous] Task plan created:', taskPlan);
+          setCurrentTaskPlan(taskPlan);
+          setAutonomousMode(true);
+          setLiveAgentPanelOpen(true); // Auto-open Live Agent panel
+        });
+        
+        governance.onExecutionStateChanged((state: AutonomousExecutionState) => {
+          console.log('🤖 [Autonomous] Execution state changed:', state);
+          setAutonomousExecutionState(state);
+        });
+        
+        governance.onTaskCompleted((taskPlan: AutonomousTaskPlan) => {
+          console.log('🤖 [Autonomous] Task completed:', taskPlan);
+          setAutonomousMode(false);
+          // Keep Live Agent panel open to show completion status
+        });
+        
+        console.log('✅ [Autonomous] Autonomous systems initialized successfully');
+      } catch (error) {
+        console.error('❌ [Autonomous] Failed to initialize autonomous systems:', error);
+      }
+    };
+
+    // Initialize repository systems
+    const initializeRepositorySystems = async () => {
+      try {
+        console.log('📁 [Repository] Initializing repository systems...');
+        
+        // Load project templates
+        const templates = await repositoryManager.getProjectTemplates();
+        setProjectTemplates(templates);
+        
+        // Load user projects
+        const userProjects = await repositoryManager.getUserProjects(user?.uid || 'anonymous');
+        setProjects(userProjects);
+        
+        console.log('✅ [Repository] Repository systems initialized successfully');
+      } catch (error) {
+        console.error('❌ [Repository] Failed to initialize repository systems:', error);
+      }
+    };
+    
+    initializeAutonomousSystems();
+    initializeRepositorySystems();
+    
     return () => {
       mountedRef.current = false;
       if (globalComponentInstance === componentId.current) {
@@ -175,6 +361,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser: user, loading: authLoading } = useAuth();
+  const { connections, loading: connectionsLoading } = useConnections();
   
   // Debug counter to track re-renders
   const renderCountRef = useRef(0);
@@ -202,8 +389,309 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   
   const chatbotService = ChatbotStorageService.getInstance();
   
+  // Enhanced team collaboration services
+  const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
+  const [orgService] = useState(() => OrganizationManagementService.getInstance());
+  const [humanChatService] = useState(() => HumanChatService.getInstance());
+  
+  // Multi-agent collaboration services
+  const [multiAgentRoutingService] = useState(() => MultiAgentRoutingService.getInstance());
+  const [multiAgentAuditLogger] = useState(() => MultiAgentAuditLogger.getInstance());
+  const [messageParser] = useState(() => MessageParser.getInstance());
+  
+  // Responsive design hooks
+  const theme = useTheme();
+  const isXsScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isSmScreen = useMediaQuery(theme.breakpoints.between('sm', 'md'));
+  const isMdScreen = useMediaQuery(theme.breakpoints.between('md', 'lg'));
+  const isLgScreen = useMediaQuery(theme.breakpoints.up('lg'));
+  
+  // Calculate responsive max visible tabs
+  const maxVisibleTabs = useMemo(() => {
+    if (isLgScreen) return 4;
+    if (isMdScreen) return 3;
+    if (isSmScreen) return 2;
+    return 1; // xs screens
+  }, [isLgScreen, isMdScreen, isSmScreen]);
+  
+  // Token economics service
+  const [tokenEconomicsService] = useState(() => TokenEconomicsService.getInstance());
+  
+  // Multi-agent state
+  const [isMultiAgentMode, setIsMultiAgentMode] = useState(false);
+  const [multiAgentResponses, setMultiAgentResponses] = useState<AgentResponse[]>([]);
+  const [isProcessingMultiAgent, setIsProcessingMultiAgent] = useState(false);
+  const [targetAgents, setTargetAgents] = useState<string[]>([]);
+  const [currentMultiAgentSession, setCurrentMultiAgentSession] = useState<string | null>(null);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>([]); // For avatar selector
+  
+  // 🔧 CRITICAL FIX: Use a ref to store session ID immediately without React state timing issues
+  const multiAgentSessionRef = useRef<string | null>(null);
+  
+  // Enhanced smart thinking indicator state
+  const [currentRespondingAgent, setCurrentRespondingAgent] = useState<{
+    id: string;
+    name: string;
+    avatar?: string;
+  } | null>(null);
+  const [currentActivity, setCurrentActivity] = useState('');
+  const [thinkingAgents, setThinkingAgents] = useState<Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    activity: string;
+    startTime: number;
+  }>>([]);
+  const [behaviorPromptActive, setBehaviorPromptActive] = useState<{
+    agentId: string;
+    behavior: string;
+    timestamp: number;
+  } | null>(null);
+  
+  // Human participants state
+  const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
+  const [showChatInvitationModal, setShowChatInvitationModal] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [chatInvitationContext, setChatInvitationContext] = useState<{
+    chatSessionId: string;
+    chatName: string;
+    agentId: string;
+    agentName: string;
+  } | null>(null);
+  const [activeChatInvitationSession, setActiveChatInvitationSession] = useState<{
+    id: string;
+    name: string;
+    messageCount?: number;
+  } | null>(null);
+  const [showHumanInviteConfirmDialog, setShowHumanInviteConfirmDialog] = useState(false);
+  const [humansToInvite, setHumansToInvite] = useState<any[]>([]);
+  const [pendingHumanInvites, setPendingHumanInvites] = useState<any[]>([]);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [selectedTarget, setSelectedTarget] = useState<string>(''); // Current messaging target (human or agent ID)
+  const [loadedHostChatSession, setLoadedHostChatSession] = useState<any>(null); // Store loaded host chat session with participants
+  const humanParticipantService = HumanParticipantService.getInstance();
+  
+  // Shared conversation state (now global)
+  const {
+    sharedConversations,
+    guestConversationAccess,
+    activeSharedConversation,
+    isInSharedMode,
+    setActiveSharedConversation,
+    setIsInSharedMode,
+    addSharedConversation,
+    handleSharedConversationSelect,
+    handleSharedConversationClose,
+    handlePrivacyToggle,
+    refreshSharedConversations
+  } = useSharedConversations();
+  
+  // Debug logging for guestConversationAccess
+  console.log('🔍 [Context] guestConversationAccess from context:', guestConversationAccess);
+  console.log('🔍 [Context] guestConversationAccess length:', guestConversationAccess?.length);
+  console.log('🔍 [Context] isInSharedMode:', isInSharedMode);
+  console.log('🔍 [Context] activeSharedConversation:', activeSharedConversation);
+  console.log('🔍 [TEST] Simple test log to verify logging is working');
+  
+  // Test the condition directly
+  const conditionMet = isInSharedMode && activeSharedConversation && guestConversationAccess?.length > 0;
+  console.log('🔍 [TEST] Condition check:', {
+    isInSharedMode,
+    activeSharedConversation: !!activeSharedConversation,
+    guestConversationAccessLength: guestConversationAccess?.length,
+    conditionMet
+  });
+  
+  // Check if the URL conversation ID exists in guestConversationAccess
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlSharedParam = urlParams.get('shared');
+  console.log('🔍 [URL] URL shared param:', urlSharedParam);
+  console.log('🔍 [URL] Active shared conversation:', activeSharedConversation);
+  
+  if (guestConversationAccess?.length > 0) {
+    const matchingAccess = guestConversationAccess.find(access => 
+      access.id === urlSharedParam || access.id === activeSharedConversation
+    );
+    console.log('🔍 [URL] Matching guest access found:', !!matchingAccess);
+    if (matchingAccess) {
+      console.log('🔍 [URL] Matching access details:', matchingAccess);
+    } else {
+      console.log('🔍 [URL] Available guest access IDs:', guestConversationAccess.map(a => a.id));
+    }
+  }
+  const sharedConversationService = SharedConversationService.getInstance();
+  const unifiedGuestChatService = UnifiedGuestChatService.getInstance();
+  
+  // Track which shared conversations are active in header (opened from drawer or notifications)
+  const [activeHeaderConversations, setActiveHeaderConversations] = useState<string[]>([]);
+  
+  // Ensure active shared conversation is always in the header list
+  useEffect(() => {
+    if (activeSharedConversation && !activeHeaderConversations.includes(activeSharedConversation)) {
+      console.log(`🔄 [Header] Adding active shared conversation to header: ${activeSharedConversation}`);
+      setActiveHeaderConversations(prev => [...prev, activeSharedConversation]);
+    }
+  }, [activeSharedConversation, activeHeaderConversations]);
+  
+  // Load host chat session data when active shared conversation changes
+  useEffect(() => {
+    console.log('🔍 [LoadSession] useEffect triggered:', {
+      isInSharedMode,
+      activeSharedConversation,
+      guestConversationAccessLength: guestConversationAccess?.length
+    });
+    
+    if (!isInSharedMode || !activeSharedConversation) {
+      console.log('🔍 [LoadSession] Clearing session - not in shared mode or no active conversation');
+      setLoadedHostChatSession(null);
+      return;
+    }
+    
+    const loadHostChatSession = async () => {
+      try {
+        // Use the EXACT same pattern as the working chat interface
+        const guestAccess = guestConversationAccess?.find(access => 
+          access.id === activeSharedConversation || 
+          access.conversationId === activeSharedConversation
+        );
+        
+        console.log('🔍 [LoadSession] Looking for guestAccess with pattern:', { 
+          activeSharedConversation,
+          foundAccess: !!guestAccess 
+        });
+        
+        if (guestAccess) {
+          console.log('🔍 [LoadSession] Found guestAccess, loading host chat session for:', guestAccess.conversationId);
+          const session = await unifiedGuestChatService.getHostChatSession(
+            guestAccess.hostUserId,
+            guestAccess.conversationId
+          );
+          console.log('🔍 [LoadSession] Loaded host chat session:', session);
+          setLoadedHostChatSession(session);
+        } else {
+          console.log('🔍 [LoadSession] No guestAccess found');
+          setLoadedHostChatSession(null);
+        }
+      } catch (error) {
+        console.error('🔍 [LoadSession] Error loading host chat session:', error);
+        setLoadedHostChatSession(null);
+      }
+    };
+    
+    loadHostChatSession();
+  }, [isInSharedMode, activeSharedConversation, guestConversationAccess]);
+  
+  // Real-time listener for shared conversation participant updates
+  useEffect(() => {
+    if (!activeSharedConversation) return;
+    
+    console.log(`🔄 [RealTime] Setting up listener for shared conversation: ${activeSharedConversation}`);
+    
+    // Set up Firebase listener for shared conversation changes
+    const unsubscribe = sharedConversationService.subscribeToConversation(
+      activeSharedConversation,
+      (updatedConversation) => {
+        console.log(`🔄 [RealTime] Shared conversation updated:`, updatedConversation);
+        
+        // Update shared conversations list with new data
+        setSharedConversations(prev => 
+          prev.map(conv => 
+            conv.id === activeSharedConversation 
+              ? { ...conv, ...updatedConversation }
+              : conv
+          )
+        );
+        
+        // Force re-render of header and participants
+        // The header will automatically update due to the sharedConversations dependency
+      }
+    );
+    
+    return () => {
+      console.log(`🔄 [RealTime] Cleaning up listener for: ${activeSharedConversation}`);
+      unsubscribe?.();
+    };
+  }, [activeSharedConversation, sharedConversationService]);
+  
+  // Notification and invitation state
+  const [showInvitationDialog, setShowInvitationDialog] = useState(false);
+  const [showUserDiscoveryDialog, setShowUserDiscoveryDialog] = useState(false);
+  const [activeNotifications, setActiveNotifications] = useState<ConversationInvitationNotification[]>([]);
+  const [currentConversationForInvite, setCurrentConversationForInvite] = useState<string | null>(null);
+  const conversationNotificationService = ConversationNotificationService.getInstance();
+  
+  // Real-time collaboration state
+  const [permissionNotifications, setPermissionNotifications] = useState<PermissionNotification[]>([]);
+  const [typingIndicators, setTypingIndicators] = useState<Map<string, any[]>>(new Map());
+  const [isTyping, setIsTyping] = useState(false);
+  const realTimeSync = RealTimeConversationSync.getInstance();
+  const agentPermissionService = AgentPermissionService.getInstance();
+  
+  // AI observation and privacy state
+  const [observationState, setObservationState] = useState<AIObservationState | null>(null);
+  const [showPrivacyControls, setShowPrivacyControls] = useState(false);
+  const aiObservationService = AIObservationService.getInstance();
+  
+  // Behavioral orchestration state
+  const [participantData, setParticipantData] = useState<ParticipantData[]>([]);
+  const [behavioralSettings, setBehavioralSettings] = useState<Map<string, BehavioralSettings>>(new Map());
+  
+  // @Mention system state
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [mentionSuggestions, setMentionSuggestions] = useState<Array<{
+    type: 'agent' | 'human';
+    id: string;
+    name: string;
+    avatar?: string;
+  }>>([]);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  
+  // Token economics state
+  const [showTokenBudget, setShowTokenBudget] = useState(false);
+  const [budgetExceeded, setBudgetExceeded] = useState(false);
+  const [budgetWarning, setBudgetWarning] = useState(false);
+  
+  // Repository and workflow services
+  const [repositoryManager] = useState(() => new WorkflowRepositoryManager());
+  const [versionControl] = useState(() => new RepositoryVersionControl());
+  const [repositoryExtensions] = useState(() => new RepositoryExtensionService());
+  const [projects, setProjects] = useState<WorkflowProject[]>([]);
+  const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
+  
   // Bot-specific state management
   const [botStates, setBotStates] = useState<Map<string, BotState>>(new Map());
+  
+  // Multi-chat state management
+  const [multiChatState, setMultiChatState] = useState<MultiChatState>({
+    activeContextId: 'ai_agent',
+    contexts: [],
+    sidePanel: {
+      isOpen: false
+    }
+  });
+  
+  // Enhanced team collaboration state
+  const [collaborationState, setCollaborationState] = useState<TeamCollaborationState | null>(null);
+  const [notifications, setNotifications] = useState<CollaborationNotification[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [unreadTeamCount, setUnreadTeamCount] = useState(0);
+  
+  // Autonomous systems state
+  const [autonomousGovernance, setAutonomousGovernance] = useState<AutonomousGovernanceExtension | null>(null);
+  const [currentTaskPlan, setCurrentTaskPlan] = useState<AutonomousTaskPlan | null>(null);
+  const [autonomousExecutionState, setAutonomousExecutionState] = useState<AutonomousExecutionState | null>(null);
+  const [liveAgentPanelOpen, setLiveAgentPanelOpen] = useState(false);
+  const [autonomousMode, setAutonomousMode] = useState(false);
+  const [autonomousStarsActive, setAutonomousStarsActive] = useState(false);
+  
+  // Autonomous Stars state
+  const [smartSuggestions, setSmartSuggestions] = useState<string[]>([]);
+  const [contextPredictions, setContextPredictions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [proactiveAssistance, setProactiveAssistance] = useState<string | null>(null);
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Add metrics caching to prevent repeated calculations
   const metricsCache = useRef<Map<string, { metrics: ChatbotMetrics; timestamp: number }>>(new Map());
@@ -227,6 +715,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const activeSession = currentBotState?.activeSession || null;
   const isWorkspaceMode = currentBotState?.isWorkspaceMode || false;
   
+  // Debug workspace mode
+  console.log(`🔍 [WORKSPACE DEBUG] selectedChatbotId: ${selectedChatbotId}`);
+  console.log(`🔍 [WORKSPACE DEBUG] currentBotState:`, currentBotState);
+  console.log(`🔍 [WORKSPACE DEBUG] isWorkspaceMode: ${isWorkspaceMode}`);
+  
   // Debug logging for chat state
   if (renderCountRef.current <= 5 || renderCountRef.current % 5 === 0) {
     console.log(`🔍 [ChatState] RENDER #${renderCountRef.current} - selectedChatbotId: ${selectedChatbotId}`);
@@ -238,7 +731,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   }
   
   // Remaining global state (not bot-specific)
-  const [isTyping, setIsTyping] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   
@@ -271,6 +763,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [actionStartTime, setActionStartTime] = useState<Date | null>(null);
 
+  // 🔧 CLEANUP: Clear message input when switching between chatbots
+  // This prevents state contamination where old messages appear in new chats
+  useEffect(() => {
+    console.log(`🧹 [StateCleanup] Chatbot changed to: ${selectedChatbotId}`);
+    setMessageInput('');
+    setAttachedFiles([]);
+    // Clear any other shared state that shouldn't persist between chats
+    setCurrentAction(null);
+    setActionStartTime(null);
+    
+    // 🔧 NEW: Clear guest agents when switching between chatbots
+    // This ensures guest agents are session-specific and don't carry over
+    setMultiChatState(prev => ({
+      ...prev,
+      contexts: prev.contexts.map(context => ({
+        ...context,
+        guestAgents: [] // Clear guest agents for clean slate
+      }))
+    }));
+    
+    // Clear selected agents as well
+    setSelectedAgents([]);
+    setTargetAgents([]);
+    
+    console.log(`🧹 [StateCleanup] Cleared guest agents for chatbot switch`);
+  }, [selectedChatbotId]);
+
   // Bot state helper functions
   const initializeBotState = (botId: string): BotState => {
     return {
@@ -281,6 +800,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       activeSession: null,
       isWorkspaceMode: false,
       chatHistoryRefreshTrigger: 0,
+      guestParticipants: [], // Initialize unified participants as empty array
     };
   };
 
@@ -291,6 +811,306 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       newStates.set(botId, { ...currentState, ...updates });
       return newStates;
     });
+  };
+
+  // Multi-chat context management functions
+  const initializeMultiChatContexts = (selectedChatbot: ChatbotProfile | null) => {
+    const aiContext: ChatContext = {
+      id: 'ai_agent',
+      type: 'ai_agent',
+      name: selectedChatbot?.identity?.name || 'AI Agent',
+      avatar: selectedChatbot?.identity?.avatar,
+      isActive: true,
+      unreadCount: 0,
+      canClose: false,
+      // Multi-agent support
+      hostAgentId: selectedChatbot?.identity?.id || selectedChatbot?.key || selectedChatbot?.id,
+      guestAgents: []
+    };
+
+    setMultiChatState(prev => ({
+      ...prev,
+      activeContextId: 'ai_agent',
+      contexts: [aiContext]
+    }));
+  };
+
+  const addChatContext = (context: Omit<ChatContext, 'isActive'>) => {
+    setMultiChatState(prev => {
+      const existingContext = prev.contexts.find(c => c.id === context.id);
+      if (existingContext) {
+        // Switch to existing context
+        return {
+          ...prev,
+          activeContextId: context.id,
+          contexts: prev.contexts.map(c => ({
+            ...c,
+            isActive: c.id === context.id
+          }))
+        };
+      }
+
+      // Add new context
+      const newContext: ChatContext = {
+        ...context,
+        isActive: true
+      };
+
+      return {
+        ...prev,
+        activeContextId: context.id,
+        contexts: prev.contexts.map(c => ({ ...c, isActive: false })).concat(newContext)
+      };
+    });
+  };
+
+  const removeChatContext = (contextId: string) => {
+    setMultiChatState(prev => {
+      const filteredContexts = prev.contexts.filter(c => c.id !== contextId);
+      const wasActive = prev.activeContextId === contextId;
+      
+      // If removing active context, switch to AI agent
+      const newActiveId = wasActive ? 'ai_agent' : prev.activeContextId;
+      
+      return {
+        ...prev,
+        activeContextId: newActiveId,
+        contexts: filteredContexts.map(c => ({
+          ...c,
+          isActive: c.id === newActiveId
+        }))
+      };
+    });
+  };
+
+  // Custom handler for shared conversation selection that also updates chat context
+  const handleCustomSharedConversationSelect = (conversationId: string) => {
+    console.log(`🔄 [ChatSwitch] Selecting shared conversation: ${conversationId}`);
+    
+    // Add to active header conversations if not already there
+    setActiveHeaderConversations(prev => {
+      if (!prev.includes(conversationId)) {
+        return [...prev, conversationId];
+      }
+      return prev;
+    });
+    
+    // Call the original shared conversation select handler
+    handleSharedConversationSelect(conversationId);
+    
+    // Update multi-chat context to reflect shared mode
+    setMultiChatState(prev => ({
+      ...prev,
+      activeContextId: `shared_${conversationId}`,
+      contexts: prev.contexts.map(c => ({
+        ...c,
+        isActive: false // Deactivate all individual contexts when in shared mode
+      }))
+    }));
+  };
+
+  // Custom handler for shared conversation close that also updates active header list
+  const handleCustomSharedConversationClose = (conversationId: string) => {
+    console.log(`🔄 [ChatSwitch] Closing shared conversation: ${conversationId}`);
+    
+    // Remove from active header conversations
+    setActiveHeaderConversations(prev => prev.filter(id => id !== conversationId));
+    
+    // Call the original shared conversation close handler
+    handleSharedConversationClose(conversationId);
+  };
+
+  const switchChatContext = (contextId: string) => {
+    console.log(`🔄 [ChatSwitch] Switching to context: ${contextId}`);
+    console.log(`🔄 [ChatSwitch] Current isInSharedMode: ${isInSharedMode}`);
+    console.log(`🔄 [ChatSwitch] Current activeSharedConversation: ${activeSharedConversation}`);
+    console.log(`🔄 [ChatSwitch] selectedChatbotId: ${selectedChatbotId}`);
+    
+    // If switching to host chat context, clear shared mode
+    // Check for various host chat context IDs
+    const isHostChatContext = contextId === 'host' || 
+                             contextId === selectedChatbotId || 
+                             contextId === 'ai_agent' ||
+                             contextId.startsWith('chatbot-');
+    
+    if (isHostChatContext) {
+      console.log(`🏠 [ChatSwitch] Switching to host chat (${contextId}), clearing shared mode`);
+      console.log(`🏠 [ChatSwitch] Before clearing - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
+      
+      setActiveSharedConversation(null);
+      setIsInSharedMode(false);
+      
+      console.log(`🏠 [ChatSwitch] After clearing calls made - should be null and false`);
+      
+      // Add a small delay to ensure state updates are processed
+      setTimeout(() => {
+        console.log(`🏠 [ChatSwitch] Delayed check - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
+      }, 100);
+    } else {
+      console.log(`🔄 [ChatSwitch] Not a host chat context (${contextId}), keeping shared mode`);
+    }
+    
+    setMultiChatState(prev => ({
+      ...prev,
+      activeContextId: contextId,
+      contexts: prev.contexts.map(c => ({
+        ...c,
+        isActive: c.id === contextId
+      }))
+    }));
+    
+    console.log(`🔄 [ChatSwitch] MultiChatState updated for context: ${contextId}`);
+  };
+
+  const toggleSidePanel = () => {
+    setMultiChatState(prev => ({
+      ...prev,
+      sidePanel: {
+        ...prev.sidePanel,
+        isOpen: !prev.sidePanel.isOpen
+      }
+    }));
+  };
+
+  // Multi-agent management functions
+  const addGuestAgent = (agentId: string, agentName: string, agentAvatar?: string) => {
+    console.log(`🤖 [Multi-Agent] Adding guest agent: ${agentName} (${agentId})`);
+    
+    setMultiChatState(prev => {
+      const activeContext = prev.contexts.find(c => c.isActive);
+      if (!activeContext || activeContext.type !== 'ai_agent') {
+        console.warn('❌ [Multi-Agent] Can only add guest agents to AI agent contexts');
+        return prev;
+      }
+
+      // Check if agent is already a guest
+      const isAlreadyGuest = activeContext.guestAgents?.some(g => g.agentId === agentId);
+      if (isAlreadyGuest) {
+        console.warn('❌ [Multi-Agent] Agent is already a guest in this chat');
+        return prev;
+      }
+
+      const updatedContexts = prev.contexts.map(context => {
+        if (context.id === activeContext.id) {
+          return {
+            ...context,
+            guestAgents: [
+              ...(context.guestAgents || []),
+              {
+                agentId,
+                name: agentName,
+                avatar: agentAvatar,
+                addedAt: new Date()
+              }
+            ]
+          };
+        }
+        return context;
+      });
+
+      return {
+        ...prev,
+        contexts: updatedContexts
+      };
+    });
+  };
+
+  const removeGuestAgent = (agentId: string) => {
+    console.log(`🗑️ [Multi-Agent] Removing guest agent: ${agentId}`);
+    
+    setMultiChatState(prev => {
+      const activeContext = prev.contexts.find(c => c.isActive);
+      if (!activeContext || activeContext.type !== 'ai_agent') {
+        return prev;
+      }
+
+      const updatedContexts = prev.contexts.map(context => {
+        if (context.id === activeContext.id) {
+          return {
+            ...context,
+            guestAgents: context.guestAgents?.filter(g => g.agentId !== agentId) || []
+          };
+        }
+        return context;
+      });
+
+      return {
+        ...prev,
+        contexts: updatedContexts
+      };
+    });
+  };
+
+  // Live Agent panel control functions
+  const toggleLiveAgentPanel = () => {
+    setLiveAgentPanelOpen(prev => !prev);
+  };
+
+  const handleLiveAgentTabClick = () => {
+    toggleLiveAgentPanel();
+  };
+
+  const startAutonomousMode = async (goal: string) => {
+    if (!autonomousGovernance) {
+      console.error('❌ [Autonomous] Governance system not initialized');
+      return;
+    }
+
+    try {
+      console.log('🤖 [Autonomous] Starting autonomous mode with goal:', goal);
+      setAutonomousStarsActive(true);
+      
+      // Create task plan
+      const taskPlan = await autonomousGovernance.createTaskPlan({
+        goal,
+        description: `Autonomous task: ${goal}`,
+        agentId: selectedChatbotId || 'default',
+        userId: user?.uid || 'anonymous'
+      });
+      
+      // Auto-open Live Agent panel
+      setLiveAgentPanelOpen(true);
+      
+      console.log('✅ [Autonomous] Autonomous mode started successfully');
+    } catch (error) {
+      console.error('❌ [Autonomous] Failed to start autonomous mode:', error);
+    }
+  };
+
+  const stopAutonomousMode = () => {
+    if (autonomousGovernance && currentTaskPlan) {
+      autonomousGovernance.pauseExecution(currentTaskPlan.id);
+    }
+    setAutonomousMode(false);
+    setAutonomousStarsActive(false);
+  };
+
+  // Helper function to check if agent is a Custom GPT
+  const isCustomGPT = (chatbot: ChatbotProfile): boolean => {
+    if (!chatbot) return false;
+    
+    // Check if it's a wrapped Custom GPT based on metadata
+    const metadata = chatbot.customGPTMetadata || chatbot.metadata;
+    if (metadata?.type === 'custom_gpt_wrapped' || metadata?.importSource === 'manual_configuration') {
+      return true;
+    }
+    
+    // Check if it's using OpenAI with custom GPT indicators
+    const apiDetails = chatbot.apiDetails;
+    if (apiDetails?.provider === 'OpenAI' && apiDetails?.selectedModel === 'gpt-4o') {
+      // Check for Custom GPT specific metadata
+      if (metadata?.originalGPTUrl || metadata?.originalGPTId) {
+        return true;
+      }
+      
+      // Check for Custom GPT naming patterns
+      if (chatbot.identity?.name?.includes('Custom GPT') || 
+          chatbot.identity?.description?.includes('Imported from Custom GPT')) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   // Helper function to update chat history refresh trigger
@@ -621,6 +1441,48 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     return { name: 'Unknown', color: '#6b7280' };
   };
 
+  // Get shared conversation participants for @mention functionality
+  const getSharedConversationParticipants = (): MentionParticipant[] => {
+    if (!isInSharedMode || !selectedSharedConversation) return [];
+    
+    const participants: MentionParticipant[] = [];
+    
+    // Add host user
+    const hostUser = selectedSharedConversation.participants?.find(p => p.id === selectedSharedConversation.createdBy);
+    if (hostUser) {
+      participants.push({
+        id: hostUser.id,
+        name: hostUser.name,
+        type: 'human',
+        displayName: hostUser.name.toLowerCase().replace(/\s+/g, '') // e.g., "Ted Sheets" -> "tedsheets"
+      });
+    }
+    
+    // Add AI agent
+    if (selectedChatbot) {
+      participants.push({
+        id: selectedChatbot.id,
+        name: selectedChatbot.identity?.name || selectedChatbot.name || 'Assistant',
+        type: 'ai',
+        displayName: (selectedChatbot.identity?.name || selectedChatbot.name || 'assistant').toLowerCase().replace(/\s+/g, '')
+      });
+    }
+    
+    // Add other participants (guests)
+    selectedSharedConversation.participants?.forEach(participant => {
+      if (participant.id !== selectedSharedConversation.createdBy && participant.id !== user?.uid) {
+        participants.push({
+          id: participant.id,
+          name: participant.name,
+          type: 'human',
+          displayName: participant.name.toLowerCase().replace(/\s+/g, '')
+        });
+      }
+    });
+    
+    return participants;
+  };
+
   // Add loading circuit breaker
   const loadingChatbotsRef = useRef(false);
 
@@ -734,6 +1596,84 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  // Visual Threading System for Behavior Prompt Responses
+  const getMessageType = (message, index, messages) => {
+    // Check if this message is a behavior prompt response
+    if (isBehaviorPromptResponse(message, messages, index)) {
+      return 'behavior-response';
+    }
+    // Check if this is responding to a behavior response
+    if (isFollowUpToBehaviorResponse(message, messages, index)) {
+      return 'behavior-followup';
+    }
+    return 'regular';
+  };
+
+  const isBehaviorPromptResponse = (message, messages, index) => {
+    if (message.sender === 'user' || index === 0) return false;
+    
+    // Check if we have an active behavior prompt that matches this message
+    if (behaviorPromptActive) {
+      const timeDiff = message.timestamp.getTime() - behaviorPromptActive.timestamp;
+      // If this message is from the expected agent and within 30 seconds of the behavior prompt
+      if (timeDiff > 0 && timeDiff < 30000) {
+        // Check if this message is from the agent we sent the behavior prompt to
+        const messageAgentId = getAgentIdFromMessage(message);
+        if (messageAgentId === behaviorPromptActive.agentId) {
+          // Clear the active behavior prompt since we found the response
+          setBehaviorPromptActive(null);
+          return true;
+        }
+      }
+    }
+    
+    // Fallback: Check if the message content suggests it's responding to a behavior prompt
+    const behaviorIndicators = [
+      'Please ask thoughtful, clarifying questions',
+      'Please collaborate with',
+      'Please play devil\'s advocate',
+      'Please provide an expert analysis',
+      'Please add creative ideas',
+      'Please provide a pessimistic perspective',
+      '❓', '🤝', '😈', '🎯', '💡', '🌧️'
+    ];
+    
+    return behaviorIndicators.some(indicator => 
+      message.content.toLowerCase().includes(indicator.toLowerCase())
+    );
+  };
+
+  const isFollowUpToBehaviorResponse = (message, messages, index) => {
+    if (message.sender === 'user' || index < 2) return false;
+    
+    // Look back to see if there was a behavior response that this might be following up on
+    for (let i = index - 1; i >= Math.max(0, index - 3); i--) {
+      const prevMessage = messages[i];
+      if (isBehaviorPromptResponse(prevMessage, messages, i)) {
+        // Check if this message is responding to that behavior response
+        const timeDiff = message.timestamp.getTime() - prevMessage.timestamp.getTime();
+        return timeDiff < 30000 && message.sender !== prevMessage.sender; // Within 30 seconds and different sender
+      }
+    }
+    
+    return false;
+  };
+
+  const getMessageIndentation = (messageType) => {
+    switch (messageType) {
+      case 'behavior-response':
+        return 48; // Increased indent for behavior responses (was 24px)
+      case 'behavior-followup':
+        return 48; // Keep follow-ups indented too for conversation thread
+      default:
+        return 0; // Regular messages
+    }
+  };
+
+  const shouldShowConnectingLine = (messageType) => {
+    return messageType === 'behavior-response' || messageType === 'behavior-followup';
+  };
+
   // Load chatbots on component mount and when user changes
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[loadChatbots] triggered - RENDER #${renderCountRef.current}`);
@@ -742,23 +1682,151 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🔍 [DEBUG] - About to call loadChatbots...');
     loadChatbots();
     loadConnectedApps();
+    
+    // Initialize team collaboration services
+    if (user?.uid && !authLoading) {
+      initializeTeamCollaboration();
+    }
   }, [user?.uid, authLoading]); // Removed loadChatbots to prevent infinite loop
+
+  // Team collaboration initialization
+  const initializeTeamCollaboration = async () => {
+    try {
+      console.log('🤝 [Team] Initializing team collaboration services...');
+      
+      // Initialize all services
+      await collaborationService.initializeUserCollaboration(user?.uid || '', user?.displayName || user?.email || 'User');
+      // Note: OrganizationManagementService doesn't require initialization
+      await humanChatService.initialize(user?.uid || '');
+      
+      // Load initial data
+      await loadTeamCollaborationData();
+      
+      // Set up real-time listeners
+      setupTeamCollaborationListeners();
+      
+      // Set up unified participants listener
+      setupHostParticipantsListener();
+      
+      console.log('✅ [Team] Team collaboration initialized successfully');
+    } catch (error) {
+      console.error('❌ [Team] Failed to initialize team collaboration:', error);
+    }
+  };
+
+  const loadTeamCollaborationData = async () => {
+    try {
+      // Initialize collaboration service and get team data
+      console.log('🔍 [Team] Loading team collaboration data...');
+      const collabState = await collaborationService.initializeUserCollaboration(user?.uid || '', user?.displayName || user?.email || 'User');
+      console.log('✅ [Team] TeamCollaborationIntegrationService initialized');
+      console.log('🔍 [Team] Collaboration state team members:', collabState.teamMembers.length);
+      
+      setCollaborationState(collabState);
+      setUnreadTeamCount(collabState.unreadMessages);
+      
+      // Load notifications
+      // Note: collaborationService.getNotifications() doesn't exist
+      // Notifications are handled by UnifiedNotificationService instead
+      console.log('🔍 [Team] Notifications handled by UnifiedNotificationService');
+      
+      // Use team members from collaboration state instead of humanChatService
+      console.log('🔍 [Team] Using team members from collaboration state:', collabState.teamMembers);
+      setTeamMembers(collabState.teamMembers);
+      console.log('✅ [Team] Loaded team members from collaboration state:', collabState.teamMembers.length);
+      
+      // Load organizations
+      const orgs = await orgService.getUserOrganizations(user?.uid || '');
+      setOrganizations(orgs);
+      
+      console.log('✅ [Team] Team collaboration data loaded');
+    } catch (error) {
+      console.error('❌ [Team] Failed to load team collaboration data:', error);
+    }
+  };
+
+  const setupTeamCollaborationListeners = () => {
+    console.log('🔧 [Team] Setting up collaboration listeners (methods available)');
+    
+    // Note: TeamCollaborationIntegrationService doesn't have onNotification/onTeamUpdate methods
+    // Notifications are handled by UnifiedNotificationService instead
+    // Team updates are handled through periodic polling in loadTeamCollaborationData
+    
+    // Note: humanChatService.onMessage() doesn't exist
+    // Message listening is handled by SharedConversationService and real-time Firebase listeners
+    console.log('🔍 [Team] Message listening handled by SharedConversationService');
+  };
+
+  // Set up Firebase listener for host participants (unified approach)
+  const setupHostParticipantsListener = () => {
+    if (!user?.uid) return;
+    
+    console.log('🔧 [Unified] Setting up host participants listener for user:', user.uid);
+    
+    // Import Firebase functions dynamically
+    import('firebase/firestore').then(({ doc, onSnapshot }) => {
+      import('../firebase/config').then(({ db }) => {
+        const hostParticipantsRef = doc(db, 'host_participants', user.uid);
+        
+        const unsubscribe = onSnapshot(hostParticipantsRef, (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const data = docSnapshot.data();
+            console.log('🔄 [Unified] Host participants updated:', data);
+            
+            // Update bot states with the new participant data
+            if (data.conversations) {
+              Object.entries(data.conversations).forEach(([conversationId, convData]: [string, any]) => {
+                if (convData.guestParticipants) {
+                  // Find the bot that matches this conversation
+                  const matchingBot = Array.from(botStates.entries()).find(([botId, state]) => {
+                    // Match by conversation ID or bot ID
+                    return conversationId.includes(botId) || botId === conversationId;
+                  });
+                  
+                  if (matchingBot) {
+                    const [botId, currentState] = matchingBot;
+                    console.log('🔄 [Unified] Updating bot state for:', botId, 'with participants:', convData.guestParticipants);
+                    
+                    updateBotState(botId, {
+                      guestParticipants: convData.guestParticipants
+                    });
+                  }
+                }
+              });
+            }
+          }
+        }, (error) => {
+          console.error('❌ [Unified] Error listening to host participants:', error);
+        });
+        
+        // Store unsubscribe function for cleanup
+        return () => unsubscribe();
+      });
+    });
+  };
 
    // URL restoration effect - restore state from URL parameters
   const agentParam = useMemo(() => searchParams.get('agent'), [searchParams]);
   const panelParam = useMemo(() => searchParams.get('panel'), [searchParams]);
+  const sharedParam = useMemo(() => searchParams.get('shared'), [searchParams]);
   
   // Use refs for tracking to prevent circular dependencies
   const isRestoringFromURLRef = useRef(false);
-  const lastProcessedParamsRef = useRef({ agent: '', panel: '' });
+  const lastProcessedParamsRef = useRef({ agent: '', panel: '', shared: '' });
   
   // URL restoration with proper circular dependency prevention
   useEffect(() => {
     console.log(`🔍 [DEBUG] useEffect[URL restoration] triggered - RENDER #${renderCountRef.current}`);
     console.log('🔍 [DEBUG] - agentParam:', agentParam);
     console.log('🔍 [DEBUG] - panelParam:', panelParam);
+    console.log('🔍 [DEBUG] - sharedParam:', sharedParam);
+    console.log('🔍 [DEBUG] - window.location.href:', window.location.href);
+    console.log('🔍 [DEBUG] - window.location.search:', window.location.search);
+    console.log('🔍 [DEBUG] - searchParams.get("shared"):', searchParams.get('shared'));
+    console.log('🔍 [DEBUG] - searchParams toString():', searchParams.toString());
     console.log('🔍 [DEBUG] - isRestoringFromURLRef.current:', isRestoringFromURLRef.current);
     console.log('🔍 [DEBUG] - chatbotProfiles.length:', chatbotProfiles.length);
+    console.log('🔍 [DEBUG] - sharedConversations.length:', sharedConversations.length);
     
     // Prevent circular updates using ref (doesn't cause re-renders)
     if (isRestoringFromURLRef.current) {
@@ -767,10 +1835,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
     
     // Check if params actually changed to prevent unnecessary processing
-    const currentParams = { agent: agentParam || '', panel: panelParam || '' };
+    const currentParams = { agent: agentParam || '', panel: panelParam || '', shared: sharedParam || '' };
     const lastParams = lastProcessedParamsRef.current;
     
-    if (currentParams.agent === lastParams.agent && currentParams.panel === lastParams.panel) {
+    if (currentParams.agent === lastParams.agent && 
+        currentParams.panel === lastParams.panel && 
+        currentParams.shared === lastParams.shared) {
       console.log('🔍 [DEBUG] - SKIPPING: URL params unchanged');
       return;
     }
@@ -808,35 +1878,325 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     // Set restoration flag to prevent circular updates
     isRestoringFromURLRef.current = true;
     
-    // Batch all state updates together using a single setState call
-    setBotStates(prev => {
-      const newMap = new Map(prev);
-      const currentState = newMap.get(agentParam) || initializeBotState(agentParam);
-      const updatedState = {
-        ...currentState,
-        rightPanelType: (panelParam as RightPanelType) || currentState.rightPanelType,
-        isWorkspaceMode: true,
-        chatHistoryRefreshTrigger: currentState.chatHistoryRefreshTrigger + 1
-      };
-      newMap.set(agentParam, updatedState);
-      return newMap;
-    });
-    
-    // Set selected chatbot if needed
+    // Use handleChatbotSelect to properly initialize session
     if (!isAlreadySelected) {
-      setSelectedChatbot(chatbot);
+      console.log('🔄 [URL Restoration] Calling handleChatbotSelect for proper session initialization');
+      handleChatbotSelect(chatbot);
+    } else {
+      // Just update the panel if chatbot is already selected
+      setBotStates(prev => {
+        const newMap = new Map(prev);
+        const currentState = newMap.get(agentParam) || initializeBotState(agentParam);
+        const updatedState = {
+          ...currentState,
+          rightPanelType: (panelParam as RightPanelType) || currentState.rightPanelType,
+          isWorkspaceMode: true,
+          chatHistoryRefreshTrigger: currentState.chatHistoryRefreshTrigger + 1
+        };
+        newMap.set(agentParam, updatedState);
+        return newMap;
+      });
     }
     
     // Update last processed params
     lastProcessedParamsRef.current = currentParams;
+    
+    // Handle shared conversation parameter
+    if (sharedParam) {
+      console.log('🔄 [URL Restoration] Processing shared conversation:', sharedParam);
+      
+      // First check regular shared conversations
+      let foundConversation = false;
+      if (sharedConversations.length > 0) {
+        const sharedConversation = sharedConversations.find(conv => conv.id === sharedParam);
+        if (sharedConversation) {
+          console.log('✅ [URL Restoration] Found regular shared conversation, selecting:', sharedConversation.name);
+          handleSharedConversationSelect(sharedParam);
+          foundConversation = true;
+        }
+      }
+      
+      // If not found in regular shared conversations, check guest conversation access
+      if (!foundConversation && guestConversationAccess.length > 0) {
+        const guestAccess = guestConversationAccess.find(access => 
+          access.id === sharedParam || access.conversationId === sharedParam
+        );
+        if (guestAccess) {
+          console.log('✅ [URL Restoration] Found guest conversation access, selecting:', guestAccess.conversationName);
+          // Use the invitation ID as the active conversation for guest access
+          handleSharedConversationSelect(guestAccess.id);
+          foundConversation = true;
+        }
+      }
+      
+      if (!foundConversation) {
+        console.log('⚠️ [URL Restoration] Shared conversation not found in either regular or guest access:', sharedParam);
+      }
+    }
     
     // Reset restoration flag after a brief delay
     setTimeout(() => {
       isRestoringFromURLRef.current = false;
       console.log('🔍 [DEBUG] - URL restoration completed');
     }, 100);
+     }, [agentParam, panelParam, sharedParam, chatbotProfiles, sharedConversations, guestConversationAccess, handleSharedConversationSelect]);
+
+  // Load human participants for the current conversation
+  useEffect(() => {
+    const loadHumanParticipants = async () => {
+      try {
+        if (selectedChatbot?.id) {
+          console.log('👥 [Human Participants] Loading participants for conversation:', selectedChatbot.id);
+          const participants = await humanParticipantService.getConversationParticipants(selectedChatbot.id);
+          setHumanParticipants(participants);
+          console.log('👥 [Human Participants] Loaded', participants.length, 'participants');
+        }
+      } catch (error) {
+        console.error('👥 [Human Participants] Error loading participants:', error);
+      }
+    };
+
+    loadHumanParticipants();
+  }, [selectedChatbot?.id]);
+
+  // Update human presence status periodically
+  useEffect(() => {
+    const updatePresence = async () => {
+      try {
+        const updatedParticipants = await Promise.all(
+          humanParticipants.map(async (participant) => {
+            const isOnline = await humanParticipantService.getUserPresence(participant.userId);
+            return { ...participant, isOnline };
+          })
+        );
+        setHumanParticipants(updatedParticipants);
+      } catch (error) {
+        console.error('👥 [Human Participants] Error updating presence:', error);
+      }
+    };
+
+    if (humanParticipants.length > 0) {
+      const interval = setInterval(updatePresence, 30000); // Update every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [humanParticipants.length]);
+
+  // Shared conversations are now loaded globally via SharedConversationContext
+
+  // Subscribe to conversation notifications
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const unsubscribe = conversationNotificationService.subscribeToNotifications((notifications) => {
+      setActiveNotifications(notifications);
+    });
+
+    // Load initial notifications
+    const initialNotifications = conversationNotificationService.getActiveNotifications(user.uid);
+    setActiveNotifications(initialNotifications);
+
+    return unsubscribe;
+  }, [user?.uid]);
+
+  // Subscribe to agent permission notifications
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    const unsubscribe = agentPermissionService.subscribeToNotifications((notification) => {
+      setPermissionNotifications(prev => [...prev, notification]);
+    });
+
+    return unsubscribe;
+  }, [user?.uid]);
+
+  // Subscribe to real-time sync for active shared conversation
+  useEffect(() => {
+    if (!activeSharedConversation || !user?.uid) return;
+
+    // Join conversation for real-time sync
+    realTimeSync.joinConversation(activeSharedConversation, user.uid);
+
+    // Subscribe to typing indicators
+    const unsubscribeTyping = realTimeSync.subscribeToTyping(activeSharedConversation, (typing) => {
+      setTypingIndicators(prev => {
+        const newMap = new Map(prev);
+        newMap.set(activeSharedConversation, typing);
+        return newMap;
+      });
+    });
+
+    // Subscribe to messages (would integrate with existing message system)
+    const unsubscribeMessages = realTimeSync.subscribeToMessages(activeSharedConversation, (message) => {
+      // This would integrate with the existing message handling system
+      console.log('📨 Real-time message received:', message);
+    });
+
+    return () => {
+      unsubscribeTyping();
+      unsubscribeMessages();
+      realTimeSync.leaveConversation(activeSharedConversation, user.uid);
+    };
+  }, [activeSharedConversation, user?.uid]);
+
+  // Update participant data for behavioral orchestration
+  useEffect(() => {
+    const participants: ParticipantData[] = [];
+
+    // Add human participants
+    humanParticipants.forEach(human => {
+      participants.push({
+        id: human.id,
+        name: human.name,
+        type: 'human',
+        avatar: human.avatar,
+        isOnline: human.isOnline,
+        aiAgents: human.aiAgents?.map(agent => ({
+          id: agent.id,
+          name: agent.name,
+          type: agent.type || 'AI Agent',
+          avatar: agent.avatar,
+          currentBehavior: behavioralSettings.get(agent.id) || {
+            responseStyle: 'balanced',
+            creativity: 50,
+            assertiveness: 50,
+            collaboration: 70,
+            verbosity: 60,
+            formality: 60,
+            proactivity: 60,
+            interactionMode: 'active',
+            focusAreas: ['general']
+          },
+          isActive: agent.isActive || false,
+          ownerId: human.id,
+          ownerName: human.name
+        })) || []
+      });
+    });
+
+    // Add AI agents from selected agents
+    selectedAgents.forEach(agentId => {
+      const agent = chatbotProfiles.find(bot => bot.id === agentId);
+      if (agent) {
+        participants.push({
+          id: agent.id,
+          name: agent.name,
+          type: 'ai',
+          avatar: agent.avatar,
+          isOnline: true,
+          currentBehavior: behavioralSettings.get(agent.id) || {
+            responseStyle: 'balanced',
+            creativity: 50,
+            assertiveness: 50,
+            collaboration: 70,
+            verbosity: 60,
+            formality: 60,
+            proactivity: 60,
+            interactionMode: 'active',
+            focusAreas: ['general']
+          },
+          ownerId: user?.uid || '',
+          ownerName: user?.displayName || 'You'
+        });
+      }
+    });
+
+    setParticipantData(participants);
+  }, [humanParticipants, selectedAgents, chatbotProfiles, behavioralSettings, user]);
+
+  // Subscribe to AI observation changes for active shared conversation
+  useEffect(() => {
+    if (!activeSharedConversation) return;
+
+    const initialState = aiObservationService.getObservationState(activeSharedConversation);
+    setObservationState(initialState);
+
+    const unsubscribe = aiObservationService.subscribeToObservationChanges((state) => {
+      if (state.conversationId === activeSharedConversation) {
+        setObservationState(state);
+      }
+    });
+
+    return unsubscribe;
+  }, [activeSharedConversation]);
+
+  // Listen for chat-specific invitation events from ChatHistoryPanel
+  useEffect(() => {
+    const handleChatInvitation = (event: CustomEvent) => {
+      const { chatSession, chatSessionId, chatName, agentId, agentName } = event.detail;
+      console.log('🎯 [ChatInvitation] Received chat invitation event:', { chatName, chatSessionId });
+      
+      // Set the current chat session context for the invitation
+      setChatInvitationContext({
+        chatSessionId,
+        chatName,
+        agentId,
+        agentName
+      });
+      
+      // Open the invitation dialog
+      setShowInviteDialog(true);
+    };
+
+    window.addEventListener('openChatInvitation', handleChatInvitation as EventListener);
     
-  }, [agentParam, panelParam, chatbotProfiles.length]); // Removed selectedChatbot?.identity?.id to prevent circular dependency
+    // 🚀 NEW: Handle session refresh events from guest acceptance
+    const handleSessionRefresh = async (event: CustomEvent) => {
+      const { sessionId } = event.detail;
+      console.log('🔄 [SessionRefresh] Received session refresh event for:', sessionId);
+      console.log('🔄 [SessionRefresh] Debug - selectedChatbotId:', selectedChatbotId);
+      console.log('🔄 [SessionRefresh] Debug - currentBotState exists:', !!currentBotState);
+      console.log('🔄 [SessionRefresh] Debug - currentChatSession.id:', currentBotState?.currentChatSession?.id);
+      
+      // Check if we should refresh this session
+      const shouldRefresh = selectedChatbotId && currentBotState?.currentChatSession?.id === sessionId;
+      console.log('🔄 [SessionRefresh] Should refresh:', shouldRefresh);
+      
+      if (shouldRefresh) {
+        try {
+          console.log('🔄 [SessionRefresh] Refreshing current session data...');
+          const updatedSession = await chatHistoryService.getChatSessionById(sessionId);
+          
+          if (updatedSession) {
+            console.log('🔄 [SessionRefresh] Got updated session with', updatedSession.messages.length, 'messages');
+            
+            // Extract guest participants from session for avatar display
+            const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+              id: guest.id,
+              name: guest.name,
+              avatar: guest.avatar,
+              type: guest.type,
+              status: guest.status || 'active',
+              email: guest.email,
+            })) || [];
+            
+            console.log('🔄 [SessionRefresh] Updated guest participants:', guestParticipants);
+            
+            // Update bot state with refreshed session and guest participants
+            updateBotState(selectedChatbotId, {
+              currentChatSession: updatedSession,
+              guestParticipants: guestParticipants,
+              chatHistoryRefreshTrigger: (currentBotState.chatHistoryRefreshTrigger || 0) + 1
+            });
+            
+            console.log('✅ [SessionRefresh] Session data refreshed successfully');
+          } else {
+            console.warn('⚠️ [SessionRefresh] No updated session found for:', sessionId);
+          }
+        } catch (error) {
+          console.error('❌ [SessionRefresh] Error refreshing session:', error);
+        }
+      } else {
+        console.log('🔄 [SessionRefresh] Skipping refresh - condition not met');
+      }
+    };
+    
+    window.addEventListener('refreshChatSession', handleSessionRefresh as EventListener);
+    
+    return () => {
+      window.removeEventListener('openChatInvitation', handleChatInvitation as EventListener);
+      window.removeEventListener('refreshChatSession', handleSessionRefresh as EventListener);
+    };
+  }, []);
 
   // State to store metrics for all chatbots
   const [chatbotMetrics, setChatbotMetrics] = useState<Map<string, ChatbotMetrics>>(new Map());
@@ -933,6 +2293,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     
     setSelectedChatbot(chatbot);
     
+    // Initialize multi-chat contexts for this chatbot
+    initializeMultiChatContexts(chatbot);
+    
     // Initialize bot state if it doesn't exist
     if (!botStates.has(chatbotId)) {
       const newState = initializeBotState(chatbotId);
@@ -961,9 +2324,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     try {
       setChatLoading(true);
       console.log(`🚀 [Workspace] Initializing Command Center for ${chatbot.identity.name}`);
+      console.log(`🔍 [Debug] chatPanelGovernanceService:`, chatPanelGovernanceService);
+      console.log(`🔍 [Debug] chatbot object:`, chatbot);
       
       // Start new chat session with governance
       const session = await chatPanelGovernanceService.startChatSession(chatbot);
+      console.log(`🔍 [Debug] Session created:`, session);
+      
       updateBotState(chatbotId, { 
         activeSession: session,
         chatMessages: []
@@ -973,6 +2340,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log(`✅ [Workspace] Command Center initialized:`, session.sessionId);
     } catch (error) {
       console.error(`❌ [Workspace] Failed to initialize Command Center:`, error);
+      console.error(`❌ [Workspace] Error details:`, error.message, error.stack);
+      
       // Create a fallback session for UI testing
       const fallbackSession: ChatSession = {
         sessionId: `fallback_${Date.now()}`,
@@ -986,6 +2355,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           complianceScore: 1.0
         }
       };
+      console.log(`🔧 [Workspace] Using fallback session:`, fallbackSession);
       updateBotState(chatbot.identity?.id || chatbot.key || chatbot.id, { activeSession: fallbackSession });
     } finally {
       setChatLoading(false);
@@ -1057,193 +2427,2459 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
-  // Chat functionality - Real Universal Governance Adapter Integration
-  const handleSendMessage = async () => {
-    if (!messageInput.trim() || !activeSession || chatLoading) return;
+  // Helper functions for Agent Avatar Selector
+  const getAgentColor = (agentName: string) => {
+    if (agentName.toLowerCase().includes('claude')) return '#3b82f6';    // Blue
+    if (agentName.toLowerCase().includes('openai') || agentName.toLowerCase().includes('gpt')) return '#10b981';    // Green
+    if (agentName.toLowerCase().includes('gemini') || agentName.toLowerCase().includes('bard')) return '#8b5cf6';   // Purple
+    if (agentName.toLowerCase().includes('anthropic')) return '#06b6d4';  // Cyan
+    if (agentName.toLowerCase().includes('mistral')) return '#f59e0b';    // Orange
+    if (agentName.toLowerCase().includes('llama')) return '#ef4444';      // Red
+    return '#64748b'; // Default gray
+  };
 
-    try {
-      setChatLoading(true);
-      setIsTyping(true);
+  const getHostAgent = () => {
+    if (!selectedChatbot) return null;
+    return {
+      id: selectedChatbot.identity?.id || selectedChatbot.id || '',
+      name: selectedChatbot.identity?.name || selectedChatbot.name || 'Host Agent',
+      color: getAgentColor(selectedChatbot.identity?.name || selectedChatbot.name || ''),
+      hotkey: 'C' // Claude hotkey
+    };
+  };
+
+  const getGuestAgents = () => {
+    const activeContext = multiChatState.contexts.find(c => c.isActive);
+    if (!activeContext?.guestAgents) return [];
+    
+    return activeContext.guestAgents.map((guest, index) => ({
+      id: guest.agentId,
+      name: guest.name,
+      color: getAgentColor(guest.name),
+      hotkey: guest.name.charAt(0).toUpperCase() // First letter as hotkey
+    }));
+  };
+
+  // Get team members for guest selector - merging collaboration service and Firebase connections
+  const getTeamMembers = () => {
+    console.log('🔍 [Team Members] Merging collaboration service and Firebase connections data');
+    console.log('🔍 [Team Members] teamMembers array:', teamMembers);
+    console.log('🔍 [Team Members] teamMembers length:', teamMembers.length);
+    console.log('🔍 [Team Members] connections array:', connections);
+    console.log('🔍 [Team Members] connections length:', connections.length);
+    
+    // Convert teamMembers from collaboration service
+    const collaborationMembers = teamMembers.map(member => ({
+      id: member.id,
+      name: member.name,
+      type: 'human' as const,
+      role: member.role || 'Team Member',
+      status: member.isOnline ? 'online' as const : 'offline' as const,
+      avatar: member.avatar || member.name?.charAt(0) || 'U',
+      source: 'collaboration'
+    }));
+
+    // Convert Firebase connections to team member format
+    const connectionMembers = connections.map(connection => {
+      // Determine which user is the connection (not the current user)
+      const isUser1 = connection.userId1 === user?.uid;
+      const connectionUserId = isUser1 ? connection.userId2 : connection.userId1;
+      const connectionUserName = isUser1 ? connection.user2Name : connection.user1Name;
+      const connectionUserAvatar = isUser1 ? connection.user2Avatar : connection.user1Avatar;
       
-      // Prepare the final message content
-      let finalMessageContent = messageInput.trim();
-      
-      // If there's an active chat reference, combine it with the user's message
-      if (activeChatReference) {
-        console.log('🔗 [ChatReference] Combining chat reference with user message');
-        console.log('🔗 [ChatReference] Reference ID:', activeChatReference.id);
-        console.log('🔗 [ChatReference] User message:', finalMessageContent);
-        
-        // Combine the chat reference ID with the user's instruction
-        finalMessageContent = `${activeChatReference.id} ${finalMessageContent}`;
-        
-        // Clear the active chat reference after using it
-        setActiveChatReference(null);
-        
-        console.log('🔗 [ChatReference] Final combined message:', finalMessageContent);
+      return {
+        id: connectionUserId,
+        name: connectionUserName || 'Unknown User',
+        type: 'human' as const,
+        role: 'Connection',
+        status: 'online' as const, // Default to online for connections
+        avatar: connectionUserAvatar || connectionUserName?.charAt(0) || 'U',
+        source: 'firebase'
+      };
+    });
+
+    // Merge and deduplicate by ID (collaboration service takes precedence)
+    const allMembers = [...collaborationMembers];
+    const existingIds = new Set(collaborationMembers.map(m => m.id));
+    
+    connectionMembers.forEach(connMember => {
+      if (!existingIds.has(connMember.id)) {
+        allMembers.push(connMember);
+        existingIds.add(connMember.id);
       }
-      
-      console.log(`📤 [ChatPanel] Sending message: "${finalMessageContent}"`);
-      
-      // Get fresh bot state to avoid stale closure issues
-      const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-      
-      // Auto-create ChatHistoryService session if none exists (proactive creation)
-      // Check both freshBotState and ChatHistoryService to ensure proper session management
-      const hasHistorySession = freshBotState?.currentChatSession;
-      
-      console.log('🔍 [AutoChat] Checking session state:');
-      console.log('🔍 [AutoChat] selectedChatbotId:', selectedChatbotId);
-      console.log('🔍 [AutoChat] freshBotState exists:', !!freshBotState);
-      console.log('🔍 [AutoChat] hasHistorySession:', !!hasHistorySession);
-      console.log('🔍 [AutoChat] hasHistorySession details:', hasHistorySession);
-      
-      if (!hasHistorySession && selectedChatbot && user?.uid) {
-        console.log('🆕 [AutoChat] No ChatHistoryService session, creating new chat session...');
-        console.log('🔍 [AutoChat] Fresh bot state:', freshBotState);
-        console.log('🔍 [AutoChat] Has history session:', hasHistorySession);
+    });
+
+    // Remove source property for final output
+    const finalMembers = allMembers.map(({ source, ...member }) => member);
+
+    console.log('🔍 [Team Members] Collaboration members:', collaborationMembers.length);
+    console.log('🔍 [Team Members] Connection members:', connectionMembers.length);
+    console.log('🔍 [Team Members] Final merged members:', finalMembers.length);
+    console.log('🔍 [Team Members] Final merged data:', finalMembers);
+    console.log('✅ [Team Members] Returning', finalMembers.length, 'team members (merged from both sources)');
+    
+    return finalMembers;
+  };
+
+  // Get AI agents for guest selector
+  const getAIAgents = () => {
+    // Get available chatbots excluding the current host
+    const hostId = selectedChatbot?.identity?.id || selectedChatbot?.id;
+    
+    return chatbotProfiles
+      .filter(bot => (bot.identity?.id || bot.id) !== hostId)
+      .map(bot => ({
+        id: bot.identity?.id || bot.id || '',
+        name: bot.identity?.name || bot.name || 'AI Agent',
+        type: 'ai_agent' as const,
+        role: 'AI Agent',
+        status: 'online' as const,
+        health: Math.floor(Math.random() * 100), // Mock health percentage
+        provider: bot.apiDetails?.provider || 'Unknown',
+        avatar: (bot.identity?.name || bot.name || 'A').charAt(0)
+      }));
+  };
+
+  // Handle adding guests from the selector popup
+  const handleAddGuests = async (guests: any[]) => {
+    console.log('🚨🚨🚨 [CRITICAL] handleAddGuests CALLED! 🚨🚨🚨');
+    console.log('🚨🚨🚨 [CRITICAL] Guests received:', guests);
+    console.log('🚨🚨🚨 [CRITICAL] Number of guests:', guests?.length || 0);
+    console.log('🤖 Adding guests to conversation:', guests);
+    
+    // Add AI agents to the conversation
+    const aiGuests = guests.filter(guest => guest.type === 'ai_agent');
+    const humanGuests = guests.filter(guest => guest.type === 'human');
+    
+    if (aiGuests.length > 0) {
+      // 🔧 FIX: Add AI agents to shared conversation if in shared mode
+      if (activeSharedConversation) {
         try {
-          // Generate a smart chat name based on the first message (use original messageInput, not combined)
-          const smartChatName = messageInput.trim().length > 50 
-            ? `${messageInput.trim().substring(0, 47)}...`
-            : messageInput.trim();
-          
-          const newSession = await chatHistoryService.createChatSession(
-            selectedChatbot.id,
-            selectedChatbot.name,
-            user.uid,
-            smartChatName || `Chat with ${selectedChatbot.name}`
-          );
-          
-          updateBotState(selectedChatbot.id, {
-            currentChatSession: newSession,
-            currentChatName: newSession.name
-          });
-          
-          // Trigger chat history panel refresh immediately
-          setChatHistoryRefreshTrigger(prev => prev + 1);
-          
-          console.log(`✅ [AutoChat] Created new ChatHistoryService session: ${newSession.name} (${newSession.id})`);
-        } catch (sessionError) {
-          console.error('❌ [AutoChat] Failed to create chat session:', sessionError);
-          // Continue with the message even if session creation fails
+          console.log('🔄 [SharedConversation] Adding AI agents to shared conversation:', activeSharedConversation);
+          for (const agent of aiGuests) {
+            await sharedConversationService.addAIAgent(
+              activeSharedConversation,
+              agent.id,
+              agent.name,
+              user?.uid || 'unknown'
+            );
+            console.log('✅ [SharedConversation] Added AI agent to shared conversation:', agent.name, agent.id);
+          }
+        } catch (error) {
+          console.error('❌ [SharedConversation] Failed to add AI agents to shared conversation:', error);
+          // Continue with local state update even if shared conversation sync fails
         }
       }
       
-      // Check if this is a receipt search query
-      const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(finalMessageContent);
-      
-      // Check if this is a chat reference (for agent processing)
-      const chatSharingService = ChatSharingService.getInstance();
-      const chatReferenceId = chatSharingService.detectChatReference(finalMessageContent);
-      
-      // Check if this is a receipt reference (for agent processing)
-      const receiptSharingService = ReceiptSharingService.getInstance();
-      const receiptReferenceId = receiptSharingService.detectReceiptReference(finalMessageContent);
-      
-      if (isReceiptSearch && selectedChatbot && user?.uid) {
-        console.log('🔍 [ReceiptSearch] Detected receipt search query');
+      // Add AI agents to multi-agent context immediately (no confirmation needed)
+      setMultiChatState(prev => {
+        const activeContext = prev.contexts.find(c => c.isActive);
+        if (!activeContext) return prev;
         
-        // Process conversational receipt search
-        const searchResponse = await conversationalReceiptSearchService.processConversationalSearch(
-          messageInput.trim(),
-          selectedChatbot.id,
-          user.uid
+        const newGuestAgents = aiGuests.map(guest => ({
+          agentId: guest.id,
+          name: guest.name,
+          status: 'active' as const
+        }));
+        
+        return {
+          ...prev,
+          contexts: prev.contexts.map(context => 
+            context.isActive 
+              ? {
+                  ...context,
+                  guestAgents: [...(context.guestAgents || []), ...newGuestAgents]
+                }
+              : context
+          )
+        };
+      });
+      
+      // Update selected agents to include new AI guests
+      const newAgentIds = aiGuests.map(guest => guest.id);
+      setSelectedAgents(prev => [...prev, ...newAgentIds]);
+      setTargetAgents(prev => [...prev, ...newAgentIds]);
+      
+      // 🔧 NEW: Persist guest agents to chat session
+      const currentChatSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+      console.log('🔍 [ChatHistory] Current bot state:', currentBotState);
+      console.log('🔍 [ChatHistory] Current chat session:', currentChatSession);
+      
+      if (currentChatSession?.id) {
+        try {
+          console.log('💾 [ChatHistory] Persisting guest agents to chat session:', currentChatSession.id);
+          console.log('💾 [ChatHistory] Guest agents to persist:', aiGuests.map(a => ({ id: a.id, name: a.name })));
+          
+          for (const agent of aiGuests) {
+            console.log(`💾 [ChatHistory] Adding guest agent: ${agent.name} (${agent.id})`);
+            await chatHistoryService.addGuestAgentToSession(currentChatSession.id, {
+              id: agent.id,
+              name: agent.name,
+              avatar: agent.avatar,
+            });
+            console.log(`✅ [ChatHistory] Successfully added guest agent: ${agent.name}`);
+          }
+          console.log('✅ [ChatHistory] Successfully persisted all guest agents to chat session');
+          
+          // 🔧 NEW: Immediately verify the persistence worked
+          console.log('🔍 [ChatHistory] Verifying guest agent persistence...');
+          const updatedSession = await chatHistoryService.getChatSession(currentChatSession.id);
+          if (updatedSession) {
+            console.log('🔍 [ChatHistory] Updated session participants:', updatedSession.participants);
+            console.log('🔍 [ChatHistory] Guest agents in session:', updatedSession.participants?.guests?.map(g => ({ id: g.id, name: g.name })) || []);
+          } else {
+            console.error('❌ [ChatHistory] Could not retrieve updated session for verification');
+          }
+          
+          // 🚀 NEW: Trigger real-time chat history panel update
+          console.log('🔄 [RealTime] Triggering chat history panel update after guest addition');
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+          
+        } catch (error) {
+          console.error('❌ [ChatHistory] Failed to persist guest agents to chat session:', error);
+          console.error('❌ [ChatHistory] Error details:', error.message, error.stack);
+          // Continue with local state - don't break the flow
+        }
+      } else {
+        console.warn('⚠️ [ChatHistory] No current chat session found, guest agents not persisted');
+        console.warn('⚠️ [ChatHistory] currentBotState keys:', Object.keys(currentBotState || {}));
+      }
+      
+      // 🔧 CRITICAL FIX: Set the multi-agent session ID when guests are added
+      // This ensures the same session ID is used for both role assignment and message routing
+      if (!currentMultiAgentSession && !multiAgentSessionRef.current) {
+        const sessionId = `conv_${Date.now()}`;
+        setCurrentMultiAgentSession(sessionId);
+        multiAgentSessionRef.current = sessionId; // Store immediately in ref
+        console.log('🆕 [MultiAgent] Set session ID when adding guests:', sessionId);
+      } else {
+        const existingSessionId = currentMultiAgentSession || multiAgentSessionRef.current;
+        multiAgentSessionRef.current = existingSessionId; // Ensure ref is synced
+        console.log('🔄 [MultiAgent] Using existing session ID:', existingSessionId);
+      }
+    }
+    
+    if (humanGuests.length > 0) {
+      // 🔧 NEW: Persist guest humans to chat session with pending status
+      const currentChatSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+      
+      if (currentChatSession?.id) {
+        try {
+          console.log('👤 [ChatHistory] Persisting guest humans to chat session:', currentChatSession.id);
+          console.log('👤 [ChatHistory] Guest humans to persist:', humanGuests.map(h => ({ id: h.id, name: h.name, email: h.email })));
+          
+          for (const human of humanGuests) {
+            console.log(`👤 [ChatHistory] Adding guest human: ${human.name} (${human.id}) - Status: pending`);
+            await chatHistoryService.addGuestHumanToSession(currentChatSession.id, {
+              id: human.id,
+              name: human.name,
+              avatar: human.avatar,
+              email: human.email,
+              status: 'pending', // Default to pending for invited humans
+            });
+            console.log(`✅ [ChatHistory] Successfully added guest human: ${human.name} with pending status`);
+          }
+          console.log('✅ [ChatHistory] Successfully persisted all guest humans to chat session');
+          
+          // 🚀 NEW: Trigger real-time chat history panel update
+          console.log('🔄 [RealTime] Triggering chat history panel update after guest human addition');
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+          
+        } catch (error) {
+          console.error('❌ [ChatHistory] Failed to persist guest humans to chat session:', error);
+          console.error('❌ [ChatHistory] Error details:', error.message, error.stack);
+          // Continue with invitation flow - don't break the process
+        }
+      } else {
+        console.warn('⚠️ [ChatHistory] No current chat session found, guest humans not persisted');
+      }
+      
+      // Show confirmation dialog for human invitations
+      console.log('👥 Requesting confirmation to invite human guests:', humanGuests);
+      setPendingHumanInvites(humanGuests);
+      setShowHumanInviteConfirmDialog(true);
+    }
+  };
+
+  // Handle adding humans to conversation
+  const handleAddHumans = async (humans: any[]) => {
+    try {
+      if (!selectedChatbot?.id) return;
+      
+      for (const human of humans) {
+        await humanParticipantService.addParticipant(selectedChatbot.id, {
+          userId: human.id,
+          name: human.name,
+          role: human.role || 'participant',
+          avatar: human.avatar,
+          permissions: ['read', 'write']
+        });
+      }
+      
+      // Refresh human participants list
+      const updatedParticipants = await humanParticipantService.getConversationParticipants(selectedChatbot.id);
+      setHumanParticipants(updatedParticipants);
+      
+      console.log('✅ Successfully added human participants to conversation');
+    } catch (error) {
+      console.error('❌ Failed to add human participants:', error);
+    }
+  };
+
+  // Handle target change for messaging
+  const handleTargetChange = (targetId: string) => {
+    console.log('🎯 [handleTargetChange] Called with targetId:', targetId);
+    console.log('🎯 [handleTargetChange] Previous selectedTarget:', selectedTarget);
+    console.log('🎯 [handleTargetChange] Current selectedChatbot:', selectedChatbot?.id, selectedChatbot?.name);
+    
+    setSelectedTarget(targetId);
+    console.log('🎯 [handleTargetChange] Set selectedTarget to:', targetId);
+    
+    // 🔧 CRITICAL FIX: Update selectedChatbot when target changes to an AI agent
+    if (targetId && targetId !== selectedChatbot?.id) {
+      console.log('🔍 [handleTargetChange] Target differs from selectedChatbot, investigating...');
+      console.log('🔍 [handleTargetChange] Available chatbots:', chatbots?.map(bot => ({ id: bot.id, name: bot.name })));
+      
+      // Find the chatbot that matches the target
+      const matchingChatbot = chatbots?.find(bot => bot.id === targetId);
+      if (matchingChatbot) {
+        console.log('🔍 [handleTargetChange] Found matching chatbot:', matchingChatbot.id, matchingChatbot.name);
+        console.log('🔧 [handleTargetChange] UPDATING selectedChatbot to match target');
+        setSelectedChatbot(matchingChatbot);
+        console.log('✅ [handleTargetChange] selectedChatbot updated to:', matchingChatbot.id, matchingChatbot.name);
+      } else {
+        console.log('🔍 [handleTargetChange] No matching chatbot found for targetId:', targetId);
+        console.log('🔍 [handleTargetChange] This might be a human participant or invalid agent ID');
+        
+        // If target is not a chatbot, clear selectedChatbot
+        if (selectedChatbot) {
+          console.log('🔧 [handleTargetChange] Clearing selectedChatbot since target is not an AI agent');
+          setSelectedChatbot(null);
+        }
+      }
+    } else if (!targetId && selectedChatbot) {
+      // Clear selectedChatbot if target is cleared
+      console.log('🔧 [handleTargetChange] Clearing selectedChatbot since target is cleared');
+      setSelectedChatbot(null);
+    }
+    
+    console.log('🎯 Messaging target changed to:', targetId);
+  };
+
+  // Shared conversation handlers are now provided by global context
+
+  const handleCreateSharedConversation = async (name: string, participants: string[] = []) => {
+    try {
+      if (!user?.uid) return;
+      
+      const conversation = await sharedConversationService.createSharedConversation(
+        user.uid,
+        user.displayName || 'User',
+        name,
+        participants
+      );
+      
+      addSharedConversation(conversation);
+      setActiveSharedConversation(conversation.id);
+      setIsInSharedMode(true);
+      
+      console.log('✅ Created shared conversation:', conversation.id);
+    } catch (error) {
+      console.error('❌ Failed to create shared conversation:', error);
+    }
+  };
+
+  // Invitation and notification handlers
+  const handleOpenInvitationDialog = (conversationId?: string) => {
+    if (conversationId) {
+      setCurrentConversationForInvite(conversationId);
+      setShowInvitationDialog(true);
+    } else if (activeSharedConversation) {
+      setCurrentConversationForInvite(activeSharedConversation);
+      setShowInvitationDialog(true);
+    }
+  };
+
+  const handleOpenUserDiscoveryDialog = (conversationId?: string) => {
+    if (conversationId) {
+      setCurrentConversationForInvite(conversationId);
+      setShowUserDiscoveryDialog(true);
+    } else if (activeSharedConversation) {
+      setCurrentConversationForInvite(activeSharedConversation);
+      setShowUserDiscoveryDialog(true);
+    }
+  };
+
+  const handleSendEmailInvitations = async (invitationData: InvitationFormData) => {
+    if (!currentConversationForInvite || !user?.uid) return;
+
+    try {
+      await conversationNotificationService.sendConversationInvitation(
+        currentConversationForInvite,
+        user.uid,
+        invitationData.emails,
+        invitationData.message,
+        invitationData.includeHistory,
+        invitationData.historyDays
+      );
+
+      console.log('✅ Sent email invitations successfully');
+    } catch (error) {
+      console.error('❌ Failed to send email invitations:', error);
+      throw error;
+    }
+  };
+
+  const handleInvitePromethiosUsers = async (users: PromethiosUser[]) => {
+    if (!currentConversationForInvite || !user?.uid) return;
+
+    try {
+      // Add users directly to conversation (they're already Promethios users)
+      for (const promethiosUser of users) {
+        await sharedConversationService.addParticipant(
+          currentConversationForInvite,
+          promethiosUser.id,
+          user.uid,
+          promethiosUser.name
+        );
+      }
+
+      // Refresh shared conversations
+      await refreshSharedConversations();
+
+      console.log('✅ Added Promethios users to conversation successfully');
+    } catch (error) {
+      console.error('❌ Failed to add Promethios users:', error);
+      throw error;
+    }
+  };
+
+  const handleOpenChatInvitation = async () => {
+    console.log('🔍 [PersonAdd] handleOpenChatInvitation called');
+    console.log('🔍 [PersonAdd] selectedChatbot:', selectedChatbot);
+    
+    if (!selectedChatbot) return;
+
+    const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+    console.log('🔍 [PersonAdd] currentBotState:', currentBotState);
+    
+    if (currentBotState?.currentChatSession) {
+      console.log('🔍 [PersonAdd] Using existing chat session:', currentBotState.currentChatSession.id);
+      // Existing chat session - use it for invitation
+      setActiveChatInvitationSession({
+        id: currentBotState.currentChatSession.id,
+        name: currentBotState.currentChatSession.name || `Chat with ${selectedChatbot.identity?.name}`,
+        messageCount: currentBotState.messages.length
+      });
+    } else {
+      console.log('🔍 [PersonAdd] No active chat session, creating new one...');
+      // No active chat session - create a new one
+      try {
+        // 🔧 FIX: Use selectedChatbotId to avoid race condition
+        const agentId = selectedChatbotId || selectedChatbot?.id;
+        const agentName = selectedChatbot?.identity?.name || selectedChatbot?.name || `Agent ${agentId}`;
+        
+        const newChatSession = await chatHistoryService.createChatSession(
+          user!.uid,
+          agentId,
+          `Chat with ${agentName}`,
+          agentName
+        );
+
+        console.log('🔍 [PersonAdd] Created new chat session:', newChatSession.id);
+
+        // Update bot state with new chat session
+        const newBotState = {
+          ...currentBotState,
+          currentChatSession: newChatSession,
+          messages: []
+        };
+        setBotStates(prev => new Map(prev.set(selectedChatbotId!, newBotState)));
+
+        // Set the new session for invitation
+        setActiveChatInvitationSession({
+          id: newChatSession.id,
+          name: newChatSession.name,
+          messageCount: 0
+        });
+
+        console.log('✅ Created new chat session for invitation:', newChatSession.id);
+      } catch (error) {
+        console.error('❌ Failed to create new chat session:', error);
+        // Fallback - still allow invitation without specific session
+        setActiveChatInvitationSession({
+          id: 'new-chat',
+          name: `Chat with ${selectedChatbot.identity?.name}`,
+          messageCount: 0
+        });
+      }
+    }
+
+    console.log('🔍 [PersonAdd] Opening ChatInvitationModal...');
+    setShowChatInvitationModal(true);
+  };
+
+  const handleAcceptInvitation = async (notificationId: string) => {
+    if (!user?.uid) return;
+
+    try {
+      console.log('🤖 [InvitationAccept] Starting invitation acceptance process...');
+      console.log('🤖 [InvitationAccept] Notification ID:', notificationId);
+      console.log('🤖 [InvitationAccept] Current user ID:', user.uid);
+      
+      // Use the new method that sets up participation automatically
+      await sharedConversationService.acceptInvitationAndSetupParticipation(
+        notificationId,
+        user.uid,
+        user.displayName || user.email || 'Anonymous User'
+      );
+
+      // Refresh shared conversations
+      await refreshSharedConversations();
+
+      console.log('✅ [InvitationAccept] Accepted invitation and set up participation successfully');
+      
+      // 🚀 NEW: Add guest status update and welcome message logic
+      try {
+        console.log('🤖 [InvitationAccept] Updating guest status and generating welcome message...');
+        
+        // Get the notification to extract conversation ID
+        const notification = activeNotifications.find(n => n.id === notificationId);
+        if (notification) {
+          console.log('🤖 [InvitationAccept] Found notification:', notification);
+          console.log('🤖 [InvitationAccept] Conversation ID:', notification.conversationId);
+          
+          // Update guest human status to active
+          await chatHistoryService.updateGuestHumanStatus(
+            notification.conversationId,
+            user.uid,
+            'active'
+          );
+          console.log('✅ [InvitationAccept] Guest status updated to active');
+          
+          // Get session to find host agent info for welcome message
+          const session = await chatHistoryService.getChatSessionById(notification.conversationId);
+          console.log('🔍 [InvitationAccept] Retrieved session for welcome message:', session ? 'found' : 'not found');
+          
+          if (session) {
+            console.log('🔍 [InvitationAccept] Session participants:', session.participants);
+            
+            // Generate and add welcome message
+            await aiWelcomeService.handleGuestAcceptance(
+              notification.conversationId,
+              user.uid,
+              session.participants.host.id,
+              session.participants.host.name
+            );
+            console.log('✅ [InvitationAccept] Welcome message generated and added');
+          } else {
+            console.warn('⚠️ [InvitationAccept] Could not find session for welcome message');
+          }
+          
+          // 🚀 NEW: Trigger session refresh to update guest participants in UI
+          console.log('🔄 [InvitationAccept] Triggering session refresh to update guest participants');
+          window.dispatchEvent(new CustomEvent('refreshChatSession', { 
+            detail: { sessionId: notification.conversationId } 
+          }));
+          
+        } else {
+          console.warn('⚠️ [InvitationAccept] Could not find notification for guest status update');
+        }
+        
+      } catch (welcomeError) {
+        console.error('❌ [InvitationAccept] Error with guest status/welcome:', welcomeError);
+        // Don't fail the acceptance flow for welcome message issues
+      }
+      
+    } catch (error) {
+      console.error('❌ Failed to accept invitation:', error);
+      throw error;
+    }
+  };
+
+  const handleDeclineInvitation = async (notificationId: string) => {
+    try {
+      await conversationNotificationService.declineInvitation(notificationId);
+      console.log('❌ Declined invitation');
+    } catch (error) {
+      console.error('❌ Failed to decline invitation:', error);
+      throw error;
+    }
+  };
+
+  const handleDismissNotification = (notificationId: string) => {
+    conversationNotificationService.dismissNotification(notificationId);
+  };
+
+  // Permission request handlers
+  const handleRequestAgentPermission = async (agentId: string, agentName: string, agentType: string, message?: string) => {
+    if (!activeSharedConversation || !user?.uid) return;
+
+    try {
+      await agentPermissionService.requestAgentPermission(
+        activeSharedConversation,
+        user.uid,
+        user.displayName || 'User',
+        agentId,
+        agentName,
+        agentType,
+        message
+      );
+
+      console.log('🔒 Requested permission to add agent:', agentName);
+    } catch (error) {
+      console.error('❌ Failed to request agent permission:', error);
+    }
+  };
+
+  const handleApproveAgentRequest = async (requestId: string, reason?: string) => {
+    if (!user?.uid) return;
+
+    try {
+      await agentPermissionService.approveAgentRequest(
+        requestId,
+        user.uid,
+        user.displayName || 'User'
+      );
+
+      console.log('✅ Approved agent permission request:', requestId);
+    } catch (error) {
+      console.error('❌ Failed to approve agent request:', error);
+      throw error;
+    }
+  };
+
+  const handleDenyAgentRequest = async (requestId: string, reason?: string) => {
+    if (!user?.uid) return;
+
+    try {
+      await agentPermissionService.denyAgentRequest(
+        requestId,
+        user.uid,
+        user.displayName || 'User',
+        reason
+      );
+
+      console.log('❌ Denied agent permission request:', requestId);
+    } catch (error) {
+      console.error('❌ Failed to deny agent request:', error);
+      throw error;
+    }
+  };
+
+  const handleDismissPermissionNotification = (notificationId: string) => {
+    setPermissionNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
+
+  // Typing indicator handlers
+  const handleStartTyping = () => {
+    if (activeSharedConversation && user?.uid && !isTyping) {
+      setIsTyping(true);
+      realTimeSync.startTyping(activeSharedConversation, user.uid, user.displayName || 'User');
+    }
+  };
+
+  const handleStopTyping = () => {
+    if (activeSharedConversation && user?.uid && isTyping) {
+      setIsTyping(false);
+      realTimeSync.stopTyping(activeSharedConversation, user.uid);
+    }
+  };
+
+  // Privacy control handlers
+  const handlePrivacyChange = (isPrivate: boolean) => {
+    console.log('🔒 Privacy mode changed:', isPrivate ? 'Private' : 'Public');
+    // Additional privacy change handling can be added here
+  };
+
+  // Behavioral orchestration handlers
+  const handleBehaviorChange = (agentId: string, settings: BehavioralSettings) => {
+    setBehavioralSettings(prev => new Map(prev.set(agentId, settings)));
+    console.log('🎭 Behavior changed for agent:', agentId, settings);
+    
+    // Apply behavioral changes to the agent
+    // This would integrate with the agent's configuration system
+  };
+
+  const handleQuickBehaviorTrigger = async (agentId: string, trigger: string) => {
+    console.log('⚡ Quick behavior trigger:', trigger, 'for agent:', agentId);
+    
+    // Find the agent
+    const agent = selectedAgents.find(id => id === agentId) || 
+                  humanParticipants.flatMap(h => h.aiAgents || []).find(a => a.id === agentId);
+    
+    if (!agent) return;
+
+    // Create behavioral prompt based on trigger
+    const behavioralPrompts = {
+      encourage: "Please provide encouragement and motivation based on the current conversation.",
+      analyze: "Please provide a deep analytical response to the current discussion.",
+      brainstorm: "Please generate creative ideas and suggestions for the current topic.",
+      critique: "Please provide constructive criticism and areas for improvement.",
+      summarize: "Please summarize the key points of this conversation so far.",
+      question: "Please ask probing questions to deepen the discussion.",
+      pessimist: "Please provide a pessimistic perspective on the current discussion. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns and worst-case scenarios."
+    };
+
+    const prompt = behavioralPrompts[trigger as keyof typeof behavioralPrompts] || 
+                   `Please respond with a ${trigger} approach to the current conversation.`;
+
+    // Trigger the agent response with behavioral context
+    await handleHoverTriggeredResponse(agentId, agent.name || agentId, trigger, prompt);
+  };
+  // Initialize selected agents when chatbot changes and restore unified participants
+  useEffect(() => {
+    const restoreConversationParticipants = async () => {
+      const hostAgent = getHostAgent();
+      
+      if (!hostAgent) return;
+      
+      // Always start with the host agent
+      let agentsToSelect = [hostAgent.id];
+      
+      // If we have a conversation ID, try to restore unified participants
+      if (selectedChatbot?.id) {
+        try {
+          console.log('🔄 [Participant Restore] Checking for unified participants in conversation:', selectedChatbot.id);
+          
+          // Import the unified participant service
+          const { unifiedParticipantService } = await import('../services/UnifiedParticipantService');
+          
+          // Get conversation participants
+          const participants = await unifiedParticipantService.getConversationParticipants(selectedChatbot.id);
+          
+          if (participants.length > 0) {
+            console.log('🔄 [Participant Restore] Found', participants.length, 'unified participants');
+            
+            // Extract AI agent IDs from participants
+            const aiAgentIds = participants
+              .filter(p => p.type === 'ai_agent' && p.status === 'active')
+              .map(p => p.id);
+            
+            if (aiAgentIds.length > 0) {
+              // Add the AI agents to the selection, avoiding duplicates
+              const uniqueAgents = [...new Set([...agentsToSelect, ...aiAgentIds])];
+              agentsToSelect = uniqueAgents;
+              console.log('✅ [Participant Restore] Restored AI agents:', aiAgentIds);
+            }
+          } else {
+            console.log('ℹ️ [Participant Restore] No unified participants found for conversation');
+          }
+        } catch (error) {
+          console.log('⚠️ [Participant Restore] Could not restore unified participants:', error);
+          // Continue with just the host agent
+        }
+      }
+      
+      // Only update if we have agents to select and current selection is empty or different
+      if (agentsToSelect.length > 0 && (selectedAgents.length === 0 || 
+          JSON.stringify(selectedAgents.sort()) !== JSON.stringify(agentsToSelect.sort()))) {
+        console.log('🔄 [Participant Restore] Setting selected agents:', agentsToSelect);
+        setSelectedAgents(agentsToSelect);
+        setTargetAgents(agentsToSelect);
+      }
+    };
+    
+    restoreConversationParticipants();
+  }, [selectedChatbot]);
+
+  // Handle agent selection change
+  const handleAgentSelectionChange = (selectedAgentIds: string[]) => {
+    setSelectedAgents(selectedAgentIds);
+    setTargetAgents(selectedAgentIds); // Update target agents for routing
+  };
+
+  // 🚀 NEW: Handle hover-triggered agent responses with behavioral prompts
+  const handleHoverTriggeredResponse = async (agentId: string, agentName: string, behaviorType?: string) => {
+    console.log('🖱️ [Hover-Triggered] Triggering response from agent:', agentName, 'with behavior:', behaviorType);
+    
+    // Find the last message in the conversation
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    if (!lastMessage) {
+      console.warn('🖱️ [Hover-Triggered] No messages found to respond to');
+      return;
+    }
+
+    // Create behavioral prompt templates
+    const behaviorPrompts = {
+      collaborate: `🤝 Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective.`,
+      question: `❓ Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration.`,
+      devils_advocate: `😈 Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments.`,
+      expert: `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed.`,
+      critic: `🔍 Please provide a critical review of the previous response. Evaluate the strengths and weaknesses, identify gaps, and suggest improvements while maintaining a constructive tone.`,
+      creative: `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions.`,
+      analyst: `📊 Please provide an analytical response to the previous message. Break down the key components, analyze the logic, data, or reasoning presented, and provide structured insights.`,
+      pessimist: `🌧️ Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account.`
+    };
+
+    // Create the behavioral trigger message
+    const triggerMessage = behaviorType && behaviorPrompts[behaviorType as keyof typeof behaviorPrompts]
+      ? behaviorPrompts[behaviorType as keyof typeof behaviorPrompts]
+      : `Please respond to the last message from ${lastMessage.sender === 'user' ? 'the user' : 'another agent'}.`;
+    
+    try {
+      // Send the behavioral trigger message to the specific agent
+      await handleSendMessage(triggerMessage, [agentId]);
+      console.log('🖱️ [Hover-Triggered] Successfully triggered', behaviorType || 'generic', 'response from:', agentName);
+    } catch (error) {
+      console.error('🖱️ [Hover-Triggered] Error triggering response:', error);
+    }
+  };
+
+  // Handle behavior prompt clicks from agent avatars
+  const handleBehaviorPrompt = async (agentId: string, agentName: string, behavior: string) => {
+    console.log('🎭 [Behavior Prompt] Triggered:', behavior, 'for agent:', agentName);
+    
+    // Check if we're in single-agent or multi-agent mode
+    const activeContext = multiChatState.contexts.find(c => c.isActive);
+    const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+    const isSingleAgentMode = !hasGuestAgents;
+    
+    // Get the last message to check who responded last
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    
+    // In multi-agent mode, don't allow behavior prompts if this agent was the last responder
+    if (!isSingleAgentMode && lastMessage) {
+      const lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+      if (lastResponderAgentId === agentId) {
+        console.log('🎭 [Behavior Prompt] Skipping - agent was last responder in multi-agent mode');
+        return;
+      }
+    }
+    
+    if (!lastMessage) {
+      console.warn('🎭 [Behavior Prompt] No messages found to respond to');
+      return;
+    }
+
+    // Get the name of who should be mentioned (who made the last message)
+    const getMentionTarget = () => {
+      if (lastMessage.sender === 'user') {
+        return '@user'; // Mention the user
+      } else {
+        // Find the agent who made the last message with improved detection
+        console.log('🎭 [getMentionTarget] Analyzing last message:', {
+          sender: lastMessage.sender,
+          content: lastMessage.content?.substring(0, 100),
+          metadata: lastMessage.metadata
+        });
+        
+        // First try to get agent ID from metadata
+        let lastResponderAgentId = lastMessage.metadata?.agentId;
+        
+        // If no metadata, try to parse from message
+        if (!lastResponderAgentId) {
+          lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+        }
+        
+        console.log('🎭 [getMentionTarget] Last responder agent ID:', lastResponderAgentId);
+        
+        if (lastResponderAgentId) {
+          const hostAgent = getHostAgent();
+          const guestAgents = getGuestAgents();
+          
+          console.log('🎭 [getMentionTarget] Available agents:', {
+            host: hostAgent?.name,
+            guests: guestAgents.map(g => g.name)
+          });
+          
+          if (hostAgent && lastResponderAgentId === hostAgent.id) {
+            console.log('🎭 [getMentionTarget] Found host agent:', hostAgent.name);
+            return `@${hostAgent.name}`;
+          }
+          
+          const guestAgent = guestAgents.find(agent => agent.id === lastResponderAgentId);
+          if (guestAgent) {
+            console.log('🎭 [getMentionTarget] Found guest agent:', guestAgent.name);
+            return `@${guestAgent.name}`;
+          }
+        }
+        
+        // Enhanced fallback: try to extract agent name from sender field
+        if (lastMessage.sender && lastMessage.sender !== 'assistant') {
+          // If sender contains agent name, use it
+          const hostAgent = getHostAgent();
+          const guestAgents = getGuestAgents();
+          
+          // Check if sender matches any agent name
+          const allAgents = [hostAgent, ...guestAgents].filter(Boolean);
+          const matchingAgent = allAgents.find(agent => 
+            lastMessage.sender.includes(agent.name) || 
+            agent.name.includes(lastMessage.sender)
+          );
+          
+          if (matchingAgent) {
+            console.log('🎭 [getMentionTarget] Found agent via sender field:', matchingAgent.name);
+            return `@${matchingAgent.name}`;
+          }
+        }
+        
+        console.warn('🎭 [getMentionTarget] Could not identify last responder, using fallback');
+        return '@assistant'; // Better fallback than @previous-agent
+      }
+    };
+
+    const mentionTarget = getMentionTarget();
+
+    // Create behavioral prompt templates - include @mention to trigger original agent response
+    const behaviorPrompts = {
+      collaborate: `🤝 Please collaborate with the previous response. Build upon the ideas presented and work together to develop a more comprehensive solution or perspective. ${mentionTarget}, please respond to my collaboration points.`,
+      question: `❓ Please ask thoughtful, clarifying questions about the previous response. Help deepen the understanding by identifying areas that need more explanation or exploration. ${mentionTarget}, please address these questions.`,
+      devils_advocate: `😈 Please play devil's advocate to the previous response. Challenge the assumptions, point out potential weaknesses, and present alternative viewpoints or counterarguments. ${mentionTarget}, please respond to these challenges.`,
+      expert: `🎯 Please provide an expert analysis of the previous response. Draw upon specialized knowledge to evaluate the accuracy, completeness, and implications of what was discussed. ${mentionTarget}, please respond to this analysis.`,
+      creative: `💡 Please add creative ideas and innovative perspectives to the previous response. Think outside the box and suggest novel approaches or creative solutions. ${mentionTarget}, please build on these creative ideas.`,
+      pessimist: `🌧️ Please provide a pessimistic perspective on the previous response. Identify potential risks, downsides, and what could realistically go wrong. Focus on practical concerns, worst-case scenarios, and cautionary considerations that should be taken into account. ${mentionTarget}, please address these concerns.`
+    };
+
+    // Create the behavioral trigger message - send directly to the clicked agent with @mention
+    const triggerMessage = behaviorPrompts[behavior as keyof typeof behaviorPrompts] || 
+      `Please respond to the last message with a ${behavior} approach. ${mentionTarget}, please respond.`;
+    
+    try {
+      // Set smart thinking indicator
+      setSmartThinkingIndicator(agentId, agentName, behavior);
+      
+      // Send the behavioral trigger message to the specific agent (includes @mention for automatic response)
+      await handleSendMessage(triggerMessage, [agentId]);
+      console.log('🎭 [Behavior Prompt] Successfully triggered', behavior, 'response from:', agentName, 'with mention:', mentionTarget);
+      
+      // Mark that we're expecting a behavior prompt response
+      setBehaviorPromptActive({
+        agentId,
+        behavior,
+        timestamp: Date.now()
+      });
+      
+      // Note: The @mention in the response will automatically trigger the original agent
+      // No need for automated setTimeout logic - let the mention system handle it
+      
+    } catch (error) {
+      console.error('🎭 [Behavior Prompt] Error triggering response:', error);
+      clearSmartThinkingIndicator();
+    }
+  };
+
+  // Helper function to get agent ID from message
+  const getAgentIdFromMessage = (message: any): string | null => {
+    // Check if message has agent information
+    if (message.agentId) return message.agentId;
+    if (message.sender && message.sender !== 'user') {
+      // Try to match sender name to agent
+      const hostAgent = getHostAgent();
+      if (hostAgent && message.sender.includes(hostAgent.name)) return hostAgent.id;
+      
+      const guestAgent = getGuestAgents().find(agent => message.sender.includes(agent.name));
+      if (guestAgent) return guestAgent.id;
+    }
+    return null;
+  };
+
+  // Handle hover-triggered AI responses to humans
+  const handleHoverTriggeredResponseToHuman = async (humanId: string, humanName: string, behaviorType: string) => {
+    console.log('🖱️ [AI-Human Interaction] Triggering AI response to human:', humanName, 'with behavior:', behaviorType);
+    
+    // Find the last message from the human or in the conversation
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    if (!lastMessage) {
+      console.warn('🖱️ [AI-Human Interaction] No messages found to respond to');
+      return;
+    }
+
+    // Create AI-to-human behavioral prompt templates
+    const aiToHumanPrompts = {
+      collaborate: `🤝 Please collaborate with ${humanName} on their recent contribution. Work together to build upon their ideas and develop a more comprehensive solution.`,
+      question: `❓ Please ask ${humanName} thoughtful, clarifying questions about their recent input. Help deepen the understanding by identifying areas that need more explanation.`,
+      devils_advocate: `😈 Please respectfully challenge ${humanName}'s recent statement. Play devil's advocate by questioning assumptions and presenting alternative viewpoints.`,
+      expert_analysis: `🎯 Please provide expert analysis of ${humanName}'s recent contribution. Evaluate their ideas with specialized knowledge and offer professional insights.`,
+      critical_review: `🔍 Please provide a constructive critical review of ${humanName}'s recent input. Identify strengths, potential improvements, and areas for development.`,
+      creative_ideas: `💡 Please brainstorm creative ideas with ${humanName} based on their recent contribution. Think outside the box and suggest innovative approaches.`,
+      analytical_response: `📊 Please provide analytical insights on ${humanName}'s recent input. Break down the key components and offer structured analysis.`
+    };
+
+    // Create the AI-to-human behavioral trigger message
+    const triggerMessage = aiToHumanPrompts[behaviorType as keyof typeof aiToHumanPrompts] || 
+      `Please respond to ${humanName}'s recent contribution in the conversation.`;
+    
+    try {
+      // Send the behavioral trigger message to the host agent (or selected AI agent)
+      const hostAgentId = selectedChatbot?.id;
+      if (hostAgentId) {
+        await handleSendMessage(triggerMessage, [hostAgentId]);
+        console.log('🖱️ [AI-Human Interaction] Successfully triggered', behaviorType, 'response to human:', humanName);
+      } else {
+        console.warn('🖱️ [AI-Human Interaction] No host agent available to respond to human');
+      }
+    } catch (error) {
+      console.error('🖱️ [AI-Human Interaction] Error triggering AI response to human:', error);
+    }
+  };
+
+  // Autonomous Stars functionality
+  const generateSmartSuggestions = useCallback(async (input: string, context: any) => {
+    if (!autonomousStarsActive || !input.trim()) {
+      setSmartSuggestions([]);
+      return;
+    }
+
+    try {
+      const suggestions: string[] = [];
+      
+      // Context-aware suggestions based on current state
+      if (projects.length > 0) {
+        suggestions.push(`Continue working on ${projects[0].name}`);
+        suggestions.push(`Create a new feature for ${projects[0].name}`);
+      }
+      
+      if (teamMembers.length > 0) {
+        suggestions.push(`Share this with ${teamMembers[0].name}`);
+        suggestions.push(`Ask team for feedback on this`);
+      }
+      
+      if (autonomousMode && currentTaskPlan) {
+        suggestions.push(`Show me the current task progress`);
+        suggestions.push(`What's the next step in this task?`);
+      }
+      
+      // Input-based suggestions
+      const lowerInput = input.toLowerCase();
+      if (lowerInput.includes('create') || lowerInput.includes('build')) {
+        suggestions.push('Create a new React application');
+        suggestions.push('Build a REST API with Flask');
+        suggestions.push('Set up a database schema');
+      }
+      
+      if (lowerInput.includes('help') || lowerInput.includes('how')) {
+        suggestions.push('Show me available project templates');
+        suggestions.push('Explain the autonomous workflow');
+        suggestions.push('Guide me through team collaboration');
+      }
+      
+      setSmartSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
+      setShowSuggestions(suggestions.length > 0);
+    } catch (error) {
+      console.error('❌ [AutonomousStars] Failed to generate suggestions:', error);
+    }
+  }, [autonomousStarsActive, projects, teamMembers, autonomousMode, currentTaskPlan]);
+
+  const handleInputChange = useCallback((value: string) => {
+    setMessageInput(value);
+    
+    // Handle typing indicators for shared conversations
+    if (isInSharedMode && activeSharedConversation && user?.uid) {
+      if (value.trim() !== messageInput.trim()) {
+        // User is typing - set typing indicator
+        sharedConversationService.handleTypingStart(activeSharedConversation, user.uid);
+      }
+    }
+    
+    // Check for @mentions (both agents and humans)
+    const mentionMatch = value.match(/@(\w+)$/);
+    if (mentionMatch) {
+      const mentionQuery = mentionMatch[1].toLowerCase();
+      
+      // Get available agents
+      const availableAgents = getGuestAgents().map(agent => ({
+        type: 'agent' as const,
+        id: agent.id,
+        name: agent.name,
+        avatar: agent.avatar
+      }));
+      
+      // Add host agent
+      if (selectedChatbot) {
+        availableAgents.unshift({
+          type: 'agent' as const,
+          id: selectedChatbot.id,
+          name: selectedChatbot.name,
+          avatar: selectedChatbot.avatar
+        });
+      }
+      
+      // Get available humans
+      const availableHumans = humanParticipants.map(human => ({
+        type: 'human' as const,
+        id: human.userId,
+        name: human.name,
+        avatar: human.avatar
+      }));
+      
+      // Filter and combine suggestions
+      const allMentionSuggestions = [...availableAgents, ...availableHumans]
+        .filter(item => item.name.toLowerCase().includes(mentionQuery))
+        .slice(0, 5);
+      
+      if (allMentionSuggestions.length > 0) {
+        setMentionSuggestions(allMentionSuggestions);
+        setShowMentionSuggestions(true);
+        setSelectedMentionIndex(0);
+      } else {
+        setShowMentionSuggestions(false);
+      }
+    } else {
+      setShowMentionSuggestions(false);
+    }
+    
+    // Only generate suggestions when autonomous stars are active and user pauses typing
+    if (autonomousStarsActive) {
+      // Clear existing timeout
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+      
+      // Hide suggestions while typing
+      setShowSuggestions(false);
+      
+      // Only show suggestions if input has meaningful content or specific triggers
+      const shouldShowSuggestions = value.trim().length > 2 || 
+        ['create', 'build', 'help', 'show', 'what'].some(trigger => 
+          value.toLowerCase().includes(trigger)
+        );
+      
+      if (shouldShowSuggestions) {
+        // Show suggestions after user stops typing (Amazon-style delay)
+        suggestionTimeoutRef.current = setTimeout(() => {
+          generateSmartSuggestions(value, {
+            selectedChatbot,
+            projects,
+            teamMembers,
+            autonomousMode,
+            currentTaskPlan
+          });
+        }, 800); // Longer delay to be less intrusive
+      }
+    }
+  }, [autonomousStarsActive, generateSmartSuggestions, selectedChatbot, projects, teamMembers, autonomousMode, currentTaskPlan]);
+
+  const handleSuggestionSelect = useCallback((suggestion: string) => {
+    setMessageInput(suggestion);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+  }, []);
+
+  const handleKeyNavigation = useCallback((e: React.KeyboardEvent) => {
+    if (!showSuggestions || smartSuggestions.length === 0) return;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => 
+        prev < smartSuggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => 
+        prev > 0 ? prev - 1 : smartSuggestions.length - 1
+      );
+    } else if (e.key === 'Tab' && selectedSuggestionIndex >= 0) {
+      e.preventDefault();
+      handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
+    }
+  }, [showSuggestions, smartSuggestions, selectedSuggestionIndex, handleSuggestionSelect]);
+
+  // Proactive assistance based on context
+  useEffect(() => {
+    if (!autonomousStarsActive) return;
+    
+    const checkProactiveAssistance = () => {
+      if (projects.length === 0 && !messageInput.trim()) {
+        setProactiveAssistance("💡 Start by creating a new project from our templates!");
+      } else if (autonomousMode && !liveAgentPanelOpen) {
+        setProactiveAssistance("🤖 Your agent is working autonomously. Click LIVE AGENT to monitor progress.");
+      } else if (unreadTeamCount > 0) {
+        setProactiveAssistance(`👥 You have ${unreadTeamCount} unread team messages.`);
+      } else {
+        setProactiveAssistance(null);
+      }
+    };
+    
+    const timeoutId = setTimeout(checkProactiveAssistance, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [autonomousStarsActive, projects.length, messageInput, autonomousMode, liveAgentPanelOpen, unreadTeamCount]);
+
+  // Smart thinking indicator helper functions
+  const getRespondingAgent = () => {
+    // In multi-agent mode, determine which agent is actually responding
+    const activeContext = multiChatState.contexts.find(c => c.isActive);
+    const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+    
+    if (hasGuestAgents) {
+      // Check if we have selected specific agents for this message
+      if (selectedAgents && selectedAgents.length > 0) {
+        // Find the first selected agent that's not the host
+        const selectedGuestId = selectedAgents.find(id => id !== selectedChatbot?.id);
+        if (selectedGuestId) {
+          const selectedGuest = activeContext.guestAgents.find(g => g.agentId === selectedGuestId);
+          if (selectedGuest) {
+            return {
+              id: selectedGuest.agentId,
+              name: selectedGuest.name,
+              avatar: selectedGuest.avatar
+            };
+          }
+        }
+        
+        // If the selected agent is the host, return host info
+        if (selectedAgents.includes(selectedChatbot?.id || '')) {
+          return {
+            id: selectedChatbot?.id || 'host',
+            name: selectedChatbot?.identity?.name || selectedChatbot?.name || 'Agent',
+            avatar: selectedChatbot?.identity?.avatar
+          };
+        }
+      }
+      
+      // If no specific selection, check which agent should respond based on context
+      // For now, default to the first guest agent if we're in multi-agent processing
+      if (isProcessingMultiAgent) {
+        const firstGuest = activeContext.guestAgents[0];
+        return {
+          id: firstGuest.agentId,
+          name: firstGuest.name,
+          avatar: firstGuest.avatar
+        };
+      }
+    }
+    
+    // Default to the selected chatbot (host agent)
+    return {
+      id: selectedChatbot?.id || 'host',
+      name: selectedChatbot?.identity?.name || selectedChatbot?.name || 'Agent',
+      avatar: selectedChatbot?.identity?.avatar
+    };
+  };
+
+  const getActivityStatus = (messageContent: string = '') => {
+    // Ensure messageContent is a string and handle null/undefined cases
+    const safeContent = typeof messageContent === 'string' ? messageContent : String(messageContent || '');
+    const content = safeContent.toLowerCase();
+    
+    // Determine activity based on message content and context
+    if (content.includes('search') || content.includes('find') || content.includes('lookup')) {
+      return 'researching...';
+    } else if (content.includes('analyze') || content.includes('review') || content.includes('examine')) {
+      return 'analyzing...';
+    } else if (content.includes('create') || content.includes('generate') || content.includes('build')) {
+      return 'creating...';
+    } else if (content.includes('calculate') || content.includes('compute') || content.includes('math')) {
+      return 'calculating...';
+    } else if (content.includes('image') || content.includes('picture') || content.includes('photo')) {
+      return 'generating image...';
+    } else if (content.includes('code') || content.includes('program') || content.includes('script')) {
+      return 'coding...';
+    } else if (content.includes('write') || content.includes('draft') || content.includes('compose')) {
+      return 'writing...';
+    } else if (isProcessingMultiAgent) {
+      return 'coordinating response...';
+    } else {
+      return 'thinking...';
+    }
+  };
+
+  const clearSmartThinkingIndicator = () => {
+    setCurrentRespondingAgent(null);
+    setCurrentActivity('');
+    setThinkingAgents([]);
+  };
+
+  const setSmartThinkingIndicator = (agentId: string, agentName: string, activity?: string) => {
+    const agentAvatar = getAgentAvatar(agentId, agentName);
+    
+    setCurrentRespondingAgent({
+      id: agentId,
+      name: agentName,
+      avatar: agentAvatar
+    });
+    setCurrentActivity(activity || 'thinking...');
+    
+    // Add to thinking agents array for multi-agent visualization
+    setThinkingAgents(prev => {
+      const filtered = prev.filter(agent => agent.id !== agentId);
+      return [...filtered, {
+        id: agentId,
+        name: agentName,
+        avatar: agentAvatar,
+        activity: activity || 'thinking...',
+        startTime: Date.now()
+      }];
+    });
+  };
+
+  const removeThinkingAgent = (agentId: string) => {
+    setThinkingAgents(prev => prev.filter(agent => agent.id !== agentId));
+    if (currentRespondingAgent?.id === agentId) {
+      setCurrentRespondingAgent(null);
+      setCurrentActivity('');
+    }
+  };
+
+  // Helper function to get agent avatar
+  const getAgentAvatar = (agentId: string, agentName: string): string => {
+    // Try to find avatar from chatbots
+    const chatbot = chatbots.find(bot => bot.id === agentId || bot.identity?.name === agentName);
+    if (chatbot?.identity?.avatar) return chatbot.identity.avatar;
+    
+    // Try to find from guest agents
+    const guestAgent = getGuestAgents().find(agent => agent.id === agentId || agent.name === agentName);
+    if (guestAgent?.avatar) return guestAgent.avatar;
+    
+    // Default avatar based on agent name
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(agentName)}&background=3b82f6&color=fff&size=32`;
+  };
+
+  // Helper function to get activity-based styling
+  const getActivityStyle = (activity: string) => {
+    if (activity.includes('analyzing') || activity.includes('analysis')) {
+      return { bgcolor: '#f59e0b', animation: 'slow-pulse 2s infinite' };
+    }
+    if (activity.includes('searching') || activity.includes('research')) {
+      return { bgcolor: '#10b981', animation: 'search-pulse 1.8s infinite' };
+    }
+    if (activity.includes('deep') || activity.includes('complex')) {
+      return { bgcolor: '#8b5cf6', animation: 'deep-pulse 2.5s infinite' };
+    }
+    return { bgcolor: '#3b82f6', animation: 'pulse 1.5s infinite' };
+  };
+
+  // Handle @mention messages in shared conversations
+  const handleMentionMessage = async (message: string, mentionedParticipants: string[]) => {
+    if (!isInSharedMode || !activeSharedConversation) return;
+    
+    try {
+      // Enhanced message content validation (same as handleSendMessage)
+      let messageToSend: string;
+      
+      if (typeof message === 'string') {
+        messageToSend = message.trim();
+      } else if (message && typeof message === 'object') {
+        // Handle case where message might be an object
+        console.warn('⚠️ [handleMentionMessage] message is an object, converting to string:', message);
+        messageToSend = JSON.stringify(message);
+      } else {
+        messageToSend = String(message || '').trim();
+      }
+      
+      // Final validation - ensure we have a non-empty string
+      if (!messageToSend || typeof messageToSend !== 'string') {
+        console.warn('⚠️ [handleMentionMessage] Invalid message content:', { messageToSend, type: typeof messageToSend });
+        return;
+      }
+      
+      console.log('✅ [handleMentionMessage] Validated message content:', { messageToSend, type: typeof messageToSend, length: messageToSend.length });
+
+      // Send message to shared conversation with mention context
+      await sharedConversationService.sendMessageToSharedConversation(
+        activeSharedConversation,
+        user?.uid || 'anonymous',
+        user?.displayName || user?.email || 'Anonymous User',
+        messageToSend,
+        mentionedParticipants // Pass mentioned participants for targeted messaging
+      );
+      
+      // Clear input after successful send
+      setMessageInput('');
+      
+      console.log('📧 [MentionMessage] Sent with mentions:', {
+        message: messageToSend,
+        mentionedParticipants,
+        conversationId: activeSharedConversation
+      });
+
+      // Check if we should trigger AI agent responses in shared conversation
+      // Only respond if the agent is explicitly selected as the target AND it's actually an AI agent
+      const isAgentExplicitlySelected = selectedTarget && selectedTarget === selectedChatbot?.id;
+      
+      // Additional check: ensure the selected target is an AI agent, not a human user
+      const isSelectedTargetAIAgent = selectedTarget && (
+        selectedTarget.startsWith('chatbot-') || 
+        selectedTarget.includes('agent') || 
+        selectedTarget.includes('ai-') ||
+        selectedTarget === selectedChatbot?.id
+      );
+      
+      if (selectedChatbot && isAgentExplicitlySelected && isSelectedTargetAIAgent) {
+        console.log('🤖 [MentionMessage] AI Agent explicitly selected - triggering AI response:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot.id,
+          isExplicitlySelected: isAgentExplicitlySelected,
+          isSelectedTargetAIAgent: isSelectedTargetAIAgent
+        });
+        
+        // Set loading states for AI response
+        setChatLoading(true);
+        setIsTyping(true);
+        
+        // Set smart thinking indicator
+        const respondingAgent = getRespondingAgent();
+        const activityStatus = getActivityStatus(messageToSend);
+        setCurrentRespondingAgent(respondingAgent);
+        setCurrentActivity(activityStatus);
+        
+        try {
+          // Trigger AI agent response in shared conversation context
+          await handleSharedConversationAIResponse(messageToSend, activeSharedConversation);
+        } catch (error) {
+          console.error('❌ [MentionMessage] Failed to get AI response:', error);
+        } finally {
+          setChatLoading(false);
+          setIsTyping(false);
+          clearSmartThinkingIndicator();
+        }
+      } else if (selectedChatbot && selectedTarget && !isSelectedTargetAIAgent) {
+        console.log('🤖 [MentionMessage] Human user selected - skipping AI response:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot.id,
+          message: 'Selected target is a human user, not an AI agent'
+        });
+      } else if (selectedChatbot && !isAgentExplicitlySelected) {
+        console.log('🤖 [MentionMessage] Agent not explicitly selected - skipping AI response:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot?.id,
+          message: 'AI will only respond when explicitly selected in shared conversations'
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ [MentionMessage] Failed to send mention message:', error);
+    }
+  };
+
+  // Enhanced multi-agent message handling
+  const handleSendMessage = async (customMessage?: string, targetAgentIds?: string[]) => {
+    // COMPREHENSIVE DEBUGGING - Let's see exactly what we're dealing with
+    // Safe JSON stringification to avoid circular reference errors
+    const safeStringify = (obj: any) => {
+      try {
+        return JSON.stringify(obj, (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            // Handle circular references and DOM elements
+            if (value.constructor && (value.constructor.name.includes('Element') || value.constructor.name.includes('Node'))) {
+              return `[${value.constructor.name}]`;
+            }
+          }
+          return value;
+        });
+      } catch (error) {
+        return `[Unstringifiable: ${error.message}]`;
+      }
+    };
+
+    console.log('🔍 [handleSendMessage] RAW INPUTS:', {
+      customMessage: customMessage,
+      customMessageType: typeof customMessage,
+      customMessageStringified: safeStringify(customMessage),
+      messageInput: messageInput,
+      messageInputType: typeof messageInput,
+      messageInputStringified: safeStringify(messageInput),
+      messageInputConstructor: messageInput?.constructor?.name || 'N/A',
+      messageInputKeys: messageInput && typeof messageInput === 'object' ? Object.keys(messageInput) : 'N/A'
+    });
+
+    // Enhanced message content validation
+    let messageToSend: string;
+    
+    if (customMessage) {
+      // Ensure customMessage is always a string
+      if (typeof customMessage === 'string') {
+        messageToSend = customMessage;
+      } else {
+        console.warn('⚠️ [handleSendMessage] customMessage is not a string:', {
+          value: customMessage,
+          type: typeof customMessage,
+          constructor: customMessage?.constructor?.name,
+          stringified: safeStringify(customMessage)
+        });
+        messageToSend = String(customMessage || '');
+      }
+    } else {
+      // Ensure messageInput is always a string
+      const rawInput = messageInput;
+      console.log('🔍 [handleSendMessage] Processing messageInput:', {
+        rawInput: rawInput,
+        type: typeof rawInput,
+        constructor: rawInput?.constructor?.name,
+        stringified: safeStringify(rawInput),
+        isObject: typeof rawInput === 'object',
+        isDOMElement: rawInput?.constructor?.name?.includes('Element'),
+        keys: rawInput && typeof rawInput === 'object' ? Object.keys(rawInput) : 'N/A'
+      });
+      
+      if (typeof rawInput === 'string') {
+        messageToSend = rawInput.trim();
+      } else if (rawInput && typeof rawInput === 'object') {
+        // Handle case where messageInput might be an object or DOM element
+        console.warn('⚠️ [handleSendMessage] messageInput is an object, details:', {
+          object: rawInput,
+          constructor: rawInput.constructor?.name,
+          isDOMElement: rawInput.constructor?.name?.includes('Element'),
+          keys: Object.keys(rawInput),
+          stringified: safeStringify(rawInput)
+        });
+        
+        // If it's a DOM element, this is a bug - messageInput should never be a DOM element
+        if (rawInput.constructor?.name?.includes('Element')) {
+          console.error('❌ [handleSendMessage] CRITICAL: messageInput is a DOM element! This should never happen.');
+          console.error('❌ [handleSendMessage] Resetting messageInput to empty string');
+          setMessageInput('');
+          return;
+        }
+        
+        // Try to extract text content from object
+        if (rawInput.text) {
+          messageToSend = String(rawInput.text);
+        } else if (rawInput.value) {
+          messageToSend = String(rawInput.value);
+        } else if (rawInput.content) {
+          messageToSend = String(rawInput.content);
+        } else {
+          messageToSend = safeStringify(rawInput);
+        }
+      } else {
+        messageToSend = String(rawInput || '').trim();
+      }
+    }
+    
+    // Final validation - ensure we have a non-empty string
+    if (!messageToSend || typeof messageToSend !== 'string' || chatLoading) {
+      console.warn('⚠️ [handleSendMessage] Invalid message content:', { 
+        messageToSend, 
+        type: typeof messageToSend, 
+        chatLoading,
+        length: messageToSend ? messageToSend.length : 0
+      });
+      return;
+    }
+    
+    console.log('✅ [handleSendMessage] Validated message content:', { 
+      messageToSend: messageToSend, 
+      type: typeof messageToSend, 
+      length: messageToSend.length,
+      preview: messageToSend.substring(0, 50) + (messageToSend.length > 50 ? '...' : '')
+    });
+
+    // 🔄 SHARED CHAT MODE: Handle guest messaging in shared conversations
+    console.log('🔍 [SharedChat] Checking shared mode conditions:', {
+      isInSharedMode,
+      activeSharedConversation,
+      guestConversationAccessLength: guestConversationAccess?.length,
+      shouldEnterSharedMode: isInSharedMode && activeSharedConversation,
+      selectedTarget,
+      selectedChatbot: selectedChatbot?.id,
+      typeOfIsInSharedMode: typeof isInSharedMode,
+      typeOfActiveSharedConversation: typeof activeSharedConversation,
+      booleanCheck: Boolean(isInSharedMode && activeSharedConversation)
+    });
+    
+    console.log('🔍 [SharedChat] EXPLICIT CONDITION TEST:', {
+      condition1: isInSharedMode,
+      condition2: activeSharedConversation,
+      bothTrue: isInSharedMode && activeSharedConversation,
+      willEnterIf: !!(isInSharedMode && activeSharedConversation)
+    });
+    
+    if (isInSharedMode && activeSharedConversation) {
+      console.log('🎯 [SharedChat] ENTERING SHARED MODE HANDLING!');
+      try {
+        console.log('🔄 [SharedChat] Sending message in shared mode:', {
+          conversationId: activeSharedConversation,
+          message: messageToSend.substring(0, 50) + '...',
+          selectedTarget
+        });
+        
+        // Find the guest access info for this conversation
+        const guestAccess = guestConversationAccess.find(
+          access => access.id === activeSharedConversation
         );
         
-        // Add user message
-        const userMessage: ChatMessage = {
+        console.log('🔍 [SharedChat] Guest access lookup:', {
+          searchingFor: activeSharedConversation,
+          foundAccess: !!guestAccess,
+          accessDetails: guestAccess ? {
+            id: guestAccess.id,
+            hostUserId: guestAccess.hostUserId,
+            conversationId: guestAccess.conversationId
+          } : null
+        });
+        
+        if (guestAccess) {
+          // Send message via unified guest chat service (this adds it to the shared conversation)
+          await unifiedGuestChatService.sendMessageToHostConversation(
+            guestAccess.hostUserId,
+            guestAccess.conversationId,
+            user?.uid || 'guest',
+            user?.displayName || 'Guest User',
+            messageToSend
+          );
+          
+          console.log('✅ [SharedChat] Message sent to shared conversation');
+          
+          // 🔄 NEW: Also trigger AI response if an agent is selected
+          if (selectedTarget) {
+            console.log('🤖 [SharedChat] Triggering AI response from selected agent:', selectedTarget);
+            
+            try {
+              // In shared mode, look for the agent in shared conversation participants, not chatbotProfiles
+              let targetAgent = null;
+              
+              // First try to find in shared conversation participants
+              if (loadedHostChatSession?.participants) {
+                const allSharedAgents = [
+                  loadedHostChatSession.participants.host,
+                  ...(loadedHostChatSession.participants.guests || [])
+                ].filter(p => p && p.type === 'ai_agent');
+                
+                targetAgent = allSharedAgents.find(agent => agent.id === selectedTarget);
+                console.log('🔍 [SharedChat] Looking for agent in shared participants:', {
+                  selectedTarget,
+                  allSharedAgents: allSharedAgents.map(a => ({ id: a.id, name: a.name })),
+                  foundAgent: !!targetAgent
+                });
+              }
+              
+              // Fallback to chatbotProfiles if not found in shared participants
+              if (!targetAgent) {
+                targetAgent = chatbotProfiles.find(bot => bot.id === selectedTarget);
+                console.log('🔍 [SharedChat] Fallback to chatbotProfiles:', {
+                  selectedTarget,
+                  availableProfiles: chatbotProfiles.map(bot => ({ id: bot.id, name: bot.name })),
+                  foundAgent: !!targetAgent
+                });
+              }
+              
+              if (targetAgent) {
+                console.log('🤖 [SharedChat] Calling universalGovernanceAdapter for agent:', targetAgent.name);
+                
+                // Call the agent API to get a response using universalGovernanceAdapter
+                const response = await universalGovernanceAdapter.sendMessage({
+                  agentId: targetAgent.id,
+                  message: messageToSend,
+                  sessionId: `shared_${activeSharedConversation}_${targetAgent.id}`,
+                  userId: user?.uid || 'guest',
+                  conversationHistory: [],
+                  provider: targetAgent.provider || 'openai',
+                  model: targetAgent.model || 'gpt-4'
+                });
+                
+                console.log('✅ [SharedChat] Received response from agent:', response);
+                
+                if (response?.response) {
+                  // Also add the agent response to the shared conversation
+                  await unifiedGuestChatService.sendMessageToHostConversation(
+                    guestAccess.hostUserId,
+                    guestAccess.conversationId,
+                    targetAgent.id,
+                    targetAgent.name,
+                    response.response
+                  );
+                  
+                  console.log('✅ [SharedChat] AI response sent to shared conversation');
+                } else {
+                  console.warn('⚠️ [SharedChat] No response received from agent');
+                }
+              } else {
+                console.warn('⚠️ [SharedChat] Target agent not found in shared participants or chatbotProfiles:', selectedTarget);
+              }
+              
+            } catch (agentError) {
+              console.error('❌ [SharedChat] Error getting AI response:', agentError);
+              setError('Failed to get AI response. Please try again.');
+            }
+          } else {
+            console.log('🔍 [SharedChat] No agent selected, message sent to shared conversation only');
+          }
+          
+          // Clear the message input and reset state
+          setMessageInput('');
+          setChatLoading(false);
+          return; // Don't continue with normal agent processing in shared mode
+          
+        } else {
+          console.warn('⚠️ [SharedChat] Guest access not found for active shared conversation');
+        }
+      } catch (error) {
+        console.error('❌ [SharedChat] Error sending message in shared mode:', error);
+        setError('Failed to send message in shared chat. Please try again.');
+        setChatLoading(false);
+        return;
+      }
+    } else {
+      console.log('🔍 [SharedChat] Not in shared mode, continuing with normal processing');
+    }
+
+    // 🔧 NEW: Parse message for @mentions in shared conversations
+    let parsedMessage: ParsedMessage | null = null;
+    let mentionedAgents: string[] = [];
+    
+    if (isInSharedMode && activeSharedConversation) {
+      // Get available agents for mention parsing
+      const availableAgents = [
+        // Include the current selected chatbot
+        ...(selectedChatbot ? [{
+          id: selectedChatbot.id,
+          name: selectedChatbot.name
+        }] : []),
+        // Include guest agents from multi-chat state
+        ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).map(agent => ({
+          id: agent.agentId,
+          name: agent.name
+        }))
+      ];
+
+      console.log('🔍 [Mentions] Available agents for parsing:', availableAgents);
+      
+      // Parse the message for mentions
+      parsedMessage = messageParser.parseMessage(messageToSend, availableAgents);
+      
+      console.log('🔍 [Mentions] Parsed message result:', {
+        hasAgentMentions: parsedMessage.hasAgentMentions,
+        mentions: parsedMessage.mentions,
+        shouldRouteToAllAgents: parsedMessage.shouldRouteToAllAgents,
+        cleanMessage: parsedMessage.cleanMessage
+      });
+      
+      // Extract mentioned agent IDs
+      mentionedAgents = parsedMessage.mentions.map(mention => mention.agentId);
+      
+      if (parsedMessage.shouldRouteToAllAgents) {
+        // @all or @everyone mentioned - add all available agents
+        mentionedAgents = availableAgents.map(agent => agent.id);
+        console.log('🔍 [Mentions] @all/@everyone detected, targeting all agents:', mentionedAgents);
+      }
+    }
+
+    // Route to shared conversation if in shared mode
+    if (isInSharedMode && activeSharedConversation) {
+      try {
+        // Check if this is a guest access conversation
+        const guestAccess = guestConversationAccess.find(access => 
+          access.id === activeSharedConversation || 
+          access.conversationId === activeSharedConversation
+        );
+        
+        if (guestAccess) {
+          // Use unified guest chat service for guest access
+          console.log('📤 [UnifiedGuestChat] Sending message via guest access:', { 
+            hostUserId: guestAccess.hostUserId,
+            conversationId: guestAccess.conversationId,
+            guestUserId: user?.uid,
+            content: messageToSend,
+            contentType: typeof messageToSend,
+            contentLength: messageToSend.length
+          });
+          
+          await unifiedGuestChatService.sendMessageToHostConversation(
+            guestAccess.hostUserId,
+            guestAccess.conversationId,
+            user?.uid || 'anonymous',
+            user?.displayName || user?.email || 'Guest User',
+            messageToSend
+          );
+        } else {
+          // Use legacy shared conversation service
+          // Clear typing indicator before sending message
+          if (user?.uid) {
+            await sharedConversationService.clearTypingIndicator(activeSharedConversation, user.uid);
+          }
+          
+          console.log('📤 [SharedConversation] About to send message:', { 
+            conversationId: activeSharedConversation,
+            senderId: user?.uid,
+            senderName: user?.displayName || user?.email,
+            content: messageToSend,
+            contentType: typeof messageToSend,
+            contentLength: messageToSend.length
+          });
+          
+          await sharedConversationService.sendMessageToSharedConversation(
+            activeSharedConversation,
+            user?.uid || 'anonymous',
+            user?.displayName || user?.email || 'Anonymous User',
+            messageToSend
+          );
+        }
+        
+        // Clear input immediately for user feedback
+        setMessageInput('');
+        setAttachedFiles([]);
+        
+        // Check if we should trigger AI agent responses in shared conversation
+        // Trigger AI response if:
+        // 1. Agent is explicitly selected as target, OR
+        // 2. Agent is mentioned in the message, OR  
+        // 3. @all/@everyone is used
+        
+        // 🔧 CRITICAL FIX: Find the target agent from available agents instead of relying on selectedChatbot
+        // In shared conversations, selectedChatbot may be undefined, but we can find the agent by selectedTarget
+        const allAvailableAgents = [
+          // Include chatbots from the main list
+          ...(chatbotProfiles || []),
+          // Include guest agents from multi-chat state
+          ...getGuestAgents(),
+          // Include agents from shared conversation participants
+          ...(activeSharedConversation?.participants?.filter(p => p.type === 'ai_agent').map(p => ({
+            id: p.id,
+            name: p.name || p.id,
+            identity: { id: p.id, name: p.name || p.id }
+          })) || [])
+        ];
+        
+        // Find the target agent by selectedTarget
+        const targetAgent = selectedTarget ? allAvailableAgents.find(agent => 
+          agent.id === selectedTarget || 
+          agent.identity?.id === selectedTarget ||
+          agent.key === selectedTarget
+        ) : null;
+        
+        // Use targetAgent if found, otherwise fall back to selectedChatbot
+        const effectiveAgent = targetAgent || selectedChatbot;
+        
+        console.log('🔍 [AI Response Check] Starting AI response evaluation:', {
+          selectedTarget,
+          selectedChatbotId: selectedChatbot?.id,
+          selectedChatbotName: selectedChatbot?.name,
+          selectedChatbotExists: !!selectedChatbot,
+          targetAgentId: targetAgent?.id,
+          targetAgentName: targetAgent?.name,
+          targetAgentExists: !!targetAgent,
+          effectiveAgentId: effectiveAgent?.id,
+          effectiveAgentName: effectiveAgent?.name,
+          allAvailableAgentsCount: allAvailableAgents.length,
+          customMessage,
+          mentionedAgents,
+          parsedMessageExists: !!parsedMessage
+        });
+        
+        // 🔧 FIXED: Use effectiveAgent instead of selectedChatbot for all checks
+        const isAgentExplicitlySelected = selectedTarget && effectiveAgent && (
+          selectedTarget === effectiveAgent.id || 
+          selectedTarget === effectiveAgent.identity?.id ||
+          selectedTarget === effectiveAgent.key
+        );
+        const isAgentMentioned = mentionedAgents.includes(effectiveAgent?.id || '');
+        const isAllAgentsMentioned = parsedMessage?.shouldRouteToAllAgents || false;
+        
+        console.log('🔍 [AI Response Check] Condition evaluation:', {
+          isAgentExplicitlySelected,
+          isAgentMentioned,
+          isAllAgentsMentioned,
+          selectedTargetValue: selectedTarget,
+          effectiveAgentId: effectiveAgent?.id,
+          targetMatchesAgent: selectedTarget === effectiveAgent?.id
+        });
+        
+        // Additional check: ensure the selected target is an AI agent, not a human user
+        const isSelectedTargetAIAgent = selectedTarget && (
+          selectedTarget.startsWith('chatbot-') || 
+          selectedTarget.includes('agent') || 
+          selectedTarget.includes('ai-') ||
+          selectedTarget === effectiveAgent?.id
+        );
+        
+        console.log('🔍 [AI Response Check] Target validation:', {
+          isSelectedTargetAIAgent,
+          selectedTargetStartsWithChatbot: selectedTarget?.startsWith('chatbot-'),
+          selectedTargetIncludesAgent: selectedTarget?.includes('agent'),
+          selectedTargetIncludesAI: selectedTarget?.includes('ai-'),
+          selectedTargetMatchesAgent: selectedTarget === effectiveAgent?.id
+        });
+        
+        // 🔧 FIXED: Use effectiveAgent instead of selectedChatbot
+        const shouldTriggerAIResponse = effectiveAgent && !customMessage && (
+          (isAgentExplicitlySelected && isSelectedTargetAIAgent) ||
+          isAgentMentioned ||
+          isAllAgentsMentioned
+        );
+        
+        console.log('🔍 [AI Response Check] Final decision:', {
+          shouldTriggerAIResponse,
+          effectiveAgentExists: !!effectiveAgent,
+          noCustomMessage: !customMessage,
+          explicitSelectionAndAIAgent: (isAgentExplicitlySelected && isSelectedTargetAIAgent),
+          mentionedCondition: isAgentMentioned,
+          allMentionedCondition: isAllAgentsMentioned
+        });
+        
+        if (shouldTriggerAIResponse) {
+          console.log('🤖 [SharedConversation] AI Agent should respond - triggering AI response:', {
+            selectedTarget,
+            selectedChatbotId: selectedChatbot?.id,
+            effectiveAgentId: effectiveAgent?.id,
+            effectiveAgentName: effectiveAgent?.name,
+            isExplicitlySelected: isAgentExplicitlySelected,
+            isSelectedTargetAIAgent: isSelectedTargetAIAgent,
+            isAgentMentioned: isAgentMentioned,
+            isAllAgentsMentioned: isAllAgentsMentioned,
+            mentionedAgents: mentionedAgents,
+            triggerReason: isAgentExplicitlySelected ? 'explicitly_selected' : 
+                          isAgentMentioned ? 'mentioned' : 
+                          isAllAgentsMentioned ? 'all_mentioned' : 'unknown'
+          });
+          
+          // Set loading states for AI response
+          setChatLoading(true);
+          setIsTyping(true);
+          
+          // Set smart thinking indicator
+          const respondingAgent = getRespondingAgent();
+          const activityStatus = getActivityStatus(messageToSend);
+          setCurrentRespondingAgent(respondingAgent);
+          setCurrentActivity(activityStatus);
+          
+          try {
+            // 🔧 FIXED: Pass effectiveAgent to handleSharedConversationAIResponse
+            await handleSharedConversationAIResponse(messageToSend, activeSharedConversation, effectiveAgent);
+          } catch (error) {
+            console.error('❌ [SharedConversation] Failed to get AI response:', error);
+          } finally {
+            setChatLoading(false);
+            setIsTyping(false);
+            clearSmartThinkingIndicator();
+          }
+        } else if (effectiveAgent && !customMessage && selectedTarget && !isSelectedTargetAIAgent) {
+          console.log('🤖 [SharedConversation] Human user selected - skipping AI response:', {
+            selectedTarget,
+            effectiveAgentId: effectiveAgent.id,
+            message: 'Selected target is a human user, not an AI agent'
+          });
+        } else if (effectiveAgent && !customMessage && !isAgentExplicitlySelected) {
+          console.log('🤖 [SharedConversation] Agent not explicitly selected - skipping AI response:', {
+            selectedTarget,
+            effectiveAgentId: effectiveAgent.id,
+            message: 'AI will only respond when explicitly selected in shared conversations'
+          });
+        } else {
+          console.log('🤖 [SharedConversation] No AI response triggered:', {
+            selectedTarget,
+            effectiveAgentExists: !!effectiveAgent,
+            customMessage: !!customMessage,
+            isAgentExplicitlySelected,
+            isSelectedTargetAIAgent,
+            message: 'Conditions not met for AI response'
+          });
+        }
+        
+        return;
+      } catch (error) {
+        console.error('Failed to send message to shared conversation:', error);
+        return;
+      }
+    }
+
+    // Continue with regular message handling for personal chats
+    if (!activeSession) return;
+
+    // 🔧 CRITICAL FIX: Create session BEFORE adding user message to UI
+    // This ensures the first message is properly persisted
+    let createdSession: ChatSession | null = null;
+    if (selectedChatbot && user?.uid) {
+      const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+      const hasHistorySession = freshBotState?.currentChatSession;
+      
+      if (!hasHistorySession) {
+        console.log('🆕 [PreMessage] Creating session before adding user message to UI...');
+        try {
+          // Generate a smart chat name based on the message
+          const smartChatName = messageToSend.trim().length > 50 
+            ? `${messageToSend.trim().substring(0, 47)}...`
+            : messageToSend.trim();
+          
+          // Use selectedChatbotId to avoid race condition
+          const agentId = selectedChatbotId || selectedChatbot?.id;
+          const agentName = selectedChatbot?.name || `Agent ${agentId}`;
+          
+          createdSession = await chatHistoryService.createChatSession(
+            agentId,
+            agentName,
+            user.uid,
+            smartChatName || `Chat with ${agentName}`,
+            false // Single agent session
+          );
+          
+          // Update bot state with new session
+          updateBotState(agentId, {
+            currentChatSession: createdSession,
+            currentChatName: createdSession.name
+          });
+          
+          // 🚀 NEW: Trigger real-time chat history panel update
+          console.log('🔄 [RealTime] Triggering chat history panel update after session creation');
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+          
+          console.log(`✅ [PreMessage] Created session: ${createdSession.name} (${createdSession.id})`);
+        } catch (sessionError) {
+          console.error('❌ [PreMessage] Failed to create session:', sessionError);
+          // Continue with message even if session creation fails
+        }
+      } else {
+        // Use existing session
+        createdSession = hasHistorySession;
+      }
+    }
+
+    // Create user message once for both UI display and persistence
+    let userMessage: ChatMessage | null = null;
+
+    try {
+      // Always add user message to chat for immediate feedback (unless it's an internal system message)
+      if (!customMessage || (typeof customMessage === 'string' && !customMessage.startsWith('🤝') && !customMessage.startsWith('❓') && !customMessage.startsWith('😈') && !customMessage.startsWith('🎯') && !customMessage.startsWith('💡') && !customMessage.startsWith('🌧️'))) {
+        userMessage = {
           id: `user_${Date.now()}`,
-          content: messageInput.trim(),
+          content: messageToSend,
           sender: 'user',
           timestamp: new Date(),
           attachments: attachedFiles.length > 0 ? attachedFiles : undefined
         };
-        
-        // Create agent response with search results
-        const agentResponse: ChatMessage = {
-          id: `agent_${Date.now()}`,
-          content: searchResponse.agentResponse,
-          sender: 'assistant',
-          timestamp: new Date(),
-          metadata: {
-            searchResults: searchResponse.results,
-            searchQuery: searchResponse.query,
-            searchTime: searchResponse.searchTime
-          }
-        };
-        
-        // Update chat messages in bot state using functional update to avoid stale closure
+
+        // Add user message immediately to provide instant feedback
         if (selectedChatbot) {
           const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
-          console.log(`🔄 [ReceiptSearch] Updating chat messages for bot: ${botId}`);
-          
           setBotStates(prev => {
             const newStates = new Map(prev);
             const currentState = newStates.get(botId) || initializeBotState(botId);
-            
-            // Use the latest state from the Map, not the potentially stale closure variable
-            const latestMessages = currentState.chatMessages || [];
-            const updatedMessages = [...latestMessages, userMessage, agentResponse];
-            
-            console.log(`🔄 [ReceiptSearch] Latest messages length: ${latestMessages.length}`);
-            console.log(`🔄 [ReceiptSearch] Updated messages length: ${updatedMessages.length}`);
-            
+            const updatedMessages = [...(currentState.chatMessages || []), userMessage!];
             const updatedState = { ...currentState, chatMessages: updatedMessages };
             newStates.set(botId, updatedState);
-            
-            console.log(`✅ [ReceiptSearch] State updated successfully`);
             return newStates;
           });
         }
-        
-        // Save to chat history
-        const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-        if (currentFreshBotState?.currentChatSession) {
-          try {
-            await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
-              id: userMessage.id,
-              content: userMessage.content,
-              sender: userMessage.sender,
-              timestamp: userMessage.timestamp,
-              agentId: selectedChatbot.id,
-              agentName: selectedChatbot.name,
-            });
-            
-            await chatHistoryService.addMessageToSession(currentFreshBotState.currentChatSession.id, {
-              id: agentResponse.id,
-              content: agentResponse.content,
-              sender: agentResponse.sender,
-              timestamp: agentResponse.timestamp,
-              agentId: selectedChatbot.id,
-              agentName: selectedChatbot.name,
-              metadata: agentResponse.metadata
-            });
-            
-            // Update bot state with new message count immediately
-            const updatedSession = await chatHistoryService.getChatSessionById(currentFreshBotState.currentChatSession.id);
-            if (updatedSession) {
-              updateBotState(selectedChatbot.id, {
-                currentChatSession: updatedSession,
-                currentChatName: updatedSession.name
-              });
-            }
-            
-            // Trigger chat history panel refresh after adding messages
-            setChatHistoryRefreshTrigger(prev => prev + 1);
-          } catch (historyError) {
-            console.warn('Failed to save receipt search to chat history:', historyError);
-          }
-        }
-        
-        // Clear input and attachments
+
+        // Clear input and attachments immediately
         setMessageInput('');
         setAttachedFiles([]);
-        setChatLoading(false);
-        setIsTyping(false);
-        
+      }
+
+      setChatLoading(true);
+      setIsTyping(true);
+      
+      // Set smart thinking indicator
+      const respondingAgent = getRespondingAgent();
+      const activityStatus = getActivityStatus(messageToSend);
+      setCurrentRespondingAgent(respondingAgent);
+      setCurrentActivity(activityStatus);
+      
+      // Check if we're in multi-agent mode or have specific target agents
+      const activeContext = multiChatState.contexts.find(c => c.isActive);
+      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+      
+      if ((hasGuestAgents || targetAgentIds) && selectedChatbot && user?.uid) {
+        console.log('🤖 [MultiAgent] Processing multi-agent message');
+        await handleMultiAgentMessage(messageToSend, targetAgentIds);
         return;
-      } else if (chatReferenceId && selectedChatbot && user?.uid) {
+      }
+      
+      // Original single-agent message handling
+      await handleSingleAgentMessage(messageToSend, userMessage, createdSession);
+      
+    } catch (error) {
+      console.error('❌ [ChatPanel] Error sending message:', error);
+      setChatLoading(false);
+      setIsTyping(false);
+      clearSmartThinkingIndicator();
+    }
+  };
+
+  // Multi-agent message handling
+  const handleMultiAgentMessage = async (message: string, targetAgentIds?: string[]) => {
+    // Type safety check - ensure message is a string
+    if (typeof message !== 'string') {
+      console.error('❌ [ChatPanel] Invalid message type in handleMultiAgentMessage:', typeof message, 'Expected string, got:', message);
+      message = String(message || '');
+    }
+
+    if (!selectedChatbot || !user?.uid) return;
+
+    try {
+      setIsProcessingMultiAgent(true);
+      setMultiAgentResponses([]);
+
+      // Get active context
+      const activeContext = multiChatState.contexts.find(c => c.isActive);
+      if (!activeContext || !activeContext.guestAgents) return;
+
+      // 🔧 CRITICAL FIX: Build conversation history for multi-agent context sharing
+      console.log('📚 [MultiAgent] Building conversation history for agent context sharing...');
+      
+      let conversationHistory: Array<{
+        role: 'user' | 'assistant';
+        content: string;
+        agentId?: string;
+        agentName?: string;
+        timestamp?: Date;
+      }> = [];
+
+      // Get current chat messages to build conversation history
+      if (selectedChatbot) {
+        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+        const currentBotState = botStates.get(botId);
+        
+        if (currentBotState?.chatMessages) {
+          conversationHistory = currentBotState.chatMessages.map(msg => ({
+            role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+            content: msg.content,
+            agentId: msg.metadata?.agentId,
+            agentName: msg.metadata?.agentName,
+            timestamp: msg.timestamp
+          }));
+          
+          console.log('📚 [MultiAgent] Built conversation history with', conversationHistory.length, 'messages');
+          console.log('📝 [MultiAgent] Recent messages preview:', 
+            conversationHistory.slice(-3).map(m => `${m.role}: ${m.content.substring(0, 50)}...`));
+        }
+      }
+
+      // Create or use existing multi-agent session ID
+      let sessionId = multiAgentSessionRef.current || currentMultiAgentSession;
+      console.log('🔍 [MultiAgent] Current session state:', currentMultiAgentSession);
+      console.log('🔍 [MultiAgent] Current session ref:', multiAgentSessionRef.current);
+      if (!sessionId) {
+        sessionId = `conv_${Date.now()}`;
+        setCurrentMultiAgentSession(sessionId);
+        multiAgentSessionRef.current = sessionId; // Store in both state and ref
+        console.log('🆕 [MultiAgent] Created new session ID:', sessionId);
+      } else {
+        console.log('🔄 [MultiAgent] Using existing session ID:', sessionId);
+      }
+
+      // Create routing context with conversation history
+      const routingContext = {
+        hostAgentId: activeContext.hostAgentId,
+        guestAgents: activeContext.guestAgents,
+        userId: user.uid,
+        conversationId: sessionId,
+        conversationHistory: conversationHistory, // 🔧 CRITICAL: Include full conversation history
+        selectedAgents: selectedAgents // 🔧 CRITICAL: Include avatar-selected agents
+      };
+
+      // Process message with multi-agent routing
+      const result = await multiAgentRoutingService.processUserMessage(message, routingContext);
+      
+      console.log('🤖 [MultiAgent] Routing result:', result);
+      
+      setTargetAgents(result.targetAgents);
+
+      // User message already added in handleSendMessage for instant feedback
+      // No need to add it again here to avoid duplicates
+
+      // Handle responses
+      if (result.responses && result.responses.length > 0) {
+        setMultiAgentResponses(result.responses);
+        
+        // Add agent responses to chat
+        const agentMessages: ChatMessage[] = result.responses.map(response => ({
+          id: `agent_${response.agentId}_${Date.now()}`,
+          content: response.response,
+          sender: 'assistant',
+          timestamp: response.timestamp,
+          metadata: {
+            agentId: response.agentId,
+            agentName: response.agentName,
+            processingTime: response.processingTime,
+            isMultiAgent: true
+          }
+        }));
+
+        // Update chat with agent responses
+        if (selectedChatbot) {
+          const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+          setBotStates(prev => {
+            const newStates = new Map(prev);
+            const currentState = newStates.get(botId) || initializeBotState(botId);
+            const updatedMessages = [...(currentState.chatMessages || []), ...agentMessages];
+            newStates.set(botId, { ...currentState, chatMessages: updatedMessages });
+            return newStates;
+          });
+        }
+
+        // Log the interaction
+        await multiAgentAuditLogger.logMultiAgentInteraction(
+          routingContext.conversationId,
+          user.uid,
+          message,
+          result.parsedMessage,
+          result.responses,
+          routingContext.guestAgents.map(g => ({
+            agentId: g.agentId,
+            agentName: g.name,
+            role: 'guest' as const,
+            addedAt: g.addedAt,
+            addedBy: user.uid,
+            responseCount: 1,
+            totalCost: 0
+          }))
+        );
+        
+        // 🔧 NEW: Persist multi-agent messages to chat history
+        console.log('💾 [MultiAgent] Persisting multi-agent messages to chat history...');
+        const currentBotState = selectedChatbot ? botStates.get(selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
+        const currentSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+        
+        if (currentSession?.id) {
+          try {
+            // Save user message first
+            const userMessage = {
+              id: `user_${Date.now()}`,
+              content: message,
+              sender: 'user' as const,
+              timestamp: new Date(),
+              agentId: selectedChatbot.id,
+              agentName: selectedChatbot.name,
+            };
+            
+            console.log('💾 [MultiAgent] Saving user message to session:', currentSession.id);
+            await chatHistoryService.addMessageToSession(currentSession.id, userMessage);
+            
+            // Save each agent response with their specific agent ID and name
+            for (const response of result.responses) {
+              const agentMessage = {
+                id: `agent_${response.agentId}_${Date.now()}`,
+                content: response.response,
+                sender: 'assistant' as const,
+                timestamp: response.timestamp,
+                agentId: response.agentId,
+                agentName: response.agentName,
+                metadata: {
+                  isMultiAgent: true,
+                  processingTime: response.processingTime,
+                }
+              };
+              
+              console.log(`💾 [MultiAgent] Saving ${response.agentName} message to session:`, currentSession.id);
+              await chatHistoryService.addMessageToSession(currentSession.id, agentMessage);
+            }
+            
+            console.log('✅ [MultiAgent] Successfully persisted all multi-agent messages to chat history');
+            
+            // 🚀 NEW: Trigger real-time chat history panel update
+            console.log('🔄 [RealTime] Triggering chat history panel update after message persistence');
+            setChatHistoryRefreshTrigger(prev => prev + 1);
+            
+            // Update session message count
+            const updatedSession = await chatHistoryService.getChatSessionById(currentSession.id);
+            if (updatedSession && selectedChatbot) {
+              const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+              
+              // Extract guest participants from session for avatar display
+              const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+                id: guest.id,
+                name: guest.name,
+                avatar: guest.avatar,
+                type: guest.type,
+                status: guest.status || 'active',
+                addedAt: guest.joinedAt,
+                addedBy: undefined, // Not tracked in current session structure
+                invitationId: undefined // Not tracked in current session structure
+              })) || [];
+              
+              setBotStates(prev => {
+                const newStates = new Map(prev);
+                const currentState = newStates.get(botId);
+                if (currentState) {
+                  newStates.set(botId, {
+                    ...currentState,
+                    currentChatSession: updatedSession,
+                    activeSession: updatedSession,
+                    guestParticipants: guestParticipants // Update guest participants for avatar display
+                  });
+                }
+                return newStates;
+              });
+              
+              console.log('✅ [ChatSession] Updated session with guest participants:', guestParticipants);
+            }
+            
+          } catch (error) {
+            console.error('❌ [MultiAgent] Failed to persist messages to chat history:', error);
+          }
+        } else {
+          console.warn('⚠️ [MultiAgent] No current session found, messages not persisted to chat history');
+        }
+      }
+
+      // Clear input
+      setMessageInput('');
+      setAttachedFiles([]);
+      
+    } catch (error) {
+      console.error('❌ [MultiAgent] Error processing multi-agent message:', error);
+    } finally {
+      setIsProcessingMultiAgent(false);
+      setChatLoading(false);
+      setIsTyping(false);
+      clearSmartThinkingIndicator();
+    }
+  };
+
+  // Original single-agent message handling
+  const handleSingleAgentMessage = async (message?: string, existingUserMessage?: ChatMessage | null, providedSession?: ChatSession | null) => {
+    try {
+      // Prepare the final message content - ensure it's always a string
+      let finalMessageContent = typeof message === 'string' ? message : (message ? String(message) : messageInput.trim());
+    
+    // If there's an active chat reference, combine it with the user's message
+    if (activeChatReference) {
+      console.log('🔗 [ChatReference] Combining chat reference with user message');
+      console.log('🔗 [ChatReference] Reference ID:', activeChatReference.id);
+      console.log('🔗 [ChatReference] User message:', finalMessageContent);
+      
+      // Combine the chat reference ID with the user's instruction
+      finalMessageContent = `${activeChatReference.id} ${finalMessageContent}`;
+      
+      // Clear the active chat reference after using it
+      setActiveChatReference(null);
+      
+      console.log('🔗 [ChatReference] Final combined message:', finalMessageContent);
+    }
+    
+    console.log(`📤 [ChatPanel] Sending message: "${finalMessageContent}"`);
+    
+    // Get fresh bot state to avoid stale closure issues
+    const freshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+    
+    // Session should already be created before this point (in sendMessage function)
+    // Just verify we have a session
+    const hasHistorySession = freshBotState?.currentChatSession;
+    
+    console.log('🔍 [AutoChat] Checking session state:');
+    console.log('🔍 [AutoChat] selectedChatbotId:', selectedChatbotId);
+    console.log('🔍 [AutoChat] freshBotState exists:', !!freshBotState);
+    console.log('🔍 [AutoChat] hasHistorySession:', !!hasHistorySession);
+    console.log('🔍 [AutoChat] hasHistorySession details:', hasHistorySession);
+    
+    if (!hasHistorySession) {
+      console.warn('⚠️ [AutoChat] No session found - this should have been created earlier');
+    }
+    
+    // Check if this is a receipt search query
+    const isReceiptSearch = conversationalReceiptSearchService.detectReceiptSearchRequest(finalMessageContent);
+    
+    // Check if this is a chat reference (for agent processing)
+    const chatSharingService = ChatSharingService.getInstance();
+    const chatReferenceId = chatSharingService.detectChatReference(finalMessageContent);
+    
+    // Check if this is a receipt reference (for agent processing)
+    const receiptSharingService = ReceiptSharingService.getInstance();
+    const receiptReferenceId = receiptSharingService.detectReceiptReference(finalMessageContent);
+    
+    if (isReceiptSearch && selectedChatbot && user?.uid) {
+      console.log('🔍 [ReceiptSearch] Detected receipt search query');
+      
+      // Process conversational receipt search
+      const searchResponse = await conversationalReceiptSearchService.processConversationalSearch(
+        messageInput.trim(),
+        selectedChatbot.id,
+        user.uid
+      );
+      
+      // Create agent response with search results (user message already added immediately)
+      const agentResponse: ChatMessage = {
+        id: `agent_${Date.now()}`,
+        content: searchResponse.agentResponse,
+        sender: 'assistant',
+        timestamp: new Date(),
+        metadata: {
+          searchResults: searchResponse.results,
+          searchQuery: searchResponse.query,
+          searchTime: searchResponse.searchTime
+        }
+      };
+      
+      // Update chat messages in bot state using functional update to avoid stale closure
+      if (selectedChatbot) {
+        const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
+        console.log(`🔄 [ReceiptSearch] Updating chat messages for bot: ${botId}`);
+        
+        setBotStates(prev => {
+          const newStates = new Map(prev);
+          const currentState = newStates.get(botId) || initializeBotState(botId);
+          
+          // Use the latest state from the Map, not the potentially stale closure variable
+          const latestMessages = currentState.chatMessages || [];
+          const updatedMessages = [...latestMessages, agentResponse]; // Only add agent response
+          
+          console.log(`🔄 [ReceiptSearch] Latest messages length: ${latestMessages.length}`);
+          console.log(`🔄 [ReceiptSearch] Updated messages length: ${updatedMessages.length}`);
+          
+          const updatedState = { ...currentState, chatMessages: updatedMessages };
+          newStates.set(botId, updatedState);
+          
+          console.log(`✅ [ReceiptSearch] State updated successfully`);
+          return newStates;
+        });
+      }
+      
+      // Save to chat history - use provided session first, then fall back to bot state
+      let sessionToUse = providedSession;
+      
+      if (!sessionToUse) {
+        const currentFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+        sessionToUse = currentFreshBotState?.currentChatSession;
+      }
+      
+      // Session should already exist from proactive creation above
+      if (sessionToUse) {
+        try {
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
+            id: userMessage.id,
+            content: userMessage.content,
+            sender: userMessage.sender,
+            timestamp: userMessage.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+          });
+          
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
+            id: agentResponse.id,
+            content: agentResponse.content,
+            sender: agentResponse.sender,
+            timestamp: agentResponse.timestamp,
+            agentId: selectedChatbot.id,
+            agentName: selectedChatbot.name,
+            metadata: agentResponse.metadata
+          });
+          
+          // Update bot state with new message count immediately
+          const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
+          if (updatedSession) {
+            // Extract guest participants from session for avatar display
+            const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+              id: guest.id,
+              name: guest.name,
+              avatar: guest.avatar,
+              type: guest.type,
+              status: guest.status || 'active',
+              addedAt: guest.joinedAt,
+              addedBy: undefined,
+              invitationId: undefined
+            })) || [];
+            
+            updateBotState(selectedChatbot.id, {
+              currentChatSession: updatedSession,
+              currentChatName: updatedSession.name,
+              guestParticipants: guestParticipants
+            });
+            
+            console.log('✅ [ChatSession] Updated session with guest participants:', guestParticipants);
+          }
+          
+          // Trigger chat history panel refresh after adding messages
+          setChatHistoryRefreshTrigger(prev => prev + 1);
+        } catch (historyError) {
+          console.warn('Failed to save receipt search to chat history:', historyError);
+        }
+      } else {
+        console.warn('⚠️ [AutoSession] No session available for message storage');
+      }
+      
+      // Clear input and attachments
+      setMessageInput('');
+      setAttachedFiles([]);
+      setChatLoading(false);
+      setIsTyping(false);
+      clearSmartThinkingIndicator();
+      
+      return;
+    } else if (chatReferenceId && selectedChatbot && user?.uid) {
         console.log('🗨️ [ChatReference] Detected chat reference:', chatReferenceId);
         
         // Process chat reference for agent context loading
@@ -1254,16 +4890,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           messageInput.trim()
         );
         
-        // Add user message
-        const userMessage: ChatMessage = {
-          id: `user_${Date.now()}`,
-          content: messageInput.trim(),
-          sender: 'user',
-          timestamp: new Date(),
-          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-        };
-        
-        // Create agent response with chat context
+        // Create agent response with chat context (user message already added immediately)
         const agentResponse: ChatMessage = {
           id: `agent_${Date.now()}`,
           content: chatReferenceResult.agentResponse,
@@ -1287,7 +4914,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             
             // Use the latest state from the Map, not the potentially stale closure variable
             const latestMessages = currentState.chatMessages || [];
-            const updatedMessages = [...latestMessages, userMessage, agentResponse];
+            const updatedMessages = [...latestMessages, agentResponse]; // Only add agent response
             
             console.log(`🔄 [ChatReference] Latest messages length: ${latestMessages.length}`);
             console.log(`🔄 [ChatReference] Updated messages length: ${updatedMessages.length}`);
@@ -1300,19 +4927,36 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           });
         }
         
-        // Save to chat history
-        if (currentBotState?.currentChatSession) {
+        // Save to chat history - use provided session first, then fall back to bot state
+        let sessionToUse = providedSession;
+        
+        if (!sessionToUse) {
+          const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+          sessionToUse = currentBotState?.currentChatSession;
+        }
+        
+        // Session should already exist from proactive creation above
+        if (sessionToUse) {
           try {
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
-              id: userMessage.id,
-              content: userMessage.content,
-              sender: userMessage.sender,
-              timestamp: userMessage.timestamp,
+            // Use existing user message if provided, otherwise create new one
+            const userMessageForSaving = existingUserMessage || {
+              id: `user_${Date.now()}`,
+              content: messageInput.trim(),
+              sender: 'user',
+              timestamp: new Date(),
+              attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+            };
+            
+            await chatHistoryService.addMessageToSession(sessionToUse.id, {
+              id: userMessageForSaving.id,
+              content: userMessageForSaving.content,
+              sender: userMessageForSaving.sender,
+              timestamp: userMessageForSaving.timestamp,
               agentId: selectedChatbot.id,
               agentName: selectedChatbot.name,
             });
             
-            await chatHistoryService.addMessageToSession(currentBotState.currentChatSession.id, {
+            await chatHistoryService.addMessageToSession(sessionToUse.id, {
               id: agentResponse.id,
               content: agentResponse.content,
               sender: agentResponse.sender,
@@ -1320,9 +4964,23 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               agentId: selectedChatbot.id,
               agentName: selectedChatbot.name,
             });
+            
+            // Update bot state with new message count immediately
+            const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
+            if (updatedSession) {
+              updateBotState(selectedChatbot.id, {
+                currentChatSession: updatedSession,
+                currentChatName: updatedSession.name
+              });
+            }
+            
+            // Trigger chat history panel refresh after adding messages
+            setChatHistoryRefreshTrigger(prev => prev + 1);
           } catch (historyError) {
             console.warn('Failed to save chat reference to chat history:', historyError);
           }
+        } else {
+          console.warn('⚠️ [AutoSession] No session available for chat reference storage');
         }
         
         // Clear input and attachments
@@ -1330,6 +4988,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         setAttachedFiles([]);
         setChatLoading(false);
         setIsTyping(false);
+        clearSmartThinkingIndicator();
         
         return;
       } else if (receiptReferenceId && selectedChatbot && user?.uid) {
@@ -1343,16 +5002,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           messageInput.trim()
         );
         
-        // Add user message
-        const userMessage: ChatMessage = {
-          id: `user_${Date.now()}`,
-          content: messageInput.trim(),
-          sender: 'user',
-          timestamp: new Date(),
-          attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-        };
-        
-        // Create agent response with receipt analysis
+        // Create agent response with receipt analysis (user message already added immediately)
         const agentResponse: ChatMessage = {
           id: `agent_${Date.now()}`,
           content: receiptReferenceResult.agentResponse,
@@ -1375,7 +5025,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             const currentState = newStates.get(botId) || initializeBotState(botId);
             
             const latestMessages = currentState.chatMessages || [];
-            const updatedMessages = [...latestMessages, userMessage, agentResponse];
+            const updatedMessages = [...latestMessages, agentResponse]; // Only add agent response
             
             const updatedState = { ...currentState, chatMessages: updatedMessages };
             newStates.set(botId, updatedState);
@@ -1429,6 +5079,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         setAttachedFiles([]);
         setChatLoading(false);
         setIsTyping(false);
+        clearSmartThinkingIndicator();
         
         return;
       }
@@ -1458,18 +5109,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setCurrentAction(actionText);
       setActionStartTime(new Date());
       
+      // Ensure we have an active session before sending message
+      if (!activeSession) {
+        console.error('❌ [ChatPanel] No active session found, cannot send message');
+        throw new Error('No active chat session. Please try refreshing the page.');
+      }
+      
       const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
       
-      // Add user message first
-      const userMessage: ChatMessage = {
-        id: `user_${Date.now()}`,
-        content: messageInput.trim(),
-        sender: 'user',
-        timestamp: new Date(),
-        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
-      };
-      
-      // Update messages with user message and bot response in bot state
+      // Update messages with bot response only (user message already added immediately)
       // Fix stale closure issue by using functional update to get latest state
       if (selectedChatbot) {
         const botId = selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id;
@@ -1482,7 +5130,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           
           // Use the latest state from the Map, not the potentially stale closure variable
           const latestMessages = currentState.chatMessages || [];
-          const updatedMessages = [...latestMessages, userMessage, response];
+          const updatedMessages = [...latestMessages, response]; // Only add agent response
           
           console.log(`🔄 [ChatState] Latest messages length: ${latestMessages.length}`);
           console.log(`🔄 [ChatState] Updated messages length: ${updatedMessages.length}`);
@@ -1495,20 +5143,46 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         });
       }
       
-      // Save to chat history
-      const mainFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-      if (mainFreshBotState?.currentChatSession) {
+      // Save to chat history - use provided session first, then fall back to bot state
+      // This ensures first messages use the freshly created session directly
+      let sessionToUse = providedSession;
+      
+      if (!sessionToUse) {
+        // Fall back to retrieving from bot state (for subsequent messages)
+        const mainFreshBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+        sessionToUse = mainFreshBotState?.currentChatSession;
+      }
+      
+      console.log('🔍 [SessionDebug] Session resolution:', {
+        providedSession: !!providedSession,
+        providedSessionId: providedSession?.id,
+        sessionFromState: !providedSession ? !!botStates.get(selectedChatbotId)?.currentChatSession : 'not_checked',
+        finalSessionId: sessionToUse?.id,
+        finalSessionExists: !!sessionToUse
+      });
+      
+      // Session should exist from proactive creation or be provided directly
+      if (sessionToUse) {
         try {
-          await chatHistoryService.addMessageToSession(mainFreshBotState.currentChatSession.id, {
-            id: userMessage.id,
-            content: userMessage.content,
-            sender: userMessage.sender,
-            timestamp: userMessage.timestamp,
+          // Use existing user message if provided, otherwise create new one
+          const userMessageForSaving = existingUserMessage || {
+            id: `user_${Date.now()}`,
+            content: messageInput.trim(),
+            sender: 'user',
+            timestamp: new Date(),
+            attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+          };
+          
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
+            id: userMessageForSaving.id,
+            content: userMessageForSaving.content,
+            sender: userMessageForSaving.sender,
+            timestamp: userMessageForSaving.timestamp,
             agentId: selectedChatbot.id,
             agentName: selectedChatbot.name,
           });
           
-          await chatHistoryService.addMessageToSession(mainFreshBotState.currentChatSession.id, {
+          await chatHistoryService.addMessageToSession(sessionToUse.id, {
             id: response.id,
             content: response.content,
             sender: response.sender,
@@ -1520,12 +5194,27 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           });
           
           // Update bot state with new message count immediately
-          const updatedSession = await chatHistoryService.getChatSessionById(mainFreshBotState.currentChatSession.id);
+          const updatedSession = await chatHistoryService.getChatSessionById(sessionToUse.id);
           if (updatedSession) {
+            // Extract guest participants from session for avatar display
+            const guestParticipants = updatedSession.participants?.guests?.map(guest => ({
+              id: guest.id,
+              name: guest.name,
+              avatar: guest.avatar,
+              type: guest.type,
+              status: guest.status || 'active',
+              addedAt: guest.joinedAt,
+              addedBy: undefined,
+              invitationId: undefined
+            })) || [];
+            
             updateBotState(selectedChatbot.id, {
               currentChatSession: updatedSession,
-              currentChatName: updatedSession.name
+              currentChatName: updatedSession.name,
+              guestParticipants: guestParticipants
             });
+            
+            console.log('✅ [ChatSession] Updated session with guest participants:', guestParticipants);
           }
           
           // Trigger chat history panel refresh after adding messages
@@ -1534,6 +5223,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           console.warn('Failed to save to chat history:', historyError);
           // Don't break the chat flow if history fails
         }
+      } else {
+        console.warn('⚠️ [AutoSession] No session available for regular message storage', {
+          providedSession: !!providedSession,
+          providedSessionId: providedSession?.id,
+          selectedChatbotId,
+          botStateExists: !!botStates.get(selectedChatbotId),
+          sessionFromState: botStates.get(selectedChatbotId)?.currentChatSession?.id,
+          message: 'This indicates a session creation or state management issue'
+        });
       }
       
       setMessageInput('');
@@ -1551,6 +5249,102 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setIsTyping(false);
       setCurrentAction(null);
       setActionStartTime(null);
+      clearSmartThinkingIndicator();
+    }
+  };
+
+  // Handle AI agent responses in shared conversations
+  const handleSharedConversationAIResponse = async (userMessage: string, conversationId: string, targetAgent?: any) => {
+    // 🔧 FIXED: Use targetAgent if provided, otherwise fall back to selectedChatbot
+    const agentToUse = targetAgent || selectedChatbot;
+    
+    if (!agentToUse || !user?.uid) {
+      console.error('❌ [SharedConversationAI] Missing required data:', { 
+        targetAgent: !!targetAgent, 
+        selectedChatbot: !!selectedChatbot, 
+        agentToUse: !!agentToUse,
+        user: !!user?.uid 
+      });
+      return;
+    }
+
+    try {
+      console.log('🤖 [SharedConversationAI] Processing AI response for shared conversation:', {
+        conversationId,
+        targetAgentId: targetAgent?.id,
+        selectedChatbotId: selectedChatbot?.id,
+        agentToUseId: agentToUse?.id,
+        agentToUseName: agentToUse?.name
+      });
+      
+      // Get agent ID consistently
+      const agentId = agentToUse.identity?.id || agentToUse.key || agentToUse.id;
+      
+      // Get user's display name for personalized response
+      const userName = user.displayName || user.email || 'User';
+      
+      // Create personalized context for the AI
+      const personalizedMessage = `In this shared conversation, ${userName} asked: "${userMessage}". Please address ${userName} directly in your response.`;
+
+      console.log('🤖 [SharedConversationAI] Sending personalized message to Universal Governance Adapter:', {
+        agentId,
+        personalizedMessage,
+        agentName: agentToUse.name
+      });
+
+      // 🔧 FIX: Use UniversalGovernanceAdapter directly (same as single agent chat)
+      // This bypasses the session dependency issue and uses the proven working architecture
+      const response = await universalGovernanceAdapter.sendMessage({
+        agentId: agentId,
+        message: personalizedMessage,
+        sessionId: `shared_${conversationId}_${agentId}`, // Generate unique session ID for shared conversation
+        userId: user.uid,
+        conversationHistory: [], // TODO: Could add shared conversation history here if needed
+        provider: agentToUse.provider,
+        model: agentToUse.model
+      });
+
+      console.log('✅ [SharedConversationAI] Received response from Universal Governance Adapter:', response);
+
+      if (response?.response) {
+        console.log('✅ [SharedConversationAI] Adding AI response to shared conversation');
+        
+        // Add AI response to the shared conversation
+        await sharedConversationService.sendMessageToSharedConversation(
+          conversationId,
+          agentToUse.id,
+          agentToUse.name,
+          response.response
+        );
+
+        console.log('✅ [SharedConversationAI] AI response added to shared conversation successfully');
+      } else {
+        console.warn('⚠️ [SharedConversationAI] No response content received from AI');
+        
+        // Add fallback message
+        await sharedConversationService.sendMessageToSharedConversation(
+          conversationId,
+          agentToUse.id,
+          agentToUse.name,
+          `Hi ${userName}, I received your message but I'm having trouble generating a response right now. Please try again.`
+        );
+      }
+
+    } catch (error) {
+      console.error('❌ [SharedConversationAI] Failed to get AI response:', error);
+      
+      // Add error message to shared conversation
+      try {
+        const userName = user?.displayName || user?.email || 'User';
+        await sharedConversationService.sendMessageToSharedConversation(
+          conversationId,
+          selectedChatbot.id,
+          selectedChatbot.name,
+          `Hi ${userName}, I apologize, but I'm having trouble responding right now. Please try again. Error: ${error.message}`
+        );
+      } catch (errorMsgError) {
+        console.error('❌ [SharedConversationAI] Failed to send error message:', errorMsgError);
+      }
     }
   };
 
@@ -1587,33 +5381,497 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             <Box sx={{ display: 'flex', height: '100%' }}>
               {/* Left Side - Chat Interface */}
               <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}>
-                {/* Chat Header */}
-              <Box sx={{ p: 3, borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                    Chat with Your Agent{currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: '#64748b' }}>
-                    {selectedChatbot?.identity?.name || 'Agent'}
-                  </Typography>
+
+              {/* Multi-Tab Chat Header */}
+              <Box sx={{ borderBottom: '1px solid #334155' }}>
+                {/* Tab Bar */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  px: 3, 
+                  py: 1,
+                  bgcolor: '#1e293b',
+                  overflowX: 'auto',
+                  '&::-webkit-scrollbar': { height: 4 },
+                  '&::-webkit-scrollbar-track': { bgcolor: '#334155' },
+                  '&::-webkit-scrollbar-thumb': { bgcolor: '#64748b', borderRadius: 2 }
+                }}>
+                  {multiChatState.contexts.map((context) => (
+                    <Box
+                      key={context.id}
+                      onClick={() => switchChatContext(context.id)}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        px: 2,
+                        py: 1,
+                        mr: 1,
+                        minWidth: 'fit-content',
+                        bgcolor: context.isActive ? '#3b82f6' : '#334155',
+                        color: context.isActive ? 'white' : '#94a3b8',
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          bgcolor: context.isActive ? '#2563eb' : '#475569'
+                        }
+                      }}
+                    >
+                      {context.avatar && (
+                        <Avatar 
+                          src={context.avatar} 
+                          sx={{ width: 20, height: 20, mr: 1 }}
+                        />
+                      )}
+                      <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        {context.name}
+                      </Typography>
+                      {context.unreadCount > 0 && (
+                        <Badge 
+                          badgeContent={context.unreadCount} 
+                          color="error" 
+                          sx={{ ml: 1 }}
+                        />
+                      )}
+                      {context.canClose && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeChatContext(context.id);
+                          }}
+                          sx={{ 
+                            ml: 1, 
+                            p: 0.5, 
+                            color: 'inherit',
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                          }}
+                        >
+                          <Close sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      )}
+                    </Box>
+                  ))}
+                  
+                  {/* Compact Shared Chat Tabs - Only show active conversations */}
+                  {activeHeaderConversations.length > 0 && (
+                    <>
+                      {/* Separator and Shared Chat Icon */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1.5, 
+                        ml: 2,
+                        mr: 1
+                      }}>
+                        <Box sx={{ width: 1, height: 24, bgcolor: 'white', opacity: 0.3 }} />
+                        <Chat sx={{ color: '#94a3b8', fontSize: 18 }} />
+                      </Box>
+                      
+                      {/* Removed CompactSharedChatTabs - redundant with chat history panel */}
+                    </>
+                  )}
+                  
+                  {/* Add Contact Button */}
+                  <IconButton
+                    onClick={toggleSidePanel}
+                    sx={{
+                      ml: 1,
+                      color: '#64748b',
+                      bgcolor: multiChatState.sidePanel.isOpen ? '#3b82f6' : '#334155',
+                      '&:hover': { bgcolor: multiChatState.sidePanel.isOpen ? '#2563eb' : '#475569' }
+                    }}
+                  >
+                    <Group />
+                  </IconButton>
                 </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    if (selectedChatbotId) {
-                      updateBotState(selectedChatbotId, { isWorkspaceMode: false });
-                    }
-                  }}
-                  sx={{ color: '#64748b', borderColor: '#64748b' }}
-                >
-                  ← Back to Agents
-                </Button>
+
+                {/* Context Header */}
+                <Box sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                      {isInSharedMode && activeSharedConversation ? (
+                        <>
+                          {(() => {
+                            const sharedConv = sharedConversations.find(c => c.id === activeSharedConversation);
+                            const hostUser = sharedConv?.participants?.find(p => 
+                              p.type === 'human' && p.id === sharedConv.createdBy
+                            );
+                            const hostName = hostUser?.name || 'Host User';
+                            const conversationName = sharedConv?.name || 'Shared Chat';
+                            
+                            return (
+                              <Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <span>🤝 Shared with {hostName}</span>
+                                  <Box sx={{ 
+                                    px: 1.5, 
+                                    py: 0.5, 
+                                    bgcolor: '#374151', 
+                                    borderRadius: 1,
+                                    fontSize: '12px',
+                                    color: '#9ca3af'
+                                  }}>
+                                    {conversationName}
+                                  </Box>
+                                </Box>
+                              </Box>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <>
+                          {multiChatState.contexts.find(c => c.isActive)?.name || 'Chat'}
+                          {currentBotState?.currentChatName ? ` - ${currentBotState.currentChatName}` : ''}
+                        </>
+                      )}
+                    </Typography>
+                    
+                    {/* Participants Display */}
+                    {(() => {
+                      // Shared conversation participants - Get real data from host chat session
+                      if (isInSharedMode && activeSharedConversation && loadedHostChatSession) {
+                        console.log('🔍 [Header] Using loaded host chat session for participants');
+                        console.log('🔍 [Header] Loaded session participants:', loadedHostChatSession.participants);
+                        
+                        const hostChatSession = loadedHostChatSession;
+                        
+                            // Get real participants from host chat session
+                            const hostAgent = hostChatSession.agentId ? {
+                          id: hostChatSession.agentId,
+                          name: hostChatSession.agentName || 'Host Agent',
+                          type: 'agent' as const
+                        } : null;
+                        
+                        const hostUser = {
+                          id: hostChatSession.userId,
+                          name: hostChatSession.hostUserName || hostChatSession.userName || 'Host User',
+                          type: 'human' as const
+                        };
+                        
+                        const guestAgents = hostChatSession.participants?.guests?.filter(g => 
+                          g.type === 'ai_agent' && g.id !== hostChatSession.agentId // Exclude host agent from guests
+                        ) || [];
+                        const guestHumans = hostChatSession.participants?.guests?.filter(g => 
+                          g.type === 'human' && g.id !== (user?.uid || 'anonymous') // Exclude current guest user
+                        ) || [];
+                        
+                        // Debug logging for header participants
+                        console.log('🔍 [Header] hostChatSession.participants:', hostChatSession.participants);
+                        console.log('🔍 [Header] All guests:', hostChatSession.participants?.guests);
+                        console.log('🔍 [Header] Filtered guestAgents:', guestAgents);
+                        console.log('🔍 [Header] Filtered guestHumans:', guestHumans);
+                        
+                        const totalParticipants = [hostUser, hostAgent, ...guestAgents, ...guestHumans].filter(Boolean).length;
+                        
+                        return (
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
+                              👥 {totalParticipants} Participant{totalParticipants !== 1 ? 's' : ''}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                              {/* Host User */}
+                              <Chip
+                                avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#3b82f6' }}>
+                                  {hostUser.name.charAt(0)}
+                                </Avatar>}
+                                label={`${hostUser.name} (Host)`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#3b82f6',
+                                  color: 'white',
+                                  opacity: 0.9,
+                                  fontSize: '11px'
+                                }}
+                              />
+                              
+                              {/* Host Agent */}
+                              {hostAgent && (
+                                <Chip
+                                  avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#8b5cf6' }}>
+                                    🤖
+                                  </Avatar>}
+                                  label={hostAgent.name}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#8b5cf6',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                    fontSize: '11px'
+                                  }}
+                                />
+                              )}
+                              
+                              {/* Guest Agents */}
+                              {guestAgents.map((agent) => {
+                                // Debug logging to see agent data structure
+                                console.log('🔍 [Header] Guest agent data:', agent);
+                                
+                                // Try to get a better display name
+                                const displayName = agent.agentConfig?.name || 
+                                                  agent.identity?.name || 
+                                                  agent.name || 
+                                                  'Guest Agent';
+                                
+                                return (
+                                  <Chip
+                                    key={agent.id}
+                                    avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#10b981' }}>
+                                      🤖
+                                    </Avatar>}
+                                    label={`${displayName} (Guest)`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#10b981',
+                                      color: 'white',
+                                      opacity: 0.9,
+                                      fontSize: '11px'
+                                    }}
+                                  />
+                                );
+                              })}
+                              
+                              {/* Guest Humans (excluding current user) */}
+                              {guestHumans.map((human) => (
+                                <Chip
+                                  key={human.id}
+                                  avatar={<Avatar sx={{ width: 20, height: 20, bgcolor: '#f59e0b' }}>
+                                    {human.name?.charAt(0) || 'G'}
+                                  </Avatar>}
+                                  label={`${human.name} (Guest)`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#f59e0b',
+                                    color: 'white',
+                                    opacity: 0.9,
+                                    fontSize: '11px'
+                                  }}
+                                />
+                              ))}
+                              
+                              {/* Add Participants Button */}
+                              <IconButton
+                                size="small"
+                                sx={{ 
+                                  width: 24, 
+                                  height: 24, 
+                                  bgcolor: '#374151', 
+                                  color: '#9ca3af',
+                                  '&:hover': { bgcolor: '#4b5563', color: 'white' }
+                                }}
+                              >
+                                <Add sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        );
+                      }
+                      
+                      // Regular conversation participants
+                      const activeContext = multiChatState.contexts.find(c => c.isActive);
+                      const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
+                      
+                      if (multiChatState.activeContextId === 'ai_agent' && !isInSharedMode) {
+                        return (
+                          <Box sx={{ mt: 1 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1, fontSize: '12px', fontWeight: 500 }}>
+                              💬 Conversation Participants:
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                              {/* Host Agent */}
+                              <Chip
+                                avatar={<Avatar src={selectedChatbot?.identity?.avatar} sx={{ width: 20, height: 20 }} />}
+                                label={`${selectedChatbot?.identity?.name || 'Host Agent'} (Host)`}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#3b82f6',
+                                  color: 'white',
+                                  '& .MuiChip-avatar': { color: 'white' },
+                                  opacity: 0.9,
+                                  fontSize: '11px'
+                                }}
+                              />
+                              
+                              {/* Guest Agents */}
+                              {hasGuestAgents && activeContext.guestAgents.map((guest) => (
+                                <Chip
+                                  key={guest.agentId}
+                                  avatar={<Avatar src={guest.avatar} sx={{ width: 20, height: 20 }} />}
+                                  label={guest.name}
+                                  size="small"
+                                  onDelete={() => removeGuestAgent(guest.agentId)}
+                                  sx={{
+                                    bgcolor: '#10b981',
+                                    color: 'white',
+                                    '& .MuiChip-avatar': { color: 'white' },
+                                    '& .MuiChip-deleteIcon': { 
+                                      color: 'white',
+                                      '&:hover': { color: '#fecaca' }
+                                    },
+                                    opacity: 0.9,
+                                    fontSize: '11px'
+                                  }}
+                                />
+                              ))}
+                              
+                              {/* Human Participants */}
+                              {humanParticipants.map((human) => (
+                                <Chip
+                                  key={human.userId}
+                                  avatar={
+                                    <Box sx={{ position: 'relative' }}>
+                                      <Avatar
+                                        src={human.avatar}
+                                        sx={{ 
+                                          width: 20, 
+                                          height: 20,
+                                          bgcolor: '#3b82f6'
+                                        }}
+                                      >
+                                        {human.displayName.charAt(0)}
+                                      </Avatar>
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          bottom: -2,
+                                          right: -2,
+                                          width: 6,
+                                          height: 6,
+                                          borderRadius: '50%',
+                                          bgcolor: human.isOnline ? '#10b981' : '#6b7280',
+                                          border: '1px solid #1e293b'
+                                        }}
+                                      />
+                                    </Box>
+                                  }
+                                  label={human.displayName}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: '#1e293b',
+                                    color: '#e2e8f0',
+                                    border: '1px solid #334155',
+                                    fontSize: '11px'
+                                  }}
+                                />
+                              ))}
+                              
+                              {/* Add Human Participant Button */}
+                              <Tooltip title="Invite human to conversation" placement="top" arrow>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => {
+                                    handleOpenChatInvitation();
+                                  }}
+                                  sx={{
+                                    bgcolor: '#1e293b',
+                                    color: '#64748b',
+                                    border: '1px solid #334155',
+                                    width: 28,
+                                    height: 28,
+                                    '&:hover': { bgcolor: '#334155', color: '#e2e8f0' }
+                                  }}
+                                >
+                                  <PersonAdd sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </Box>
+                        );
+                      } else {
+                        return (
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            {multiChatState.activeContextId === 'ai_agent' 
+                              ? selectedChatbot?.identity?.name || 'Agent'
+                              : 'Team Member'
+                            }
+                          </Typography>
+                        );
+                      }
+                    })()}
+                  </Box>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      if (selectedChatbotId) {
+                        updateBotState(selectedChatbotId, { isWorkspaceMode: false });
+                      }
+                    }}
+                    sx={{ color: '#64748b', borderColor: '#64748b' }}
+                  >
+                    ← Back to Agents
+                  </Button>
+                </Box>
               </Box>
 
               {/* Chat Messages Area */}
               <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
-                {chatMessages.length === 0 && !currentBotState?.currentChatSession ? (
+                {(() => {
+                  console.log(`🎨 [UI Render] Checking shared mode - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
+                  console.log(`🎨 [UI Render] Condition result: ${isInSharedMode && activeSharedConversation}`);
+                  return isInSharedMode && activeSharedConversation;
+                })() ? (
+                  /* Shared Conversation Interface */
+                  <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    {/* Unified Shared Conversation Messages */}
+                    <Box sx={{ flex: 1 }}>
+                      {(() => {
+                        // Check if this is a unified guest access conversation
+                        const guestAccess = guestConversationAccess.find(access => 
+                          access.id === activeSharedConversation || 
+                          access.conversationId === activeSharedConversation
+                        );
+                        
+                        if (guestAccess) {
+                          // Use unified approach for guest access
+                          return (
+                            <UnifiedSharedMessages
+                              conversationId={guestAccess.conversationId}
+                              currentUserId={user?.uid || 'anonymous'}
+                              guestAccess={guestAccess}
+                              isUnifiedMode={true}
+                              hideInputBar={true} // Hide input bar for guest users
+                            />
+                          );
+                        } else {
+                          // Use legacy approach for backward compatibility
+                          return (
+                            <UnifiedSharedMessages
+                              conversationId={activeSharedConversation}
+                              currentUserId={user?.uid || 'anonymous'}
+                              isUnifiedMode={false}
+                              hideInputBar={true} // Hide input bar for guest users
+                              onSendMessage={async (message: string) => {
+                                try {
+                                  await sharedConversationService.sendMessageToSharedConversation(
+                                    activeSharedConversation,
+                                    user?.uid || 'anonymous',
+                                    user?.displayName || user?.email || 'Anonymous User',
+                                    message
+                                  );
+                                } catch (error) {
+                                  console.error('Failed to send message to shared conversation:', error);
+                                }
+                              }}
+                            />
+                          );
+                        }
+                      })()}
+                    </Box>
+                  </Box>
+                ) : (
+                  /* Enhanced Host Chat Interface */
+                  <EnhancedHostChatInterface
+                    chatMessages={chatMessages}
+                    selectedChatbot={selectedChatbot}
+                    user={user}
+                    chatLoading={chatLoading}
+                    showLeftPanel={false} // Start as 1-on-1, show when needed
+                    showRightPanel={false} // Start as 1-on-1, show when needed
+                    aiAgents={[]} // TODO: Connect to real multi-agent data
+                    humanParticipants={[]} // TODO: Connect to real human participants
+                  />
+                )}
                   <Box 
                     sx={{ 
                       display: 'flex', 
@@ -1682,10 +5940,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', p: 1 }}>
-                          {/* Text Input */}
+                          {/* Simplified Input: Use regular TextField for both shared and personal chats */}
                           <TextField
                             fullWidth
-                            placeholder="Type your message..."
+                            placeholder={isInSharedMode ? "Message shared conversation..." : "Type your message..."}
                             value={messageInput}
                             onChange={(e) => setMessageInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -1693,22 +5951,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             disabled={chatLoading}
                             InputProps={{
                               disableUnderline: true,
-                              sx: {
-                                color: 'white',
-                                fontSize: '1rem',
-                                px: 2,
-                                py: 1.5,
-                                '& input::placeholder': {
-                                  color: '#9ca3af',
-                                  opacity: 1
+                                sx: {
+                                  color: 'white',
+                                  fontSize: '1rem',
+                                  px: 2,
+                                  py: 1.5,
+                                  '& input::placeholder': {
+                                    color: '#9ca3af',
+                                    opacity: 1
+                                  }
                                 }
-                              }
-                            }}
-                          />
+                              }}
+                            />
                           
-                          {/* Send Button */}
+                          {/* Send Button - show for both personal and shared chats */}
                           <IconButton
-                            onClick={handleSendMessage}
+                            onClick={() => handleSendMessage()}
                             disabled={!messageInput.trim() || chatLoading}
                             sx={{
                               color: messageInput.trim() ? '#3b82f6' : '#6b7280',
@@ -1772,136 +6030,255 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     </Box>
                   </Box>
                 ) : (
-                  <Stack spacing={3}>
-                    {chatMessages.map((message) => (
-                      <Box
-                        key={message.id}
-                        sx={{
-                          display: 'flex',
-                          justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start'
-                        }}
-                      >
+                  <Stack 
+                    spacing={3}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column-reverse', // Reverse direction for bottom-up flow
+                      justifyContent: 'flex-start', // Start from bottom
+                      minHeight: '100%',
+                      paddingBottom: 2
+                    }}
+                  >
+                    {/* Multi-Agent Response Indicator */}
+                    {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
+                    
+                    {[...chatMessages].reverse().map((message, index) => {
+                      const messageType = getMessageType(message, index, [...chatMessages].reverse());
+                      const indentation = getMessageIndentation(messageType);
+                      const showConnectingLine = shouldShowConnectingLine(messageType);
+                      
+                      return (
                         <Box
+                          key={message.id}
                           sx={{
-                            maxWidth: '75%',
-                            textAlign: message.sender === 'user' ? 'right' : 'left'
-                          }}
-                        >
-                          {/* Message Content */}
-                          <MarkdownRenderer 
-                            content={message.content}
-                            sx={{ 
-                              fontSize: '0.9rem',
-                              mb: 0.5
-                            }}
-                          />
-                          
-                          {/* Attachments Display */}
-                          <AttachmentRenderer 
-                            attachments={message.attachments || []}
-                            sx={{ mt: 1 }}
-                          />
-                          
-                          {/* Timestamp */}
-                          <Typography variant="caption" sx={{ 
-                            color: '#94a3b8', 
-                            fontSize: '0.75rem'
-                          }}>
-                            {message.timestamp.toLocaleTimeString()}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    ))}
-                    {(isTyping || currentAction) && (
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                        <Paper 
-                          sx={{ 
-                            p: 3, 
-                            bgcolor: '#374151', 
-                            color: 'white', 
-                            borderRadius: 2,
+                            display: 'flex',
+                            justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
                             position: 'relative',
-                            overflow: 'hidden',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              bgcolor: '#4b5563',
-                              transform: 'translateY(-1px)',
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-                            }
-                          }}
-                          onClick={() => {
-                            if (actionStartTime) {
-                              const elapsed = Math.floor((new Date().getTime() - actionStartTime.getTime()) / 1000);
-                              console.log(`⏱️ Action "${currentAction}" has been running for ${elapsed} seconds`);
-                            }
+                            marginLeft: `${indentation}px`,
+                            transition: 'margin-left 0.2s ease'
                           }}
                         >
-                          {/* Animated background gradient */}
+                          {/* Enhanced Connecting Lines for Behavior Prompt Conversations */}
+                          {showConnectingLine && (
+                            <>
+                              {/* Vertical connecting line */}
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  left: -24,
+                                  top: messageType === 'behavior-response' ? '50%' : 0,
+                                  width: 2,
+                                  height: messageType === 'behavior-response' ? '50%' : '100%',
+                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                  opacity: 0.4,
+                                  zIndex: 1
+                                }}
+                              />
+                              
+                              {/* Horizontal connecting line */}
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  left: -24,
+                                  top: '50%',
+                                  width: 20,
+                                  height: 2,
+                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                  borderRadius: 1,
+                                  transform: 'translateY(-50%)',
+                                  opacity: 0.6,
+                                  zIndex: 2
+                                }}
+                              />
+                              
+                              {/* Connection dot */}
+                              <Box
+                                sx={{
+                                  position: 'absolute',
+                                  left: -28,
+                                  top: '50%',
+                                  width: 6,
+                                  height: 6,
+                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                  borderRadius: '50%',
+                                  transform: 'translateY(-50%)',
+                                  opacity: 0.8,
+                                  zIndex: 3
+                                }}
+                              />
+                            </>
+                          )}
+                          
                           <Box
                             sx={{
-                              position: 'absolute',
-                              top: 0,
-                              left: '-100%',
-                              width: '100%',
-                              height: '100%',
-                              background: 'linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent)',
-                              animation: 'shimmer 2s infinite',
-                              '@keyframes shimmer': {
-                                '0%': { left: '-100%' },
-                                '100%': { left: '100%' }
-                              }
+                              maxWidth: '75%',
+                              textAlign: message.sender === 'user' ? 'right' : 'left',
+                              // Enhanced styling for behavior prompt conversations
+                              ...(messageType === 'behavior-response' && {
+                                bgcolor: 'rgba(100, 116, 139, 0.08)',
+                                borderRadius: 2,
+                                p: 1.5,
+                                border: '1px solid rgba(100, 116, 139, 0.15)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                              }),
+                              ...(messageType === 'behavior-followup' && {
+                                bgcolor: 'rgba(16, 185, 129, 0.08)',
+                                borderRadius: 2,
+                                p: 1.5,
+                                border: '1px solid rgba(16, 185, 129, 0.15)',
+                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                              })
                             }}
-                          />
-                          
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative', zIndex: 1 }}>
-                            {/* Animated dots */}
-                            <Box sx={{ display: 'flex', gap: 0.5 }}>
-                              {[0, 1, 2].map((i) => (
-                                <Box
-                                  key={i}
+                          >
+                            {/* Message Type Indicator */}
+                            {messageType !== 'regular' && (
+                              <Box sx={{ mb: 0.5 }}>
+                                <Chip
+                                  label={
+                                    messageType === 'behavior-response' ? '🎭 Behavior Response' : 
+                                    messageType === 'behavior-followup' ? '💬 Follow-up' : ''
+                                  }
+                                  size="small"
                                   sx={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: '50%',
-                                    bgcolor: '#3b82f6',
-                                    animation: 'pulse 1.5s infinite',
-                                    animationDelay: `${i * 0.2}s`,
-                                    '@keyframes pulse': {
-                                      '0%, 80%, 100%': { opacity: 0.3, transform: 'scale(0.8)' },
-                                      '40%': { opacity: 1, transform: 'scale(1.2)' }
-                                    }
+                                    bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
+                                    color: 'white',
+                                    fontSize: '0.65rem',
+                                    height: 20
                                   }}
                                 />
-                              ))}
-                            </Box>
+                              </Box>
+                            )}
                             
-                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                              {currentAction || `${selectedChatbot?.identity?.name || 'Agent'} is typing...`}
+                            {/* Multi-Agent Message Header */}
+                            {message.metadata?.isMultiAgent && (
+                              <Box sx={{ mb: 1 }}>
+                                <Chip
+                                  label={`${message.metadata.agentName} (${Math.floor(message.metadata.processingTime / 1000)}s)`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: getAgentColor(message.metadata.agentId, message.metadata.agentName),
+                                    color: 'white',
+                                    fontSize: '0.7rem'
+                                  }}
+                                />
+                              </Box>
+                            )}
+                            
+                            {/* Recipient Indicator for User Messages in Multi-Agent Mode */}
+                            {message.sender === 'user' && (selectedAgents.length > 1 || humanParticipants.length > 0) && (
+                              <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography 
+                                  variant="caption" 
+                                  sx={{ 
+                                    color: '#64748b',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5
+                                  }}
+                                >
+                                  {user?.displayName || user?.email || 'You'}
+                                  <Box component="span" sx={{ color: '#94a3b8', mx: 0.5 }}>→</Box>
+                                  {(() => {
+                                    const recipients = [];
+                                    
+                                    // Add selected AI agents
+                                    selectedAgents.forEach(agentId => {
+                                      const agent = chatbotProfiles.find(p => p.id === agentId || p.key === agentId);
+                                      if (agent) {
+                                        recipients.push(agent.name || agent.identity?.name || 'AI Agent');
+                                      }
+                                    });
+                                    
+                                    // Add human participants
+                                    humanParticipants.forEach(participant => {
+                                      recipients.push(participant.name || participant.email || 'Human');
+                                    });
+                                    
+                                    // If no specific recipients, show current agent
+                                    if (recipients.length === 0 && selectedChatbot) {
+                                      recipients.push(selectedChatbot.name || selectedChatbot.identity?.name || 'AI Agent');
+                                    }
+                                    
+                                    return recipients.length > 0 ? recipients.join(', ') : 'All Participants';
+                                  })()}
+                                </Typography>
+                              </Box>
+                            )}
+                            
+                            {/* Message Content */}
+                            <MarkdownRenderer 
+                              content={message.content}
+                              sx={{ 
+                                fontSize: '0.9rem',
+                                mb: 0.5
+                              }}
+                            />
+                            
+                            {/* Attachments Display */}
+                            <AttachmentRenderer 
+                              attachments={message.attachments || []}
+                              sx={{ mt: 1 }}
+                            />
+                            
+                            {/* Timestamp */}
+                            <Typography variant="caption" sx={{ 
+                              color: '#94a3b8', 
+                              fontSize: '0.75rem'
+                            }}>
+                              {message.timestamp.toLocaleTimeString()}
                             </Typography>
-                            
-                            {actionStartTime && (
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  color: '#9ca3af',
-                                  fontSize: '0.75rem',
-                                  opacity: 0.8
+
+                            {/* Small token response icon for multi-agent responses */}
+                            {message.metadata?.isMultiAgent && message.sender === 'assistant' && (
+                              <TokenResponseIcon
+                                agentId={message.metadata.agentId}
+                                cost={tokenEconomicsService.estimateMessageCost(message.content)}
+                                quality={8} // Default quality, could be dynamic
+                                value="high" // Could be calculated based on response
+                                onRate={(rating) => {
+                                  console.log('📊 [TokenIcon] Rating submitted:', message.metadata.agentName, rating);
+                                  // This could trigger updates to agent metrics
                                 }}
-                              >
-                                {Math.floor((new Date().getTime() - actionStartTime.getTime()) / 1000)}s
-                              </Typography>
+                              />
                             )}
                           </Box>
-                        </Paper>
-                      </Box>
-                    )}
+                        </Box>
+                      );
+                    })}
                   </Stack>
+                )}
+                  </>
                 )}
               </Box>
               
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
+                {/* Token Economics Widgets */}
+                {/* Removed intrusive Multi-Agent Response Status - let conversation flow naturally */}
+
+                {/* Budget Alerts */}
+                {budgetExceeded && (
+                  <Alert 
+                    severity="error" 
+                    sx={{ mb: 2, bgcolor: '#ef444420', border: '1px solid #ef444440' }}
+                    onClose={() => setBudgetExceeded(false)}
+                  >
+                    Budget exceeded! Consider increasing your budget or ending the conversation.
+                  </Alert>
+                )}
+
+                {budgetWarning && !budgetExceeded && (
+                  <Alert 
+                    severity="warning" 
+                    sx={{ mb: 2, bgcolor: '#f59e0b20', border: '1px solid #f59e0b40' }}
+                    onClose={() => setBudgetWarning(false)}
+                  >
+                    Budget warning: You're approaching your spending limit.
+                  </Alert>
+                )}
                 {/* Connected Apps Preview */}
                 {selectedConnectedApps.length > 0 && (
                   <Box sx={{ mb: 2 }}>
@@ -1975,7 +6352,41 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   </Box>
                 )}
                 
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 1, position: 'relative' }}>
+                  {/* Autonomous Stars Toggle */}
+                  <Tooltip title={autonomousStarsActive ? "Disable Autonomous Stars" : "Enable Autonomous Stars"}>
+                    <IconButton
+                      onClick={() => setAutonomousStarsActive(!autonomousStarsActive)}
+                      sx={{ 
+                        color: autonomousStarsActive ? '#f59e0b' : '#94a3b8',
+                        mb: 0.5,
+                        '&:hover': { color: autonomousStarsActive ? '#d97706' : '#3b82f6' }
+                      }}
+                    >
+                      {autonomousStarsActive ? (
+                        <Badge badgeContent="⭐" color="warning">
+                          <AutoAwesome />
+                        </Badge>
+                      ) : (
+                        <AutoAwesome />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* Token Budget Button */}
+                  <Tooltip title="Token Budget Tracker">
+                    <IconButton
+                      onClick={() => setShowTokenBudget(true)}
+                      sx={{ 
+                        color: '#10b981',
+                        mb: 0.5,
+                        '&:hover': { color: '#059669' }
+                      }}
+                    >
+                      <WalletIcon />
+                    </IconButton>
+                  </Tooltip>
+
                   {/* Add Menu Button */}
                   <IconButton
                     onClick={(e) => setAddMenuAnchor(e.currentTarget)}
@@ -1984,27 +6395,476 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     <Add />
                   </IconButton>
                   
-                  <TextField
-                    fullWidth
-                    placeholder="Type your message..."
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                    onPaste={handlePaste}
-                    variant="outlined"
-                    disabled={chatLoading}
-                    multiline
-                    maxRows={4}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        bgcolor: '#0f172a',
-                        color: 'white',
-                        '& fieldset': { borderColor: '#334155' },
-                        '&:hover fieldset': { borderColor: '#3b82f6' },
-                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                      }
-                    }}
-                  />
+                  {/* Enhanced Multi-Agent Text Input with Avatar Selector */}
+                  <Box sx={{ flex: 1, position: 'relative' }}>
+                    {/* Always use AgentAvatarSelector for intuitive multi-agent interaction */}
+                    {(() => {
+                      // Always use the new avatar-based system with integrated input design
+                      return (
+                          <>
+                            {/* Smart Thinking Indicator - Right Above Input */}
+                            {(isTyping || currentAction || currentActivity) && (
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 1, px: 1 }}>
+                                <Box 
+                                  sx={{ 
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1.5,
+                                    px: 2, 
+                                    py: 0.75,
+                                    bgcolor: 'rgba(55, 65, 81, 0.9)', 
+                                    color: '#d1d5db', 
+                                    borderRadius: '16px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 500,
+                                    backdropFilter: 'blur(8px)',
+                                    border: '1px solid rgba(75, 85, 99, 0.4)',
+                                    maxWidth: 'fit-content',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}
+                                >
+                                  {/* Progress indicator for thinking duration */}
+                                  <LinearProgress 
+                                    variant="indeterminate" 
+                                    sx={{ 
+                                      position: 'absolute',
+                                      bottom: 0,
+                                      left: 0,
+                                      right: 0,
+                                      height: 2,
+                                      bgcolor: 'transparent',
+                                      '& .MuiLinearProgress-bar': { 
+                                        bgcolor: currentActivity.includes('analyzing') ? '#f59e0b' : 
+                                                currentActivity.includes('searching') ? '#10b981' : '#3b82f6',
+                                        opacity: 0.6
+                                      }
+                                    }} 
+                                  />
+
+                                  {/* Multi-agent avatars or single agent avatar */}
+                                  {thinkingAgents.length > 1 ? (
+                                    <AvatarGroup 
+                                      max={3} 
+                                      sx={{ 
+                                        '& .MuiAvatar-root': { 
+                                          width: 20, 
+                                          height: 20,
+                                          border: '2px solid #3b82f6',
+                                          animation: 'pulse-border 2s infinite',
+                                          '@keyframes pulse-border': {
+                                            '0%, 100%': { borderColor: '#3b82f6', transform: 'scale(1)' },
+                                            '50%': { borderColor: '#60a5fa', transform: 'scale(1.05)' }
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      {thinkingAgents.map(agent => (
+                                        <Avatar 
+                                          key={agent.id} 
+                                          src={agent.avatar}
+                                          sx={{ fontSize: '0.75rem' }}
+                                        >
+                                          {agent.name.charAt(0)}
+                                        </Avatar>
+                                      ))}
+                                    </AvatarGroup>
+                                  ) : currentRespondingAgent?.avatar && (
+                                    <Avatar 
+                                      src={currentRespondingAgent.avatar} 
+                                      sx={{ 
+                                        width: 20, 
+                                        height: 20,
+                                        border: '2px solid #3b82f6',
+                                        animation: 'pulse-border 2s infinite',
+                                        fontSize: '0.75rem',
+                                        '@keyframes pulse-border': {
+                                          '0%, 100%': { borderColor: '#3b82f6', transform: 'scale(1)' },
+                                          '50%': { borderColor: '#60a5fa', transform: 'scale(1.05)' }
+                                        }
+                                      }}
+                                    >
+                                      {currentRespondingAgent.name.charAt(0)}
+                                    </Avatar>
+                                  )}
+
+                                  {/* Enhanced animated dots with activity-based colors */}
+                                  <Box sx={{ display: 'flex', gap: 0.3, alignItems: 'center' }}>
+                                    {[0, 1, 2].map((i) => (
+                                      <Box
+                                        key={i}
+                                        sx={{
+                                          width: 4,
+                                          height: 4,
+                                          borderRadius: '50%',
+                                          ...getActivityStyle(currentActivity),
+                                          animationDelay: `${i * 0.2}s`,
+                                          '@keyframes pulse': {
+                                            '0%, 80%, 100%': { opacity: 0.3, transform: 'scale(0.8)' },
+                                            '40%': { opacity: 1, transform: 'scale(1.2)' }
+                                          },
+                                          '@keyframes slow-pulse': {
+                                            '0%, 80%, 100%': { opacity: 0.2, transform: 'scale(0.7)' },
+                                            '40%': { opacity: 1, transform: 'scale(1.3)' }
+                                          },
+                                          '@keyframes search-pulse': {
+                                            '0%, 100%': { opacity: 0.4, transform: 'scale(0.9)' },
+                                            '50%': { opacity: 1, transform: 'scale(1.1)' }
+                                          },
+                                          '@keyframes deep-pulse': {
+                                            '0%, 90%, 100%': { opacity: 0.2, transform: 'scale(0.6)' },
+                                            '45%': { opacity: 1, transform: 'scale(1.4)' }
+                                          }
+                                        }}
+                                      />
+                                    ))}
+                                  </Box>
+                                  
+                                  <Typography variant="body2" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                                    {thinkingAgents.length > 1 
+                                      ? `${thinkingAgents.length} agents are collaborating...`
+                                      : currentRespondingAgent 
+                                        ? `${currentRespondingAgent.name} is ${currentActivity || 'thinking...'}` 
+                                        : `${selectedChatbot?.identity?.name || 'Agent'} is ${currentActivity || 'thinking...'}`}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                            )}
+
+                            {/* Integrated Input with Avatar Selection Inside */}
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1,
+                              p: 1,
+                              bgcolor: '#1e293b',
+                              borderRadius: 2,
+                              border: '1px solid #334155',
+                              mb: 1
+                            }}>
+                              {/* Text Input with Integrated Avatar Selector */}
+                              <TextField
+                                fullWidth
+                                placeholder={
+                                  isInSharedMode && activeSharedConversation 
+                                    ? "Message shared conversation... (or use @agent-name or @human-name)"
+                                    : "Type your message... (or use @agent-name or @human-name)"
+                                }
+                                value={messageInput}
+                                onChange={(e) => handleInputChange(e.target.value)}
+                                onKeyDown={handleKeyNavigation}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    if (showSuggestions && selectedSuggestionIndex >= 0) {
+                                      e.preventDefault();
+                                      handleSuggestionSelect(smartSuggestions[selectedSuggestionIndex]);
+                                    } else {
+                                      handleSendMessage();
+                                    }
+                                  }
+                                }}
+                                onPaste={handlePaste}
+                                onFocus={() => {
+                                  if (autonomousStarsActive && messageInput.trim()) {
+                                    setShowSuggestions(true);
+                                  }
+                                }}
+                                onBlur={() => {
+                                // Delay hiding suggestions to allow clicking
+                                setTimeout(() => setShowSuggestions(false), 200);
+                              }}
+                              variant="outlined"
+                              disabled={chatLoading}
+                              multiline
+                              maxRows={4}
+                              InputProps={{
+                                startAdornment: (
+                                  <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: 0.5, 
+                                    mr: 1,
+                                    flexShrink: 0
+                                  }}>
+                                    {/* Agent Avatar Selector - Inside Input */}
+                                    <AgentAvatarSelector
+                                      hostAgent={(() => {
+                                        if (isInSharedMode && loadedHostChatSession) {
+                                          // Use the actual host agent from the loaded session
+                                          const hostAgent = loadedHostChatSession.participants?.host;
+                                          console.log('🔍 [AvatarSelector] Host agent from loaded session:', hostAgent);
+                                          
+                                          if (hostAgent) {
+                                            return {
+                                              id: hostAgent.id,
+                                              name: hostAgent.name || 'Host Agent',
+                                              type: 'agent' as const,
+                                              avatar: hostAgent.avatar || undefined
+                                            };
+                                          }
+                                          
+                                          // Fallback to guest access data
+                                          const hostChatSession = guestConversationAccess?.[0];
+                                          return hostChatSession?.agentId ? {
+                                            id: hostChatSession.agentId,
+                                            name: hostChatSession.agentName || 'Host Agent',
+                                            type: 'agent' as const,
+                                            avatar: hostChatSession.agentAvatar || undefined
+                                          } : null;
+                                        }
+                                        return getHostAgent();
+                                      })()}
+                                      guestAgents={(() => {
+                                        if (isInSharedMode && activeSharedConversation && loadedHostChatSession) {
+                                          console.log('🔍 [AvatarSelector] Using loaded host chat session for agents');
+                                          console.log('🔍 [AvatarSelector] Loaded session participants:', loadedHostChatSession.participants);
+                                          
+                                          const hostChatSession = loadedHostChatSession;
+                                          
+                                          // For avatar selector, include ALL agents (host + guests) for message targeting
+                                          const allAgents = [];
+                                          
+                                          // Add host agent if it exists
+                                          if (hostChatSession.agentId) {
+                                            allAgents.push({
+                                              id: hostChatSession.agentId,
+                                              name: hostChatSession.agentName || 'Host Agent',
+                                              type: 'agent' as const,
+                                              avatar: undefined,
+                                              status: 'active'
+                                            });
+                                          }
+                                          
+                                          // Add guest agents (but exclude host agent to avoid duplicates)
+                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => 
+                                            g.type === 'ai_agent' && g.id !== hostChatSession.agentId
+                                          ) || [];
+                                          allAgents.push(...guestAgents.map(agent => ({
+                                            id: agent.id,
+                                            name: agent.name,
+                                            type: 'agent' as const,
+                                            avatar: agent.avatar,
+                                            status: agent.status || 'active'
+                                          })));
+                                          
+                                          // Debug logging for avatar selector
+                                          console.log('🔍 [AvatarSelector] hostChatSession.participants:', hostChatSession.participants);
+                                          console.log('🔍 [AvatarSelector] All guests:', hostChatSession.participants?.guests);
+                                          console.log('🔍 [AvatarSelector] Host agent ID:', hostChatSession.agentId);
+                                          console.log('🔍 [AvatarSelector] Guest agents (filtered):', guestAgents);
+                                          console.log('🔍 [AvatarSelector] All agents for selector (deduplicated):', allAgents);
+                                          
+                                          return allAgents;
+                                        }
+                                        return getGuestAgents();
+                                      })()}
+                                      selectedAgents={selectedAgents}
+                                      onSelectionChange={handleAgentSelectionChange}
+                                      teamMembers={getTeamMembers()}
+                                      aiAgents={isInSharedMode && activeSharedConversation ? [] : getAIAgents()}
+                                      connectionsLoading={connectionsLoading}
+                                      onAddGuests={handleAddGuests}
+                                      // Add unifiedParticipants for shared mode
+                                      unifiedParticipants={(() => {
+                                        if (isInSharedMode && activeSharedConversation && loadedHostChatSession) {
+                                          console.log('🔍 [UnifiedParticipants] Building unified participants for shared mode');
+                                          const hostChatSession = loadedHostChatSession;
+                                          const participants = [];
+                                          
+                                          // Add host agent if it exists
+                                          if (hostChatSession.agentId) {
+                                            participants.push({
+                                              id: hostChatSession.agentId,
+                                              name: hostChatSession.agentName || 'Host Agent',
+                                              type: 'ai_agent' as const,
+                                              avatar: hostChatSession.agentAvatar || undefined,
+                                              status: 'active'
+                                            });
+                                          }
+                                          
+                                          // Add guest agents
+                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
+                                          participants.push(...guestAgents.map(agent => {
+                                            // Debug logging to see agent data structure
+                                            console.log('🔍 [UnifiedParticipants] Guest agent data:', agent);
+                                            
+                                            // Try to get a better display name
+                                            const displayName = agent.agentConfig?.name || 
+                                                              agent.identity?.name || 
+                                                              agent.name || 
+                                                              'Guest Agent';
+                                            
+                                            return {
+                                              id: agent.id,
+                                              name: displayName,
+                                              type: 'ai_agent' as const,
+                                              avatar: agent.avatar,
+                                              status: agent.status || 'active'
+                                            };
+                                          }));
+                                          
+                                          console.log('🔍 [UnifiedParticipants] Final unified participants:', participants);
+                                          return participants;
+                                        }
+                                        return [];
+                                      })()}
+                                      humanParticipants={(() => {
+                                        if (isInSharedMode && guestConversationAccess?.length > 0) {
+                                          // Use real human participants from host chat session (excluding current guest)
+                                          const hostChatSession = guestConversationAccess[0];
+                                          const hostUser = {
+                                            id: hostChatSession.userId,
+                                            name: hostChatSession.hostUserName || hostChatSession.userName || 'Host User',
+                                            type: 'human' as const,
+                                            role: 'host' as const,
+                                            status: 'online' as const,
+                                            avatar: undefined
+                                          };
+                                          
+                                          const guestHumans = hostChatSession.participants?.guests?.filter(g => 
+                                            g.type === 'human' && g.id !== user?.uid // Exclude current guest user
+                                          ).map(human => ({
+                                            id: human.id,
+                                            name: human.name,
+                                            type: 'human' as const,
+                                            role: 'guest' as const,
+                                            status: human.status || 'active' as const,
+                                            avatar: human.avatar
+                                          })) || [];
+                                          
+                                          return [hostUser, ...guestHumans];
+                                        }
+                                        
+                                        return humanParticipants
+                                          .filter(h => h.userId !== user?.uid) // Exclude current user from participant selector
+                                          .map(h => ({
+                                            id: h.userId,
+                                            name: h.name,
+                                            type: 'human' as const,
+                                            role: h.role,
+                                            status: h.isOnline ? 'online' as const : 'offline' as const,
+                                            avatar: h.avatar
+                                          }));
+                                      })()}
+                                      selectedTarget={selectedTarget}
+                                      onTargetChange={handleTargetChange}
+                                      onBehaviorPrompt={handleBehaviorPrompt}
+                                      currentUserId={user?.uid}
+                                      currentUserName={user?.displayName || 'User'}
+                                      conversationId={multiAgentSessionRef.current || currentMultiAgentSession || `conv_${Date.now()}`}
+                                      conversationName={`${selectedChatbot?.name || 'AI'} Collaboration`}
+                                      hideHostAgent={false} // Always show host agent in avatar selector for messaging
+                                      // Shared conversation context
+                                      isSharedMode={!!(isInSharedMode && activeSharedConversation)}
+                                      sharedConversationParticipants={
+                                        isInSharedMode && activeSharedConversation 
+                                          ? sharedConversations.find(c => c.id === activeSharedConversation)?.participants || []
+                                          : []
+                                      }
+                                      // New unified invitation props
+                                      chatSession={currentBotState?.currentChatSession ? {
+                                        id: currentBotState.currentChatSession.id,
+                                        name: currentBotState.currentChatSession.name || `${selectedChatbot?.name || 'AI'} Chat`,
+                                        messageCount: currentBotState.currentChatSession.messages?.length || 0
+                                      } : undefined}
+                                      agentId={selectedChatbot?.id}
+                                      user={user}
+                                    />
+                                    
+                                    {/* Behavioral Orchestration Hover Triggers */}
+                                    <HoverOrchestrationTrigger
+                                      participants={participantData}
+                                      onBehaviorChange={handleBehaviorChange}
+                                      onQuickBehaviorTrigger={handleQuickBehaviorTrigger}
+                                      currentUserId={user?.uid || ''}
+                                      showBehavioralControls={isInSharedMode || selectedAgents.length > 1}
+                                    />
+                                  </Box>
+                                )
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  bgcolor: '#0f172a',
+                                  color: 'white',
+                                  '& fieldset': { 
+                                    borderColor: autonomousStarsActive ? '#f59e0b' : '#475569',
+                                    borderWidth: 1
+                                  },
+                                  '&:hover fieldset': { borderColor: '#3b82f6' },
+                                  '&.Mui-focused fieldset': { 
+                                    borderColor: autonomousStarsActive ? '#f59e0b' : '#3b82f6',
+                                    borderWidth: 2
+                                  },
+                                  '& input::placeholder': {
+                                    color: '#9ca3af',
+                                    opacity: 1
+                                  }
+                                }
+                              }}
+                            />
+                            </Box>
+                            
+                            {/* Amazon-Style Smart Suggestions Dropdown (Below Input) */}
+                            {showSuggestions && smartSuggestions.length > 0 && (
+                              <Paper
+                                sx={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  left: 0,
+                                  right: 0,
+                                  zIndex: 1000,
+                                  bgcolor: 'white',
+                                  border: '1px solid #e5e7eb',
+                                  borderRadius: 1,
+                                  mt: 0.5,
+                                  maxHeight: 200,
+                                  overflow: 'auto',
+                                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                                }}
+                              >
+                                {smartSuggestions.map((suggestion, index) => (
+                                  <Box
+                                    key={index}
+                                    onClick={() => handleSuggestionSelect(suggestion)}
+                                    sx={{
+                                      p: 1.5,
+                                      cursor: 'pointer',
+                                      bgcolor: selectedSuggestionIndex === index ? '#f3f4f6' : 'transparent',
+                                      '&:hover': { bgcolor: '#f9fafb' },
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1.5,
+                                      borderBottom: index < smartSuggestions.length - 1 ? '1px solid #f3f4f6' : 'none'
+                                    }}
+                                  >
+                                    <Box sx={{ color: '#6b7280', fontSize: '16px', minWidth: '20px' }}>
+                                      {suggestion.includes('Create') ? '💡' : 
+                                       suggestion.includes('team') ? '👥' : 
+                                       suggestion.includes('project') ? '📁' : 
+                                       suggestion.includes('task') ? '🚀' : 
+                                       suggestion.includes('Continue') ? '▶️' : 
+                                       suggestion.includes('Check') ? '📬' : '⭐'}
+                                    </Box>
+                                    <Typography 
+                                      variant="body2" 
+                                      sx={{ 
+                                        color: '#374151', 
+                                        flex: 1,
+                                        fontSize: '14px',
+                                        fontWeight: selectedSuggestionIndex === index ? 500 : 400
+                                      }}
+                                    >
+                                      {suggestion}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Paper>
+                            )}
+                          </>
+                      );
+                    })()}
+                  </Box>
                   
                   {/* Voice Recording Button */}
                   <IconButton
@@ -2020,7 +6880,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   
                   <Button
                     variant="contained"
-                    onClick={handleSendMessage}
+                    onClick={() => handleSendMessage()}
                     disabled={(!messageInput.trim() && attachedFiles.length === 0) || chatLoading}
                     sx={{
                       bgcolor: '#3b82f6',
@@ -2258,9 +7118,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 {/* Command Panel Tabs */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {[
-                    { key: 'team', label: 'TEAM' },
+                    { key: 'team', label: 'TEAM', badge: unreadTeamCount },
                     { key: 'chats', label: 'CHATS' },
+                    { key: 'repo', label: 'REPO', badge: projects.length },
                     { key: 'analytics', label: 'ANALYTICS' },
+                    { key: 'mas_collaboration', label: 'MAS COLLABORATION', badge: 0 },
+                    { key: 'token_economics', label: 'TOKEN ECONOMICS', badge: budgetWarning || budgetExceeded ? 1 : 0 },
                     { key: 'customize', label: 'CUSTOMIZE' },
                     { key: 'personality', label: 'PERSONALITY' },
                     { key: 'knowledge', label: 'AI KNOWLEDGE' },
@@ -2272,48 +7135,246 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     { key: 'receipts', label: 'RECEIPTS' },
                     { key: 'memory', label: 'MEMORY' },
                     { key: 'sandbox', label: 'SANDBOX' },
-                    { key: 'live_agent', label: 'LIVE AGENT' },
+                    { key: 'live_agent', label: 'LIVE AGENT', badge: autonomousMode ? 1 : 0, isLiveAgent: true },
                     { key: 'governance', label: 'GOVERNANCE' },
+                    ...(selectedChatbot && isCustomGPT(selectedChatbot) ? [{ key: 'custom_gpt', label: 'CUSTOM GPT', badge: 0 }] : []),
                     { key: 'debug', label: 'DEBUG' }
                   ].map((tab) => (
-                    <Button
+                    <Badge
                       key={tab.key}
-                      size="small"
-                      variant={rightPanelType === tab.key ? 'contained' : 'outlined'}
-                      onClick={() => setRightPanelType(tab.key as RightPanelType)}
+                      badgeContent={tab.badge || 0}
+                      color={tab.isLiveAgent && autonomousMode ? "success" : "error"}
+                      invisible={!tab.badge || tab.badge === 0}
                       sx={{
-                        fontSize: '0.7rem',
-                        px: 1.5,
-                        py: 0.5,
-                        minWidth: 'auto',
-                        borderColor: '#374151',
-                        color: rightPanelType === tab.key ? 'white' : '#94a3b8',
-                        bgcolor: rightPanelType === tab.key ? '#3b82f6' : 'transparent',
-                        '&:hover': { 
-                          borderColor: '#4b5563', 
-                          bgcolor: rightPanelType === tab.key ? '#2563eb' : '#374151' 
-                        },
+                        '& .MuiBadge-badge': {
+                          fontSize: '0.6rem',
+                          height: 16,
+                          minWidth: 16
+                        }
                       }}
                     >
-                      {tab.label}
-                    </Button>
+                      <Button
+                        size="small"
+                        variant={rightPanelType === tab.key ? 'contained' : 'outlined'}
+                        onClick={() => {
+                          if (tab.key === 'live_agent') {
+                            handleLiveAgentTabClick();
+                          } else {
+                            setRightPanelType(tab.key as RightPanelType);
+                          }
+                        }}
+                        sx={{
+                          fontSize: '0.7rem',
+                          px: 1.5,
+                          py: 0.5,
+                          minWidth: 'auto',
+                          borderColor: '#374151',
+                          color: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? 'white' : '#94a3b8',
+                          bgcolor: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? '#3b82f6' : 'transparent',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? '#2563eb' : '#374151' 
+                          },
+                        }}
+                      >
+                        {tab.label}
+                      </Button>
+                    </Badge>
                   ))}
                 </Box>
               </Box>
 
               {/* Panel Content */}
-              <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ 
+                flex: 1, 
+                overflow: 'hidden', 
+                display: 'flex', 
+                flexDirection: 'column',
+                height: '100%', // Ensure full height
+                pb: 0, // Remove any bottom padding
+                mb: 0  // Remove any bottom margin
+              }}>
                 {rightPanelType === 'team' && (
-                  <TeamPanel currentUserId={user?.uid} />
+                  <TeamPanel 
+                    currentUserId={user?.uid} 
+                    onAddGuestAgent={addGuestAgent}
+                    onAddHumanToChat={(humans) => {
+                      setPendingHumanInvites(humans);
+                      setShowHumanInviteConfirmDialog(true);
+                    }}
+                  />
+                )}
+                
+                {rightPanelType === 'repo' && (
+                  <RepositoryBrowser
+                    projects={projects}
+                    templates={projectTemplates}
+                    onProjectCreate={async (template: ProjectTemplate, projectName: string) => {
+                      try {
+                        console.log('📁 [Repository] Creating project from template:', template.name);
+                        
+                        // Create new project
+                        const newProject = await repositoryManager.createProjectFromTemplate(
+                          template,
+                          projectName,
+                          user?.uid || 'anonymous'
+                        );
+                        
+                        // Update projects list
+                        setProjects(prev => [...prev, newProject]);
+                        
+                        // Start autonomous mode for project setup
+                        if (autonomousGovernance) {
+                          const taskPlan = await autonomousGovernance.createTaskPlan({
+                            goal: `Set up ${projectName} project using ${template.name} template`,
+                            context: {
+                              projectId: newProject.id,
+                              templateId: template.id,
+                              projectName,
+                              templateName: template.name
+                            }
+                          });
+                          
+                          console.log('🤖 [Autonomous] Starting project setup task:', taskPlan);
+                        }
+                        
+                        console.log('✅ [Repository] Project created successfully:', newProject);
+                      } catch (error) {
+                        console.error('❌ [Repository] Failed to create project:', error);
+                      }
+                    }}
+                    onProjectSelect={(project: WorkflowProject) => {
+                      console.log('📁 [Repository] Project selected:', project.name);
+                      // Could integrate with Live Agent to show project status
+                    }}
+                    repositoryManager={repositoryManager}
+                    versionControl={versionControl}
+                    currentUserId={user?.uid || 'anonymous'}
+                  />
+                )}
+                
+                {rightPanelType === 'mas_collaboration' && (
+                  <MASCollaborationPanel
+                    settings={{
+                      chatFeatures: {
+                        conversationContextSharing: true,
+                        crossAgentReferences: true,
+                        realTimeCollaboration: true,
+                        visualAgentSelection: true,
+                        mentionSystemEnabled: true
+                      },
+                      // 🔧 CRITICAL FIX: Add missing agentToAgentCommunication property
+                      agentToAgentCommunication: {
+                        enabled: true,
+                        allowDirectTagging: true,
+                        hoverTriggeredResponses: false,
+                        autoResponseToMentions: true,
+                        crossAgentConversations: true,
+                        responseDelay: 2,
+                        maxChainLength: 3
+                      },
+                      autonomousBehaviors: {
+                        proactiveInterjection: false,
+                        smartSuggestions: true,
+                        contextualHandRaising: true,
+                        triggerBasedEngagement: true,
+                        collaborativeFiltering: true
+                      },
+                      temporaryRoles: {},
+                      tokenEconomics: {
+                        maxTokensPerAgent: 1000,
+                        suggestionThreshold: 70,
+                        monitoringBudget: 100,
+                        interjectionCost: 150,
+                        enableSmartBudgeting: true
+                      },
+                      triggerSettings: {
+                        keywordTriggers: ['question', 'problem', 'help', 'idea'],
+                        topicTriggers: ['technical', 'creative', 'analysis'],
+                        questionTriggers: true,
+                        disagreementTriggers: true,
+                        expertiseTriggers: true,
+                        sensitivityLevel: 5
+                      }
+                    }}
+                    onSettingsChange={(settings: MASCollaborationSettings) => {
+                      console.log('🎛️ [MAS] Settings updated:', settings);
+                      // TODO: Persist settings and apply to multi-agent system
+                    }}
+                    availableAgents={[
+                      ...(selectedChatbot ? [{
+                        id: selectedChatbot.id,
+                        name: selectedChatbot.identity?.name || 'Host Agent',
+                        avatar: selectedChatbot.identity?.avatar,
+                        expertise: selectedChatbot.expertise || []
+                      }] : []),
+                      ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).map(guest => ({
+                        id: guest.agentId,
+                        name: guest.name,
+                        avatar: guest.avatar,
+                        expertise: []
+                      }))
+                    ]}
+                    currentTokenUsage={{
+                      ...(selectedChatbot ? {
+                        [selectedChatbot.id]: {
+                          used: 450,
+                          budget: 1000,
+                          efficiency: 0.85
+                        }
+                      } : {}),
+                      ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).reduce((acc, guest) => ({
+                        ...acc,
+                        [guest.agentId]: {
+                          used: 320,
+                          budget: 1000,
+                          efficiency: 0.92
+                        }
+                      }), {})
+                    }}
+                  />
                 )}
                 
                 {rightPanelType === 'chats' && selectedChatbot && (
-                  <ChatHistoryPanel
-                    agentId={selectedChatbot.id}
-                    agentName={selectedChatbot.name}
+                  <OptimizedChatHistoryPanel
+                    agentId={selectedChatbotId || selectedChatbot?.id}
+                    agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
                     currentSessionId={currentBotState?.currentChatSession?.id}
-                    refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0} // Use bot state refresh trigger
-                    onChatSelect={(session) => {
+                    refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
+                    sharedConversations={guestConversationAccess.map(access => ({
+                      id: access.id,
+                      name: access.conversationName || 'Shared Chat',
+                      participants: access.participants || [],
+                      messageCount: access.messageCount || 0,
+                      createdAt: access.createdAt,
+                      updatedAt: access.updatedAt,
+                      isPrivate: false,
+                      createdBy: access.hostUserId || '',
+                    }))}
+                    onSharedConversationSelect={handleCustomSharedConversationSelect}
+                    onDeleteSharedConversation={(conversationId) => {
+                      console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
+                      // Remove from local state immediately for instant UI feedback
+                      // This would need to be connected to the actual delete service
+                      refreshSharedConversations();
+                    }}
+                    onBulkCleanupLegacyConversations={() => {
+                      console.log(`🧹 [LegacyCleanup] Cleaning up legacy conversations`);
+                      // This would need to be connected to the actual cleanup service
+                      refreshSharedConversations();
+                    }}
+                    onDirectMessage={(userId, userName) => {
+                      // Integrate with existing direct message system
+                      console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
+                      // TODO: Integrate with your existing direct message functionality
+                      // This should open the bottom-right chat window like in the team panel
+                    }}
+                    onViewProfile={(userId) => {
+                      // Integrate with existing profile view system
+                      console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
+                      // TODO: Integrate with your existing profile view functionality
+                    }}
+                    onChatSelect={async (session) => {
                       console.log(`🔄 [ChatHistory] Chat selected:`, session);
                       console.log(`🔄 [ChatHistory] Session has ${session.messages?.length || 0} messages`);
                       console.log(`🔄 [ChatHistory] Selected chatbot ID: ${selectedChatbotId}`);
@@ -2324,6 +7385,57 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           currentChatName: session.name || `Chat ${session.id.slice(-8)}`
                         });
                         console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
+                        
+                        // 🔧 NEW: Restore guest agents from chat session to multiChatState
+                        try {
+                          const guestAgents = await chatHistoryService.getGuestAgentsForSession(session.id);
+                          console.log(`🤖 [ChatHistory] Found ${guestAgents.length} guest agents in session:`, guestAgents);
+                          
+                          if (guestAgents.length > 0) {
+                            // Update multiChatState to include guest agents
+                            setMultiChatState(prev => {
+                              const activeContext = prev.contexts.find(c => c.isActive);
+                              if (!activeContext) return prev;
+                              
+                              const restoredGuestAgents = guestAgents.map(guest => ({
+                                agentId: guest.id,
+                                name: guest.name,
+                                avatar: guest.avatar,
+                                status: 'active' as const
+                              }));
+                              
+                              return {
+                                ...prev,
+                                contexts: prev.contexts.map(context => 
+                                  context.isActive 
+                                    ? {
+                                        ...context,
+                                        guestAgents: restoredGuestAgents
+                                      }
+                                    : context
+                                )
+                              };
+                            });
+                            
+                            // Update selected agents to include restored guest agents
+                            const guestAgentIds = guestAgents.map(guest => guest.id);
+                            setSelectedAgents(prev => {
+                              // Remove duplicates and add guest agents
+                              const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+                              return uniqueIds;
+                            });
+                            setTargetAgents(prev => {
+                              // Remove duplicates and add guest agents
+                              const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+                              return uniqueIds;
+                            });
+                            
+                            console.log(`✅ [ChatHistory] Restored ${guestAgents.length} guest agents to multiChatState`);
+                          }
+                        } catch (error) {
+                          console.error('❌ [ChatHistory] Failed to restore guest agents from session:', error);
+                          // Continue without guest agents - don't break the flow
+                        }
                       }
                       
                       // Load the chat messages into the current chat interface
@@ -2380,6 +7492,36 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             chatMessages: []
                           });
                         }
+                        
+                        // 🔧 NEW: Clear guest agent state when creating new chat
+                        console.log('🧹 [NewChat] Clearing guest agent state for new chat session');
+                        
+                        // Clear multi-agent state
+                        setMultiChatState(prev => ({
+                          ...prev,
+                          contexts: prev.contexts.map(context => 
+                            context.isActive 
+                              ? {
+                                  ...context,
+                                  guestAgents: [] // Clear guest agents
+                                }
+                              : context
+                          )
+                        }));
+                        
+                        // Clear selected agents (keep only host agent)
+                        setSelectedAgents([]);
+                        setTargetAgents([]);
+                        
+                        // Clear multi-agent session state
+                        setCurrentMultiAgentSession(null);
+                        multiAgentSessionRef.current = null;
+                        
+                        // 🚀 NEW: Trigger real-time chat history panel update
+                        console.log('🔄 [RealTime] Triggering chat history panel update after new chat creation');
+                        setChatHistoryRefreshTrigger(prev => prev + 1);
+                        
+                        console.log('✅ [NewChat] Guest agent state cleared for new chat session');
                       }
                       setMessageInput('');
                       setAttachedFiles([]);
@@ -2451,14 +7593,40 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       }
                     }}                />
                 )}
+              </Box>
 
+              {/* Right Side - Control Panels */}
+              <Box sx={{ flex: '0 0 40%', bgcolor: '#1e293b', borderLeft: '1px solid #334155' }}>
                 {rightPanelType === 'analytics' && selectedChatbot && (
                   <Box>
                     <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
-                      Analytics Dashboard
+                      Enhanced Analytics Dashboard
                     </Typography>
                     
-                    {/* Key Metrics */}
+                    {/* Real-time Status */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                          <Box sx={{ 
+                            width: 8, 
+                            height: 8, 
+                            borderRadius: '50%', 
+                            bgcolor: autonomousMode ? '#10b981' : '#6b7280',
+                            animation: autonomousMode ? 'pulse 2s infinite' : 'none'
+                          }} />
+                          <Typography variant="body1" sx={{ color: 'white', fontWeight: 600 }}>
+                            Agent Status: {autonomousMode ? 'Autonomous Mode Active' : 'Interactive Mode'}
+                          </Typography>
+                        </Box>
+                        {currentTaskPlan && (
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Current Task: {currentTaskPlan.goal}
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Enhanced Key Metrics */}
                     <Grid container spacing={1} sx={{ mb: 2 }}>
                       <Grid item xs={6}>
                         <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
@@ -2468,6 +7636,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             </Typography>
                             <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
                               {getRealMetricsSync(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Avg last 24h
                             </Typography>
                           </CardContent>
                         </Card>
@@ -2481,18 +7652,108 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1rem' }}>
                               {getRealMetricsSync(selectedChatbot).satisfactionScore.toFixed(1)}/5
                             </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              User feedback
+                            </Typography>
                           </CardContent>
                         </Card>
                       </Grid>
                       <Grid item xs={6}>
                         <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Autonomous Tasks
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {projects.length}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Active projects
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Team Collaboration
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {unreadTeamCount}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Unread messages
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Autonomous Mode Analytics */}
+                    {autonomousMode && currentTaskPlan && (
+                      <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="body1" sx={{ color: 'white', mb: 1, fontWeight: 600 }}>
+                            Autonomous Execution Analytics
+                          </Typography>
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                Progress
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#10b981' }}>
+                                {Math.round((currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100)}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={(currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100}
+                              sx={{ 
+                                bgcolor: '#334155',
+                                '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                              }}
+                            />
+                          </Box>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Phase {currentTaskPlan.currentPhaseId} of {currentTaskPlan.phases.length}: {
+                              currentTaskPlan.phases.find(p => p.id === currentTaskPlan.currentPhaseId)?.title || 'Unknown'
+                            }
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Team Collaboration Analytics */}
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
                           <CardContent sx={{ p: 2 }}>
-                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
-                              Resolution Rate
+                            <Typography variant="body1" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
+                              Team Collaboration Metrics
                             </Typography>
-                            <Typography variant="h5" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
-                              {getRealMetricsSync(selectedChatbot).resolutionRate}%
-                            </Typography>
+                            <Grid container spacing={2}>
+                              <Grid item xs={6}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                  <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                                    {teamMembers.length}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                    Team Members
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                              <Grid item xs={6}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                  <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                                    {teamConversations.length}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                    Active Chats
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            </Grid>
                           </CardContent>
                         </Card>
                       </Grid>
@@ -3110,6 +8371,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   }} />
                 )}
 
+                {rightPanelType === 'custom_gpt' && selectedChatbot && (
+                  <CustomGPTTab 
+                    agentId={selectedChatbot.identity.id}
+                    onClose={() => setRightPanelType(null)}
+                  />
+                )}
+
                 {rightPanelType === 'rag_policy' && (
                   <RAGPolicyPanel
                     agentId={selectedChatbot?.id || ''}
@@ -3259,8 +8527,220 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     </Card>
                   </Box>
                 )}
+
+                {rightPanelType === 'token_economics' && user?.uid && (
+                  <Box>
+                    <TokenEconomicsConfigPanel
+                      sessionId={currentMultiAgentSession || `session_${selectedChatbot?.identity?.id || selectedChatbot?.id}_${Date.now()}`}
+                      userId={user.uid}
+                      onConfigChange={(config) => {
+                        console.log('💰 [TokenEconomics] Configuration updated:', config);
+                        // Update local state based on config changes
+                        setBudgetWarning(false);
+                        setBudgetExceeded(false);
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {rightPanelType === 'debug' && (
+                  <DebugPanel />
+                )}
               </Box>
             </Box>
+            
+            {/* Sliding Contact Panel */}
+            <Slide direction="left" in={multiChatState.sidePanel.isOpen} mountOnEnter unmountOnExit>
+              <Box sx={{
+                position: 'fixed',
+                top: 0,
+                right: 0,
+                width: 320,
+                height: '100vh',
+                bgcolor: '#0f172a',
+                borderLeft: '1px solid #334155',
+                zIndex: 1300,
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '-4px 0 20px rgba(0,0,0,0.3)'
+              }}>
+                {/* Contact Panel Header */}
+                <Box sx={{ 
+                  p: 3, 
+                  borderBottom: '1px solid #334155',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                    Shared Chat History
+                  </Typography>
+                  <IconButton
+                    onClick={toggleSidePanel}
+                    sx={{ color: '#64748b' }}
+                  >
+                    <Close />
+                  </IconButton>
+                </Box>
+
+                {/* Contact Search */}
+                <Box sx={{ p: 2 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    placeholder="Search shared conversations..."
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Search sx={{ color: '#64748b', fontSize: 18 }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        bgcolor: '#1e293b',
+                        color: 'white',
+                        '& fieldset': { borderColor: '#334155' },
+                        '&:hover fieldset': { borderColor: '#3b82f6' },
+                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                      }
+                    }}
+                  />
+                </Box>
+
+                {/* Shared Conversations Header */}
+                <Box sx={{ px: 2, pb: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+                    RECENT CONVERSATIONS ({sharedConversations.length})
+                  </Typography>
+                </Box>
+
+                {/* Shared Conversations List */}
+                <Box sx={{ flex: 1, overflow: 'auto' }}>
+                  {sharedConversations.length === 0 ? (
+                    <Box sx={{ p: 3, textAlign: 'center' }}>
+                      <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+                        No shared conversations yet
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        Create or join a shared conversation to get started
+                      </Typography>
+                    </Box>
+                  ) : (
+                    sharedConversations.map((conversation) => (
+                      <Box
+                        key={conversation.id}
+                        onClick={() => {
+                          // Open shared conversation in header
+                          handleCustomSharedConversationSelect(conversation.id);
+                          toggleSidePanel();
+                        }}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          p: 2,
+                          mx: 2,
+                          mb: 1,
+                          borderRadius: 1,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            bgcolor: '#1e293b'
+                          }
+                        }}
+                      >
+                        {/* Avatar Group - Show up to 3 participants */}
+                        <Box sx={{ position: 'relative', mr: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                            {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
+                              <Avatar
+                                key={participant.id}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  fontSize: '0.7rem',
+                                  bgcolor: participant.type === 'ai_agent' ? '#6366f1' : '#10b981',
+                                  border: '2px solid #0f172a',
+                                  ml: pIndex > 0 ? -1 : 0,
+                                  zIndex: 3 - pIndex
+                                }}
+                              >
+                                {participant.type === 'ai_agent' ? '🤖' : participant.name.charAt(0).toUpperCase()}
+                              </Avatar>
+                            ))}
+                            {(conversation.participants?.length || 0) > 3 && (
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: '#94a3b8', 
+                                  ml: 1, 
+                                  fontSize: '0.7rem',
+                                  fontWeight: 500
+                                }}
+                              >
+                                +{(conversation.participants?.length || 0) - 3}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+
+                        {/* Conversation Info */}
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                            {conversation.name || 'Shared Chat'}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#64748b' }}>
+                            {conversation.participants?.length || 0} participants • {
+                              conversation.lastActivity ? 
+                              new Date(conversation.lastActivity).toLocaleDateString() : 
+                              'No activity'
+                            }
+                          </Typography>
+                        </Box>
+
+                        {/* Unread Count */}
+                        {conversation.unreadCounts && conversation.unreadCounts[user?.uid || ''] > 0 && (
+                          <Badge 
+                            badgeContent={conversation.unreadCounts[user?.uid || '']} 
+                            color="error"
+                            sx={{
+                              '& .MuiBadge-badge': {
+                                fontSize: '0.6rem',
+                                height: 16,
+                                minWidth: 16
+                              }
+                            }}
+                          />
+                        )}
+                      </Box>
+                    ))
+                  )}
+                </Box>
+
+                {/* Quick Actions */}
+                <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<Add />}
+                    onClick={() => {
+                      // TODO: Open create shared conversation dialog
+                      console.log('Create new shared conversation');
+                    }}
+                    sx={{
+                      borderColor: '#334155',
+                      color: '#94a3b8',
+                      '&:hover': {
+                        borderColor: '#3b82f6',
+                        bgcolor: '#1e293b'
+                      }
+                    }}
+                  >
+                    Create Shared Chat
+                  </Button>
+                </Box>
+              </Box>
+            </Slide>
             </Box>
           </Box>
         ) : (
@@ -3598,6 +9078,461 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           />
         )}
       </Box>
+
+      {/* Live Agent Panel - Slides out from right */}
+      <Slide direction="left" in={liveAgentPanelOpen} mountOnEnter unmountOnExit>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: { xs: '100%', md: '400px', lg: '450px' },
+            height: '100vh',
+            bgcolor: '#1e293b',
+            borderLeft: '1px solid #334155',
+            zIndex: 1300,
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.3)'
+          }}
+        >
+          {/* Live Agent Header */}
+          <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ 
+                  width: 12, 
+                  height: 12, 
+                  borderRadius: '50%', 
+                  bgcolor: autonomousMode ? '#10b981' : '#6b7280',
+                  animation: autonomousMode ? 'pulse 2s infinite' : 'none'
+                }} />
+                <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                  Live Agent Monitor
+                </Typography>
+              </Box>
+              <IconButton 
+                onClick={toggleLiveAgentPanel}
+                sx={{ color: '#64748b', '&:hover': { color: 'white' } }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            
+            <Typography variant="body2" sx={{ color: '#64748b' }}>
+              {autonomousMode ? 'Agent is working autonomously' : 'Agent is idle'}
+            </Typography>
+          </Box>
+
+          {/* Live Agent Content */}
+          <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+            {currentTaskPlan ? (
+              <Box>
+                <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                  Current Task: {currentTaskPlan.goal}
+                </Typography>
+                
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                    Progress
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100}
+                    sx={{ 
+                      bgcolor: '#334155',
+                      '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                    }}
+                  />
+                </Box>
+
+                <Box>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+                    Phases
+                  </Typography>
+                  {currentTaskPlan.phases.map((phase, index) => (
+                    <Box key={phase.id} sx={{ mb: 2, p: 2, bgcolor: '#0f172a', borderRadius: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                        <Box sx={{ 
+                          width: 8, 
+                          height: 8, 
+                          borderRadius: '50%', 
+                          bgcolor: phase.status === 'completed' ? '#10b981' : 
+                                   phase.status === 'in_progress' ? '#f59e0b' : '#6b7280'
+                        }} />
+                        <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                          {phase.title}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>
+                        {phase.description}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" sx={{ color: '#64748b', mb: 2 }}>
+                  No active autonomous tasks
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>
+                  Start an autonomous task to see live monitoring here
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* Live Agent Controls */}
+          {autonomousMode && currentTaskPlan && (
+            <Box sx={{ p: 3, borderTop: '1px solid #334155', flexShrink: 0 }}>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                onClick={stopAutonomousMode}
+                sx={{ mb: 1 }}
+              >
+                Stop Autonomous Mode
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Slide>
+
+      {/* Token Budget Popup */}
+      <TokenBudgetPopup
+        open={showTokenBudget}
+        onClose={() => setShowTokenBudget(false)}
+        sessionId={currentMultiAgentSession || (selectedChatbot ? `session_${selectedChatbot.identity?.id || selectedChatbot.id}_${Date.now()}` : undefined)}
+      />
+
+      {/* Human Invitation Dialog */}
+      <Dialog
+        open={showInviteDialog}
+        onClose={() => setShowInviteDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e293b',
+            border: '1px solid #334155',
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: '#e2e8f0', borderBottom: '1px solid #334155' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonAdd sx={{ color: '#3b82f6' }} />
+            <Typography variant="h6">
+              {chatInvitationContext 
+                ? `Invite to "${chatInvitationContext.chatName}"` 
+                : 'Invite Human to Conversation'
+              }
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 3 }}>
+            {chatInvitationContext 
+              ? `Invite a team member to join the chat "${chatInvitationContext.chatName}" with ${chatInvitationContext.agentName}. They'll be able to see the conversation history and participate in the discussion.`
+              : 'Invite a human participant to join this AI conversation. They\'ll be able to interact with AI agents and receive behavioral responses.'
+            }
+          </Typography>
+          
+          <TextField
+            fullWidth
+            label="Email Address"
+            variant="outlined"
+            placeholder="colleague@company.com"
+            sx={{
+              mb: 2,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#0f172a',
+                color: '#e2e8f0',
+                '& fieldset': { borderColor: '#334155' },
+                '&:hover fieldset': { borderColor: '#475569' },
+                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+              },
+              '& .MuiInputLabel-root': { color: '#94a3b8' }
+            }}
+          />
+          
+          <TextField
+            fullWidth
+            label="Personal Message (Optional)"
+            variant="outlined"
+            multiline
+            rows={3}
+            placeholder="Join me for an AI-powered collaboration session..."
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#0f172a',
+                color: '#e2e8f0',
+                '& fieldset': { borderColor: '#334155' },
+                '&:hover fieldset': { borderColor: '#475569' },
+                '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+              },
+              '& .MuiInputLabel-root': { color: '#94a3b8' }
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid #334155' }}>
+          <Button
+            onClick={() => setShowInviteDialog(false)}
+            sx={{ color: '#94a3b8' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              if (!inviteEmail.trim()) return;
+              
+              try {
+                console.log('👥 [Human Invitation] Sending invitation...');
+                
+                if (chatInvitationContext) {
+                  // Chat-specific invitation
+                  console.log('🎯 [ChatInvitation] Creating chat-specific invitation:', {
+                    chatSessionId: chatInvitationContext.chatSessionId,
+                    chatName: chatInvitationContext.chatName,
+                    email: inviteEmail
+                  });
+                  
+                  await aiCollaborationInvitationService.createInvitation({
+                    fromUserId: user?.uid || '',
+                    fromUserName: user?.displayName || user?.email || 'User',
+                    toEmail: inviteEmail,
+                    conversationId: chatInvitationContext.chatSessionId,
+                    conversationName: chatInvitationContext.chatName,
+                    agentName: chatInvitationContext.agentName,
+                    message: `Join me in my chat "${chatInvitationContext.chatName}" with ${chatInvitationContext.agentName}`,
+                    includeHistory: true
+                  });
+                  
+                  console.log('✅ [ChatInvitation] Chat-specific invitation sent successfully');
+                } else {
+                  // General conversation invitation (existing logic)
+                  console.log('👥 [Human Invitation] Creating general conversation invitation');
+                  // TODO: Implement general invitation logic
+                }
+                
+                setShowInviteDialog(false);
+                setInviteEmail('');
+                setChatInvitationContext(null);
+                
+              } catch (error) {
+                console.error('❌ [Human Invitation] Failed to send invitation:', error);
+              }
+            }}
+            sx={{
+              bgcolor: '#3b82f6',
+              color: 'white',
+              '&:hover': { bgcolor: '#2563eb' }
+            }}
+          >
+            Send Invitation
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Human Invitation Confirmation Dialog */}
+      <Dialog
+        open={showHumanInviteConfirmDialog}
+        onClose={() => {
+          setShowHumanInviteConfirmDialog(false);
+          setPendingHumanInvites([]);
+        }}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: '#1e293b',
+            border: '1px solid #334155',
+            borderRadius: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: '#e2e8f0', borderBottom: '1px solid #334155' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonAdd sx={{ color: '#3b82f6' }} />
+            <Typography variant="h6">Send Chat Invitation?</Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Typography variant="body1" sx={{ color: '#e2e8f0', mb: 2 }}>
+            You're about to invite {pendingHumanInvites.length} team member{pendingHumanInvites.length !== 1 ? 's' : ''} to join this conversation:
+          </Typography>
+          
+          {pendingHumanInvites.map((human, index) => (
+            <Box key={human.id} sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
+              <Avatar sx={{ bgcolor: '#3b82f6', width: 32, height: 32 }}>
+                {human.name.charAt(0)}
+              </Avatar>
+              <Box>
+                <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 500 }}>
+                  {human.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                  {human.role || 'Team Member'}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+          
+          <Typography variant="body2" sx={{ color: '#94a3b8', mt: 2 }}>
+            They will receive a notification and can choose to accept or decline the invitation.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, borderTop: '1px solid #334155' }}>
+          <Button
+            onClick={() => {
+              setShowHumanInviteConfirmDialog(false);
+              setPendingHumanInvites([]);
+            }}
+            sx={{ color: '#94a3b8' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              console.log('📨 Sending invitations to:', pendingHumanInvites);
+              
+              try {
+                // Get current conversation info - use the SAME session ID that was used for guest human addition
+                const currentChatSession = currentBotState?.currentChatSession || currentBotState?.activeSession;
+                const currentConversationId = currentChatSession?.id || activeSession?.sessionId || currentMultiAgentSession || `session_${selectedChatbot?.id}_${Date.now()}`;
+                const currentConversationName = selectedChatbot?.identity?.name || 'AI Conversation';
+                const currentUserId = user?.uid || 'unknown-user'; // Use real authenticated user ID
+                const currentUserName = user?.displayName || user?.email || 'Current User'; // Use real user name
+                
+                console.log('📨 [Invitation] Using conversation ID:', currentConversationId);
+                console.log('📨 [Invitation] This should match the session where guest humans were added:', currentChatSession?.id);
+                console.log('📨 [Invitation] Active session:', activeSession?.sessionId);
+                console.log('📨 [Invitation] Multi-agent session:', currentMultiAgentSession);
+                
+                // Create invitation requests for each pending human
+                const invitationRequests: AICollaborationInvitationRequest[] = pendingHumanInvites.map(human => ({
+                  fromUserId: currentUserId,
+                  fromUserName: currentUserName,
+                  toUserId: human.id,
+                  toUserName: human.name,
+                  conversationId: currentConversationId,
+                  conversationName: currentConversationName,
+                  agentName: selectedChatbot?.identity?.name,
+                  message: `Join me in collaborating with ${selectedChatbot?.identity?.name || 'AI'}`
+                }));
+                
+                // Send invitations through the notification system
+                const userIds = invitationRequests.map(req => req.toUserId);
+                await aiCollaborationInvitationService.sendInvitationToMultipleUsers(
+                  user?.uid || '',
+                  user?.displayName || user?.email || 'User',
+                  userIds,
+                  currentConversationId,
+                  currentConversationName,
+                  selectedChatbot?.identity?.name,
+                  `Join me in collaborating with ${selectedChatbot?.identity?.name || 'AI'}`
+                );
+                
+                console.log(`✅ Successfully sent ${invitationRequests.length} collaboration invitations`);
+                
+                // For now, also add them directly (in real implementation, wait for acceptance)
+                await handleAddHumans(pendingHumanInvites);
+                
+              } catch (error) {
+                console.error('❌ Error sending invitations:', error);
+                // Still add them directly as fallback
+                await handleAddHumans(pendingHumanInvites);
+              }
+              
+              setShowHumanInviteConfirmDialog(false);
+              setPendingHumanInvites([]);
+            }}
+            sx={{
+              bgcolor: '#3b82f6',
+              color: 'white',
+              '&:hover': { bgcolor: '#2563eb' }
+            }}
+          >
+            Send Invitation{pendingHumanInvites.length !== 1 ? 's' : ''}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Conversation Invitation Dialog */}
+      <ConversationInvitationDialog
+        open={showInvitationDialog}
+        onClose={() => {
+          setShowInvitationDialog(false);
+          setCurrentConversationForInvite(null);
+        }}
+        onSendInvitations={handleSendEmailInvitations}
+        conversationName={
+          currentConversationForInvite 
+            ? sharedConversations.find(conv => conv.id === currentConversationForInvite)?.name || 'AI Conversation'
+            : 'AI Conversation'
+        }
+        currentParticipants={
+          currentConversationForInvite 
+            ? sharedConversations.find(conv => conv.id === currentConversationForInvite)?.participants || []
+            : []
+        }
+        isCreator={true}
+      />
+
+      {/* User Discovery Dialog */}
+      <UserDiscoveryDialog
+        open={showUserDiscoveryDialog}
+        onClose={() => {
+          setShowUserDiscoveryDialog(false);
+          setCurrentConversationForInvite(null);
+        }}
+        onInviteUsers={handleInvitePromethiosUsers}
+        conversationName={
+          currentConversationForInvite 
+            ? sharedConversations.find(conv => conv.id === currentConversationForInvite)?.name || 'AI Conversation'
+            : 'AI Conversation'
+        }
+        currentParticipantIds={
+          currentConversationForInvite 
+            ? sharedConversations.find(conv => conv.id === currentConversationForInvite)?.participants.map(p => p.id) || []
+            : []
+        }
+      />
+
+      {/* In-App Notification Popup */}
+      <InAppNotificationPopup
+        notifications={activeNotifications}
+        onAcceptInvitation={handleAcceptInvitation}
+        onDeclineInvitation={handleDeclineInvitation}
+        onDismissNotification={handleDismissNotification}
+        position="top-right"
+      />
+
+      {/* Chat Invitation Modal */}
+      <ChatInvitationModal
+        open={showChatInvitationModal}
+        onClose={() => {
+          setShowChatInvitationModal(false);
+          setActiveChatInvitationSession(null);
+        }}
+        chatSession={activeChatInvitationSession}
+        agentId={selectedChatbot?.id}
+        agentName={selectedChatbot?.identity?.name || 'AI Assistant'}
+        user={user}
+      />
+
+      {/* Agent Permission Request Popup */}
+      <AgentPermissionRequestPopup
+        notifications={permissionNotifications}
+        onApproveRequest={handleApproveAgentRequest}
+        onDenyRequest={handleDenyAgentRequest}
+        onDismissNotification={handleDismissPermissionNotification}
+        position="top-right"
+      />
     </Box>
   );
 };
