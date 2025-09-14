@@ -119,6 +119,7 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from './notifications/NotificationBell';
 import ChatButton from './social/ChatButton';
 import UserConnectionsModal from './social/UserConnectionsModal';
+import BottomUserSection from './navigation/BottomUserSection';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
@@ -818,18 +819,12 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
+          justifyContent: collapsed ? 'center' : 'flex-end',
           padding: '8px',
           borderBottom: '1px solid',
           borderColor: 'divider',
         }}
       >
-        {!collapsed && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <NotificationBell collapsed={false} />
-            <ChatButton collapsed={false} />
-          </Box>
-        )}
         <IconButton onClick={handleToggleCollapse} sx={{ color: 'text.primary' }}>
           {collapsed ? <ChevronRight /> : <ChevronLeft />}
         </IconButton>
@@ -840,158 +835,11 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         {navigationItems.map(item => renderNavigationItem(item))}
       </List>
 
-      {/* Footer section for collapsed state */}
-      {collapsed && (
-        <Box sx={{ mt: 'auto', p: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-          <NotificationBell collapsed={true} />
-          <ChatButton collapsed={true} />
-          <Tooltip title="Profile" placement="right" arrow>
-            <IconButton 
-              sx={{ color: 'text.primary', width: '100%', mb: 0.5 }}
-              onClick={() => handleNavigation('/ui/profile')}
-            >
-              <PersonIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Settings" placement="right" arrow>
-            <IconButton 
-              sx={{ color: 'text.primary', width: '100%', mb: 0.5 }}
-              onClick={() => handleNavigation('/ui/settings')}
-            >
-              <SettingsIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Help" placement="right" arrow>
-            <IconButton 
-              sx={{ color: 'text.primary', width: '100%', mb: 0.5 }}
-              onClick={() => handleNavigation('/ui/help')}
-            >
-              <HelpIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Logout" placement="right" arrow>
-            <IconButton 
-              sx={{ color: 'text.primary', width: '100%' }}
-              onClick={() => {
-                // Add logout logic here
-                window.location.href = '/';
-              }}
-            >
-              <LogoutIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )}
-
-      {/* Footer section for expanded state */}
-      {!collapsed && (
-        <Box sx={{ mt: 'auto' }}>
-          <Divider sx={{ borderColor: 'divider' }} />
-          <List>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/profile')}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <PersonIcon />
-                </ListItemIcon>
-                <ListItemText primary="Profile" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/settings')}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <SettingsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Settings" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            {/* Settings Sub-Items */}
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/settings/preferences')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <PreferencesIcon />
-                </ListItemIcon>
-                <ListItemText primary="Preferences" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/settings/organization')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <OrganizationIcon />
-                </ListItemIcon>
-                <ListItemText primary="Organization" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/settings/integrations')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <IntegrationsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Integrations" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/settings/data')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <DataIcon />
-                </ListItemIcon>
-                <ListItemText primary="Data Management" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/settings/api-keys')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <ApiKeyIcon />
-                </ListItemIcon>
-                <ListItemText primary="API Keys" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/help')}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <HelpIcon />
-                </ListItemIcon>
-                <ListItemText primary="Help & Support" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            {/* Help Sub-Items */}
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/help/tours')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <ToursIcon />
-                </ListItemIcon>
-                <ListItemText primary="Guided Tours" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/help/documentation')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <DocsIcon />
-                </ListItemIcon>
-                <ListItemText primary="Documentation" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigation('/ui/help/support')} sx={{ pl: 4 }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <SupportIcon />
-                </ListItemIcon>
-                <ListItemText primary="Support" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => {
-                // Add logout logic here
-                window.location.href = '/';
-              }}>
-                <ListItemIcon sx={{ color: 'text.primary' }}>
-                  <LogoutIcon />
-                </ListItemIcon>
-                <ListItemText primary="Logout" sx={{ color: 'text.primary' }} />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </Box>
-      )}
+      {/* Bottom User Section */}
+      <BottomUserSection 
+        collapsed={collapsed} 
+        onNavigate={handleNavigation}
+      />
     </DrawerComponent>
 
     {/* Connections Modal */}
