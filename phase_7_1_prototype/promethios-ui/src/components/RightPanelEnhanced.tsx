@@ -693,7 +693,11 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         </Alert>
       )}
 
+<<<<<<< HEAD
       {/* Collapsed Icon List - Smart Adaptive Behavior */}
+=======
+      {/* Collapsed Icon List */}
+>>>>>>> 831e35dedfcd527648e4355321be9f3b6dea6adc
       {preferences.rightPanelCollapsed && (
         <Box sx={{ 
           flex: 1,
@@ -704,6 +708,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
           gap: 0.5,
           overflow: 'auto'
         }}>
+<<<<<<< HEAD
           {/* Space Mode Indicator */}
           <Tooltip 
             title={`Chat Space Mode: ${chatSpaceMode.charAt(0).toUpperCase() + chatSpaceMode.slice(1)}`} 
@@ -724,12 +729,18 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
             />
           </Tooltip>
           
+=======
+>>>>>>> 831e35dedfcd527648e4355321be9f3b6dea6adc
           {tabConfigs.map((config) => (
             <Tooltip key={config.id} title={config.label} placement="left" arrow>
               <IconButton
                 onClick={() => {
                   setActiveTab(config.id);
+<<<<<<< HEAD
                   handleManualToggle(); // Expand panel when icon is clicked
+=======
+                  updateRightPanelState(false); // Expand panel when icon is clicked
+>>>>>>> 831e35dedfcd527648e4355321be9f3b6dea6adc
                 }}
                 disabled={config.disabled}
                 sx={{
