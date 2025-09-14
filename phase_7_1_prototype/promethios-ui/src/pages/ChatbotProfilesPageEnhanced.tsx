@@ -490,33 +490,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     refreshSharedConversations
   } = useSharedConversations();
   
-  // Adaptive right panel based on chat interface complexity
-  const chatInterfaceState: ChatInterfaceState = {
-    messages: chatMessages,
-    participants: [...(humanParticipants || []), ...(aiAgents || [])],
-    sharedConversations: sharedConversations,
-    hasActiveThreads: sharedConversations.some(conv => conv.messageCount > 5),
-    hasRichContent: chatMessages.some(msg => msg.hasAttachments || msg.hasRichContent),
-    hasMultipleParticipants: (humanParticipants?.length || 0) + (aiAgents?.length || 0) > 2,
-    isMultiAgent: (aiAgents?.length || 0) > 1,
-    hasAttachments: chatMessages.some(msg => msg.attachments?.length > 0),
-    messageCount: chatMessages.length,
-    screenWidth: window.innerWidth
-  };
-  
-  const {
-    isCollapsed: rightPanelCollapsed,
-    adaptiveWidth,
-    adaptiveMinWidth,
-    adaptiveMaxWidth,
-    recommendedMode,
-    reason: adaptiveReason,
-    toggleCollapse: toggleRightPanel,
-    setCollapsed: setRightPanelCollapsed
-  } = useAdaptiveRightPanel(chatInterfaceState);
-  
-  const adaptiveTransitions = useAdaptiveTransitions();
-  
   // Debug logging for guestConversationAccess
   console.log('🔍 [Context] guestConversationAccess from context:', guestConversationAccess);
   console.log('🔍 [Context] guestConversationAccess length:', guestConversationAccess?.length);
@@ -793,6 +766,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Enhanced action indicators
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [actionStartTime, setActionStartTime] = useState<Date | null>(null);
+
+  // Adaptive right panel based on chat interface complexity
+  const chatInterfaceState: ChatInterfaceState = {
+    messages: chatMessages,
+    participants: [...(humanParticipants || [])],
+    sharedConversations: sharedConversations,
+    hasActiveThreads: sharedConversations.some(conv => conv.messageCount > 5),
+    hasRichContent: chatMessages.some(msg => msg.hasAttachments || msg.hasRichContent),
+    hasMultipleParticipants: (humanParticipants?.length || 0) > 2,
+    isMultiAgent: humanParticipants.some(p => p.aiAgents && p.aiAgents.length > 1),
+    hasAttachments: chatMessages.some(msg => msg.attachments?.length > 0),
+    messageCount: chatMessages.length,
+    screenWidth: window.innerWidth
+  };
+  
+  const {
+    isCollapsed: rightPanelCollapsed,
+    adaptiveWidth,
+    adaptiveMinWidth,
+    adaptiveMaxWidth,
+    recommendedMode,
+    reason: adaptiveReason,
+    toggleCollapse: toggleRightPanel,
+    setCollapsed: setRightPanelCollapsed
+  } = useAdaptiveRightPanel(chatInterfaceState);
+  
+  const adaptiveTransitions = useAdaptiveTransitions();
 
   // 🔧 CLEANUP: Clear message input when switching between chatbots
   // This prevents state contamination where old messages appear in new chats
