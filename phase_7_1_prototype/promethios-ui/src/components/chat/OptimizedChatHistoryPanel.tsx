@@ -592,6 +592,10 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   
+  // Cache for instant loading
+  const [cachedSessions, setCachedSessions] = useState<{[key: string]: {sessions: ChatSession[], timestamp: number}}>({});
+  const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
+  
   // Dialog states
   const [newChatDialogOpen, setNewChatDialogOpen] = useState(false);
   const [newChatName, setNewChatName] = useState('');
@@ -620,12 +624,13 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
   const chatSharingService = useMemo(() => ChatSharingService.getInstance(), []);
 
   // Optimized load function with caching and error handling
-  const loadChatSessions = useCallback(async () => {
+  const loadChatSessions = useCallback(async (forceRefresh = false) => {
     console.log('🔍 [DEBUG] loadChatSessions called:', {
       currentUserUid: currentUser?.uid,
       agentId,
       searchTerm,
-      loading
+      loading,
+      forceRefresh
     });
 
     if (!currentUser?.uid) {
@@ -634,8 +639,36 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
       return;
     }
 
+    // Create cache key
+    const cacheKey = `${currentUser.uid}_${agentId}_${searchTerm.trim()}`;
+    const cached = cachedSessions[cacheKey];
+    const now = Date.now();
+    const CACHE_TTL = 2 * 60 * 1000; // 2 minutes cache
+
+    // Check cache first for instant loading
+    if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_TTL) {
+      console.log('⚡ [DEBUG] Using cached sessions for instant loading:', {
+        cacheKey,
+        sessionsCount: cached.sessions.length,
+        cacheAge: now - cached.timestamp
+      });
+      
+      setChatSessions(cached.sessions);
+      setLoading(false);
+      
+      // Start background refresh if cache is older than 30 seconds
+      if ((now - cached.timestamp) > 30000) {
+        console.log('🔄 [DEBUG] Starting background refresh...');
+        setIsBackgroundRefreshing(true);
+        setTimeout(() => loadChatSessions(true), 100);
+      }
+      return;
+    }
+
     try {
-      setLoading(true);
+      if (!forceRefresh) {
+        setLoading(true);
+      }
       console.log('🔍 [DEBUG] Starting chat sessions load...');
       
       // Use a more efficient filter approach
@@ -678,6 +711,15 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
         validSessions: validSessions.slice(0, 3).map(s => ({ id: s.id, name: s.name, agentId: s.agentId }))
       });
       
+      // Update cache
+      setCachedSessions(prev => ({
+        ...prev,
+        [cacheKey]: {
+          sessions: validSessions,
+          timestamp: now
+        }
+      }));
+      
       setChatSessions(validSessions);
       console.log('✅ [DEBUG] Chat sessions set successfully');
     } catch (error) {
@@ -696,6 +738,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
       }
     } finally {
       setLoading(false);
+      setIsBackgroundRefreshing(false);
       console.log('🔍 [DEBUG] loadChatSessions completed');
     }
   }, [currentUser?.uid, agentId, searchTerm, chatHistoryService, chatSessions.length]);
@@ -1131,7 +1174,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
             {/* Debug Info */}
             <Box sx={{ p: 1, bgcolor: '#1e293b', borderBottom: '1px solid #334155' }}>
               <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                DEBUG: User: {currentUser?.uid || 'None'} | Agent: {agentId} | Sessions: {chatSessions.length} | Loading: {loading.toString()}
+                DEBUG: User: {currentUser?.uid || 'None'} | Agent: {agentId} | Sessions: {chatSessions.length} | Loading: {loading.toString()} | BG Refresh: {isBackgroundRefreshing.toString()}
               </Typography>
             </Box>
             

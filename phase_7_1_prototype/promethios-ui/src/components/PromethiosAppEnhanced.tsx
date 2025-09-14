@@ -642,13 +642,26 @@ const PromethiosAppEnhanced: React.FC<PromethiosAppEnhancedProps> = ({
 
       {/* Error Alert */}
       {error && (
-        <Alert severity="error" sx={{ m: 1 }} onClose={() => setError(null)}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            m: 1,
+            flexShrink: 0  // Prevent alert from shrinking main content
+          }} 
+          onClose={() => setError(null)}
+        >
           {error}
         </Alert>
       )}
 
       {/* Main Content */}
-      {renderMainContent()}
+      <Box sx={{ 
+        flexGrow: 1,     // Take up remaining space after AppBar
+        minHeight: 0,    // Allow shrinking below content size
+        overflow: 'hidden'  // Prevent overflow
+      }}>
+        {renderMainContent()}
+      </Box>
 
       {/* Menus */}
       {renderUserMenu()}
