@@ -32,6 +32,7 @@ import InAppNotificationPopup, { ConversationInvitationNotification } from '../c
 import ConversationNotificationService from '../services/ConversationNotificationService';
 import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../services/ChatInvitationService';
 import { useConnections } from '../hooks/useConnections';
+import { useAdaptiveRightPanel, useAdaptiveTransitions, ChatInterfaceState } from '../hooks/useAdaptiveRightPanel';
 // Removed MultiAgentResponseIndicator - intrusive orange popup
 // Real-time collaboration imports
 import RealTimeConversationSync from '../services/RealTimeConversationSync';
@@ -107,6 +108,8 @@ import {
   Settings,
   Close as CloseIcon,
   Close,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Chat,
   Rocket,
   MoreVert,
@@ -486,6 +489,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     handlePrivacyToggle,
     refreshSharedConversations
   } = useSharedConversations();
+  
+  // Adaptive right panel based on chat interface complexity
+  const chatInterfaceState: ChatInterfaceState = {
+    messages: chatMessages,
+    participants: [...(humanParticipants || []), ...(aiAgents || [])],
+    sharedConversations: sharedConversations,
+    hasActiveThreads: sharedConversations.some(conv => conv.messageCount > 5),
+    hasRichContent: chatMessages.some(msg => msg.hasAttachments || msg.hasRichContent),
+    hasMultipleParticipants: (humanParticipants?.length || 0) + (aiAgents?.length || 0) > 2,
+    isMultiAgent: (aiAgents?.length || 0) > 1,
+    hasAttachments: chatMessages.some(msg => msg.attachments?.length > 0),
+    messageCount: chatMessages.length,
+    screenWidth: window.innerWidth
+  };
+  
+  const {
+    isCollapsed: rightPanelCollapsed,
+    adaptiveWidth,
+    adaptiveMinWidth,
+    adaptiveMaxWidth,
+    recommendedMode,
+    reason: adaptiveReason,
+    toggleCollapse: toggleRightPanel,
+    setCollapsed: setRightPanelCollapsed
+  } = useAdaptiveRightPanel(chatInterfaceState);
+  
+  const adaptiveTransitions = useAdaptiveTransitions();
   
   // Debug logging for guestConversationAccess
   console.log('🔍 [Context] guestConversationAccess from context:', guestConversationAccess);
@@ -7095,55 +7125,77 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
             {/* Right Side - Command Panels */}
             <Box sx={{ 
-              flex: '0 0 40%', 
+              flex: rightPanelCollapsed ? '0 0 60px' : `0 0 ${adaptiveWidth}`,
+              minWidth: rightPanelCollapsed ? '60px' : adaptiveMinWidth,
+              maxWidth: rightPanelCollapsed ? '60px' : adaptiveMaxWidth,
               bgcolor: '#1e293b', 
               borderLeft: '1px solid #334155',
-              height: '100vh',
+              height: '100%', // Changed from 100vh to 100% to fix dead space
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              ...adaptiveTransitions
             }}>
               {/* Panel Header */}
               <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <Avatar sx={{ bgcolor: '#3b82f6' }}>
-                    {selectedChatbot?.identity?.name?.charAt(0) || 'A'}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                      {selectedChatbot?.identity?.name || 'Agent'} • Custom
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#64748b' }}>
-                      Live • Enterprise
-                    </Typography>
-                  </Box>
+                  {!rightPanelCollapsed && (
+                    <>
+                      <Avatar sx={{ bgcolor: '#3b82f6' }}>
+                        {selectedChatbot?.identity?.name?.charAt(0) || 'A'}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                          {selectedChatbot?.identity?.name || 'Agent'} • Custom
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          Live • Enterprise
+                        </Typography>
+                      </Box>
+                    </>
+                  )}
+                  
+                  {/* Collapse Button */}
+                  <Tooltip title={rightPanelCollapsed ? "Expand panel" : "Collapse panel"}>
+                    <IconButton 
+                      onClick={toggleRightPanel}
+                      sx={{ 
+                        color: '#64748b',
+                        '&:hover': { color: '#94a3b8' },
+                        ml: rightPanelCollapsed ? 0 : 'auto'
+                      }}
+                    >
+                      {rightPanelCollapsed ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                    </IconButton>
+                  </Tooltip>
                 </Box>
                 
-                {/* Command Panel Tabs */}
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {[
-                    { key: 'team', label: 'TEAM', badge: unreadTeamCount },
-                    { key: 'chats', label: 'CHATS' },
-                    { key: 'repo', label: 'REPO', badge: projects.length },
-                    { key: 'analytics', label: 'ANALYTICS' },
-                    { key: 'mas_collaboration', label: 'MAS COLLABORATION', badge: 0 },
-                    { key: 'token_economics', label: 'TOKEN ECONOMICS', badge: budgetWarning || budgetExceeded ? 1 : 0 },
-                    { key: 'customize', label: 'CUSTOMIZE' },
-                    { key: 'personality', label: 'PERSONALITY' },
-                    { key: 'knowledge', label: 'AI KNOWLEDGE' },
-                    { key: 'tools', label: 'TOOLS' },
-                    { key: 'chat_interface', label: 'CHAT INTERFACE' },
-                    { key: 'integrations', label: 'INTEGRATIONS' },
-                    { key: 'rag_policy', label: 'RAG + POLICY' },
-                    { key: 'automation', label: 'AUTOMATION' },
-                    { key: 'receipts', label: 'RECEIPTS' },
-                    { key: 'memory', label: 'MEMORY' },
-                    { key: 'sandbox', label: 'SANDBOX' },
-                    { key: 'live_agent', label: 'LIVE AGENT', badge: autonomousMode ? 1 : 0, isLiveAgent: true },
-                    { key: 'governance', label: 'GOVERNANCE' },
-                    ...(selectedChatbot && isCustomGPT(selectedChatbot) ? [{ key: 'custom_gpt', label: 'CUSTOM GPT', badge: 0 }] : []),
-                    { key: 'debug', label: 'DEBUG' }
-                  ].map((tab) => (
+                {/* Command Panel Tabs - Only show when expanded */}
+                {!rightPanelCollapsed && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {[
+                      { key: 'team', label: 'TEAM', badge: unreadTeamCount },
+                      { key: 'chats', label: 'CHATS' },
+                      { key: 'repo', label: 'REPO', badge: projects.length },
+                      { key: 'analytics', label: 'ANALYTICS' },
+                      { key: 'mas_collaboration', label: 'MAS COLLABORATION', badge: 0 },
+                      { key: 'token_economics', label: 'TOKEN ECONOMICS', badge: budgetWarning || budgetExceeded ? 1 : 0 },
+                      { key: 'customize', label: 'CUSTOMIZE' },
+                      { key: 'personality', label: 'PERSONALITY' },
+                      { key: 'knowledge', label: 'AI KNOWLEDGE' },
+                      { key: 'tools', label: 'TOOLS' },
+                      { key: 'chat_interface', label: 'CHAT INTERFACE' },
+                      { key: 'integrations', label: 'INTEGRATIONS' },
+                      { key: 'rag_policy', label: 'RAG + POLICY' },
+                      { key: 'automation', label: 'AUTOMATION' },
+                      { key: 'receipts', label: 'RECEIPTS' },
+                      { key: 'memory', label: 'MEMORY' },
+                      { key: 'sandbox', label: 'SANDBOX' },
+                      { key: 'live_agent', label: 'LIVE AGENT', badge: autonomousMode ? 1 : 0, isLiveAgent: true },
+                      { key: 'governance', label: 'GOVERNANCE' },
+                      ...(selectedChatbot && isCustomGPT(selectedChatbot) ? [{ key: 'custom_gpt', label: 'CUSTOM GPT', badge: 0 }] : []),
+                      { key: 'debug', label: 'DEBUG' }
+                    ].map((tab) => (
                     <Badge
                       key={tab.key}
                       badgeContent={tab.badge || 0}
@@ -7186,6 +7238,62 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     </Badge>
                   ))}
                 </Box>
+                )}
+                
+                {/* Collapsed Icon List State */}
+                {rightPanelCollapsed && (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: 1, 
+                    alignItems: 'center',
+                    mt: 1
+                  }}>
+                    {/* Adaptive Mode Indicator */}
+                    <Box sx={{
+                      width: 3,
+                      height: 20,
+                      bgcolor: recommendedMode === 'minimal' ? '#ef4444' : 
+                               recommendedMode === 'compact' ? '#f59e0b' : 
+                               recommendedMode === 'standard' ? '#10b981' : '#3b82f6',
+                      borderRadius: 1.5,
+                      mb: 1
+                    }} />
+                    
+                    {/* Key Tab Icons */}
+                    {[
+                      { key: 'team', icon: '👥', badge: unreadTeamCount },
+                      { key: 'chats', icon: '💬', badge: 0 },
+                      { key: 'analytics', icon: '📊', badge: 0 },
+                      { key: 'tools', icon: '🔧', badge: 0 },
+                      { key: 'settings', icon: '⚙️', badge: 0 }
+                    ].map((item) => (
+                      <Tooltip key={item.key} title={`${item.key.toUpperCase()} - Click to expand`} placement="left">
+                        <IconButton
+                          onClick={() => {
+                            setRightPanelCollapsed(false);
+                            setRightPanelType(item.key);
+                          }}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            color: rightPanelType === item.key ? '#3b82f6' : '#64748b',
+                            bgcolor: rightPanelType === item.key ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                            '&:hover': {
+                              color: '#94a3b8',
+                              bgcolor: 'rgba(148, 163, 184, 0.1)'
+                            },
+                            fontSize: '14px'
+                          }}
+                        >
+                          <Badge badgeContent={item.badge || 0} color="error" invisible={!item.badge}>
+                            {item.icon}
+                          </Badge>
+                        </IconButton>
+                      </Tooltip>
+                    ))}
+                  </Box>
+                )}
               </Box>
 
               {/* Panel Content */}
