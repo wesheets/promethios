@@ -82,6 +82,7 @@ import TeamPanel from './team/TeamPanel';
 import TabCustomizationModal, { TabConfig } from './TabCustomizationModal';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
 import { useUserPreferences } from '../hooks/useUserPreferences';
+import { ChatSpaceMode, usePanelWidth, useAdaptiveTransition } from '../hooks/useChatSpaceDetection';
 
 interface RightPanelEnhancedProps {
   userId: string;
@@ -90,6 +91,7 @@ interface RightPanelEnhancedProps {
   currentAgentName?: string;
   onClose?: () => void;
   defaultTab?: string;
+  chatSpaceMode?: ChatSpaceMode; // Smart adaptive sizing
 }
 
 type RightPanelTab = 
@@ -115,10 +117,34 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
   currentAgentId,
   currentAgentName,
   onClose,
-  defaultTab = 'chats'
+  defaultTab = 'chats',
+  chatSpaceMode = 'full'
 }) => {
   // Hooks
   const { preferences, updateRightPanelState } = useUserPreferences();
+  
+  // Adaptive width based on chat space mode and collapse state
+  const adaptiveWidth = usePanelWidth(chatSpaceMode, preferences.rightPanelCollapsed);
+  const adaptiveTransition = useAdaptiveTransition();
+  
+  // Auto-collapse when space mode is minimal (unless manually overridden)
+  useEffect(() => {
+    if (chatSpaceMode === 'minimal' && !preferences.rightPanelCollapsed) {
+      // Only auto-collapse if user hasn't manually expanded recently
+      const lastManualAction = localStorage.getItem('rightPanel_lastManualAction');
+      const timeSinceManual = lastManualAction ? Date.now() - parseInt(lastManualAction) : Infinity;
+      
+      if (timeSinceManual > 30000) { // 30 seconds since last manual action
+        updateRightPanelState(true);
+      }
+    }
+  }, [chatSpaceMode, preferences.rightPanelCollapsed, updateRightPanelState]);
+  
+  // Track manual collapse/expand actions
+  const handleManualToggle = () => {
+    localStorage.setItem('rightPanel_lastManualAction', Date.now().toString());
+    updateRightPanelState(!preferences.rightPanelCollapsed);
+  };
   
   // Services
   const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
@@ -580,8 +606,8 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
       minHeight: 0,  // Allow shrinking below content size
       overflow: 'hidden',  // Prevent content from overflowing
       width: preferences.rightPanelCollapsed ? '60px' : '100%',
-      minWidth: preferences.rightPanelCollapsed ? '60px' : '300px',
-      transition: 'width 0.3s ease-in-out, min-width 0.3s ease-in-out'
+      minWidth: adaptiveWidth, // Use adaptive width based on chat space mode
+      ...adaptiveTransition // Smooth transitions
     }}>
       {/* Header */}
       <Box sx={{ 
@@ -604,7 +630,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
           <Tooltip title={preferences.rightPanelCollapsed ? "Expand panel" : "Collapse panel"}>
             <IconButton 
               size="small" 
-              onClick={() => updateRightPanelState(!preferences.rightPanelCollapsed)}
+              onClick={handleManualToggle}
               sx={{ 
                 color: 'text.secondary',
                 '&:hover': { color: 'primary.main' }
@@ -665,6 +691,90 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         <Alert severity="error" sx={{ m: 1 }} onClose={() => setError(null)}>
           {error}
         </Alert>
+      )}
+
+      {/* Collapsed Icon List - Smart Adaptive Behavior */}
+      {preferences.rightPanelCollapsed && (
+        <Box sx={{ 
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          py: 1,
+          gap: 0.5,
+          overflow: 'auto'
+        }}>
+          {/* Space Mode Indicator */}
+          <Tooltip 
+            title={`Chat Space Mode: ${chatSpaceMode.charAt(0).toUpperCase() + chatSpaceMode.slice(1)}`} 
+            placement="left" 
+            arrow
+          >
+            <Box
+              sx={{
+                width: 32,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: 
+                  chatSpaceMode === 'full' ? '#10b981' :
+                  chatSpaceMode === 'compact' ? '#f59e0b' : '#ef4444',
+                mb: 1,
+                opacity: 0.7
+              }}
+            />
+          </Tooltip>
+          
+          {tabConfigs.map((config) => (
+            <Tooltip key={config.id} title={config.label} placement="left" arrow>
+              <IconButton
+                onClick={() => {
+                  setActiveTab(config.id);
+                  handleManualToggle(); // Expand panel when icon is clicked
+                }}
+                disabled={config.disabled}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  color: activeTab === config.id ? 'primary.main' : 'text.secondary',
+                  backgroundColor: activeTab === config.id ? 'action.selected' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                    color: 'primary.main'
+                  },
+                  '&.Mui-disabled': {
+                    opacity: 0.5
+                  },
+                  position: 'relative'
+                }}
+              >
+                {config.icon}
+                {/* Badge for notifications */}
+                {config.badgeCount && config.badgeCount > 0 && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: 'error.main',
+                      fontSize: '0.6rem',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: config.badgeCount > 9 ? 16 : 8,
+                      px: config.badgeCount > 9 ? 0.5 : 0
+                    }}
+                  >
+                    {config.badgeCount > 99 ? '99+' : config.badgeCount > 9 ? config.badgeCount : ''}
+                  </Box>
+                )}
+              </IconButton>
+            </Tooltip>
+          ))}
+        </Box>
       )}
 
       {/* Tabs */}

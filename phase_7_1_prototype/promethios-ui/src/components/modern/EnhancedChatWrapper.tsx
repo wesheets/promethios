@@ -11,6 +11,7 @@ import { Box, Fade, Slide } from '@mui/material';
 import { ModernChatProvider } from './ModernChatProvider';
 import ParticipantPanelLeft from './ParticipantPanelLeft';
 import ParticipantPanelRight from './ParticipantPanelRight';
+import { useChatSpaceDetection, ChatSpaceMode } from '../../hooks/useChatSpaceDetection';
 
 interface EnhancedChatWrapperProps {
   children: React.ReactNode;
@@ -86,6 +87,34 @@ const EnhancedChatWrapper: React.FC<EnhancedChatWrapperProps> = ({
       status: 'online'
     }))
   ];
+  
+  // Smart space detection for adaptive right panel
+  const chatContext = {
+    messages: chatMessages.map(msg => ({
+      id: msg.id || Math.random().toString(),
+      content: msg.content || msg.text || '',
+      type: msg.type || 'text',
+      hasAttachments: msg.attachments?.length > 0,
+      isThreaded: msg.isThreaded || false,
+      threadCount: msg.threadCount || 0,
+      hasRichContent: msg.hasRichContent || false
+    })),
+    participants: [...mockAIParticipants, ...mockHumanParticipants],
+    aiAgents: mockAIParticipants,
+    humanParticipants: mockHumanParticipants,
+    isMultiAgent: aiAgents.length > 1,
+    hasActiveThreads: chatMessages.some(msg => msg.isThreaded)
+  };
+  
+  const spaceDetection = useChatSpaceDetection(chatContext);
+  const [chatSpaceMode, setChatSpaceMode] = useState<ChatSpaceMode>('full');
+  
+  // Update chat space mode based on detection
+  useEffect(() => {
+    if (spaceDetection.confidence > 70) {
+      setChatSpaceMode(spaceDetection.recommendedMode);
+    }
+  }, [spaceDetection.recommendedMode, spaceDetection.confidence]);
   
   if (!enableEnhancedMode) {
     // Return original interface unchanged
