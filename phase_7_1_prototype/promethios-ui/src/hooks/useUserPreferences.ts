@@ -5,6 +5,7 @@ import { firestoreRetry } from '../utils/firestoreRetry';
 
 export interface UserPreferences {
   navigationCollapsed: boolean;
+  rightPanelCollapsed: boolean;
   theme: 'dark' | 'light';
   notifications: {
     email: boolean;
@@ -19,6 +20,7 @@ export interface UserPreferences {
 
 const defaultPreferences: UserPreferences = {
   navigationCollapsed: false,
+  rightPanelCollapsed: false,
   theme: 'dark',
   notifications: {
     email: true,
@@ -47,10 +49,12 @@ export const useUserPreferences = () => {
         console.log("⚠️ useUserPreferences: No currentUser, using localStorage fallback");
         // For logged-out users, use localStorage
         const localNavCollapsed = localStorage.getItem("navCollapsed");
-        console.log("📱 useUserPreferences: Using localStorage fallback. navCollapsed:", localNavCollapsed);
+        const localRightPanelCollapsed = localStorage.getItem("rightPanelCollapsed");
+        console.log("📱 useUserPreferences: Using localStorage fallback. navCollapsed:", localNavCollapsed, "rightPanelCollapsed:", localRightPanelCollapsed);
         setPreferences({
           ...defaultPreferences,
           navigationCollapsed: localNavCollapsed === "true",
+          rightPanelCollapsed: localRightPanelCollapsed === "true",
         });
         setLoading(false);
         return;
@@ -60,10 +64,12 @@ export const useUserPreferences = () => {
         console.log("⚠️ useUserPreferences: Database not available, using localStorage fallback");
         // If db is not yet initialized, use localStorage temporarily
         const localNavCollapsed = localStorage.getItem("navCollapsed");
-        console.log("📱 useUserPreferences: Using localStorage fallback. navCollapsed:", localNavCollapsed);
+        const localRightPanelCollapsed = localStorage.getItem("rightPanelCollapsed");
+        console.log("📱 useUserPreferences: Using localStorage fallback. navCollapsed:", localNavCollapsed, "rightPanelCollapsed:", localRightPanelCollapsed);
         setPreferences({
           ...defaultPreferences,
           navigationCollapsed: localNavCollapsed === "true",
+          rightPanelCollapsed: localRightPanelCollapsed === "true",
         });
         setLoading(false);
         return;
@@ -81,9 +87,11 @@ export const useUserPreferences = () => {
           console.warn('⚠️ useUserPreferences: User preferences document does not exist for UID:', currentUser.uid, '. Checking localStorage for migration.');
           // No Firestore document exists, check localStorage for migration
           const localNavCollapsed = localStorage.getItem('navCollapsed');
+          const localRightPanelCollapsed = localStorage.getItem('rightPanelCollapsed');
           const initialPrefs = {
             ...defaultPreferences,
             navigationCollapsed: localNavCollapsed === 'true',
+            rightPanelCollapsed: localRightPanelCollapsed === 'true',
           };
           
           console.log('🔥 useUserPreferences: Creating initial Firestore document with preferences:', initialPrefs);
@@ -117,9 +125,11 @@ export const useUserPreferences = () => {
         
         // Fallback to localStorage on error
         const localNavCollapsed = localStorage.getItem('navCollapsed');
+        const localRightPanelCollapsed = localStorage.getItem('rightPanelCollapsed');
         setPreferences({
           ...defaultPreferences,
           navigationCollapsed: localNavCollapsed === 'true',
+          rightPanelCollapsed: localRightPanelCollapsed === 'true',
         });
       });
 
@@ -142,6 +152,10 @@ export const useUserPreferences = () => {
       if ('navigationCollapsed' in updates) {
         console.log("📱 useUserPreferences: Updating localStorage navCollapsed:", updates.navigationCollapsed);
         localStorage.setItem('navCollapsed', String(updates.navigationCollapsed));
+      }
+      if ('rightPanelCollapsed' in updates) {
+        console.log("📱 useUserPreferences: Updating localStorage rightPanelCollapsed:", updates.rightPanelCollapsed);
+        localStorage.setItem('rightPanelCollapsed', String(updates.rightPanelCollapsed));
       }
 
       // Update Firestore if user is logged in and db is available
@@ -176,6 +190,12 @@ export const useUserPreferences = () => {
     await updatePreferences({ navigationCollapsed: collapsed });
   };
 
+  // Convenience method for right panel state
+  const updateRightPanelState = async (collapsed: boolean) => {
+    console.log("🔧 useUserPreferences: updateRightPanelState called with:", collapsed);
+    await updatePreferences({ rightPanelCollapsed: collapsed });
+  };
+
   // Convenience method for theme
   const updateTheme = async (theme: 'dark' | 'light') => {
     await updatePreferences({ theme });
@@ -194,6 +214,7 @@ export const useUserPreferences = () => {
     error,
     updatePreferences,
     updateNavigationState,
+    updateRightPanelState,
     updateTheme,
     updateNotifications,
   };

@@ -53,7 +53,9 @@ import {
   Group as GroupIcon,
   Notifications as NotificationsIcon,
   Close as CloseIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  ChevronRight as ChevronRightIcon,
+  ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material';
 
 // Import existing components (these would be the existing right panel components)
@@ -79,6 +81,7 @@ import DebugPanel from './debug/DebugPanel';
 import TeamPanel from './team/TeamPanel';
 import TabCustomizationModal, { TabConfig } from './TabCustomizationModal';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 
 interface RightPanelEnhancedProps {
   userId: string;
@@ -116,6 +119,7 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
 }) => {
   // Services
   const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
+  const { preferences, updateRightPanelState } = useUserPreferences();
 
   // State
   const [activeTab, setActiveTab] = useState<RightPanelTab>(defaultTab as RightPanelTab);
@@ -567,56 +571,84 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
   const tabConfigs = getVisibleTabConfigs();
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      width: preferences.rightPanelCollapsed ? '60px' : '100%',
+      minWidth: preferences.rightPanelCollapsed ? '60px' : '300px',
+      transition: 'width 0.3s ease-in-out, min-width 0.3s ease-in-out',
+      overflow: preferences.rightPanelCollapsed ? 'hidden' : 'visible'
+    }}>
       {/* Header */}
       <Box sx={{ 
         display: 'flex', 
-        justifyContent: 'space-between', 
+        justifyContent: preferences.rightPanelCollapsed ? 'center' : 'space-between', 
         alignItems: 'center', 
         p: 1,
         borderBottom: 1,
         borderColor: 'divider'
       }}>
-        <Typography variant="h6" sx={{ fontSize: '1rem' }}>
-          Promethios Control Panel
-        </Typography>
+        {!preferences.rightPanelCollapsed && (
+          <Typography variant="h6" sx={{ fontSize: '1rem' }}>
+            Promethios Control Panel
+          </Typography>
+        )}
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* Tab customization settings */}
-          <Tooltip title="Customize tabs">
+          {!preferences.rightPanelCollapsed && (
+            <>
+              {/* Tab customization settings */}
+              <Tooltip title="Customize tabs">
+                <IconButton 
+                  size="small" 
+                  onClick={() => setShowTabCustomization(true)}
+                  sx={{ 
+                    color: 'text.secondary',
+                    '&:hover': { color: 'primary.main' }
+                  }}
+                >
+                  <SettingsIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              
+              {/* Collaboration status indicator */}
+              {collaborationState && (
+                <Tooltip title={`${collaborationState.activeCollaborations} active collaborations`}>
+                  <Badge badgeContent={collaborationState.activeCollaborations} color="primary">
+                    <GroupIcon fontSize="small" />
+                  </Badge>
+                </Tooltip>
+              )}
+              
+              {/* Notifications indicator */}
+              {notifications.filter(n => !n.read).length > 0 && (
+                <Tooltip title={`${notifications.filter(n => !n.read).length} unread notifications`}>
+                  <IconButton size="small" onClick={() => setActiveTab('team')}>
+                    <Badge badgeContent={notifications.filter(n => !n.read).length} color="error">
+                      <NotificationsIcon fontSize="small" />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+              )}
+            </>
+          )}
+
+          {/* Collapse button */}
+          <Tooltip title={preferences.rightPanelCollapsed ? "Expand panel" : "Collapse panel"}>
             <IconButton 
               size="small" 
-              onClick={() => setShowTabCustomization(true)}
+              onClick={() => updateRightPanelState(!preferences.rightPanelCollapsed)}
               sx={{ 
                 color: 'text.secondary',
                 '&:hover': { color: 'primary.main' }
               }}
             >
-              <SettingsIcon fontSize="small" />
+              {preferences.rightPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
             </IconButton>
           </Tooltip>
-          
-          {/* Collaboration status indicator */}
-          {collaborationState && (
-            <Tooltip title={`${collaborationState.activeCollaborations} active collaborations`}>
-              <Badge badgeContent={collaborationState.activeCollaborations} color="primary">
-                <GroupIcon fontSize="small" />
-              </Badge>
-            </Tooltip>
-          )}
-          
-          {/* Notifications indicator */}
-          {notifications.filter(n => !n.read).length > 0 && (
-            <Tooltip title={`${notifications.filter(n => !n.read).length} unread notifications`}>
-              <IconButton size="small" onClick={() => setActiveTab('team')}>
-                <Badge badgeContent={notifications.filter(n => !n.read).length} color="error">
-                  <NotificationsIcon fontSize="small" />
-                </Badge>
-              </IconButton>
-            </Tooltip>
-          )}
 
-          {onClose && (
+          {!preferences.rightPanelCollapsed && onClose && (
             <IconButton onClick={onClose} size="small">
               <CloseIcon fontSize="small" />
             </IconButton>
@@ -625,52 +657,56 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
       </Box>
 
       {/* Error Alert */}
-      {error && (
+      {error && !preferences.rightPanelCollapsed && (
         <Alert severity="error" sx={{ m: 1 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          minHeight: 48,
-          '& .MuiTab-root': {
-            minWidth: 'auto',
+      {/* Tabs - only show when not collapsed */}
+      {!preferences.rightPanelCollapsed && (
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ 
+            borderBottom: 1, 
+            borderColor: 'divider',
             minHeight: 48,
-            px: 1
-          }
-        }}
-      >
-        {tabConfigs.map((config) => (
-          <Tab
-            key={config.id}
-            value={config.id}
-            label={renderTabLabel(config)}
-            disabled={config.disabled}
-            sx={{
-              opacity: config.disabled ? 0.5 : 1,
-              '&.Mui-selected': {
-                color: config.isNew ? 'success.main' : 'primary.main'
-              }
-            }}
-          />
-        ))}
-      </Tabs>
+            '& .MuiTab-root': {
+              minWidth: 'auto',
+              minHeight: 48,
+              px: 1
+            }
+          }}
+        >
+          {tabConfigs.map((config) => (
+            <Tab
+              key={config.id}
+              value={config.id}
+              label={renderTabLabel(config)}
+              disabled={config.disabled}
+              sx={{
+                opacity: config.disabled ? 0.5 : 1,
+                '&.Mui-selected': {
+                  color: config.isNew ? 'success.main' : 'primary.main'
+                }
+              }}
+            />
+          ))}
+        </Tabs>
+      )}
 
-      {/* Tab Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        {renderActiveTabContent()}
-      </Box>
+      {/* Tab Content - only show when not collapsed */}
+      {!preferences.rightPanelCollapsed && (
+        <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+          {renderActiveTabContent()}
+        </Box>
+      )}
 
-      {/* Collaboration Status Bar */}
-      {collaborationState && (
+      {/* Collaboration Status Bar - only show when not collapsed */}
+      {collaborationState && !preferences.rightPanelCollapsed && (
         <Box sx={{ 
           p: 1, 
           borderTop: 1, 
