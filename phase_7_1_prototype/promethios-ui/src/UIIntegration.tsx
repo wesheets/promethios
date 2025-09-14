@@ -25,6 +25,8 @@ import AgentWrappingPage from './pages/AgentWrappingPage';
 import MultiAgentWrappingPage from './pages/MultiAgentWrappingPage';
 import ChatPage from './pages/ChatPage';
 import ModernChatPage from './pages/ModernChatPage';
+import EnhancedModernChatPage from './pages/EnhancedModernChatPage';
+import TestEnhancedChatPage from './pages/TestEnhancedChatPage';
 import DeployPage from './pages/DeployPage';
 import RegistryPage from './pages/RegistryPage';
 import BenchmarksPage from './pages/BenchmarksPage';
@@ -357,6 +359,18 @@ const UIIntegration: React.FC = () => {
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
+        
+        {/* Enhanced Modern Chat Page route - adaptive multi-agent interface */}
+        <Route path="enhanced-chat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <EnhancedModernChatPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Test Enhanced Chat Page route - no authentication required */}
+        <Route path="test-chat" element={<TestEnhancedChatPage />} />
         
         {/* Promethios Chat Routes */}
         <Route path="chat/dashboard" element={
