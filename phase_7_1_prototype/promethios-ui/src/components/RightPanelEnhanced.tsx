@@ -53,7 +53,9 @@ import {
   Group as GroupIcon,
   Notifications as NotificationsIcon,
   Close as CloseIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon
 } from '@mui/icons-material';
 
 // Import existing components (these would be the existing right panel components)
@@ -79,6 +81,7 @@ import DebugPanel from './debug/DebugPanel';
 import TeamPanel from './team/TeamPanel';
 import TabCustomizationModal, { TabConfig } from './TabCustomizationModal';
 import { TeamCollaborationIntegrationService, TeamCollaborationState, CollaborationNotification } from '../services/TeamCollaborationIntegrationService';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 
 interface RightPanelEnhancedProps {
   userId: string;
@@ -114,6 +117,9 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
   onClose,
   defaultTab = 'chats'
 }) => {
+  // Hooks
+  const { preferences, updateRightPanelState } = useUserPreferences();
+  
   // Services
   const [collaborationService] = useState(() => TeamCollaborationIntegrationService.getInstance());
 
@@ -572,7 +578,10 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
       display: 'flex', 
       flexDirection: 'column',
       minHeight: 0,  // Allow shrinking below content size
-      overflow: 'hidden'  // Prevent content from overflowing
+      overflow: 'hidden',  // Prevent content from overflowing
+      width: preferences.rightPanelCollapsed ? '60px' : '100%',
+      minWidth: preferences.rightPanelCollapsed ? '60px' : '300px',
+      transition: 'width 0.3s ease-in-out, min-width 0.3s ease-in-out'
     }}>
       {/* Header */}
       <Box sx={{ 
@@ -584,14 +593,32 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
         borderColor: 'divider',
         flexShrink: 0  // Prevent header from shrinking
       }}>
-        <Typography variant="h6" sx={{ fontSize: '1rem' }}>
-          Promethios Control Panel
-        </Typography>
+        {!preferences.rightPanelCollapsed && (
+          <Typography variant="h6" sx={{ fontSize: '1rem' }}>
+            Promethios Control Panel
+          </Typography>
+        )}
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* Tab customization settings */}
-          <Tooltip title="Customize tabs">
+          {/* Collapse button */}
+          <Tooltip title={preferences.rightPanelCollapsed ? "Expand panel" : "Collapse panel"}>
             <IconButton 
+              size="small" 
+              onClick={() => updateRightPanelState(!preferences.rightPanelCollapsed)}
+              sx={{ 
+                color: 'text.secondary',
+                '&:hover': { color: 'primary.main' }
+              }}
+            >
+              {preferences.rightPanelCollapsed ? <ChevronLeftIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+          
+          {!preferences.rightPanelCollapsed && (
+            <>
+              {/* Tab customization settings */}
+              <Tooltip title="Customize tabs">
+                <IconButton 
               size="small" 
               onClick={() => setShowTabCustomization(true)}
               sx={{ 
@@ -621,36 +648,39 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
                 </Badge>
               </IconButton>
             </Tooltip>
-          )}
+              )}
 
-          {onClose && (
-            <IconButton onClick={onClose} size="small">
-              <CloseIcon fontSize="small" />
-            </IconButton>
+              {onClose && (
+                <IconButton onClick={onClose} size="small">
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+            </>
           )}
         </Box>
       </Box>
 
       {/* Error Alert */}
-      {error && (
+      {!preferences.rightPanelCollapsed && error && (
         <Alert severity="error" sx={{ m: 1 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
 
       {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ 
-          borderBottom: 1, 
-          borderColor: 'divider',
-          minHeight: 48,
-          flexShrink: 0,  // Prevent tabs from shrinking
-          '& .MuiTab-root': {
-            minWidth: 'auto',
+      {!preferences.rightPanelCollapsed && (
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ 
+            borderBottom: 1, 
+            borderColor: 'divider',
+            minHeight: 48,
+            flexShrink: 0,  // Prevent tabs from shrinking
+            '& .MuiTab-root': {
+              minWidth: 'auto',
             minHeight: 48,
             px: 1
           }
@@ -671,26 +701,29 @@ const RightPanelEnhanced: React.FC<RightPanelEnhancedProps> = ({
           />
         ))}
       </Tabs>
+      )}
 
       {/* Tab Content */}
-      <Box sx={{ 
-        flexGrow: 1,     // Take up remaining space
-        minHeight: 0,    // Allow shrinking below content size
-        overflow: 'hidden',  // Prevent overflow
-        display: 'flex',     // Make this a flex container
-        flexDirection: 'column'  // Stack content vertically
-      }}>
-        <Box sx={{
-          flexGrow: 1,
-          overflow: 'auto',  // Allow scrolling within this area
-          minHeight: 0       // Allow shrinking
+      {!preferences.rightPanelCollapsed && (
+        <Box sx={{ 
+          flexGrow: 1,     // Take up remaining space
+          minHeight: 0,    // Allow shrinking below content size
+          overflow: 'hidden',  // Prevent overflow
+          display: 'flex',     // Make this a flex container
+          flexDirection: 'column'  // Stack content vertically
         }}>
-          {renderActiveTabContent()}
+          <Box sx={{
+            flexGrow: 1,
+            overflow: 'auto',  // Allow scrolling within this area
+            minHeight: 0       // Allow shrinking
+          }}>
+            {renderActiveTabContent()}
+          </Box>
         </Box>
-      </Box>
+      )}
 
       {/* Collaboration Status Bar */}
-      {collaborationState && (
+      {!preferences.rightPanelCollapsed && collaborationState && (
         <Box sx={{ 
           p: 1, 
           borderTop: 1, 
