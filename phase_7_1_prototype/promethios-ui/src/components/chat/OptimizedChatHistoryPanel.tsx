@@ -588,7 +588,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
   
   // State management with performance optimization
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);  // Start with false, set to true only when needed
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   
@@ -654,7 +654,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
       });
       
       setChatSessions(cached.sessions);
-      setLoading(false);
+      setLoading(false);  // Ensure loading is false for cached data
       
       // Start background refresh if cache is older than 30 seconds
       if ((now - cached.timestamp) > 30000) {
@@ -666,6 +666,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
     }
 
     try {
+      // Only set loading to true if we're not using cached data
       if (!forceRefresh) {
         setLoading(true);
       }
@@ -1033,10 +1034,14 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
     });
   }, [sharedConversations, searchTerm]);
 
-  // Loading skeleton component
+  // Loading skeleton component that fills available height
   const LoadingSkeleton = memo(() => (
-    <Box sx={{ p: 2 }}>
-      {[...Array(5)].map((_, index) => (
+    <Box sx={{ 
+      p: 2,
+      height: '100%',      // Fill available height
+      overflow: 'hidden'   // Prevent overflow
+    }}>
+      {[...Array(12)].map((_, index) => (  // Show more skeleton items
         <Box key={index} sx={{ mb: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
             <Skeleton variant="circular" width={28} height={28} sx={{ bgcolor: '#334155' }} />
