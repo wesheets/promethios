@@ -718,10 +718,22 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
 
   // Initial load - only when agentId or user changes, not on every render
   useEffect(() => {
-    if (agentId && currentUser?.uid && !loading) {
+    console.log('🔍 [DEBUG] Initial load useEffect triggered:', {
+      agentId,
+      currentUserUid: currentUser?.uid,
+      loading
+    });
+    
+    if (agentId && currentUser?.uid) {
+      console.log('🔍 [DEBUG] Conditions met, calling loadChatSessions');
       loadChatSessions();
+    } else {
+      console.log('🔍 [DEBUG] Conditions not met:', {
+        hasAgentId: !!agentId,
+        hasCurrentUser: !!currentUser?.uid
+      });
     }
-  }, [agentId, currentUser?.uid]); // Removed loadChatSessions from deps to prevent loops
+  }, [agentId, currentUser?.uid, loadChatSessions]); // Added loadChatSessions back to deps
 
   // Real-time refresh optimization
   useEffect(() => {
@@ -1100,7 +1112,19 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
       </Box>
 
       {/* Chat List */}
-      <Box sx={{ flex: 1, overflow: 'auto', bgcolor: '#0f172a' }}>
+      <Box sx={{ 
+        flexGrow: 1,     // Take up remaining space
+        minHeight: 0,    // Allow shrinking below content size
+        overflow: 'hidden',  // Prevent overflow
+        bgcolor: '#0f172a',
+        display: 'flex',     // Make this a flex container
+        flexDirection: 'column'  // Stack content vertically
+      }}>
+        <Box sx={{
+          flexGrow: 1,
+          overflow: 'auto',  // Allow scrolling within this area
+          minHeight: 0       // Allow shrinking
+        }}>
         {activeTab === 0 ? (
           // Host Chats Tab
           <>
@@ -1238,6 +1262,7 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
             )}
           </>
         )}
+        </Box>
       </Box>
 
       {/* Context Menu */}
