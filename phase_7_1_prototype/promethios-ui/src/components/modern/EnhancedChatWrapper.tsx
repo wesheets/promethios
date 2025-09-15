@@ -127,7 +127,7 @@ const EnhancedChatWrapper: React.FC<EnhancedChatWrapperProps> = ({
         sx={{
           height: '100%',
           display: 'flex',
-          backgroundColor: '#0f172a',
+          // Removed backgroundColor to match main background
           color: 'white',
           position: 'relative'
         }}
@@ -169,24 +169,7 @@ const EnhancedChatWrapper: React.FC<EnhancedChatWrapperProps> = ({
             }
           }}
         >
-          {/* Enhanced Background Effects */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: `
-                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(139, 92, 246, 0.05) 0%, transparent 50%)
-              `,
-              pointerEvents: 'none',
-              zIndex: 0
-            }}
-          />
-          
+          {/* Removed gradient background overlay to match main background */}     
           {/* Original Chat Content (enhanced) */}
           <Box
             sx={{
