@@ -32,7 +32,8 @@ import InAppNotificationPopup, { ConversationInvitationNotification } from '../c
 import ConversationNotificationService from '../services/ConversationNotificationService';
 import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../services/ChatInvitationService';
 import { useConnections } from '../hooks/useConnections';
-import { useAdaptiveRightPanel, useAdaptiveTransitions, ChatInterfaceState } from '../hooks/useAdaptiveRightPanel';
+import { useAdaptiveRightPanel, useAdaptiveTransitions } from '../hooks/useAdaptiveRightPanel';
+import RightNavigationBar from '../components/navigation/RightNavigationBar';
 // Removed MultiAgentResponseIndicator - intrusive orange popup
 // Real-time collaboration imports
 import RealTimeConversationSync from '../services/RealTimeConversationSync';
@@ -7124,18 +7125,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             </Box>
 
             {/* Right Side - Command Panels */}
-            <Box sx={{ 
-              flex: rightPanelCollapsed ? '0 0 60px' : `0 0 ${adaptiveWidth}`,
-              minWidth: rightPanelCollapsed ? '60px' : adaptiveMinWidth,
-              maxWidth: rightPanelCollapsed ? '60px' : adaptiveMaxWidth,
-              bgcolor: '#1e293b', 
-              borderLeft: '1px solid #334155',
-              height: '100%', // Changed from 100vh to 100% to fix dead space
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              ...adaptiveTransitions
-            }}>
+            {/* Replaced with new RightNavigationBar component */}
+            </Box>
+          </Box>
+          
+          {/* New Right Navigation Bar */}
+          <RightNavigationBar
+            chatMessages={chatMessages}
+            humanParticipants={humanParticipants}
+            sharedConversations={sharedConversations}
+            selectedChatbot={selectedChatbot}
+            currentBotState={currentBotState}
+            unreadCounts={{
+              team: unreadTeamCount,
+              chats: 0,
+              analytics: 0
+            }}
+          />
+        ) : (
               {/* Panel Header */}
               <Box sx={{ p: 3, borderBottom: '1px solid #334155', flexShrink: 0 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
