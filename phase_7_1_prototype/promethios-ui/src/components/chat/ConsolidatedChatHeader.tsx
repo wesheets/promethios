@@ -250,12 +250,11 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
   const renderParticipantChip = (participant: any, type: 'ai' | 'human') => {
     const isAI = type === 'ai';
     const borderColor = isAI ? participant.color : '#3b82f6';
-    const icon = isAI ? '🤖' : '👤';
     
     return (
       <Tooltip
         key={participant.id}
-        title={`${icon} ${participant.name} (${participant.type === 'host' ? 'Host' : 'Guest'} ${isAI ? 'AI' : 'Human'})`}
+        title={`${participant.name} (${participant.type === 'host' ? 'Host' : 'Guest'} ${isAI ? 'AI' : 'Human'})`}
         arrow
       >
         <Box sx={{
@@ -272,7 +271,25 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
           height: 28,
           minWidth: 'fit-content'
         }}>
-          <Box sx={{ fontSize: '12px' }}>{icon}</Box>
+          {/* Avatar Circle */}
+          <Avatar sx={{
+            width: 16,
+            height: 16,
+            backgroundColor: borderColor,
+            fontSize: '8px',
+            fontWeight: 'bold'
+          }}>
+            {participant.avatar ? (
+              <img 
+                src={participant.avatar} 
+                alt={participant.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              participant.name.charAt(0).toUpperCase()
+            )}
+          </Avatar>
+          
           <Typography sx={{ 
             color: 'white', 
             fontSize: '11px', 
