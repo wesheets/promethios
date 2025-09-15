@@ -2672,15 +2672,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       });
     }
     
-    // Add guest agents
+    // Add known guest agents (Mark the Claude should be second for purple color)
+    participants.push({
+      id: 'mark-the-claude',
+      name: 'Mark the Claude',
+      type: 'ai'
+    });
+    
+    // Add other guest agents from multiChatState
     const activeContext = multiChatState.contexts.find(c => c.isActive);
     if (activeContext?.guestAgents) {
       activeContext.guestAgents.forEach(guest => {
-        participants.push({
-          id: guest.agentId,
-          name: guest.name,
-          type: 'ai'
-        });
+        // Avoid duplicates
+        if (!participants.find(p => p.id === guest.agentId)) {
+          participants.push({
+            id: guest.agentId,
+            name: guest.name,
+            type: 'ai'
+          });
+        }
       });
     }
     
@@ -5921,14 +5931,42 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       const isUser = message.sender === 'user';
                       const isAgent = message.sender === 'assistant' || message.sender === 'agent';
                       
-                      // Get sender details
+                      // Get sender details with improved agent identification
                       const senderId = isUser 
                         ? (user?.uid || 'current-user')
-                        : (message.metadata?.agentId || selectedChatbot?.identity?.id || selectedChatbot?.id || 'unknown-agent');
+                        : (() => {
+                            // First try metadata
+                            if (message.metadata?.agentId) {
+                              return message.metadata.agentId;
+                            }
+                            
+                            // Try to identify agent from message content
+                            const content = message.content.toLowerCase();
+                            if (content.includes("i'm mark the claude") || content.includes("mark the claude")) {
+                              return 'mark-the-claude';
+                            }
+                            
+                            // Fallback to selected chatbot
+                            return selectedChatbot?.identity?.id || selectedChatbot?.id || 'unknown-agent';
+                          })();
                       
                       const senderName = isUser
                         ? (user?.displayName || user?.email || 'You')
-                        : (message.metadata?.agentName || selectedChatbot?.identity?.name || selectedChatbot?.name || 'Assistant');
+                        : (() => {
+                            // First try metadata
+                            if (message.metadata?.agentName) {
+                              return message.metadata.agentName;
+                            }
+                            
+                            // Try to identify agent from message content
+                            const content = message.content.toLowerCase();
+                            if (content.includes("i'm mark the claude") || content.includes("mark the claude")) {
+                              return 'Mark the Claude';
+                            }
+                            
+                            // Fallback to selected chatbot
+                            return selectedChatbot?.identity?.name || selectedChatbot?.name || 'Assistant';
+                          })();
                       
                       const senderType: 'ai' | 'human' = isUser ? 'human' : 'ai';
                       const senderColor = getParticipantColor(senderId, senderType);
