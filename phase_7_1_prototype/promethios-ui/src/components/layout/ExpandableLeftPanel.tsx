@@ -44,7 +44,7 @@ const ExpandableLeftPanel: React.FC<ExpandableLeftPanelProps> = ({
   // Use route or targetRoute (for compatibility)
   const currentRoute = route || targetRoute;
   // Use width or panelWidth (for compatibility)
-  const currentWidth = width || panelWidth || '600px';
+  const currentWidth = width || panelWidth || '50%';
 
   console.log('🔍 [ExpandableLeftPanel] Computed values:', { currentRoute, currentWidth });
 

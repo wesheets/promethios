@@ -111,11 +111,11 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           sx={{
             flexGrow: 1,
             ml: isPanelOpen 
-              ? `calc(${preferences.navigationCollapsed ? '60px' : '260px'} + 600px)` 
+              ? `calc(${preferences.navigationCollapsed ? '60px' : '260px'} + 50vw)` 
               : (preferences.navigationCollapsed ? '60px' : '260px'),
             pt: 0, // Remove top padding since no header
-            px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
-            pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
+            px: 0, // Remove all horizontal padding for full-width chat interface
+            pb: 0, // Remove bottom padding for full-height chat interface
             transition: theme => theme.transitions.create(['margin-left'], {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
