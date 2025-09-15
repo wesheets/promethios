@@ -46,6 +46,7 @@ import MockAuthButton from './components/debug/MockAuthButton';
 import MockNotificationTestButton from './components/debug/MockNotificationTestButton';
 import RealNotificationTestButton from './components/debug/RealNotificationTestButton';
 import ConnectionTestButton from './components/debug/ConnectionTestButton';
+import DragDropTestPage from './pages/DragDropTestPage';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -153,6 +154,7 @@ const AppContent: React.FC = () => {
                   <Route path="/atlas-demo" element={<AtlasDemoPage />} />
                   <Route path="/governed-vs-ungoverned" element={<GovernedVsUngoverned />} />
                   <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
+                  <Route path="/drag-drop-test" element={<DragDropTestPage />} />
                   <Route path="/admin/export-waitlist" element={<AdminExportWaitlist />} />
                   
                   {/* Public Profile Routes */}
