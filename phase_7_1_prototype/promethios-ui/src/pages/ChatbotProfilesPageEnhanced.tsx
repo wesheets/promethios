@@ -1122,75 +1122,65 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
       console.log(`🔄 [ChatHistory] Updated chatMessages with ${session.messages?.length || 0} messages`);
       
-      // Extract participants from message metadata instead of session.participants
-      if (session.messages && session.messages.length > 0) {
-        console.log(`🔄 [ChatHistory] Extracting participants from ${session.messages.length} messages`);
-        console.log(`🔄 [ChatHistory] First message structure:`, session.messages[0]);
-        console.log(`🔄 [ChatHistory] All messages:`, session.messages);
+      // 🔧 NEW: Restore guest agents from chat session to multiChatState (same as working bottom panel)
+      try {
+        const guestAgents = await chatHistoryService.getGuestAgentsForSession(session.id);
+        console.log(`🤖 [ChatHistory] Found ${guestAgents.length} guest agents in session:`, guestAgents);
         
-        // Extract unique agents from message metadata
-        const agentMap = new Map();
-        const humanMap = new Map();
-        
-        session.messages.forEach((message: any, index: number) => {
-          console.log(`🔄 [ChatHistory] Message ${index}:`, {
-            sender: message.sender,
-            content: message.content?.substring(0, 100),
-            metadata: message.metadata,
-            agentId: message.agentId,
-            agentName: message.agentName,
-            userId: message.userId,
-            userName: message.userName
+        if (guestAgents.length > 0) {
+          // Update multiChatState to include guest agents
+          setMultiChatState(prev => {
+            const activeContext = prev.contexts.find(c => c.isActive);
+            if (!activeContext) return prev;
+            
+            const restoredGuestAgents = guestAgents.map(guest => ({
+              agentId: guest.id,
+              name: guest.name,
+              avatar: guest.avatar,
+              status: 'active' as const
+            }));
+            
+            return {
+              ...prev,
+              contexts: prev.contexts.map(context => 
+                context.isActive 
+                  ? {
+                      ...context,
+                      guestAgents: restoredGuestAgents
+                    }
+                  : context
+              )
+            };
           });
           
-          // Try multiple possible agent metadata locations
-          const agentId = message.metadata?.agentId || message.agentId;
-          const agentName = message.metadata?.agentName || message.agentName || message.agent?.name;
+          // Update selected agents to include restored guest agents
+          const guestAgentIds = guestAgents.map(guest => guest.id);
+          setSelectedAgents(prev => {
+            // Remove duplicates and add guest agents
+            const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+            return uniqueIds;
+          });
+          setTargetAgents(prev => {
+            const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+            return uniqueIds;
+          });
           
-          if (agentId && agentName) {
-            agentMap.set(agentId, {
-              id: agentId,
-              name: agentName,
-              type: 'agent'
-            });
-            console.log(`🔄 [ChatHistory] Found agent: ${agentName} (${agentId})`);
-          }
-          
-          // Extract human participants from user messages
-          const userId = message.userId || message.user?.id;
-          const userName = message.userName || message.user?.name || message.metadata?.userName;
-          
-          if (message.sender === 'user' && userId) {
-            humanMap.set(userId, {
-              id: userId,
-              name: userName || 'User',
-              type: 'human'
-            });
-            console.log(`🔄 [ChatHistory] Found human: ${userName || 'User'} (${userId})`);
-          }
-        });
-        
-        // Update human participants
-        const humans = Array.from(humanMap.values());
-        setHumanParticipants(humans.map((h: any) => ({
-          id: h.id,
-          name: h.name,
-          email: h.email,
-          avatar: h.avatar,
-          status: 'active'
-        })));
-        
-        // Update agent participants (excluding the host agent)
-        const agents = Array.from(agentMap.values()).filter((a: any) => a.id !== selectedChatbotId);
-        setSelectedAgents(agents.map((a: any) => a.id));
-        
-        console.log(`🔄 [ChatHistory] Extracted from messages - Agents: ${agentMap.size}, Humans: ${humans.length}`);
-        console.log(`🔄 [ChatHistory] Agent details:`, Array.from(agentMap.values()));
-        console.log(`🔄 [ChatHistory] Selected agents (excluding host):`, agents);
-      } else {
-        console.log(`🔄 [ChatHistory] No messages found, clearing participant lists`);
-        setHumanParticipants([]);
-        setSelectedAgents([]);
+          console.log(`🤖 [ChatHistory] Restored ${guestAgents.length} guest agents to multiChatState`);
+          console.log(`🤖 [ChatHistory] Updated selectedAgents:`, guestAgentIds);
+        } else {
+          console.log(`🤖 [ChatHistory] No guest agents found, clearing guest agent state`);
+          // Clear guest agents if none found
+          setMultiChatState(prev => ({
+            ...prev,
+            contexts: prev.contexts.map(context => 
+              context.isActive 
+                ? { ...context, guestAgents: [] }
+                : context
+            )
+          }));
+        }
+      } catch (error) {
+        console.error(`❌ [ChatHistory] Error restoring guest agents:`, error);
       }
       
       // Update loadedHostChatSession for compatibility with existing participant display logic
