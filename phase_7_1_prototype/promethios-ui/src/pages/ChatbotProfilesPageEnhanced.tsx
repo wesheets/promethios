@@ -5441,7 +5441,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 ...getChatInterfaceWidth(),
                 display: 'flex', 
                 flexDirection: 'column', 
-                bgcolor: '#0f172a',
+                // Removed bgcolor to match main background
                 transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
               }}>
 
