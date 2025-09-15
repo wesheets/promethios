@@ -137,10 +137,14 @@ export function useDropTarget(
 
     onDrop: useCallback(async (e: React.DragEvent) => {
       e.preventDefault();
+      console.log('💧 Drop event triggered:', { targetId: id });
+      
       setIsOver(false);
       setCanDrop(false);
       
       const sourceId = e.dataTransfer.getData('text/plain');
+      console.log('💧 Drop details:', { sourceId, targetId: id });
+      
       const context: DropContext = {
         position: { x: e.clientX, y: e.clientY },
         modifiers: {
@@ -153,22 +157,29 @@ export function useDropTarget(
 
       // If there are multiple actions available, show action menu
       const actions = dragDropRegistry.getAvailableActions(sourceId, id);
+      console.log('💧 Available actions:', actions);
+      
       if (actions.length > 1) {
         // Show action selection menu (will be implemented in UI component)
         console.log('Multiple actions available:', actions);
         // For now, just execute the first action
         if (actions[0]) {
+          console.log('💧 Executing first action:', actions[0]);
           await dragDropRegistry.executeDrop(sourceId, id, actions[0].id, context);
         }
       } else if (actions.length === 1) {
         // Execute the single available action
+        console.log('💧 Executing single action:', actions[0]);
         await dragDropRegistry.executeDrop(sourceId, id, actions[0].id, context);
       } else if (onDrop) {
         // Fallback to custom onDrop handler
+        console.log('💧 Using custom onDrop handler');
         const source = dragDropRegistry.getSource(sourceId);
         if (source) {
           await onDrop(source, context);
         }
+      } else {
+        console.log('💧 No actions or onDrop handler available');
       }
 
       setAvailableActions([]);
