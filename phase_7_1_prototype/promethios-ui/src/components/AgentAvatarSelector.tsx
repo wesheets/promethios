@@ -574,188 +574,174 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         </Tooltip>
       ))}
 
-  // Draggable Agent Avatar Component
-  const DraggableAgentAvatar: React.FC<{
-    agent: AgentInfo;
-    isSelected: boolean;
-    onClick: (e: React.MouseEvent) => void;
-  }> = ({ agent, isSelected, onClick }) => {
-    const isPending = (agent as any).isPending;
-    const isAI = agent.type === 'ai_agent';
-    
-    // Make AI agents draggable
-    const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
-      agent.id,
-      {
-        id: agent.id,
-        name: agent.name,
-        type: agent.type,
-        color: agent.color,
-        avatar: agent.avatar,
-        hotkey: agent.hotkey,
-      },
-      !isAI // isHuman
-    );
+      {/* Agent Avatars with Behavior Prompts */}
+      {allAgents.map((agent) => {
+        const isPending = (agent as any).isPending;
+        const isAI = agent.type === 'ai_agent';
+        
+        // Make AI agents draggable
+        const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
+          agent.id,
+          {
+            id: agent.id,
+            name: agent.name,
+            type: agent.type,
+            color: agent.color,
+            avatar: agent.avatar,
+            hotkey: agent.hotkey,
+          },
+          !isAI // isHuman
+        );
 
-    return (
-      <Tooltip 
-        key={agent.id}
-        title={
-          <Box sx={{ p: 1.5, minWidth: 200 }}>
-            {/* Agent Info Header */}
-            <Box sx={{ fontWeight: 600, mb: 0.5, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-              {agent.name}
-              {isAI && <DragIndicator sx={{ fontSize: '12px', opacity: 0.7 }} />}
-            </Box>
-            <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
-              {hostAgent && agent.id === hostAgent.id ? '👑 Host Agent' : 
-               agent.type === 'human' ? 
-                 (isPending ? '⏳ Guest User (Pending)' : '👤 Guest User') : 
-                 (isPending ? '⏳ Guest Agent (Pending)' : '🤖 Guest Agent')}
-            </Box>
-            <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1.5, textAlign: 'center' }}>
-              {isAI && !isPending && '💡 Drag onto messages to interact • '}
-              {selectedAgents.includes(agent.id) ? 'Selected for messaging' : 'Click to select for messaging'}
-              {agent.hotkey && ` • Press ${agent.hotkey.toUpperCase()}`}
-            </Box>
-            
-            {/* Enhanced Behavior Prompts with Participant Selection */}
-            {isAI && !isPending && (
-              <Box sx={{ borderTop: '1px solid #374151', pt: 1 }}>
-                <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1, textAlign: 'center' }}>
-                  Quick Behavior Prompts:
+        return (
+          <Tooltip 
+            key={agent.id}
+            title={
+              <Box sx={{ p: 1.5, minWidth: 200 }}>
+                {/* Agent Info Header */}
+                <Box sx={{ fontWeight: 600, mb: 0.5, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                  {agent.name}
+                  {isAI && <DragIndicator sx={{ fontSize: '12px', opacity: 0.7 }} />}
+                </Box>
+                <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
+                  {hostAgent && agent.id === hostAgent.id ? '👑 Host Agent' : 
+                   agent.type === 'human' ? 
+                     (isPending ? '⏳ Guest User (Pending)' : '👤 Guest User') : 
+                     (isPending ? '⏳ Guest Agent (Pending)' : '🤖 Guest Agent')}
+                </Box>
+                <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1.5, textAlign: 'center' }}>
+                  {isAI && !isPending && '💡 Drag onto messages to interact • '}
+                  {selectedAgents.includes(agent.id) ? 'Selected for messaging' : 'Click to select for messaging'}
+                  {agent.hotkey && ` • Press ${agent.hotkey.toUpperCase()}`}
                 </Box>
                 
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  {/* Simple Behavior Prompts */}
-                  {[
-                    { behavior: 'collaborate', label: '🤝 Collaborate', color: '#10b981' },
-                    { behavior: 'question', label: '❓ Question', color: '#3b82f6' },
-                    { behavior: 'devils_advocate', label: '😈 Devil\'s Advocate', color: '#ef4444' },
-                    { behavior: 'expert', label: '🧠 Expert Analysis', color: '#8b5cf6' },
-                    { behavior: 'creative', label: '💡 Creative Ideas', color: '#ec4899' },
-                    { behavior: 'pessimist', label: '🌧️ Pessimist', color: '#f59e0b' }
-                  ].map((prompt) => (
+                {/* Enhanced Behavior Prompts with Participant Selection */}
+                {isAI && !isPending && (
+                  <Box sx={{ borderTop: '1px solid #374151', pt: 1 }}>
+                    <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1, textAlign: 'center' }}>
+                      Quick Behavior Prompts:
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      {/* Simple Behavior Prompts */}
+                      {[
+                        { behavior: 'collaborate', label: '🤝 Collaborate', color: '#10b981' },
+                        { behavior: 'question', label: '❓ Question', color: '#3b82f6' },
+                        { behavior: 'devils_advocate', label: '😈 Devil\'s Advocate', color: '#ef4444' },
+                        { behavior: 'expert', label: '🧠 Expert Analysis', color: '#8b5cf6' },
+                        { behavior: 'creative', label: '💡 Creative Ideas', color: '#ec4899' },
+                        { behavior: 'pessimist', label: '🌧️ Pessimist', color: '#f59e0b' }
+                      ].map((prompt) => (
+                        <Box
+                          key={prompt.behavior}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onBehaviorPrompt?.(agent.id, agent.name, prompt.behavior);
+                          }}
+                          sx={{
+                            px: 1,
+                            py: 0.5,
+                            bgcolor: 'rgba(55, 65, 81, 0.8)',
+                            borderRadius: 1,
+                            cursor: 'pointer',
+                            fontSize: '0.7rem',
+                            color: prompt.color,
+                            border: `1px solid ${prompt.color}40`,
+                            textAlign: 'center',
+                            '&:hover': {
+                              bgcolor: `${prompt.color}20`,
+                              borderColor: `${prompt.color}60`
+                            }
+                          }}
+                        >
+                          {prompt.label}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+                
+                {/* Remove Participant Section (for unified system) */}
+                {useUnifiedParticipants && (
+                  (participantContext?.canRemoveParticipant(agent.id) || (agent as any).permissions?.canRemove)
+                ) && (
+                  <Box sx={{ borderTop: '1px solid #374151', pt: 1, mt: 1 }}>
                     <Box
-                      key={prompt.behavior}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onBehaviorPrompt?.(agent.id, agent.name, prompt.behavior);
+                        handleRemoveParticipant(agent.id);
                       }}
                       sx={{
                         px: 1,
                         py: 0.5,
-                        bgcolor: 'rgba(55, 65, 81, 0.8)',
+                        bgcolor: 'rgba(239, 68, 68, 0.1)',
                         borderRadius: 1,
                         cursor: 'pointer',
                         fontSize: '0.7rem',
-                        color: prompt.color,
-                        border: `1px solid ${prompt.color}40`,
+                        color: '#ef4444',
+                        border: '1px solid #ef444440',
                         textAlign: 'center',
                         '&:hover': {
-                          bgcolor: `${prompt.color}20`,
-                          borderColor: `${prompt.color}60`
+                          bgcolor: '#ef444420',
+                          borderColor: '#ef444460'
                         }
                       }}
                     >
-                      {prompt.label}
+                      🗑️ Remove {agent.type === 'human' ? 'Participant' : 'Agent'}
                     </Box>
-                  ))}
-                </Box>
+                  </Box>
+                )}
               </Box>
-            )}
-            
-            {/* Remove Participant Section (for unified system) */}
-            {useUnifiedParticipants && (
-              (participantContext?.canRemoveParticipant(agent.id) || (agent as any).permissions?.canRemove)
-            ) && (
-              <Box sx={{ borderTop: '1px solid #374151', pt: 1, mt: 1 }}>
-                <Box
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveParticipant(agent.id);
-                  }}
-                  sx={{
-                    px: 1,
-                    py: 0.5,
-                    bgcolor: 'rgba(239, 68, 68, 0.1)',
-                    borderRadius: 1,
-                    cursor: 'pointer',
-                    fontSize: '0.7rem',
-                    color: '#ef4444',
-                    border: '1px solid #ef444440',
-                    textAlign: 'center',
-                    '&:hover': {
-                      bgcolor: '#ef444420',
-                      borderColor: '#ef444460'
-                    }
-                  }}
-                >
-                  🗑️ Remove {agent.type === 'human' ? 'Participant' : 'Agent'}
-                </Box>
-              </Box>
-            )}
-          </Box>
-        }
-        placement="top"
-        arrow
-        componentsProps={{
-          tooltip: {
-            sx: {
-              bgcolor: '#1e293b',
-              border: '1px solid #334155',
-              '& .MuiTooltip-arrow': {
-                color: '#1e293b',
-              },
-            },
-          },
-        }}
-      >
-        <Badge
-          badgeContent={agent.hotkey?.toUpperCase()}
-          color="primary"
-          sx={{
-            '& .MuiBadge-badge': {
-              fontSize: '0.6rem',
-              minWidth: 16,
-              height: 16,
-              bgcolor: isSelected ? agent.color : '#64748b',
-              opacity: 0.8
             }
-          }}
-        >
-          <Avatar
-            ref={isAI ? dragRef : undefined}
-            {...(isAI ? dragHandlers : {})}
-            onClick={onClick}
-            sx={{
-              ...getAgentStyle(agent),
-              cursor: isAI ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
-              opacity: isDragging ? 0.7 : (isPending ? 0.6 : 1),
-              transform: isDragging ? 'rotate(5deg)' : 'none',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                ...getAgentStyle(agent)['&:hover'],
-                transform: isDragging ? 'rotate(5deg)' : (isPending ? 'none' : 'scale(1.1)'),
-              }
+            placement="top"
+            arrow
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  bgcolor: '#1e293b',
+                  border: '1px solid #334155',
+                  '& .MuiTooltip-arrow': {
+                    color: '#1e293b',
+                  },
+                },
+              },
             }}
           >
-            {agent.avatar || agent.name.charAt(0)}
-          </Avatar>
-        </Badge>
-      </Tooltip>
-    );
-  };
-
-      {/* Agent Avatars with Behavior Prompts */}
-      {allAgents.map((agent) => (
-        <DraggableAgentAvatar
-          key={agent.id}
-          agent={agent}
-          isSelected={selectedAgents.includes(agent.id)}
-          onClick={(e) => handleAgentClick(agent.id, e)}
-        />
-      ))}
+            <Badge
+              badgeContent={agent.hotkey?.toUpperCase()}
+              color="primary"
+              sx={{
+                '& .MuiBadge-badge': {
+                  fontSize: '0.6rem',
+                  minWidth: 16,
+                  height: 16,
+                  bgcolor: selectedAgents.includes(agent.id) ? agent.color : '#64748b',
+                  opacity: 0.8
+                }
+              }}
+            >
+              <Avatar
+                ref={isAI ? dragRef : undefined}
+                {...(isAI ? dragHandlers : {})}
+                onClick={(e) => handleAgentClick(agent.id, e)}
+                sx={{
+                  ...getAgentStyle(agent),
+                  cursor: isAI ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+                  opacity: isDragging ? 0.7 : (isPending ? 0.6 : 1),
+                  transform: isDragging ? 'rotate(5deg)' : 'none',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    ...getAgentStyle(agent)['&:hover'],
+                    transform: isDragging ? 'rotate(5deg)' : (isPending ? 'none' : 'scale(1.1)'),
+                  }
+                }}
+              >
+                {agent.avatar || agent.name.charAt(0)}
+              </Avatar>
+            </Badge>
+          </Tooltip>
+        );
+      })}
 
       {/* Add Agent Button */}
       {(onAddAgent || onAddGuests) && (
