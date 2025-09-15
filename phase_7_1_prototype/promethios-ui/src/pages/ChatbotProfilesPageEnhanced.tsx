@@ -3504,8 +3504,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Handle behavior prompt clicks from agent avatars
-  const handleBehaviorPrompt = async (agentId: string, agentName: string, behavior: string) => {
-    console.log('🎭 [Behavior Prompt] Triggered:', behavior, 'for agent:', agentName);
+  const handleBehaviorPrompt = async (agentId: string, agentName: string, behavior: string, isDragDrop: boolean = false) => {
+    console.log('🎭 [Behavior Prompt] Triggered:', behavior, 'for agent:', agentName, isDragDrop ? '(via drag & drop)' : '(via click)');
     
     // Check if we're in single-agent or multi-agent mode
     const activeContext = multiChatState.contexts.find(c => c.isActive);
@@ -3516,7 +3516,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     const lastMessage = chatMessages[chatMessages.length - 1];
     
     // In multi-agent mode, don't allow behavior prompts if this agent was the last responder
-    if (!isSingleAgentMode && lastMessage) {
+    // UNLESS this is a drag & drop interaction (user explicitly chose this agent for this message)
+    if (!isSingleAgentMode && lastMessage && !isDragDrop) {
       const lastResponderAgentId = getAgentIdFromMessage(lastMessage);
       if (lastResponderAgentId === agentId) {
         console.log('🎭 [Behavior Prompt] Skipping - agent was last responder in multi-agent mode');
@@ -6030,8 +6031,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           
                           console.log('🎭 Found agent for interaction:', { agentId, agentName, action });
                           
-                          // Trigger behavioral prompt
-                          handleBehaviorPrompt(agentId, agentName, action);
+                          // Trigger behavioral prompt (mark as drag & drop to bypass last responder check)
+                          handleBehaviorPrompt(agentId, agentName, action, true);
                         } else {
                           console.log('❌ Agent not found for interaction:', { agentId, action });
                           // Fallback: add a message indicating the interaction
