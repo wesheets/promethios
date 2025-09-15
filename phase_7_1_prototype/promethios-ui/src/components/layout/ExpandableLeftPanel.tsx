@@ -77,8 +77,11 @@ const ExpandableLeftPanel: React.FC<ExpandableLeftPanelProps> = ({
     }
 
     console.log('🔍 [ExpandableLeftPanel] Checking route matches...');
-    console.log('🔍 [ExpandableLeftPanel] social check:', currentRoute.includes('social'));
-    console.log('🔍 [ExpandableLeftPanel] social-feed check:', currentRoute.includes('social-feed'));
+    console.log('🔍 [ExpandableLeftPanel] currentRoute value:', JSON.stringify(currentRoute));
+    console.log('🔍 [ExpandableLeftPanel] currentRoute type:', typeof currentRoute);
+    console.log('🔍 [ExpandableLeftPanel] social check:', currentRoute?.includes('social'));
+    console.log('🔍 [ExpandableLeftPanel] social-feed check:', currentRoute?.includes('social-feed'));
+    console.log('🔍 [ExpandableLeftPanel] exact route check:', currentRoute === '/ui/social/feed');
 
     // Route-based content rendering
     switch (true) {

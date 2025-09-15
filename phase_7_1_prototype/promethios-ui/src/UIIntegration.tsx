@@ -116,6 +116,8 @@ import HostedApiSetup from './components/chat/setup/HostedApiSetup';
 // Import chatbot management page
 import ChatbotProfilesPageEnhanced from './pages/ChatbotProfilesPageEnhanced';
 import ChatbotProfilesPage from './pages/ChatbotProfilesPage';
+import AliveEnhancedChatPage from './pages/AliveEnhancedChatPage';
+import RevolutionaryVideoConferencePage from './pages/RevolutionaryVideoConferencePage';
 
 // Conditional routing component for chatbots
 const ChatbotRoutingComponent: React.FC = () => {
@@ -359,6 +361,22 @@ const UIIntegration: React.FC = () => {
             <MainLayoutProxy>
               <ModernChatPage />
             </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Alive Enhanced Chat - Revolutionary multi-agent interface with all "alive" features */}
+        <Route path="alive-chat" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <AliveEnhancedChatPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        {/* Revolutionary Video Conference - Complete video + chat + AI collaboration */}
+        <Route path="video-conference" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <RevolutionaryVideoConferencePage />
           </ProtectedRoute>
         } />
         
