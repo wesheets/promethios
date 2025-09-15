@@ -5933,6 +5933,35 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       const senderType: 'ai' | 'human' = isUser ? 'human' : 'ai';
                       const senderColor = getParticipantColor(senderId, senderType);
                       
+                      // Determine recipient for directional flow
+                      const getRecipient = () => {
+                        if (isUser) {
+                          // User message - recipient is the target agent(s)
+                          // For now, default to the host agent (can be enhanced for multi-agent targeting)
+                          const hostAgent = selectedChatbot;
+                          if (hostAgent) {
+                            const recipientId = hostAgent.identity?.id || hostAgent.id || 'host-agent';
+                            return {
+                              id: recipientId,
+                              name: hostAgent.identity?.name || hostAgent.name || 'Assistant',
+                              type: 'ai' as const,
+                              avatar: hostAgent.identity?.avatar,
+                              color: getParticipantColor(recipientId, 'ai')
+                            };
+                          }
+                        } else {
+                          // Agent message - recipient is the user (or specific target in multi-agent)
+                          return {
+                            id: user?.uid || 'current-user',
+                            name: user?.displayName || user?.email || 'You',
+                            type: 'human' as const,
+                            avatar: user?.photoURL,
+                            color: getParticipantColor(user?.uid || 'current-user', 'human')
+                          };
+                        }
+                        return null;
+                      };
+                      
                       // Create message object for ColorCodedChatMessage
                       const colorCodedMessage = {
                         id: message.id,
@@ -5946,11 +5975,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         }
                       };
                       
+                      const recipient = getRecipient();
+                      
                       return (
                         <ColorCodedChatMessage
                           key={message.id}
                           message={colorCodedMessage}
                           senderColor={senderColor}
+                          recipient={recipient}
                           isCurrentUser={isUser}
                         />
                       );

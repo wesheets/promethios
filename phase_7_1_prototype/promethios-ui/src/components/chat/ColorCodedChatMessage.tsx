@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
+import DirectionalFlowIndicator from './DirectionalFlowIndicator';
 
 interface ColorCodedChatMessageProps {
   message: {
@@ -14,12 +15,20 @@ interface ColorCodedChatMessageProps {
     };
   };
   senderColor: string;
+  recipient?: {
+    id: string;
+    name: string;
+    type: 'ai' | 'human';
+    avatar?: string;
+    color: string;
+  };
   isCurrentUser?: boolean;
 }
 
 const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
   message,
   senderColor,
+  recipient,
   isCurrentUser = false
 }) => {
   const isAI = message.sender.type === 'ai';
@@ -33,6 +42,22 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
       alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
       maxWidth: '100%'
     }}>
+      {/* Directional Flow Indicator */}
+      {recipient && (
+        <DirectionalFlowIndicator
+          sender={{
+            id: message.sender.id,
+            name: message.sender.name,
+            type: message.sender.type,
+            avatar: message.sender.avatar,
+            color: senderColor
+          }}
+          recipient={recipient}
+          timestamp={message.timestamp}
+          isCurrentUser={isCurrentUser}
+        />
+      )}
+
       {/* Agent/User Name with Color Square */}
       <Box sx={{ 
         display: 'flex', 
@@ -59,13 +84,15 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
           {message.sender.name}
         </Typography>
         
-        {/* Timestamp */}
-        <Typography variant="caption" sx={{ 
-          color: '#64748b',
-          fontSize: '11px'
-        }}>
-          {message.timestamp}
-        </Typography>
+        {/* Timestamp (only show if no directional flow) */}
+        {!recipient && (
+          <Typography variant="caption" sx={{ 
+            color: '#64748b',
+            fontSize: '11px'
+          }}>
+            {message.timestamp}
+          </Typography>
+        )}
       </Box>
 
       {/* Message Content with Colored Border */}
