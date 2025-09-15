@@ -174,11 +174,14 @@ interface NavigationItem {
 interface CollapsibleNavigationEnhancedProps {
   userPermissions?: string[];
   isAdmin?: boolean;
+  // Expandable Panel Support
+  onOpenExpandablePanel?: (route: string, width?: string) => void;
 }
 
 const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps> = ({
   userPermissions = [],
   isAdmin = false,
+  onOpenExpandablePanel,
 }) => {
   const { preferences, updateNavigationState } = useUserPreferences();
   const { currentUser } = useAuth();
@@ -475,6 +478,22 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   const handleNavigation = (path: string) => {
     console.log('🔄 Navigating via path for:', path);
     console.log('📍 Current location before navigation:', location.pathname);
+    
+    // Check if this route should open in an expandable panel
+    const expandablePanelRoutes = [
+      '/ui/social/feed',
+      '/ui/social/profiles', 
+      '/ui/social/organizations',
+      '/ui/social/discovery',
+      '/ui/social/channels',
+      '/ui/social/connections'
+    ];
+    
+    if (expandablePanelRoutes.includes(path) && onOpenExpandablePanel) {
+      console.log('🎯 Opening route in expandable panel:', path);
+      onOpenExpandablePanel(path, '50%');
+      return;
+    }
     
     const currentPath = location.pathname;
     

@@ -13,6 +13,10 @@ import Footer from '../components/layout/Footer';
 import TestAuth from '../components/TestAuth';
 import SuperEnhancedObserverButton from '../components/SuperEnhancedObserverButton';
 
+// Import expandable panel system
+import ExpandableLeftPanel from '../components/layout/ExpandableLeftPanel';
+import { useExpandablePanel } from '../hooks/useExpandablePanel';
+
 /**
  * MainLayoutProxy Component
  * 
@@ -31,6 +35,15 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const { currentUser, logout } = useAuth();
   const { preferences } = useUserPreferences();
   const { isAdmin } = useAdminCheck();
+
+  // Expandable panel state
+  const { 
+    isOpen: isPanelOpen, 
+    route: panelRoute, 
+    width: panelWidth,
+    openPanel,
+    closePanel 
+  } = useExpandablePanel();
 
   // Debug authentication state
   console.log("Current user:", currentUser);
@@ -81,14 +94,23 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         <CollapsibleNavigationEnhanced 
           userPermissions={['view']}
           isAdmin={isAdmin}
+          onOpenExpandablePanel={openPanel}
         />
         
-        {/* Main content area - adjust margin to account for collapsible nav only */}
+        {/* Expandable Left Panel */}
+        <ExpandableLeftPanel
+          isOpen={isPanelOpen}
+          route={panelRoute}
+          width={panelWidth}
+          onClose={closePanel}
+        />
+        
+        {/* Main content area - adjust margin to account for collapsible nav and expandable panel */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            ml: preferences.navigationCollapsed ? '60px' : '260px',
+            ml: `calc(${preferences.navigationCollapsed ? '60px' : '260px'} + ${isPanelOpen ? panelWidth : '0px'})`,
             pt: 0, // Remove top padding since no header
             px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
             pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
