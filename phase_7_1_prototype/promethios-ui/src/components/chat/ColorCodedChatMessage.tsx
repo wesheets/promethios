@@ -43,9 +43,17 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
   const { dropRef, isOver, canDrop, dropHandlers } = useMessageDropTarget(
     message.id,
     message,
-    (agentId: string, messageId: string, action: string) => {
-      console.log('Agent dropped on message:', { agentId, messageId, action });
-      onAgentInteraction?.(agentId, messageId, action);
+    (source, context) => {
+      console.log('Agent dropped on message:', { source, context, messageId: message.id });
+      
+      // Extract agent ID from the source
+      const agentId = source.data?.agentId || source.id.replace('agent-', '');
+      
+      // For now, use a default action - this will be enhanced later with behavioral prompts
+      const defaultAction = 'collaborate';
+      
+      console.log('Calling onAgentInteraction with:', { agentId, messageId: message.id, action: defaultAction });
+      onAgentInteraction?.(agentId, message.id, defaultAction);
     }
   );
 
