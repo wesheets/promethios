@@ -125,16 +125,29 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
     return maxVisibleParticipants;
   }, [isXsScreen, isSmScreen, maxVisibleParticipants]);
 
-  // Get agent color based on name/type
-  const getAgentColor = (agentName?: string) => {
-    if (!agentName) return '#64748b';
-    const lowerName = agentName.toLowerCase();
-    if (lowerName.includes('claude')) return '#ff6b35';
-    if (lowerName.includes('openai') || lowerName.includes('gpt')) return '#10a37f';
-    if (lowerName.includes('gemini') || lowerName.includes('bard')) return '#4285f4';
-    if (lowerName.includes('mistral')) return '#f59e0b';
-    if (lowerName.includes('llama')) return '#ef4444';
-    return '#10b981';
+  // Sequential color assignment for agents (humans are always blue)
+  const agentColorPalette = [
+    '#f97316', // Orange
+    '#8b5cf6', // Purple  
+    '#10b981', // Green
+    '#ec4899', // Pink
+    '#eab308', // Yellow
+    '#06b6d4', // Cyan
+    '#ef4444', // Red
+    '#84cc16', // Lime
+  ];
+
+  const humanColor = '#3b82f6'; // Blue for all humans
+
+  // Get color for participant based on entry order
+  const getParticipantColor = (participant: any, allParticipants: any[], type: 'ai' | 'human') => {
+    if (type === 'human') {
+      return humanColor;
+    }
+    
+    // For AI agents, assign colors sequentially based on their position in the participants list
+    const agentIndex = allParticipants.findIndex(p => p.id === participant.id);
+    return agentColorPalette[agentIndex % agentColorPalette.length];
   };
 
   // Get AI participants (including host agent)
@@ -149,7 +162,6 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
         name: selectedChatbot.identity?.name || selectedChatbot.name || 'Host Agent',
         avatar: selectedChatbot.identity?.avatar,
         type: 'host',
-        color: getAgentColor(selectedChatbot.identity?.name || selectedChatbot.name),
       });
     }
 
@@ -161,12 +173,15 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
           name: guest.name,
           avatar: guest.avatar,
           type: 'guest',
-          color: getAgentColor(guest.name),
         });
       });
     }
 
-    return participants;
+    // Assign colors based on order
+    return participants.map((participant, index) => ({
+      ...participant,
+      color: agentColorPalette[index % agentColorPalette.length],
+    }));
   };
 
   // Get human participants for shared conversations
@@ -177,13 +192,17 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
 
     const hostChatSession = loadedHostChatSession;
     
+    // Collect all AI participants first
+    const aiParticipants = [];
+    
     // Host agent
-    const hostAgent = hostChatSession.agentId ? {
-      id: hostChatSession.agentId,
-      name: hostChatSession.agentName || 'Host Agent',
-      type: 'host',
-      color: getAgentColor(hostChatSession.agentName),
-    } : null;
+    if (hostChatSession.agentId) {
+      aiParticipants.push({
+        id: hostChatSession.agentId,
+        name: hostChatSession.agentName || 'Host Agent',
+        type: 'host',
+      });
+    }
 
     // Guest agents
     const guestAgents = (hostChatSession.participants?.guests?.filter(g => 
@@ -192,18 +211,25 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
       id: agent.id,
       name: agent.agentConfig?.name || agent.identity?.name || agent.name || 'Guest Agent',
       type: 'guest',
-      color: getAgentColor(agent.agentConfig?.name || agent.identity?.name || agent.name),
     }));
 
-    // Host user
+    aiParticipants.push(...guestAgents);
+
+    // Assign colors to AI participants based on order
+    const aiParticipantsWithColors = aiParticipants.map((participant, index) => ({
+      ...participant,
+      color: agentColorPalette[index % agentColorPalette.length],
+    }));
+
+    // Human participants (always blue)
     const hostUser = {
       id: hostChatSession.userId,
       name: hostChatSession.hostUserName || hostChatSession.userName || 'Host User',
       type: 'host',
       isOnline: true,
+      color: humanColor,
     };
 
-    // Guest humans (excluding current user)
     const guestHumans = (hostChatSession.participants?.guests?.filter(g => 
       g.type === 'human' && g.id !== (user?.uid || 'anonymous')
     ) || []).map(human => ({
@@ -211,10 +237,11 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
       name: human.name || 'Guest User',
       type: 'guest',
       isOnline: true,
+      color: humanColor,
     }));
 
     return {
-      aiParticipants: [hostAgent, ...guestAgents].filter(Boolean),
+      aiParticipants: aiParticipantsWithColors,
       humanParticipants: [hostUser, ...guestHumans],
     };
   };
@@ -336,7 +363,13 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
   // Get participants based on mode
   const { aiParticipants, humanParticipants: displayHumanParticipants } = isInSharedMode 
     ? getSharedConversationParticipants()
-    : { aiParticipants: getAIParticipants(), humanParticipants };
+    : { 
+        aiParticipants: getAIParticipants(), 
+        humanParticipants: humanParticipants.map(human => ({
+          ...human,
+          color: humanColor
+        }))
+      };
 
   // Split visible and hidden participants
   const visibleAI = aiParticipants.slice(0, maxVisible);
