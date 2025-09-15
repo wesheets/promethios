@@ -179,6 +179,14 @@ export class DragDropRegistry {
     const source = this.sources.get(sourceId);
     const target = this.targets.get(targetId);
     
+    console.log('🔍 canDrop check:', { 
+      sourceId, 
+      targetId, 
+      source: source ? { id: source.id, type: source.type } : null,
+      target: target ? { id: target.id, type: target.type, accepts: target.accepts } : null,
+      result: source && target ? target.accepts.includes(source.type) : false
+    });
+    
     if (!source || !target) return false;
     
     return target.accepts.includes(source.type);

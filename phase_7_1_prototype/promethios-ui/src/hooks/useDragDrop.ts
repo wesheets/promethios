@@ -38,6 +38,7 @@ export function useDraggable(
   const dragHandlers = {
     draggable: true,
     onDragStart: useCallback((e: React.DragEvent) => {
+      console.log('🚀 Drag started:', { id, type, data });
       setIsDragging(true);
       e.dataTransfer.setData('text/plain', id);
       e.dataTransfer.effectAllowed = 'copy';
@@ -46,16 +47,17 @@ export function useDraggable(
       if (dragRef.current) {
         dragRef.current.style.opacity = '0.5';
       }
-    }, [id]),
+    }, [id, type, data]),
 
     onDragEnd: useCallback((e: React.DragEvent) => {
+      console.log('🏁 Drag ended:', { id });
       setIsDragging(false);
       
-      // Remove visual feedback
+      // Reset visual feedback
       if (dragRef.current) {
         dragRef.current.style.opacity = '1';
       }
-    }, []),
+    }, [id]),
   };
 
   return {
@@ -99,6 +101,8 @@ export function useDropTarget(
       const sourceId = e.dataTransfer.getData('text/plain');
       const canDropHere = dragDropRegistry.canDrop(sourceId, id);
       
+      console.log('🎯 Drag over:', { sourceId, targetId: id, canDropHere });
+      
       setCanDrop(canDropHere);
       if (canDropHere) {
         e.dataTransfer.dropEffect = 'copy';
@@ -114,6 +118,8 @@ export function useDropTarget(
       e.preventDefault();
       const sourceId = e.dataTransfer.getData('text/plain');
       const canDropHere = dragDropRegistry.canDrop(sourceId, id);
+      
+      console.log('🚪 Drag enter:', { sourceId, targetId: id, canDropHere });
       
       if (canDropHere) {
         setIsOver(true);
