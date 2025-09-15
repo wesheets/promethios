@@ -66,6 +66,20 @@ interface RightNavigationBarProps {
   userName?: string;
   currentAgentId?: string;
   currentAgentName?: string;
+  // Additional props for OptimizedChatHistoryPanel
+  agentId?: string;
+  agentName?: string;
+  currentSessionId?: string;
+  refreshTrigger?: number;
+  onSharedConversationSelect?: (conversation: any) => void;
+  onDeleteSharedConversation?: (conversationId: string) => void;
+  onBulkCleanupLegacyConversations?: () => void;
+  onDirectMessage?: (userId: string, userName: string) => void;
+  onViewProfile?: (userId: string) => void;
+  updateBotState?: (botId: string, updates: any) => void;
+  selectedChatbotId?: string;
+  setMultiChatState?: (updater: any) => void;
+  chatHistoryService?: any;
 }
 
 interface NavItem {
@@ -106,6 +120,20 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
   userName,
   currentAgentId,
   currentAgentName,
+  // Additional props for OptimizedChatHistoryPanel
+  agentId,
+  agentName,
+  currentSessionId,
+  refreshTrigger,
+  onSharedConversationSelect,
+  onDeleteSharedConversation,
+  onBulkCleanupLegacyConversations,
+  onDirectMessage,
+  onViewProfile,
+  updateBotState,
+  selectedChatbotId,
+  setMultiChatState,
+  chatHistoryService,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -394,6 +422,20 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 masCollaborationSettings={masCollaborationSettings}
                 availableAgents={availableAgents}
                 currentTokenUsage={currentTokenUsage}
+                // Additional props for OptimizedChatHistoryPanel
+                agentId={agentId}
+                agentName={agentName}
+                currentSessionId={currentSessionId}
+                refreshTrigger={refreshTrigger}
+                onSharedConversationSelect={onSharedConversationSelect}
+                onDeleteSharedConversation={onDeleteSharedConversation}
+                onBulkCleanupLegacyConversations={onBulkCleanupLegacyConversations}
+                onDirectMessage={onDirectMessage}
+                onViewProfile={onViewProfile}
+                updateBotState={updateBotState}
+                selectedChatbotId={selectedChatbotId}
+                setMultiChatState={setMultiChatState}
+                chatHistoryService={chatHistoryService}
               />
             </Box>
           </Box>
@@ -488,6 +530,20 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 masCollaborationSettings={masCollaborationSettings}
                 availableAgents={availableAgents}
                 currentTokenUsage={currentTokenUsage}
+                // Additional props for OptimizedChatHistoryPanel
+                agentId={agentId}
+                agentName={agentName}
+                currentSessionId={currentSessionId}
+                refreshTrigger={refreshTrigger}
+                onSharedConversationSelect={onSharedConversationSelect}
+                onDeleteSharedConversation={onDeleteSharedConversation}
+                onBulkCleanupLegacyConversations={onBulkCleanupLegacyConversations}
+                onDirectMessage={onDirectMessage}
+                onViewProfile={onViewProfile}
+                updateBotState={updateBotState}
+                selectedChatbotId={selectedChatbotId}
+                setMultiChatState={setMultiChatState}
+                chatHistoryService={chatHistoryService}
               />
             </Box>
           </Box>

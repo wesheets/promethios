@@ -7223,6 +7223,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               chats: 0,
               analytics: 0
             }}
+            // Additional props for OptimizedChatHistoryPanel
+            agentId={selectedChatbotId || selectedChatbot?.id}
+            agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
+            currentSessionId={currentBotState?.currentChatSession?.id}
+            refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
+            guestConversationAccess={guestConversationAccess}
+            onSharedConversationSelect={handleCustomSharedConversationSelect}
+            onDeleteSharedConversation={(conversationId) => {
+              console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
+              refreshSharedConversations();
+            }}
+            onBulkCleanupLegacyConversations={() => {
+              console.log(`🧹 [LegacyCleanup] Cleaning up legacy conversations`);
+              refreshSharedConversations();
+            }}
+            onDirectMessage={(userId, userName) => {
+              console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
+            }}
+            onViewProfile={(userId) => {
+              console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
+            }}
+            updateBotState={updateBotState}
+            selectedChatbotId={selectedChatbotId}
+            setMultiChatState={setMultiChatState}
+            chatHistoryService={chatHistoryService}
           />
         ) : (
               {/* Panel Header */}
