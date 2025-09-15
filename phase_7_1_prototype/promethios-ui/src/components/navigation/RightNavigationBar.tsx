@@ -12,6 +12,7 @@ import {
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
+  Close as CloseIcon,
   Group as TeamIcon,
   Chat as ChatsIcon,
   Analytics as AnalyticsIcon,
@@ -72,7 +73,8 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
   // Notify parent component of state changes
   useEffect(() => {
     if (onStateChange) {
-      const panelWidth = activePanel ? 
+      // For overlay panels, panelWidth should be 0 since they don't affect layout
+      const panelWidth = activePanel && isSideBySidePanel(activePanel) ? 
         navigationItems.find(item => item.key === activePanel)?.panelWidth || 0 : 0;
       onStateChange({
         isCollapsed,
@@ -130,8 +132,18 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
 
   const getPanelWidth = () => {
     if (!activePanel) return 0;
-    const item = navItems.find(item => item.key === activePanel);
+    const item = navigationItems.find(item => item.key === activePanel);
     return item?.panelWidth || 300;
+  };
+
+  // Determine if panel should be side-by-side or overlay
+  const isSideBySidePanel = (panelKey: string | null) => {
+    return panelKey === 'chats'; // Only Chat History uses side-by-side
+  };
+
+  // Get overlay panel width (30-40% of screen)
+  const getOverlayPanelWidth = () => {
+    return Math.min(Math.max(window.innerWidth * 0.35, 400), 600); // 35% of screen, min 400px, max 600px
   };
 
   return (
@@ -192,7 +204,7 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
           overflowX: 'hidden',
           py: 1
         }}>
-          {navItems.map((item) => (
+          {navigationItems.map((item) => (
             <Tooltip 
               key={item.key} 
               title={isCollapsed ? item.label : ''} 
@@ -263,25 +275,26 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
         </Box>
       </Box>
 
-      {/* Sliding Content Panel */}
-      <Drawer
-        anchor="right"
-        open={!!activePanel}
-        onClose={() => setActivePanel(null)}
-        variant="persistent"
-        sx={{
-          '& .MuiDrawer-paper': {
-            width: getPanelWidth(),
-            bgcolor: '#1e293b',
-            borderLeft: '1px solid #334155',
-            right: getNavBarWidth(),
-            height: '100vh',
-            overflow: 'hidden',
-            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          }
-        }}
-      >
-        {activePanel && (
+      {/* Hybrid Panel Rendering */}
+      {activePanel && isSideBySidePanel(activePanel) && (
+        /* Side-by-Side Panel (Chat History) */
+        <Drawer
+          anchor="right"
+          open={!!activePanel}
+          onClose={() => setActivePanel(null)}
+          variant="persistent"
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: getPanelWidth(),
+              bgcolor: '#1e293b',
+              borderLeft: '1px solid #334155',
+              right: getNavBarWidth(),
+              height: '100vh',
+              overflow: 'hidden',
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }
+          }}
+        >
           <Box sx={{ 
             height: '100%', 
             display: 'flex', 
@@ -298,24 +311,18 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
               flexShrink: 0
             }}>
               <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                {navItems.find(item => item.key === activePanel)?.label}
+                {navigationItems.find(item => item.key === activePanel)?.label}
               </Typography>
               <IconButton
                 onClick={() => setActivePanel(null)}
-                sx={{
-                  color: '#94a3b8',
-                  '&:hover': { color: 'white' }
-                }}
+                sx={{ color: '#94a3b8', '&:hover': { color: 'white' } }}
               >
-                <ChevronRightIcon />
+                <CloseIcon />
               </IconButton>
             </Box>
-
+            
             {/* Panel Content */}
-            <Box sx={{ 
-              flex: 1, 
-              overflow: 'hidden'
-            }}>
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
               <RightPanelContent
                 panelType={activePanel}
                 chatMessages={chatMessages}
@@ -326,23 +333,79 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
               />
             </Box>
           </Box>
-        )}
-      </Drawer>
+        </Drawer>
+      )}
 
-      {/* Backdrop for mobile */}
-      {isMobile && activePanel && (
-        <Box
-          onClick={() => setActivePanel(null)}
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            bgcolor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 1100
-          }}
-        />
+      {activePanel && !isSideBySidePanel(activePanel) && (
+        /* Overlay Panel (All Others) */
+        <>
+          {/* Backdrop */}
+          <Box
+            onClick={() => setActivePanel(null)}
+            sx={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              bgcolor: 'rgba(0, 0, 0, 0.4)',
+              zIndex: 1300,
+              backdropFilter: 'blur(2px)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          />
+          
+          {/* Overlay Panel */}
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: getOverlayPanelWidth(),
+              height: '100vh',
+              bgcolor: '#1e293b',
+              borderLeft: '1px solid #334155',
+              zIndex: 1400,
+              display: 'flex',
+              flexDirection: 'column',
+              transform: 'translateX(0)',
+              transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            {/* Panel Header */}
+            <Box sx={{ 
+              p: 2, 
+              borderBottom: '1px solid #334155',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0
+            }}>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                {navigationItems.find(item => item.key === activePanel)?.label}
+              </Typography>
+              <IconButton
+                onClick={() => setActivePanel(null)}
+                sx={{ color: '#94a3b8', '&:hover': { color: 'white' } }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            
+            {/* Panel Content */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              <RightPanelContent
+                panelType={activePanel}
+                chatMessages={chatMessages}
+                humanParticipants={humanParticipants}
+                sharedConversations={sharedConversations}
+                selectedChatbot={selectedChatbot}
+                currentBotState={currentBotState}
+              />
+            </Box>
+          </Box>
+        </>
       )}
     </>
   );
