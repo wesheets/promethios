@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Box, Button, Typography, Chip, Fab } from '@mui/material';
 import { VideoCall as VideoCallIcon, Chat as ChatIcon } from '@mui/icons-material';
 import VideoConferenceManager from '../components/video/VideoConferenceManager';
@@ -57,121 +57,101 @@ const mockParticipants = [
   }
 ];
 
-/**
- * RevolutionaryVideoConferencePage - Complete video + chat + AI collaboration
- * 
- * This revolutionary interface combines:
- * - Multi-participant video conferencing
- * - Real-time AI agent participation via voice
- * - Smart wake word detection for AI activation
- * - Context-aware conversation management
- * - Integrated enhanced chat interface
- * - Professional meeting experience with AI collaboration
- */
-const RevolutionaryVideoConferencePage: React.FC = () => {
-  const [showChat, setShowChat] = useState(false);
-  const [participants, setParticipants] = useState(mockParticipants);
-  const [isRecording, setIsRecording] = useState(false);
-  const [meetingStarted, setMeetingStarted] = useState(false);
-  const [activeAI, setActiveAI] = useState<string | null>(null);
-
-  // Simulate AI wake word detection
-  useEffect(() => {
-    if (meetingStarted) {
-      const interval = setInterval(() => {
-        // Randomly activate AI agents
-        if (Math.random() > 0.8) {
-          const aiAgents = participants.filter(p => p.type === 'ai');
-          const randomAI = aiAgents[Math.floor(Math.random() * aiAgents.length)];
-          setActiveAI(randomAI.id);
-          
-          // Simulate AI speaking
-          setParticipants(prev => prev.map(p => 
-            p.id === randomAI.id 
-              ? { ...p, isSpeaking: true }
-              : { ...p, isSpeaking: false }
-          ));
-
-          // Stop AI speaking after a few seconds
-          setTimeout(() => {
-            setActiveAI(null);
-            setParticipants(prev => prev.map(p => ({ ...p, isSpeaking: false })));
-          }, 3000 + Math.random() * 4000);
-        }
-      }, 10000);
-
-      return () => clearInterval(interval);
-    }
-  }, [meetingStarted, participants]);
-
-  const handleStartMeeting = () => {
-    setMeetingStarted(true);
-  };
-
-  const handleEndMeeting = () => {
-    setMeetingStarted(false);
-    setIsRecording(false);
-    setActiveAI(null);
-  };
-
-  const handleToggleRecording = () => {
-    setIsRecording(!isRecording);
-  };
-
-  const handleToggleChat = () => {
-    setShowChat(!showChat);
-  };
-
-  const handleMuteParticipant = (participantId: string) => {
-    setParticipants(prev => prev.map(p => 
-      p.id === participantId 
-        ? { ...p, isAudioEnabled: !p.isAudioEnabled }
-        : p
-    ));
-  };
-
-  const handleToggleVideo = (participantId: string) => {
-    setParticipants(prev => prev.map(p => 
-      p.id === participantId 
-        ? { ...p, isVideoEnabled: !p.isVideoEnabled }
-        : p
-    ));
-  };
-
-  if (showChat) {
-    return (
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Chat Header with Video Toggle */}
-        <Box
-          sx={{
-            p: 2,
-            borderBottom: '1px solid #1e293b',
-            bgcolor: '#0f172a',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <Typography variant="h6" sx={{ color: 'white' }}>
-            🎥 Video Conference Chat
-          </Typography>
-          <Button
-            startIcon={<VideoCallIcon />}
-            onClick={handleToggleChat}
-            variant="outlined"
-            sx={{ color: '#3b82f6', borderColor: '#3b82f6' }}
-          >
-            Back to Video
-          </Button>
-        </Box>
-        
-        {/* Embedded Enhanced Chat */}
-        <Box sx={{ flex: 1 }}>
-          <AliveEnhancedChatPage />
-        </Box>
-      </Box>
-    );
+const mockAgents = [
+  {
+    id: 'claude-1',
+    name: 'Claude',
+    color: '#ff6b35',
+    isActive: false
+  },
+  {
+    id: 'gpt4-1',
+    name: 'GPT-4',
+    color: '#10a37f',
+    isActive: false
+  },
+  {
+    id: 'gemini-1',
+    name: 'Gemini',
+    color: '#4285f4',
+    isActive: false
   }
+];
+
+const RevolutionaryVideoConferencePage: React.FC = () => {
+  const [isVideoConferenceActive, setIsVideoConferenceActive] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(true);
+  const [isWakeWordEnabled, setIsWakeWordEnabled] = useState(true);
+  const [isContextAwarenessEnabled, setIsContextAwarenessEnabled] = useState(true);
+  const [participants, setParticipants] = useState(mockParticipants);
+  const [agents, setAgents] = useState(mockAgents);
+
+  const contextManagerRef = useRef<any>(null);
+
+  // Handle wake word detection
+  const handleWakeWordDetected = (agentId: string, transcript: string) => {
+    console.log(`Wake word detected for ${agentId}:`, transcript);
+    
+    // Update agent state to active
+    setAgents(prev => prev.map(agent => 
+      agent.id === agentId || agentId === 'all'
+        ? { ...agent, isActive: true }
+        : agent
+    ));
+
+    // Add to context manager
+    if (contextManagerRef.current) {
+      contextManagerRef.current.addTranscriptEntry('Human Speaker', transcript, 'human', 0.9);
+    }
+
+    // Auto-deactivate after 30 seconds if not mentioned again
+    setTimeout(() => {
+      setAgents(prev => prev.map(agent => 
+        agent.id === agentId || agentId === 'all'
+          ? { ...agent, isActive: false }
+          : agent
+      ));
+    }, 30000);
+  };
+
+  // Handle transcription updates
+  const handleTranscriptionUpdate = (transcript: string, speaker: string) => {
+    console.log(`Transcription from ${speaker}:`, transcript);
+    
+    // Add to context manager
+    if (contextManagerRef.current) {
+      contextManagerRef.current.addTranscriptEntry(speaker, transcript, 'human', 0.8);
+    }
+  };
+
+  // Handle context updates
+  const handleContextUpdate = (agentId: string, context: string) => {
+    console.log(`Context update for ${agentId}:`, context);
+    // Here you would typically send the context to the AI agent
+  };
+
+  // Handle agent state changes
+  const handleAgentStateChange = (agentId: string, state: string) => {
+    console.log(`Agent ${agentId} state changed to:`, state);
+    
+    setAgents(prev => prev.map(agent => 
+      agent.id === agentId
+        ? { ...agent, isActive: state === 'ACTIVE' }
+        : agent
+    ));
+  };
+
+  // Start video conference
+  const startVideoConference = () => {
+    setIsVideoConferenceActive(true);
+    setIsChatVisible(false); // Hide chat when video starts
+  };
+
+  // End video conference
+  const endVideoConference = () => {
+    setIsVideoConferenceActive(false);
+    setIsChatVisible(true); // Show chat when video ends
+  };
 
   return (
     <Box
@@ -179,250 +159,183 @@ const RevolutionaryVideoConferencePage: React.FC = () => {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: '#0f172a',
-        color: 'white'
+        backgroundColor: '#0f172a',
+        position: 'relative'
       }}
     >
-      {/* Header */}
-      <Box
-        sx={{
-          p: 2,
-          borderBottom: '1px solid #1e293b',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            🎥 Revolutionary Video Conference
-          </Typography>
-          <Chip
-            label="AI-Enhanced Meeting"
-            size="small"
-            sx={{
-              bgcolor: '#059669',
-              color: 'white',
-              fontWeight: 500
-            }}
-          />
-        </Box>
-        
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Chip
-            label={`${participants.length} Participants`}
-            size="small"
-            sx={{ bgcolor: '#1e293b', color: '#94a3b8' }}
-          />
-          {isRecording && (
-            <Chip
-              label="● Recording"
-              size="small"
-              sx={{
-                bgcolor: '#ef4444',
-                color: 'white',
-                animation: 'pulse 2s infinite'
-              }}
-            />
-          )}
-          {activeAI && (
-            <Chip
-              label={`🤖 ${participants.find(p => p.id === activeAI)?.name} Speaking`}
-              size="small"
-              sx={{
-                bgcolor: '#3b82f6',
-                color: 'white',
-                animation: 'pulse 1s infinite'
-              }}
-            />
-          )}
-        </Box>
-      </Box>
+      {/* Video Conference Interface */}
+      {isVideoConferenceActive && (
+        <VideoConferenceManager
+          conversationId="demo-video-conference"
+          participants={participants}
+          onCallEnd={endVideoConference}
+          isVisible={isVideoConferenceActive}
+        />
+      )}
 
-      {/* Main Video Conference Area */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {!meetingStarted ? (
-          /* Pre-Meeting Lobby */
-          <Box
+      {/* Chat Interface (when video is not active) */}
+      {isChatVisible && !isVideoConferenceActive && (
+        <Box sx={{ flex: 1, position: 'relative' }}>
+          <AliveEnhancedChatPage />
+          
+          {/* Video Call Start Button */}
+          <Fab
+            color="primary"
+            onClick={startVideoConference}
             sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4
+              position: 'fixed',
+              top: 20,
+              right: 20,
+              backgroundColor: '#10b981',
+              '&:hover': {
+                backgroundColor: '#059669'
+              },
+              zIndex: 1000
             }}
           >
-            <Typography variant="h4" sx={{ textAlign: 'center', mb: 2 }}>
-              Ready to start your AI-enhanced meeting?
-            </Typography>
-            
-            <Typography variant="body1" sx={{ textAlign: 'center', color: '#94a3b8', maxWidth: 600 }}>
-              This revolutionary video conference includes AI agents that can participate via voice,
-              smart wake word detection, and integrated enhanced chat capabilities.
-            </Typography>
+            <VideoCallIcon />
+          </Fab>
+        </Box>
+      )}
 
-            <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<VideoCallIcon />}
-                onClick={handleStartMeeting}
-                sx={{
-                  bgcolor: '#059669',
-                  '&:hover': { bgcolor: '#047857' },
-                  px: 4,
-                  py: 1.5
-                }}
-              >
-                Start Meeting
-              </Button>
-              
-              <Button
-                variant="outlined"
-                size="large"
-                startIcon={<ChatIcon />}
-                onClick={handleToggleChat}
-                sx={{
-                  borderColor: '#3b82f6',
-                  color: '#3b82f6',
-                  '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.1)' },
-                  px: 4,
-                  py: 1.5
-                }}
-              >
-                Chat Only
-              </Button>
-            </Box>
-
-            {/* Feature Highlights */}
-            <Box
-              sx={{
-                mt: 6,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: 3,
-                maxWidth: 800,
-                width: '100%'
-              }}
-            >
-              <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#1e293b', borderRadius: 2 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>🤖 AI Participants</Typography>
-                <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                  Claude, GPT-4, and Gemini can join via voice
-                </Typography>
-              </Box>
-              
-              <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#1e293b', borderRadius: 2 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>🎙️ Wake Word Detection</Typography>
-                <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                  Smart activation of AI agents during conversation
-                </Typography>
-              </Box>
-              
-              <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#1e293b', borderRadius: 2 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>💬 Enhanced Chat</Typography>
-                <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-                  Full multi-agent chat interface integrated
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        ) : (
-          /* Active Meeting Interface */
-          <>
-            {/* Video Conference Manager */}
-            <VideoConferenceManager
-              participants={participants}
-              onMuteParticipant={handleMuteParticipant}
-              onToggleVideo={handleToggleVideo}
-              isRecording={isRecording}
-              activeAI={activeAI}
-            />
-
-            {/* Smart Wake Word Detector */}
-            <SmartWakeWordDetector
-              isActive={meetingStarted}
-              onAIActivated={setActiveAI}
-              participants={participants}
-            />
-
-            {/* Context Awareness Manager */}
-            <ContextAwarenessManager
-              participants={participants}
-              isRecording={isRecording}
-              activeAI={activeAI}
-            />
-
-            {/* Meeting Controls */}
-            <Box
-              sx={{
-                p: 2,
-                borderTop: '1px solid #1e293b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 2,
-                bgcolor: '#0f172a'
-              }}
-            >
-              <Button
-                variant={isRecording ? 'contained' : 'outlined'}
-                onClick={handleToggleRecording}
-                sx={{
-                  bgcolor: isRecording ? '#ef4444' : 'transparent',
-                  borderColor: '#ef4444',
-                  color: isRecording ? 'white' : '#ef4444',
-                  '&:hover': {
-                    bgcolor: isRecording ? '#dc2626' : 'rgba(239, 68, 68, 0.1)'
-                  }
-                }}
-              >
-                {isRecording ? 'Stop Recording' : 'Start Recording'}
-              </Button>
-
-              <Button
-                variant="outlined"
-                onClick={handleToggleChat}
-                sx={{
-                  borderColor: '#3b82f6',
-                  color: '#3b82f6',
-                  '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.1)' }
-                }}
-              >
-                Open Chat
-              </Button>
-
-              <Button
-                variant="contained"
-                onClick={handleEndMeeting}
-                sx={{
-                  bgcolor: '#ef4444',
-                  '&:hover': { bgcolor: '#dc2626' }
-                }}
-              >
-                End Meeting
-              </Button>
-            </Box>
-          </>
-        )}
-      </Box>
-
-      {/* Floating Chat Button */}
-      {meetingStarted && (
-        <Fab
-          color="primary"
-          onClick={handleToggleChat}
+      {/* Demo Interface (when no video conference) */}
+      {!isVideoConferenceActive && !isChatVisible && (
+        <Box
           sx={{
-            position: 'fixed',
-            bottom: 80,
-            right: 24,
-            bgcolor: '#3b82f6',
-            '&:hover': { bgcolor: '#2563eb' }
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            p: 4,
+            textAlign: 'center'
           }}
         >
-          <ChatIcon />
-        </Fab>
+          <Typography variant="h3" sx={{ color: 'white', fontWeight: 600, mb: 2 }}>
+            🎥 Revolutionary Video Conference
+          </Typography>
+          
+          <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.8)', mb: 4, maxWidth: 600 }}>
+            The world's first video conference platform where humans and AI agents collaborate 
+            in the same room with intelligent wake-word detection and context awareness.
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 4, justifyContent: 'center' }}>
+            <Chip label="🎯 Smart Wake-Word Detection" sx={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6' }} />
+            <Chip label="🧠 Context Awareness" sx={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }} />
+            <Chip label="🎥 Human Video Tiles" sx={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }} />
+            <Chip label="🔊 AI Voice Tiles" sx={{ backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} />
+            <Chip label="⚖️ Live Governance" sx={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }} />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
+            <Button
+              variant="contained"
+              size="large"
+              onClick={startVideoConference}
+              startIcon={<VideoCallIcon />}
+              sx={{
+                backgroundColor: '#10b981',
+                '&:hover': { backgroundColor: '#059669' },
+                px: 4,
+                py: 1.5
+              }}
+            >
+              Start Video Conference
+            </Button>
+            
+            <Button
+              variant="outlined"
+              size="large"
+              onClick={() => setIsChatVisible(true)}
+              startIcon={<ChatIcon />}
+              sx={{
+                borderColor: '#3b82f6',
+                color: '#3b82f6',
+                '&:hover': { borderColor: '#2563eb', backgroundColor: 'rgba(59, 130, 246, 0.1)' },
+                px: 4,
+                py: 1.5
+              }}
+            >
+              Open Chat Interface
+            </Button>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 4, textAlign: 'left' }}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ color: '#f59e0b', fontWeight: 600, mb: 1 }}>
+                👥 Human Participants
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                • Traditional video tiles<br/>
+                • Familiar Zoom/Meet experience<br/>
+                • Screen sharing & controls
+              </Typography>
+            </Box>
+            
+            <Box>
+              <Typography variant="subtitle1" sx={{ color: '#3b82f6', fontWeight: 600, mb: 1 }}>
+                🤖 AI Agents
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                • Voice waveform tiles<br/>
+                • Wake-word activation<br/>
+                • Context-aware responses
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+      {/* Smart Wake-Word Detector */}
+      <SmartWakeWordDetector
+        agents={agents}
+        onWakeWordDetected={handleWakeWordDetected}
+        onTranscriptionUpdate={handleTranscriptionUpdate}
+        isEnabled={isWakeWordEnabled && isVideoConferenceActive}
+      />
+
+      {/* Context Awareness Manager */}
+      <ContextAwarenessManager
+        ref={contextManagerRef}
+        agents={agents}
+        onContextUpdate={handleContextUpdate}
+        onAgentStateChange={handleAgentStateChange}
+        isEnabled={isContextAwarenessEnabled && isVideoConferenceActive}
+      />
+
+      {/* Feature Toggle Controls (Demo) */}
+      {!isVideoConferenceActive && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            zIndex: 1000
+          }}
+        >
+          <Chip
+            label={`Wake-Word: ${isWakeWordEnabled ? 'ON' : 'OFF'}`}
+            onClick={() => setIsWakeWordEnabled(!isWakeWordEnabled)}
+            sx={{
+              backgroundColor: isWakeWordEnabled ? '#10b981' : '#6b7280',
+              color: 'white',
+              cursor: 'pointer'
+            }}
+          />
+          <Chip
+            label={`Context Awareness: ${isContextAwarenessEnabled ? 'ON' : 'OFF'}`}
+            onClick={() => setIsContextAwarenessEnabled(!isContextAwarenessEnabled)}
+            sx={{
+              backgroundColor: isContextAwarenessEnabled ? '#10b981' : '#6b7280',
+              color: 'white',
+              cursor: 'pointer'
+            }}
+          />
+        </Box>
       )}
     </Box>
   );

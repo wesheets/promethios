@@ -101,153 +101,114 @@ const mockAIInteractions = [
   {
     id: 'interaction-2',
     fromAgent: 'GPT-4',
-    toAgent: 'Gemini',
-    type: 'consulting' as const,
-    message: "Checking governance compliance for proposed solution...",
-    timestamp: Date.now() - 5000,
-    duration: 12000
+    toAgent: 'Claude',
+    type: 'collaborating' as const,
+    message: "Building on Claude's security analysis with implementation details...",
+    timestamp: Date.now() - 1000,
+    duration: 6000
   }
 ];
 
-const mockMessages = [
-  {
-    id: 'msg-1',
-    content: "Let's discuss the new authentication system architecture. I think we should consider a multi-layered approach.",
-    sender: { id: 'user-1', name: 'Sarah Chen', type: 'human' as const },
-    timestamp: Date.now() - 300000,
-    reactions: [],
-    governanceScore: 85
-  },
-  {
-    id: 'msg-2',
-    content: "I agree with Sarah's multi-layered approach. From a security perspective, we should implement OAuth 2.0 with PKCE for the client-side authentication, combined with JWT tokens for session management. This provides both security and scalability.",
-    sender: { id: 'claude-1', name: 'Claude', type: 'ai' as const },
-    timestamp: Date.now() - 280000,
-    reactions: [{ emoji: '👍', count: 2 }],
-    governanceScore: 92,
-    aiMetadata: {
-      confidence: 0.94,
-      reasoning: "Based on industry best practices and security requirements",
-      sources: ["OAuth 2.0 RFC", "JWT Security Guidelines"]
+const mockGovernanceReceipt = {
+  messageId: 'msg-123',
+  timestamp: Date.now(),
+  agentId: 'claude-1',
+  overallStatus: 'compliant' as const,
+  trustScore: 95,
+  checks: [
+    {
+      id: 'check-1',
+      rule: 'Content Safety',
+      status: 'passed' as const,
+      description: 'No harmful content detected',
+      severity: 'high' as const
+    },
+    {
+      id: 'check-2',
+      rule: 'Privacy Compliance',
+      status: 'passed' as const,
+      description: 'No PII exposure detected',
+      severity: 'high' as const
+    },
+    {
+      id: 'check-3',
+      rule: 'Factual Accuracy',
+      status: 'warning' as const,
+      description: 'Claims require verification',
+      severity: 'medium' as const
     }
-  },
-  {
-    id: 'msg-3',
-    content: "Building on Claude's suggestion, I'd recommend adding biometric authentication as an additional layer. We could integrate WebAuthn for passwordless authentication, which would significantly improve user experience while maintaining high security standards.",
-    sender: { id: 'gpt4-1', name: 'GPT-4', type: 'ai' as const },
-    timestamp: Date.now() - 260000,
-    reactions: [{ emoji: '🚀', count: 1 }],
-    governanceScore: 88,
-    aiMetadata: {
-      confidence: 0.91,
-      reasoning: "WebAuthn provides strong security with improved UX",
-      sources: ["WebAuthn Specification", "FIDO2 Guidelines"]
-    }
-  },
-  {
-    id: 'msg-4',
-    content: "Great ideas! Mike, what's your take on the implementation complexity?",
-    sender: { id: 'user-1', name: 'Sarah Chen', type: 'human' as const },
-    timestamp: Date.now() - 240000,
-    reactions: [],
-    governanceScore: 75
-  },
-  {
-    id: 'msg-5',
-    content: "The implementation looks feasible. I'd estimate about 3-4 sprints for the core OAuth/JWT implementation, plus another 2 sprints for WebAuthn integration. We should also consider the testing strategy for biometric flows.",
-    sender: { id: 'user-2', name: 'Mike Rodriguez', type: 'human' as const },
-    timestamp: Date.now() - 220000,
-    reactions: [{ emoji: '✅', count: 3 }],
-    governanceScore: 90
-  },
-  {
-    id: 'msg-6',
-    content: "From a governance perspective, I need to flag that biometric data handling requires GDPR compliance review. We'll need explicit consent mechanisms and secure biometric template storage. I recommend consulting with our legal team before proceeding with WebAuthn implementation.",
-    sender: { id: 'gemini-1', name: 'Gemini', type: 'ai' as const },
-    timestamp: Date.now() - 200000,
-    reactions: [{ emoji: '⚖️', count: 2 }],
-    governanceScore: 96,
-    aiMetadata: {
-      confidence: 0.97,
-      reasoning: "GDPR compliance is mandatory for biometric data processing",
-      sources: ["GDPR Article 9", "Biometric Data Guidelines"]
-    }
-  }
-];
+  ],
+  policyVersion: '2.1.0',
+  processingTime: 45,
+  ragSources: [
+    'Internal Security Guidelines v3.2',
+    'OWASP Authentication Best Practices',
+    'Company Privacy Policy 2024'
+  ]
+};
 
-/**
- * AliveEnhancedChatPage - Revolutionary multi-agent interface with all "alive" features
- * 
- * This is the showcase page that demonstrates the full power of our enhanced chat system:
- * - Multi-agent AI collaboration (Claude, GPT-4, Gemini)
- * - Real-time human-AI interaction
- * - AI-to-AI communication indicators
- * - Governance and compliance tracking
- * - Trust scores and personality-based interactions
- * - Advanced context awareness
- * - Professional ChatGPT/Manus-quality interface
- */
 const AliveEnhancedChatPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // State management
-  const [selectedMode, setSelectedMode] = useState<InteractionMode>('collaborative');
-  const [showGovernanceOverlay, setShowGovernanceOverlay] = useState(false);
-  const [activeAIInteractions, setActiveAIInteractions] = useState(mockAIInteractions);
-  const [messages, setMessages] = useState(mockMessages);
-  const [participants, setParticipants] = useState(mockParticipants);
+  const [currentMode, setCurrentMode] = useState<InteractionMode>('collaborative');
+  const [showGovernanceReceipt, setShowGovernanceReceipt] = useState(false);
+  const [aiInteractions, setAIInteractions] = useState(mockAIInteractions);
+  const [messageCount, setMessageCount] = useState(24);
 
-  // Simulate real-time AI interactions
+  const handleBackToStandard = () => {
+    // Preserve current query parameters and navigate back to standard mode
+    const searchParams = new URLSearchParams(location.search);
+    navigate(`/chat/chatbots?${searchParams.toString()}`);
+  };
+
+  // Simulate AI interactions
   useEffect(() => {
     const interval = setInterval(() => {
-      // Randomly trigger AI-to-AI interactions
+      // Randomly add new AI interactions
       if (Math.random() > 0.7) {
+        const agents = ['Claude', 'GPT-4', 'Gemini'];
+        const types = ['considering', 'agreeing', 'disagreeing', 'collaborating', 'analyzing'] as const;
+        const messages = [
+          "Evaluating the proposed solution architecture...",
+          "Cross-referencing with security best practices...",
+          "Analyzing potential edge cases and failure modes...",
+          "Considering alternative implementation approaches...",
+          "Validating against compliance requirements..."
+        ];
+
         const newInteraction = {
           id: `interaction-${Date.now()}`,
-          fromAgent: mockAIAgents[Math.floor(Math.random() * mockAIAgents.length)].name,
-          toAgent: mockAIAgents[Math.floor(Math.random() * mockAIAgents.length)].name,
-          type: ['considering', 'consulting', 'collaborating'][Math.floor(Math.random() * 3)] as const,
-          message: [
-            "Analyzing response patterns...",
-            "Cross-referencing governance policies...",
-            "Optimizing collaborative approach...",
-            "Validating technical feasibility..."
-          ][Math.floor(Math.random() * 4)],
+          fromAgent: agents[Math.floor(Math.random() * agents.length)],
+          toAgent: agents[Math.floor(Math.random() * agents.length)],
+          type: types[Math.floor(Math.random() * types.length)],
+          message: messages[Math.floor(Math.random() * messages.length)],
           timestamp: Date.now(),
-          duration: 5000 + Math.random() * 10000
+          duration: 5000 + Math.random() * 5000
         };
-        
-        setActiveAIInteractions(prev => [...prev.slice(-2), newInteraction]);
+
+        setAIInteractions(prev => [...prev, newInteraction]);
       }
     }, 8000);
 
     return () => clearInterval(interval);
   }, []);
 
-  // Clean up expired interactions
-  useEffect(() => {
-    const cleanup = setInterval(() => {
-      setActiveAIInteractions(prev => 
-        prev.filter(interaction => 
-          Date.now() - interaction.timestamp < interaction.duration
-        )
-      );
-    }, 2000);
-
-    return () => clearInterval(cleanup);
-  }, []);
-
-  const handleBackToChat = () => {
-    navigate('/ui/chat/chatbots');
-  };
-
   const handleModeChange = (mode: InteractionMode) => {
-    setSelectedMode(mode);
+    setCurrentMode(mode);
+    console.log('Interaction mode changed to:', mode);
   };
 
-  const handleShowGovernance = () => {
-    setShowGovernanceOverlay(true);
+  const handleInteractionComplete = (interactionId: string) => {
+    setAIInteractions(prev => prev.filter(i => i.id !== interactionId));
+  };
+
+  const handleSendMessage = () => {
+    setMessageCount(prev => prev + 1);
+    // Simulate governance check
+    setTimeout(() => {
+      setShowGovernanceReceipt(true);
+    }, 1000);
   };
 
   return (
@@ -257,81 +218,81 @@ const AliveEnhancedChatPage: React.FC = () => {
           height: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          bgcolor: '#0f172a',
-          color: 'white',
-          overflow: 'hidden'
+          backgroundColor: '#0f172a',
+          color: 'white'
         }}
       >
-        {/* Header */}
+        {/* Header with Back Button */}
         <Box
           sx={{
-            p: 2,
-            borderBottom: '1px solid #1e293b',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            flexShrink: 0
+            px: 3,
+            py: 1,
+            bgcolor: '#1e293b',
+            borderBottom: '1px solid #334155',
+            zIndex: 1000
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Button
-              startIcon={<ArrowBack />}
-              onClick={handleBackToChat}
-              sx={{ color: '#94a3b8' }}
-            >
-              Back to Chat
-            </Button>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              🚀 Alive Enhanced Chat
-            </Typography>
-            <Chip
-              label="Revolutionary Interface"
-              size="small"
-              sx={{
-                bgcolor: '#059669',
-                color: 'white',
-                fontWeight: 500
-              }}
-            />
-          </Box>
-          
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Chip
-              label={`${participants.length} Participants`}
-              size="small"
-              sx={{ bgcolor: '#1e293b', color: '#94a3b8' }}
-            />
-            <Button
               variant="outlined"
+              onClick={handleBackToStandard}
+              startIcon={<ArrowBack />}
               size="small"
-              onClick={handleShowGovernance}
               sx={{
-                borderColor: '#3b82f6',
-                color: '#3b82f6',
-                '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.1)' }
+                borderColor: '#475569',
+                color: '#94a3b8',
+                '&:hover': {
+                  borderColor: '#64748b',
+                  bgcolor: 'rgba(148, 163, 184, 0.1)'
+                }
               }}
             >
-              Governance
+              Standard Mode
             </Button>
+            
+            <Typography variant="h6" sx={{ color: '#f1f5f9', fontWeight: 600 }}>
+              Enhanced Multi-Agent Chat
+            </Typography>
+            
+            <Chip
+              label="Revolutionary Mode"
+              size="small"
+              sx={{
+                bgcolor: '#10b981',
+                color: 'white',
+                fontWeight: 600,
+                animation: 'pulse 2s infinite'
+              }}
+            />
           </Box>
         </Box>
 
         {/* Enhanced Context Bar */}
         <EnhancedContextBar
-          mode={selectedMode}
+          participants={mockParticipants}
+          messageCount={messageCount}
+          conversationId="demo-conversation"
+          conversationTitle="Multi-Agent Authentication Strategy Discussion"
           onModeChange={handleModeChange}
-          participants={participants}
-          governanceScore={89}
-          activeInteractions={activeAIInteractions.length}
+          currentMode={currentMode}
         />
 
-        {/* Main Chat Interface */}
+        {/* Main Chat Area */}
         <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Left Panel - AI Agents */}
           <ParticipantPanelLeft
             agents={mockAIAgents}
-            interactions={activeAIInteractions}
-            mode={selectedMode}
+            isVisible={true}
+            width="280px"
+            onAddAgent={() => console.log('Add AI agent')}
+            onAgentSettings={(id) => console.log('Configure agent:', id)}
+            onAgentDragStart={(agent, event) => {
+              console.log('Drag started for agent:', agent.name);
+              event.dataTransfer.setData('text/plain', JSON.stringify(agent));
+            }}
           />
 
           {/* Center - Chat Messages */}
@@ -340,150 +301,169 @@ const AliveEnhancedChatPage: React.FC = () => {
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden',
-              borderLeft: '1px solid #1e293b',
-              borderRight: '1px solid #1e293b'
+              position: 'relative',
+              backgroundColor: '#1e293b'
             }}
           >
-            {/* Messages Area */}
+            {/* Demo Messages Area */}
             <Box
               sx={{
                 flex: 1,
-                overflowY: 'auto',
-                p: 2,
+                p: 3,
+                overflow: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2
               }}
             >
-              {messages.map((message) => (
-                <Box
-                  key={message.id}
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    p: 2,
-                    borderRadius: 2,
-                    bgcolor: message.sender.type === 'ai' ? '#1e293b' : '#0f172a',
-                    border: message.sender.type === 'ai' ? '1px solid #334155' : '1px solid #1e293b'
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {message.sender.name}
-                    </Typography>
-                    <Chip
-                      label={message.sender.type === 'ai' ? 'AI' : 'Human'}
-                      size="small"
-                      sx={{
-                        bgcolor: message.sender.type === 'ai' ? '#3b82f6' : '#059669',
-                        color: 'white',
-                        fontSize: '0.7rem'
-                      }}
-                    />
-                    <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </Typography>
-                    <Chip
-                      label={`Governance: ${message.governanceScore}%`}
-                      size="small"
-                      sx={{
-                        bgcolor: message.governanceScore > 90 ? '#059669' : 
-                                message.governanceScore > 80 ? '#f59e0b' : '#ef4444',
-                        color: 'white',
-                        fontSize: '0.7rem'
-                      }}
-                    />
-                  </Box>
-                  
-                  <Typography sx={{ lineHeight: 1.6 }}>
-                    {message.content}
-                  </Typography>
-
-                  {message.aiMetadata && (
-                    <Box sx={{ mt: 1, p: 1, bgcolor: '#0f172a', borderRadius: 1 }}>
-                      <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                        Confidence: {(message.aiMetadata.confidence * 100).toFixed(0)}% | 
-                        Reasoning: {message.aiMetadata.reasoning}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {message.reactions && message.reactions.length > 0 && (
-                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      {message.reactions.map((reaction, index) => (
-                        <Chip
-                          key={index}
-                          label={`${reaction.emoji} ${reaction.count}`}
-                          size="small"
-                          sx={{ bgcolor: '#1e293b', color: '#94a3b8' }}
-                        />
-                      ))}
-                    </Box>
-                  )}
+              {/* Welcome Message */}
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  textAlign: 'center'
+                }}
+              >
+                <Typography variant="h5" sx={{ color: '#3b82f6', fontWeight: 600, mb: 2 }}>
+                  🎉 Revolutionary Multi-Agent Chat Interface
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.primary', mb: 2 }}>
+                  Experience the world's first "alive" collaboration platform with:
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+                  <Chip label="🔥 Conversation Heartbeat" size="small" sx={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }} />
+                  <Chip label="🤖 Agent Personality Signals" size="small" sx={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6' }} />
+                  <Chip label="💬 AI-to-AI Observable Interactions" size="small" sx={{ backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }} />
+                  <Chip label="⚖️ Governance Transparency" size="small" sx={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }} />
+                  <Chip label="🎭 Dynamic Interaction Modes" size="small" sx={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }} />
                 </Box>
-              ))}
+              </Box>
+
+              {/* Demo Message with Governance Receipt */}
+              <Box
+                sx={{
+                  position: 'relative',
+                  p: 3,
+                  borderRadius: 2,
+                  backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                  border: '1px solid rgba(255, 107, 53, 0.3)',
+                  borderLeft: '4px solid #ff6b35'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      backgroundColor: '#ff6b35',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    C
+                  </Box>
+                  <Typography variant="subtitle2" sx={{ color: '#ff6b35', fontWeight: 600 }}>
+                    Claude (Analyst)
+                  </Typography>
+                  <Chip label="🔥 Active" size="small" sx={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }} />
+                </Box>
+                <Typography variant="body1" sx={{ color: 'text.primary' }}>
+                  Based on our security analysis, I recommend implementing OAuth 2.0 with PKCE for the authentication flow. 
+                  This approach provides robust security while maintaining excellent user experience. The implementation should 
+                  include proper token rotation and secure storage mechanisms.
+                </Typography>
+
+                {/* Governance Receipt Overlay */}
+                <GovernanceReceiptOverlay
+                  receipt={mockGovernanceReceipt}
+                  isVisible={showGovernanceReceipt}
+                  onToggleVisibility={() => setShowGovernanceReceipt(!showGovernanceReceipt)}
+                />
+              </Box>
+
+              {/* Test Controls */}
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                  border: '1px solid rgba(107, 114, 128, 0.3)'
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ color: 'text.primary', mb: 2 }}>
+                  🧪 Test Controls
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleSendMessage}
+                    sx={{ borderColor: '#3b82f6', color: '#3b82f6' }}
+                  >
+                    Send Test Message
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setShowGovernanceReceipt(!showGovernanceReceipt)}
+                    sx={{ borderColor: '#10b981', color: '#10b981' }}
+                  >
+                    Toggle Governance Receipt
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      const modes: InteractionMode[] = ['workshop', 'debate', 'tutor', 'analysis', 'collaborative'];
+                      const currentIndex = modes.indexOf(currentMode);
+                      const nextMode = modes[(currentIndex + 1) % modes.length];
+                      handleModeChange(nextMode);
+                    }}
+                    sx={{ borderColor: '#f59e0b', color: '#f59e0b' }}
+                  >
+                    Cycle Interaction Mode
+                  </Button>
+                </Box>
+              </Box>
             </Box>
 
-            {/* Input Area */}
+            {/* Chat Input Area */}
             <Box
               sx={{
                 p: 2,
-                borderTop: '1px solid #1e293b',
-                bgcolor: '#0f172a'
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)'
               }}
             >
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 2,
-                  p: 2,
-                  bgcolor: '#1e293b',
-                  borderRadius: 2,
-                  border: '1px solid #334155'
-                }}
-              >
-                <Typography sx={{ flex: 1, color: '#94a3b8' }}>
-                  Type your message... (AI agents will respond automatically)
-                </Typography>
-                <Button
-                  variant="contained"
-                  sx={{
-                    bgcolor: '#3b82f6',
-                    '&:hover': { bgcolor: '#2563eb' }
-                  }}
-                >
-                  Send
-                </Button>
-              </Box>
+              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                💡 This is a demonstration of the revolutionary "alive" chat interface
+              </Typography>
             </Box>
           </Box>
 
           {/* Right Panel - Human Participants */}
           <ParticipantPanelRight
             humans={mockHumans}
-            mode={selectedMode}
+            isVisible={true}
+            width="280px"
+            onInviteHuman={() => console.log('Invite human')}
+            onHumanSettings={(id) => console.log('Configure human:', id)}
           />
         </Box>
 
         {/* AI-to-AI Interaction Indicators */}
-        {activeAIInteractions.map((interaction) => (
-          <AIToAIInteractionIndicator
-            key={interaction.id}
-            interaction={interaction}
-          />
-        ))}
-
-        {/* Governance Receipt Overlay */}
-        {showGovernanceOverlay && (
-          <GovernanceReceiptOverlay
-            isOpen={showGovernanceOverlay}
-            onClose={() => setShowGovernanceOverlay(false)}
-            messages={messages}
-            participants={participants}
-          />
-        )}
+        <AIToAIInteractionIndicator
+          interactions={aiInteractions}
+          isVisible={true}
+          onInteractionComplete={handleInteractionComplete}
+        />
       </Box>
     </ModernChatProvider>
   );
