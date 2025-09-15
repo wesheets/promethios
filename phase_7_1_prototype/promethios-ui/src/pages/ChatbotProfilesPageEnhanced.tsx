@@ -712,6 +712,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Hosted API, 2: BYOK, 3: Enterprise
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Right navigation state for responsive layout
+  const [rightNavState, setRightNavState] = useState({
+    isCollapsed: true,
+    activePanel: null as string | null,
+    panelWidth: 0
+  });
+
+  // Calculate chat interface width based on right navigation state
+  const getChatInterfaceWidth = () => {
+    const navBarWidth = rightNavState.isCollapsed ? 60 : 200; // Navigation bar width
+    const panelWidth = rightNavState.activePanel ? rightNavState.panelWidth : 0; // Active panel width
+    const totalRightWidth = navBarWidth + panelWidth;
+    
+    // Calculate available width (assuming full screen width minus right navigation)
+    // Use a fixed max width for chat content to maintain readability
+    const maxChatWidth = 1200; // Maximum chat content width
+    const availableWidth = `calc(100vw - ${totalRightWidth}px)`;
+    
+    return {
+      width: availableWidth,
+      maxWidth: `${maxChatWidth}px`,
+      margin: '0 auto' // Center the chat content
+    };
+  };
+  
   // Current bot state (derived from botStates map)
   const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
   const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
@@ -5412,7 +5437,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             {/* Command Center Layout - Chat on Left, Panels on Right */}
             <Box sx={{ display: 'flex', height: '100%' }}>
               {/* Left Side - Chat Interface */}
-              <Box sx={{ flex: '0 0 60%', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a' }}>
+              <Box sx={{ 
+                ...getChatInterfaceWidth(),
+                display: 'flex', 
+                flexDirection: 'column', 
+                bgcolor: '#0f172a',
+                transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
+              }}>
 
               {/* Multi-Tab Chat Header */}
               <Box sx={{ borderBottom: '1px solid #334155' }}>
@@ -7130,6 +7161,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           
           {/* New Right Navigation Bar */}
           <RightNavigationBar
+            onStateChange={setRightNavState}
             chatMessages={chatMessages}
             humanParticipants={humanParticipants}
             sharedConversations={sharedConversations}

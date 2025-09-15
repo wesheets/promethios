@@ -36,6 +36,7 @@ import RightPanelContent from './RightPanelContent';
 
 interface RightNavigationBarProps {
   onContentChange?: (content: React.ReactNode) => void;
+  onStateChange?: (state: { isCollapsed: boolean; activePanel: string | null; panelWidth: number }) => void;
   unreadCounts?: Record<string, number>;
   // Data props for content rendering
   chatMessages?: any[];
@@ -55,6 +56,7 @@ interface NavItem {
 
 const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
   onContentChange,
+  onStateChange,
   unreadCounts = {},
   chatMessages = [],
   humanParticipants = [],
@@ -66,6 +68,19 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Notify parent component of state changes
+  useEffect(() => {
+    if (onStateChange) {
+      const panelWidth = activePanel ? 
+        navigationItems.find(item => item.key === activePanel)?.panelWidth || 0 : 0;
+      onStateChange({
+        isCollapsed,
+        activePanel,
+        panelWidth
+      });
+    }
+  }, [isCollapsed, activePanel, onStateChange]);
 
   // Navigation items with their respective panel widths
   const navigationItems = [
