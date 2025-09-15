@@ -526,6 +526,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                 </Button>
               </Box>
             ) : (
+              <Button
                 sx={{
                   borderColor: '#334155',
                   color: '#94a3b8',

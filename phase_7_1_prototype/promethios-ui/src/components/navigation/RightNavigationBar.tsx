@@ -68,26 +68,26 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Navigation items with their respective panel widths
-  const navItems: NavItem[] = [
-    { key: 'team', label: 'Team', icon: <TeamIcon />, panelWidth: 300, badge: unreadCounts.team },
-    { key: 'chats', label: 'Chats', icon: <ChatsIcon />, panelWidth: 300, badge: unreadCounts.chats },
-    { key: 'analytics', label: 'Analytics', icon: <AnalyticsIcon />, panelWidth: 400 },
-    { key: 'repo', label: 'Repo', icon: <RepoIcon />, panelWidth: 300 },
-    { key: 'tools', label: 'Tools', icon: <ToolsIcon />, panelWidth: 300 },
-    { key: 'chat_interface', label: 'Chat Interface', icon: <ChatInterfaceIcon />, panelWidth: 300 },
-    { key: 'rag_policy', label: 'RAG & Policy', icon: <RagPolicyIcon />, panelWidth: 300 },
-    { key: 'token_economics', label: 'Token Economics', icon: <TokenEconomicsIcon />, panelWidth: 400 },
-    { key: 'mas_collaboration', label: 'MAS Collaboration', icon: <MasCollaborationIcon />, panelWidth: 400 },
-    { key: 'customize', label: 'Customize', icon: <CustomizeIcon />, panelWidth: 400 },
-    { key: 'personality', label: 'Personality', icon: <PersonalityIcon />, panelWidth: 400 },
-    { key: 'ai_knowledge', label: 'AI Knowledge', icon: <AiKnowledgeIcon />, panelWidth: 400 },
-    { key: 'integrations', label: 'Integrations', icon: <IntegrationsIcon />, panelWidth: 400 },
-    { key: 'automation', label: 'Automation', icon: <AutomationIcon />, panelWidth: 400 },
-    { key: 'receipts', label: 'Receipts', icon: <ReceiptsIcon />, panelWidth: 400 },
-    { key: 'memory', label: 'Memory', icon: <MemoryIcon />, panelWidth: 300 },
-    { key: 'sandbox', label: 'Sandbox', icon: <SandboxIcon />, panelWidth: 300 },
-    { key: 'governance', label: 'Governance', icon: <GovernanceIcon />, panelWidth: 250 },
-    { key: 'debug', label: 'Debug', icon: <DebugIcon />, panelWidth: 250 }
+  const navigationItems = [
+    { key: 'team', label: 'Team', icon: <TeamIcon />, panelWidth: 600, badge: unreadCounts.team },
+    { key: 'chats', label: 'Chats', icon: <ChatsIcon />, panelWidth: 600, badge: unreadCounts.chats },
+    { key: 'analytics', label: 'Analytics', icon: <AnalyticsIcon />, panelWidth: 800 },
+    { key: 'repo', label: 'Repo', icon: <RepoIcon />, panelWidth: 600 },
+    { key: 'tools', label: 'Tools', icon: <ToolsIcon />, panelWidth: 600 },
+    { key: 'chat_interface', label: 'Chat Interface', icon: <ChatInterfaceIcon />, panelWidth: 600 },
+    { key: 'rag_policy', label: 'RAG & Policy', icon: <RagPolicyIcon />, panelWidth: 600 },
+    { key: 'token_economics', label: 'Token Economics', icon: <TokenEconomicsIcon />, panelWidth: 800 },
+    { key: 'mas_collaboration', label: 'MAS Collaboration', icon: <MasCollaborationIcon />, panelWidth: 800 },
+    { key: 'customize', label: 'Customize', icon: <CustomizeIcon />, panelWidth: 800 },
+    { key: 'personality', label: 'Personality', icon: <PersonalityIcon />, panelWidth: 800 },
+    { key: 'ai_knowledge', label: 'AI Knowledge', icon: <AiKnowledgeIcon />, panelWidth: 800 },
+    { key: 'integrations', label: 'Integrations', icon: <IntegrationsIcon />, panelWidth: 800 },
+    { key: 'automation', label: 'Automation', icon: <AutomationIcon />, panelWidth: 800 },
+    { key: 'receipts', label: 'Receipts', icon: <ReceiptsIcon />, panelWidth: 800 },
+    { key: 'memory', label: 'Memory', icon: <MemoryIcon />, panelWidth: 600 },
+    { key: 'sandbox', label: 'Sandbox', icon: <SandboxIcon />, panelWidth: 600 },
+    { key: 'governance', label: 'Governance', icon: <GovernanceIcon />, panelWidth: 500 },
+    { key: 'debug', label: 'Debug', icon: <DebugIcon />, panelWidth: 500 }
   ];
 
   const handleNavItemClick = (item: NavItem) => {
