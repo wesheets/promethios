@@ -6015,6 +6015,30 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       
                       const recipient = getRecipient();
                       
+                      // Handle agent interaction from drag & drop
+                      const handleAgentInteraction = (agentId: string, messageId: string, action: string) => {
+                        console.log('🎯 Agent interaction:', { agentId, messageId, action });
+                        
+                        // Find the agent details
+                        const agent = multiChatState.contexts
+                          .flatMap(ctx => ctx.guestAgents || [])
+                          .find(a => a.agentId === agentId) || 
+                          (selectedChatbot?.id === agentId ? selectedChatbot : null);
+                        
+                        if (agent) {
+                          const agentName = agent.name || agent.identity?.name || 'Agent';
+                          
+                          // Trigger behavioral prompt
+                          if (onBehaviorPrompt) {
+                            onBehaviorPrompt(agentId, agentName, action);
+                          } else {
+                            // Fallback: add a message indicating the interaction
+                            const interactionMessage = `🎭 ${agentName} is ${action}ing on this message...`;
+                            console.log('🎭 Behavioral interaction:', interactionMessage);
+                          }
+                        }
+                      };
+                      
                       return (
                         <ColorCodedChatMessage
                           key={message.id}
@@ -6022,6 +6046,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           senderColor={senderColor}
                           recipient={recipient}
                           isCurrentUser={isUser}
+                          onAgentInteraction={handleAgentInteraction}
                         />
                       );
                     })}

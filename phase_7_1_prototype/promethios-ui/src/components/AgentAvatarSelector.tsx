@@ -11,10 +11,13 @@ import {
   IconButton,
   Badge
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, DragIndicator } from '@mui/icons-material';
 import GuestSelectorPopup from './GuestSelectorPopup';
 import { unifiedParticipantService, UnifiedParticipant } from '../services/UnifiedParticipantService';
 import { useUnifiedParticipantsOptional } from '../contexts/UnifiedParticipantContext';
+
+// Import drag & drop functionality
+import { useAgentDragSource } from '../hooks/useDragDrop';
 
 export interface AgentInfo {
   id: string;
@@ -571,28 +574,53 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         </Tooltip>
       ))}
 
-      {/* Agent Avatars with Behavior Prompts */}
-      {allAgents.map((agent) => (
-        <Tooltip 
-          key={agent.id}
-          title={
-            <Box sx={{ p: 1.5, minWidth: 200 }}>
-              {/* Agent Info Header */}
-              <Box sx={{ fontWeight: 600, mb: 0.5, textAlign: 'center' }}>
-                {agent.name}
-              </Box>
-              <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
-                {hostAgent && agent.id === hostAgent.id ? '👑 Host Agent' : 
-                 agent.type === 'human' ? 
-                   ((agent as any).isPending ? '⏳ Guest User (Pending)' : '👤 Guest User') : 
-                   ((agent as any).isPending ? '⏳ Guest Agent (Pending)' : '🤖 Guest Agent')}
-              </Box>
-              <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1.5, textAlign: 'center' }}>
-                {selectedAgents.includes(agent.id) ? 'Selected for messaging' : 'Click to select for messaging'}
-                {agent.hotkey && ` • Press ${agent.hotkey.toUpperCase()}`}
-              </Box>
-              
-              {/* Enhanced Behavior Prompts with Participant Selection */}
+  // Draggable Agent Avatar Component
+  const DraggableAgentAvatar: React.FC<{
+    agent: AgentInfo;
+    isSelected: boolean;
+    onClick: (e: React.MouseEvent) => void;
+  }> = ({ agent, isSelected, onClick }) => {
+    const isPending = (agent as any).isPending;
+    const isAI = agent.type === 'ai_agent';
+    
+    // Make AI agents draggable
+    const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
+      agent.id,
+      {
+        id: agent.id,
+        name: agent.name,
+        type: agent.type,
+        color: agent.color,
+        avatar: agent.avatar,
+        hotkey: agent.hotkey,
+      },
+      !isAI // isHuman
+    );
+
+    return (
+      <Tooltip 
+        key={agent.id}
+        title={
+          <Box sx={{ p: 1.5, minWidth: 200 }}>
+            {/* Agent Info Header */}
+            <Box sx={{ fontWeight: 600, mb: 0.5, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+              {agent.name}
+              {isAI && <DragIndicator sx={{ fontSize: '12px', opacity: 0.7 }} />}
+            </Box>
+            <Box sx={{ fontSize: '0.75rem', opacity: 0.8, mb: 1, textAlign: 'center' }}>
+              {hostAgent && agent.id === hostAgent.id ? '👑 Host Agent' : 
+               agent.type === 'human' ? 
+                 (isPending ? '⏳ Guest User (Pending)' : '👤 Guest User') : 
+                 (isPending ? '⏳ Guest Agent (Pending)' : '🤖 Guest Agent')}
+            </Box>
+            <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1.5, textAlign: 'center' }}>
+              {isAI && !isPending && '💡 Drag onto messages to interact • '}
+              {selectedAgents.includes(agent.id) ? 'Selected for messaging' : 'Click to select for messaging'}
+              {agent.hotkey && ` • Press ${agent.hotkey.toUpperCase()}`}
+            </Box>
+            
+            {/* Enhanced Behavior Prompts with Participant Selection */}
+            {isAI && !isPending && (
               <Box sx={{ borderTop: '1px solid #374151', pt: 1 }}>
                 <Box sx={{ fontSize: '0.7rem', opacity: 0.6, mb: 1, textAlign: 'center' }}>
                   Quick Behavior Prompts:
@@ -635,74 +663,98 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
                   ))}
                 </Box>
               </Box>
-              
-              {/* Remove Participant Section (for unified system) */}
-              {useUnifiedParticipants && (
-                (participantContext?.canRemoveParticipant(agent.id) || (agent as any).permissions?.canRemove)
-              ) && (
-                <Box sx={{ borderTop: '1px solid #374151', pt: 1, mt: 1 }}>
-                  <Box
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveParticipant(agent.id);
-                    }}
-                    sx={{
-                      px: 1,
-                      py: 0.5,
-                      bgcolor: 'rgba(239, 68, 68, 0.1)',
-                      borderRadius: 1,
-                      cursor: 'pointer',
-                      fontSize: '0.7rem',
-                      color: '#ef4444',
-                      border: '1px solid #ef444440',
-                      textAlign: 'center',
-                      '&:hover': {
-                        bgcolor: '#ef444420',
-                        borderColor: '#ef444460'
-                      }
-                    }}
-                  >
-                    🗑️ Remove {agent.type === 'human' ? 'Participant' : 'Agent'}
-                  </Box>
+            )}
+            
+            {/* Remove Participant Section (for unified system) */}
+            {useUnifiedParticipants && (
+              (participantContext?.canRemoveParticipant(agent.id) || (agent as any).permissions?.canRemove)
+            ) && (
+              <Box sx={{ borderTop: '1px solid #374151', pt: 1, mt: 1 }}>
+                <Box
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveParticipant(agent.id);
+                  }}
+                  sx={{
+                    px: 1,
+                    py: 0.5,
+                    bgcolor: 'rgba(239, 68, 68, 0.1)',
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    fontSize: '0.7rem',
+                    color: '#ef4444',
+                    border: '1px solid #ef444440',
+                    textAlign: 'center',
+                    '&:hover': {
+                      bgcolor: '#ef444420',
+                      borderColor: '#ef444460'
+                    }
+                  }}
+                >
+                  🗑️ Remove {agent.type === 'human' ? 'Participant' : 'Agent'}
                 </Box>
-              )}
-            </Box>
-          }
-          placement="top"
-          arrow
-          componentsProps={{
-            tooltip: {
-              sx: {
-                bgcolor: '#1e293b',
-                border: '1px solid #334155',
-                '& .MuiTooltip-arrow': {
-                  color: '#1e293b',
-                },
+              </Box>
+            )}
+          </Box>
+        }
+        placement="top"
+        arrow
+        componentsProps={{
+          tooltip: {
+            sx: {
+              bgcolor: '#1e293b',
+              border: '1px solid #334155',
+              '& .MuiTooltip-arrow': {
+                color: '#1e293b',
               },
             },
+          },
+        }}
+      >
+        <Badge
+          badgeContent={agent.hotkey?.toUpperCase()}
+          color="primary"
+          sx={{
+            '& .MuiBadge-badge': {
+              fontSize: '0.6rem',
+              minWidth: 16,
+              height: 16,
+              bgcolor: isSelected ? agent.color : '#64748b',
+              opacity: 0.8
+            }
           }}
         >
-          <Badge
-            badgeContent={agent.hotkey?.toUpperCase()}
-            color="primary"
+          <Avatar
+            ref={isAI ? dragRef : undefined}
+            {...(isAI ? dragHandlers : {})}
+            onClick={onClick}
             sx={{
-              '& .MuiBadge-badge': {
-                fontSize: '0.6rem',
-                minWidth: 16,
-                height: 16,
-                bgcolor: selectedAgents.includes(agent.id) ? agent.color : '#64748b',
-                opacity: 0.8
+              ...getAgentStyle(agent),
+              cursor: isAI ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+              opacity: isDragging ? 0.7 : (isPending ? 0.6 : 1),
+              transform: isDragging ? 'rotate(5deg)' : 'none',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                ...getAgentStyle(agent)['&:hover'],
+                transform: isDragging ? 'rotate(5deg)' : (isPending ? 'none' : 'scale(1.1)'),
               }
             }}
           >
-            <Avatar
-              onClick={(e) => handleAgentClick(agent.id, e)}
-              sx={getAgentStyle(agent)}
-            >
-              {agent.avatar || agent.name.charAt(0)}
-            </Avatar>
-          </Badge>
-        </Tooltip>
+            {agent.avatar || agent.name.charAt(0)}
+          </Avatar>
+        </Badge>
+      </Tooltip>
+    );
+  };
+
+      {/* Agent Avatars with Behavior Prompts */}
+      {allAgents.map((agent) => (
+        <DraggableAgentAvatar
+          key={agent.id}
+          agent={agent}
+          isSelected={selectedAgents.includes(agent.id)}
+          onClick={(e) => handleAgentClick(agent.id, e)}
+        />
       ))}
 
       {/* Add Agent Button */}

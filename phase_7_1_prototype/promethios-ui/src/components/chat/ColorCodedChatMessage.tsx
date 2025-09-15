@@ -2,6 +2,9 @@ import React from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
 import DirectionalFlowIndicator from './DirectionalFlowIndicator';
 
+// Import drag & drop functionality
+import { useMessageDropTarget } from '../../hooks/useDragDrop';
+
 interface ColorCodedChatMessageProps {
   message: {
     id: string;
@@ -23,16 +26,28 @@ interface ColorCodedChatMessageProps {
     color: string;
   };
   isCurrentUser?: boolean;
+  onAgentInteraction?: (agentId: string, messageId: string, action: string) => void;
 }
 
 const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
   message,
   senderColor,
   recipient,
-  isCurrentUser = false
+  isCurrentUser = false,
+  onAgentInteraction
 }) => {
   const isAI = message.sender.type === 'ai';
   const isHuman = message.sender.type === 'human';
+
+  // Add drop functionality
+  const { dropRef, isOver, canDrop } = useMessageDropTarget(
+    message.id,
+    message,
+    (agentId: string, messageId: string, action: string) => {
+      console.log('Agent dropped on message:', { agentId, messageId, action });
+      onAgentInteraction?.(agentId, messageId, action);
+    }
+  );
 
   return (
     <Box sx={{ 
@@ -98,17 +113,25 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
       </Box>
 
       {/* Message Content with Colored Border */}
-      <Box sx={{
-        position: 'relative',
-        maxWidth: isCurrentUser ? '70%' : '85%',
-        minWidth: '200px',
-        // Premium hover effect
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          transform: 'translateY(-1px)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-        }
-      }}>
+      <Box 
+        ref={dropRef}
+        sx={{
+          position: 'relative',
+          maxWidth: isCurrentUser ? '70%' : '85%',
+          minWidth: '200px',
+          // Premium hover effect
+          transition: 'all 0.2s ease-in-out',
+          // Drop zone visual feedback
+          backgroundColor: isOver && canDrop ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+          border: isOver && canDrop ? '2px dashed #3b82f6' : '2px solid transparent',
+          borderRadius: 2,
+          cursor: canDrop ? 'copy' : 'default',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          }
+        }}
+      >
         {/* Colored Left Border - Rounded for premium feel */}
         <Box sx={{
           position: 'absolute',

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -14,7 +14,11 @@ import {
   Add,
   Group,
   Chat,
+  DragIndicator,
 } from '@mui/icons-material';
+
+// Import drag & drop functionality
+import { useAgentDragSource } from '../../hooks/useDragDrop';
 
 // Types
 interface GuestAgent {
@@ -246,31 +250,81 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
     };
   };
 
-  // Render participant chip
-  const renderParticipantChip = (participant: any, type: 'ai' | 'human') => {
+  // Draggable Agent Chip Component
+  const DraggableAgentChip: React.FC<{
+    participant: any;
+    type: 'ai' | 'human';
+  }> = ({ participant, type }) => {
     const isAI = type === 'ai';
     const borderColor = isAI ? participant.color : '#3b82f6';
+    
+    // Make AI agents draggable
+    const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
+      participant.id,
+      {
+        id: participant.id,
+        name: participant.name,
+        type: participant.type,
+        color: participant.color,
+        avatar: participant.avatar,
+      },
+      !isAI // isHuman
+    );
     
     return (
       <Tooltip
         key={participant.id}
-        title={`${participant.name} (${participant.type === 'host' ? 'Host' : 'Guest'} ${isAI ? 'AI' : 'Human'})`}
+        title={
+          <Box>
+            <Box sx={{ fontWeight: 'bold', mb: 0.5 }}>
+              {participant.name} ({participant.type === 'host' ? 'Host' : 'Guest'} {isAI ? 'AI' : 'Human'})
+            </Box>
+            {isAI && (
+              <Box sx={{ fontSize: '12px', color: '#94a3b8' }}>
+                💡 Drag onto messages to interact
+              </Box>
+            )}
+          </Box>
+        }
         arrow
       >
-        <Box sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          px: 1,
-          py: 0.5,
-          bgcolor: '#334155',
-          borderRadius: 1,
-          borderLeft: `3px solid ${borderColor}`,
-          cursor: 'pointer',
-          '&:hover': { bgcolor: '#475569' },
-          height: 28,
-          minWidth: 'fit-content'
-        }}>
+        <Box 
+          ref={isAI ? dragRef : undefined}
+          {...(isAI ? dragHandlers : {})}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            px: 1,
+            py: 0.5,
+            bgcolor: '#334155',
+            borderRadius: 1,
+            borderLeft: `3px solid ${borderColor}`,
+            cursor: isAI ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+            opacity: isDragging ? 0.7 : 1,
+            transform: isDragging ? 'rotate(5deg)' : 'none',
+            '&:hover': { 
+              bgcolor: '#475569',
+              transform: isDragging ? 'rotate(5deg)' : 'scale(1.05)',
+            },
+            height: 28,
+            minWidth: 'fit-content',
+            transition: 'all 0.2s ease',
+            position: 'relative',
+          }}
+        >
+          {/* Drag Indicator for AI agents */}
+          {isAI && (
+            <DragIndicator sx={{ 
+              fontSize: 10, 
+              color: '#64748b', 
+              position: 'absolute',
+              top: 2,
+              right: 2,
+              opacity: 0.6
+            }} />
+          )}
+          
           {/* Avatar Circle */}
           <Avatar sx={{
             width: 16,
@@ -313,6 +367,11 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
         </Box>
       </Tooltip>
     );
+  };
+
+  // Render participant chip (now uses DraggableAgentChip)
+  const renderParticipantChip = (participant: any, type: 'ai' | 'human') => {
+    return <DraggableAgentChip participant={participant} type={type} />;
   };
 
   // Render overflow indicator
