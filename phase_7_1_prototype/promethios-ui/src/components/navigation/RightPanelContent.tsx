@@ -1,6 +1,18 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
+// Import existing UI pages
+import UserProfilePage from '../../pages/UserProfilePage';
+import PreferencesSettingsPage from '../../pages/PreferencesSettingsPage';
+import OrganizationSettingsPage from '../../pages/OrganizationSettingsPage';
+import IntegrationsSettingsPage from '../../pages/IntegrationsSettingsPage';
+import DataManagementSettingsPage from '../../pages/DataManagementSettingsPage';
+import ApiKeysSettingsPage from '../../pages/ApiKeysSettingsPage';
+import SupportPage from '../../pages/SupportPage';
+import GuidedToursPage from '../../pages/GuidedToursPage';
+import DocumentationPage from '../../pages/DocumentationPage';
+import ApiDocsPage from '../../pages/ApiDocsPage';
+
 interface RightPanelContentProps {
   panelType: string;
   chatMessages?: any[];
@@ -22,6 +34,40 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
   
   const renderContent = () => {
     switch (panelType) {
+      // User Section
+      case 'profile':
+        return <UserProfilePage />;
+
+      // Settings Section  
+      case 'preferences':
+        return <PreferencesSettingsPage />;
+      
+      case 'organization':
+        return <OrganizationSettingsPage />;
+      
+      case 'integrations':
+        return <IntegrationsSettingsPage />;
+      
+      case 'data_management':
+        return <DataManagementSettingsPage />;
+      
+      case 'api_keys':
+        return <ApiKeysSettingsPage />;
+
+      // Help Section
+      case 'support':
+        return <SupportPage />;
+      
+      case 'guided_tours':
+        return <GuidedToursPage />;
+      
+      case 'documentation':
+        return <DocumentationPage />;
+      
+      case 'api_docs':
+        return <ApiDocsPage />;
+
+      // Keep existing custom content for other panels
       case 'team':
         return (
           <Box>
