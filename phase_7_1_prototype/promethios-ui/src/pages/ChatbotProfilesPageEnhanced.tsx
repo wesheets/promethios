@@ -7126,7 +7126,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
             {/* Right Side - Command Panels */}
             {/* Replaced with new RightNavigationBar component */}
-            </Box>
           </Box>
           
           {/* New Right Navigation Bar */}
