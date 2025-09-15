@@ -7333,6 +7333,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             onChatSelect={handleChatSelect}
             onNewChat={handleNewChat}
             onShareChat={handleShareChat}
+            onSharedConversationSelect={handleCustomSharedConversationSelect}
+            onDeleteSharedConversation={(conversationId) => {
+              console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
+              refreshSharedConversations();
+            }}
+            onBulkCleanupLegacyConversations={() => {
+              console.log('🧹 [SharedChat] Bulk cleanup legacy conversations');
+              refreshSharedConversations();
+            }}
             unreadCounts={{
               team: unreadTeamCount,
               chats: 0,
@@ -7344,25 +7353,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             currentSessionId={currentBotState?.currentChatSession?.id}
             refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
             guestConversationAccess={guestConversationAccess}
-            onSharedConversationSelect={handleCustomSharedConversationSelect}
-            onDeleteSharedConversation={(conversationId) => {
-              console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
-              refreshSharedConversations();
-            }}
-            onBulkCleanupLegacyConversations={() => {
-              console.log(`🧹 [LegacyCleanup] Cleaning up legacy conversations`);
-              refreshSharedConversations();
-            }}
+            updateBotState={updateBotState}
+            selectedChatbotId={selectedChatbotId}
+            setMultiChatState={setMultiChatState}
+            chatHistoryService={chatHistoryService}
             onDirectMessage={(userId, userName) => {
               console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
             }}
             onViewProfile={(userId) => {
               console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
             }}
-            updateBotState={updateBotState}
-            selectedChatbotId={selectedChatbotId}
-            setMultiChatState={setMultiChatState}
-            chatHistoryService={chatHistoryService}
           />
         ) : (
               {/* Panel Header */}
