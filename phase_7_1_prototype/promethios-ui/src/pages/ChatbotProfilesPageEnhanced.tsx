@@ -1107,6 +1107,53 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     toggleLiveAgentPanel();
   };
 
+  // Chat History Callback Functions
+  const handleChatSelect = async (session: any) => {
+    console.log(`🔄 [ChatHistory] Chat selected:`, session);
+    console.log(`🔄 [ChatHistory] Session has ${session.messages?.length || 0} messages`);
+    console.log(`🔄 [ChatHistory] Selected chatbot ID: ${selectedChatbotId}`);
+    
+    if (selectedChatbotId) {
+      updateBotState(selectedChatbotId, { 
+        currentChatSession: session,
+        currentChatName: session.name || `Chat ${session.id.slice(-8)}`
+      });
+      console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
+      
+      // Load chat messages if available
+      if (session.messages && session.messages.length > 0) {
+        setChatMessages(session.messages);
+      }
+    }
+  };
+
+  const handleNewChat = (session?: any) => {
+    if (selectedChatbotId) {
+      if (session) {
+        // New chat created - set the session and name
+        updateBotState(selectedChatbotId, {
+          currentChatSession: session,
+          currentChatName: session.name || `Chat ${session.id.slice(-8)}`,
+          chatMessages: []
+        });
+        setChatMessages([]);
+      } else {
+        // Clear current chat and start fresh
+        updateBotState(selectedChatbotId, {
+          currentChatSession: null,
+          currentChatName: '',
+          chatMessages: []
+        });
+        setChatMessages([]);
+      }
+    }
+  };
+
+  const handleShareChat = (contextId: string) => {
+    console.log(`🔗 [ChatShare] Sharing chat context: ${contextId}`);
+    // TODO: Implement chat sharing functionality
+  };
+
   const startAutonomousMode = async (goal: string) => {
     if (!autonomousGovernance) {
       console.error('❌ [Autonomous] Governance system not initialized');
@@ -7167,6 +7214,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             sharedConversations={sharedConversations}
             selectedChatbot={selectedChatbot}
             currentBotState={currentBotState}
+            // Chat History Callbacks
+            onChatSelect={handleChatSelect}
+            onNewChat={handleNewChat}
+            onShareChat={handleShareChat}
             unreadCounts={{
               team: unreadTeamCount,
               chats: 0,

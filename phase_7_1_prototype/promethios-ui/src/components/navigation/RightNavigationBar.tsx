@@ -45,6 +45,10 @@ interface RightNavigationBarProps {
   sharedConversations?: any[];
   selectedChatbot?: any;
   currentBotState?: any;
+  // Chat History Callbacks
+  onChatSelect?: (session: any) => void;
+  onNewChat?: (session?: any) => void;
+  onShareChat?: (contextId: string) => void;
 }
 
 interface NavItem {
@@ -63,7 +67,11 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
   humanParticipants = [],
   sharedConversations = [],
   selectedChatbot,
-  currentBotState
+  currentBotState,
+  // Chat History Callbacks
+  onChatSelect,
+  onNewChat,
+  onShareChat
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -330,6 +338,10 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 sharedConversations={sharedConversations}
                 selectedChatbot={selectedChatbot}
                 currentBotState={currentBotState}
+                // Chat History Callbacks
+                onChatSelect={onChatSelect}
+                onNewChat={onNewChat}
+                onShareChat={onShareChat}
               />
             </Box>
           </Box>
@@ -402,6 +414,10 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 sharedConversations={sharedConversations}
                 selectedChatbot={selectedChatbot}
                 currentBotState={currentBotState}
+                // Chat History Callbacks
+                onChatSelect={onChatSelect}
+                onNewChat={onNewChat}
+                onShareChat={onShareChat}
               />
             </Box>
           </Box>

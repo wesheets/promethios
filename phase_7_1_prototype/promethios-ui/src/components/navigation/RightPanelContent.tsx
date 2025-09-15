@@ -18,7 +18,6 @@ import ToolConfigurationPanel from '../tools/ToolConfigurationPanel';
 import ConnectedAppsPanel from '../tools/ConnectedAppsPanel';
 import MASCollaborationPanel from '../collaboration/MASCollaborationPanel';
 import TokenEconomicsConfigPanel from '../TokenEconomicsConfigPanel';
-
 interface RightPanelContentProps {
   panelType: string;
   userId?: string;
@@ -30,7 +29,10 @@ interface RightPanelContentProps {
   sharedConversations?: any[];
   selectedChatbot?: any;
   currentBotState?: any;
-  onClose?: () => void;
+  // Chat History Callbacks
+  onChatSelect?: (session: any) => void;
+  onNewChat?: (session?: any) => void;
+  onShareChat?: (contextId: string) => void;
 }
 
 const RightPanelContent: React.FC<RightPanelContentProps> = ({
@@ -44,7 +46,10 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
   sharedConversations = [],
   selectedChatbot,
   currentBotState,
-  onClose
+  // Chat History Callbacks
+  onChatSelect,
+  onNewChat,
+  onShareChat
 }) => {
   // Common props for panels that need them
   const commonProps = {
@@ -52,6 +57,11 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
     userName,
     currentAgentId,
     currentAgentName,
+    chatMessages,
+    humanParticipants,
+    sharedConversations,
+    selectedChatbot,
+    currentBotState,
     onClose
   };
 
@@ -68,6 +78,9 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
         return (
           <ChatHistoryPanel
             {...commonProps}
+            onChatSelect={onChatSelect}
+            onNewChat={onNewChat}
+            onShareChat={onShareChat}
           />
         );
 
