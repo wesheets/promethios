@@ -40,7 +40,7 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
   const isHuman = message.sender.type === 'human';
 
   // Add drop functionality
-  const { dropRef, isOver, canDrop } = useMessageDropTarget(
+  const { dropRef, isOver, canDrop, dropHandlers } = useMessageDropTarget(
     message.id,
     message,
     (agentId: string, messageId: string, action: string) => {
@@ -115,6 +115,7 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
       {/* Message Content with Colored Border */}
       <Box 
         ref={dropRef}
+        {...dropHandlers}
         sx={{
           position: 'relative',
           maxWidth: isCurrentUser ? '70%' : '85%',
