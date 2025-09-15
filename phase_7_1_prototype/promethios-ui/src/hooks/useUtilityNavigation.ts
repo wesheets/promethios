@@ -11,39 +11,39 @@ export const useUtilityNavigation = () => {
   const { logout: authLogout } = useAuth();
 
   const navigateToProfile = () => {
-    navigate('/ui/profile');
+    navigate('/ui/profile/settings');
   };
 
   const navigateToPreferences = () => {
-    navigate('/ui/preferences');
+    navigate('/ui/settings/preferences');
   };
 
   const navigateToOrganization = () => {
-    navigate('/ui/organization');
+    navigate('/ui/settings/organization');
   };
 
   const navigateToIntegrations = () => {
-    navigate('/ui/integrations');
+    navigate('/ui/settings/integrations');
   };
 
   const navigateToDataManagement = () => {
-    navigate('/ui/data-management');
+    navigate('/ui/settings/data');
   };
 
   const navigateToApiKeys = () => {
-    navigate('/ui/api-keys');
+    navigate('/ui/settings/api-keys');
   };
 
   const navigateToDocumentation = () => {
-    navigate('/documentation');
+    navigate('/ui/help/documentation');
   };
 
   const navigateToGuidedTours = () => {
-    navigate('/guided-tours');
+    navigate('/ui/help/tours');
   };
 
   const navigateToSupport = () => {
-    navigate('/support');
+    navigate('/ui/help/support');
   };
 
   const handleLogout = async () => {

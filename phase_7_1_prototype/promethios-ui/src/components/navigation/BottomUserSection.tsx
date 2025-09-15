@@ -66,6 +66,8 @@ const BottomUserSection: React.FC<BottomUserSectionProps> = ({
 
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const [helpExpanded, setHelpExpanded] = useState(false);
+  const [collapsedSettingsExpanded, setCollapsedSettingsExpanded] = useState(false);
+  const [collapsedHelpExpanded, setCollapsedHelpExpanded] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
 
   // Get user display info
@@ -102,14 +104,14 @@ const BottomUserSection: React.FC<BottomUserSectionProps> = ({
         
         {/* Settings - Show sub-items */}
         <ListItem disablePadding>
-          <ListItemButton onClick={() => setSettingsExpanded(!settingsExpanded)}>
+          <ListItemButton onClick={() => setCollapsedSettingsExpanded(!collapsedSettingsExpanded)}>
             <ListItemIcon><SettingsIcon sx={{ color: '#94a3b8', fontSize: 20 }} /></ListItemIcon>
             <ListItemText primary="Settings" sx={{ color: '#cbd5e1' }} />
-            {settingsExpanded ? <ExpandLess sx={{ color: '#94a3b8' }} /> : <ExpandMore sx={{ color: '#94a3b8' }} />}
+            {collapsedSettingsExpanded ? <ExpandLess sx={{ color: '#94a3b8' }} /> : <ExpandMore sx={{ color: '#94a3b8' }} />}
           </ListItemButton>
         </ListItem>
         
-        <Collapse in={settingsExpanded} timeout="auto" unmountOnExit>
+        <Collapse in={collapsedSettingsExpanded} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
             <ListItem disablePadding>
               <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToPreferences(); }} sx={{ pl: 4 }}>
@@ -146,14 +148,14 @@ const BottomUserSection: React.FC<BottomUserSectionProps> = ({
         
         {/* Help - Show sub-items */}
         <ListItem disablePadding>
-          <ListItemButton onClick={() => setHelpExpanded(!helpExpanded)}>
+          <ListItemButton onClick={() => setCollapsedHelpExpanded(!collapsedHelpExpanded)}>
             <ListItemIcon><HelpIcon sx={{ color: '#94a3b8', fontSize: 20 }} /></ListItemIcon>
             <ListItemText primary="Help" sx={{ color: '#cbd5e1' }} />
-            {helpExpanded ? <ExpandLess sx={{ color: '#94a3b8' }} /> : <ExpandMore sx={{ color: '#94a3b8' }} />}
+            {collapsedHelpExpanded ? <ExpandLess sx={{ color: '#94a3b8' }} /> : <ExpandMore sx={{ color: '#94a3b8' }} />}
           </ListItemButton>
         </ListItem>
         
-        <Collapse in={helpExpanded} timeout="auto" unmountOnExit>
+        <Collapse in={collapsedHelpExpanded} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
             <ListItem disablePadding>
               <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToSupport(); }} sx={{ pl: 4 }}>

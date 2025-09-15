@@ -8666,201 +8666,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
               </Box>
             </Box>
-            
-            {/* Sliding Contact Panel */}
-            <Slide direction="left" in={multiChatState.sidePanel.isOpen} mountOnEnter unmountOnExit>
-              <Box sx={{
-                position: 'fixed',
-                top: 0,
-                right: 0,
-                width: 320,
-                height: '100vh',
-                bgcolor: '#0f172a',
-                borderLeft: '1px solid #334155',
-                zIndex: 1300,
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '-4px 0 20px rgba(0,0,0,0.3)'
-              }}>
-                {/* Contact Panel Header */}
-                <Box sx={{ 
-                  p: 3, 
-                  borderBottom: '1px solid #334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
-                    Shared Chat History
-                  </Typography>
-                  <IconButton
-                    onClick={toggleSidePanel}
-                    sx={{ color: '#64748b' }}
-                  >
-                    <Close />
-                  </IconButton>
-                </Box>
-
-                {/* Contact Search */}
-                <Box sx={{ p: 2 }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Search shared conversations..."
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Search sx={{ color: '#64748b', fontSize: 18 }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        bgcolor: '#1e293b',
-                        color: 'white',
-                        '& fieldset': { borderColor: '#334155' },
-                        '&:hover fieldset': { borderColor: '#3b82f6' },
-                        '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
-                      }
-                    }}
-                  />
-                </Box>
-
-                {/* Shared Conversations Header */}
-                <Box sx={{ px: 2, pb: 1 }}>
-                  <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
-                    RECENT CONVERSATIONS ({sharedConversations.length})
-                  </Typography>
-                </Box>
-
-                {/* Shared Conversations List */}
-                <Box sx={{ flex: 1, overflow: 'auto' }}>
-                  {sharedConversations.length === 0 ? (
-                    <Box sx={{ p: 3, textAlign: 'center' }}>
-                      <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
-                        No shared conversations yet
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: '#64748b' }}>
-                        Create or join a shared conversation to get started
-                      </Typography>
-                    </Box>
-                  ) : (
-                    sharedConversations.map((conversation) => (
-                      <Box
-                        key={conversation.id}
-                        onClick={() => {
-                          // Open shared conversation in header
-                          handleCustomSharedConversationSelect(conversation.id);
-                          toggleSidePanel();
-                        }}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          p: 2,
-                          mx: 2,
-                          mb: 1,
-                          borderRadius: 1,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          '&:hover': {
-                            bgcolor: '#1e293b'
-                          }
-                        }}
-                      >
-                        {/* Avatar Group - Show up to 3 participants */}
-                        <Box sx={{ position: 'relative', mr: 2 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                            {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
-                              <Avatar
-                                key={participant.id}
-                                sx={{
-                                  width: 28,
-                                  height: 28,
-                                  fontSize: '0.7rem',
-                                  bgcolor: participant.type === 'ai_agent' ? '#6366f1' : '#10b981',
-                                  border: '2px solid #0f172a',
-                                  ml: pIndex > 0 ? -1 : 0,
-                                  zIndex: 3 - pIndex
-                                }}
-                              >
-                                {participant.type === 'ai_agent' ? '🤖' : participant.name.charAt(0).toUpperCase()}
-                              </Avatar>
-                            ))}
-                            {(conversation.participants?.length || 0) > 3 && (
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  color: '#94a3b8', 
-                                  ml: 1, 
-                                  fontSize: '0.7rem',
-                                  fontWeight: 500
-                                }}
-                              >
-                                +{(conversation.participants?.length || 0) - 3}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-
-                        {/* Conversation Info */}
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
-                            {conversation.name || 'Shared Chat'}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: '#64748b' }}>
-                            {conversation.participants?.length || 0} participants • {
-                              conversation.lastActivity ? 
-                              new Date(conversation.lastActivity).toLocaleDateString() : 
-                              'No activity'
-                            }
-                          </Typography>
-                        </Box>
-
-                        {/* Unread Count */}
-                        {conversation.unreadCounts && conversation.unreadCounts[user?.uid || ''] > 0 && (
-                          <Badge 
-                            badgeContent={conversation.unreadCounts[user?.uid || '']} 
-                            color="error"
-                            sx={{
-                              '& .MuiBadge-badge': {
-                                fontSize: '0.6rem',
-                                height: 16,
-                                minWidth: 16
-                              }
-                            }}
-                          />
-                        )}
-                      </Box>
-                    ))
-                  )}
-                </Box>
-
-                {/* Quick Actions */}
-                <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<Add />}
-                    onClick={() => {
-                      // TODO: Open create shared conversation dialog
-                      console.log('Create new shared conversation');
-                    }}
-                    sx={{
-                      borderColor: '#334155',
-                      color: '#94a3b8',
-                      '&:hover': {
-                        borderColor: '#3b82f6',
-                        bgcolor: '#1e293b'
-                      }
-                    }}
-                  >
-                    Create Shared Chat
-                  </Button>
-                </Box>
-              </Box>
-            </Slide>
-            </Box>
-          </Box>
         ) : (
           <Container sx={{ py: 2, height: '100%' }}>
             {/* Header */}
@@ -9175,6 +8980,199 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             </Box>
           </Container>
         )}
+
+        {/* Sliding Contact Panel */}
+        <Slide direction="left" in={multiChatState.sidePanel.isOpen} mountOnEnter unmountOnExit>
+          <Box sx={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: 320,
+            height: '100vh',
+            bgcolor: '#0f172a',
+            borderLeft: '1px solid #334155',
+            zIndex: 1300,
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '-4px 0 20px rgba(0,0,0,0.3)'
+          }}>
+            {/* Contact Panel Header */}
+            <Box sx={{ 
+              p: 3, 
+              borderBottom: '1px solid #334155',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                Shared Chat History
+              </Typography>
+              <IconButton
+                onClick={toggleSidePanel}
+                sx={{ color: '#64748b' }}
+              >
+                <Close />
+              </IconButton>
+            </Box>
+
+            {/* Contact Search */}
+            <Box sx={{ p: 2 }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search shared conversations..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: '#64748b', fontSize: 18 }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: '#1e293b',
+                    color: 'white',
+                    '& fieldset': { borderColor: '#334155' },
+                    '&:hover fieldset': { borderColor: '#3b82f6' },
+                    '&.Mui-focused fieldset': { borderColor: '#3b82f6' }
+                  }
+                }}
+              />
+            </Box>
+
+            {/* Shared Conversations Header */}
+            <Box sx={{ px: 2, pb: 1 }}>
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600 }}>
+                RECENT CONVERSATIONS ({sharedConversations.length})
+              </Typography>
+            </Box>
+
+            {/* Shared Conversations List */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              {sharedConversations.length === 0 ? (
+                <Box sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" sx={{ color: '#64748b', mb: 2 }}>
+                    No shared conversations yet
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                    Create or join a shared conversation to get started
+                  </Typography>
+                </Box>
+              ) : (
+                sharedConversations.map((conversation) => (
+                  <Box
+                    key={conversation.id}
+                    onClick={() => {
+                      // Open shared conversation in header
+                      handleCustomSharedConversationSelect(conversation.id);
+                      toggleSidePanel();
+                    }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      p: 2,
+                      mx: 2,
+                      mb: 1,
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: '#1e293b'
+                      }
+                    }}
+                  >
+                    {/* Avatar Group - Show up to 3 participants */}
+                    <Box sx={{ position: 'relative', mr: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                        {conversation.participants?.slice(0, 3).map((participant, pIndex) => (
+                          <Avatar
+                            key={participant.id}
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              fontSize: '0.7rem',
+                              bgcolor: participant.type === 'ai_agent' ? '#6366f1' : '#10b981',
+                              border: '2px solid #0f172a',
+                              ml: pIndex > 0 ? -1 : 0,
+                              zIndex: 3 - pIndex
+                            }}
+                          >
+                            {participant.type === 'ai_agent' ? '🤖' : participant.name.charAt(0).toUpperCase()}
+                          </Avatar>
+                        ))}
+                        {(conversation.participants?.length || 0) > 3 && (
+                          <Typography 
+                            variant="caption" 
+                            sx={{ 
+                              color: '#94a3b8', 
+                              ml: 1, 
+                              fontSize: '0.7rem',
+                              fontWeight: 500
+                            }}
+                          >
+                            +{(conversation.participants?.length || 0) - 3}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Conversation Info */}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+                        {conversation.name || 'Shared Chat'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>
+                        {conversation.participants?.length || 0} participants • {
+                          conversation.lastActivity ? 
+                          new Date(conversation.lastActivity).toLocaleDateString() : 
+                          'No activity'
+                        }
+                      </Typography>
+                    </Box>
+
+                    {/* Unread Count */}
+                    {conversation.unreadCounts && conversation.unreadCounts[user?.uid || ''] > 0 && (
+                      <Badge 
+                        badgeContent={conversation.unreadCounts[user?.uid || '']} 
+                        color="error"
+                        sx={{
+                          '& .MuiBadge-badge': {
+                            fontSize: '0.6rem',
+                            height: 16,
+                            minWidth: 16
+                          }
+                        }}
+                      />
+                    )}
+                  </Box>
+                ))
+              )}
+            </Box>
+
+            {/* Quick Actions */}
+            <Box sx={{ p: 2, borderTop: '1px solid #334155' }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<Add />}
+                onClick={() => {
+                  // TODO: Open create shared conversation dialog
+                  console.log('Create new shared conversation');
+                }}
+                sx={{
+                  borderColor: '#334155',
+                  color: '#94a3b8',
+                  '&:hover': {
+                    borderColor: '#3b82f6',
+                    bgcolor: '#1e293b'
+                  }
+                }}
+              >
+                Create Shared Chat
+              </Button>
+            </Box>
+          </Box>
+        </Slide>
 
         {/* Chatbot Management Modal - Only show for real chatbots */}
         {manageModalOpen && manageChatbotId && user?.uid && (

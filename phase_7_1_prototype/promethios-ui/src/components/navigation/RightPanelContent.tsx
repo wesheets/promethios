@@ -237,47 +237,6 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
           </Box>
         );
 
-      case 'integrations':
-        return (
-          <Box>
-            <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
-              Integrations
-            </Typography>
-            
-            {['Slack', 'Discord', 'Microsoft Teams', 'Zapier', 'GitHub'].map((integration, index) => (
-              <Box key={index} sx={{ 
-                p: 2, 
-                mb: 1, 
-                bgcolor: 'rgba(148, 163, 184, 0.1)', 
-                borderRadius: 1,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <Box>
-                  <Typography sx={{ color: 'white', fontWeight: 600 }}>
-                    {integration}
-                  </Typography>
-                  <Typography sx={{ color: '#94a3b8', fontSize: '0.8rem' }}>
-                    Not connected
-                  </Typography>
-                </Box>
-                <Box sx={{ 
-                  px: 2, 
-                  py: 0.5, 
-                  bgcolor: '#3b82f6', 
-                  borderRadius: 1,
-                  cursor: 'pointer'
-                }}>
-                  <Typography sx={{ color: 'white', fontSize: '0.7rem' }}>
-                    Connect
-                  </Typography>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-        );
-
       default:
         return (
           <Box>
