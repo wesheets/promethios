@@ -34,6 +34,9 @@ const ExpandableLeftPanel: React.FC<ExpandableLeftPanelProps> = ({
   panelWidth,
   children
 }) => {
+  console.log('🔍 [ExpandableLeftPanel] Component render called');
+  console.log('🔍 [ExpandableLeftPanel] Props:', { isOpen, route, targetRoute, width, panelWidth, hasChildren: !!children });
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [panelContent, setPanelContent] = useState<React.ReactNode>(null);
@@ -42,6 +45,8 @@ const ExpandableLeftPanel: React.FC<ExpandableLeftPanelProps> = ({
   const currentRoute = route || targetRoute;
   // Use width or panelWidth (for compatibility)
   const currentWidth = width || panelWidth || '600px';
+
+  console.log('🔍 [ExpandableLeftPanel] Computed values:', { currentRoute, currentWidth });
 
   // Function to render content based on route
   const renderPanelContent = () => {
