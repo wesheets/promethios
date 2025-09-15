@@ -3994,7 +3994,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Helper function to get agent avatar
   const getAgentAvatar = (agentId: string, agentName: string): string => {
     // Try to find avatar from chatbots
-    const chatbot = chatbots.find(bot => bot.id === agentId || bot.identity?.name === agentName);
+    const chatbot = chatbotProfiles.find(bot => bot.id === agentId || bot.identity?.name === agentName);
     if (chatbot?.identity?.avatar) return chatbot.identity.avatar;
     
     // Try to find from guest agents
