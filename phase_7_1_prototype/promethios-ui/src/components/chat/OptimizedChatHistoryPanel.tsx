@@ -1324,6 +1324,17 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
                         transition: 'background-color 0.2s ease-in-out',
                         cursor: 'pointer',
                       }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log(`🔄 [RightPanel] Guest chat clicked: ${conversation.id}`);
+                        console.log(`🔄 [RightPanel] onSharedConversationSelect available:`, !!onSharedConversationSelect);
+                        if (onSharedConversationSelect) {
+                          onSharedConversationSelect(conversation.id);
+                        } else {
+                          console.warn(`⚠️ [RightPanel] onSharedConversationSelect not available`);
+                        }
+                      }}
                     >
                       <ListItemIcon sx={{ minWidth: 36 }}>
                         <Box sx={{ position: 'relative' }}>
@@ -1341,7 +1352,6 @@ const OptimizedChatHistoryPanel: React.FC<OptimizedChatHistoryPanelProps> = ({
                         </Box>
                       </ListItemIcon>
                       <ListItemText
-                        onClick={() => onSharedConversationSelect?.(conversation.id)}
                         primary={
                           <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
                             {conversation.name || 'Shared Chat'}

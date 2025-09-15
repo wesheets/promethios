@@ -491,7 +491,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
     
     if (expandablePanelRoutes.includes(path) && onOpenExpandablePanel) {
       console.log('🎯 Opening route in expandable panel:', path);
-      onOpenExpandablePanel(path, '50%');
+      onOpenExpandablePanel(path, '600px');
       return;
     }
     

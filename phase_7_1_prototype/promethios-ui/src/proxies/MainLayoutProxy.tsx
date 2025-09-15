@@ -110,11 +110,13 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           component="main"
           sx={{
             flexGrow: 1,
-            ml: `calc(${preferences.navigationCollapsed ? '60px' : '260px'} + ${isPanelOpen ? panelWidth : '0px'})`,
+            ml: isPanelOpen 
+              ? `calc(${preferences.navigationCollapsed ? '60px' : '260px'} + 600px)` 
+              : (preferences.navigationCollapsed ? '60px' : '260px'),
             pt: 0, // Remove top padding since no header
             px: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
             pb: location.pathname.includes('/chat') || location.pathname.includes('/modern-chat') ? 0 : 2,
-            transition: theme => theme.transitions.create(['margin', 'padding'], {
+            transition: theme => theme.transitions.create(['margin-left'], {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
@@ -123,7 +125,6 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
             overflow: 'auto',
             color: 'white',
             minHeight: '100vh', // Full height since no header
-            margin: 0,
             position: 'relative',
           }}
         >
