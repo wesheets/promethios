@@ -467,33 +467,63 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
           flex: 1,
           minWidth: 0,
           display: 'flex',
-          flexDirection: 'column',
-          gap: 0.5
+          alignItems: 'flex-start',
+          gap: 1.5
         }}>
-          {/* Agent Name */}
-          <Typography variant="body1" sx={{ 
-            color: 'white', 
-            fontWeight: 600, 
-            fontSize: '16px',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
+          {/* Host Agent Avatar */}
+          <Avatar sx={{
+            width: 32,
+            height: 32,
+            backgroundColor: aiParticipants.length > 0 ? aiParticipants[0].color : '#f97316',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            flexShrink: 0,
+            mt: 0.25 // Slight offset to align with text
           }}>
-            {getAgentName()}
-          </Typography>
+            {selectedChatbot?.identity?.avatar ? (
+              <img 
+                src={selectedChatbot.identity.avatar} 
+                alt={getAgentName()} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+            ) : (
+              getAgentName().charAt(0).toUpperCase()
+            )}
+          </Avatar>
           
-          {/* Chat Name (if exists) */}
-          {getChatName() && (
-            <Typography variant="body2" sx={{ 
-              color: '#94a3b8', 
-              fontSize: '12px',
+          {/* Agent Name and Chat Name */}
+          <Box sx={{ 
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.5
+          }}>
+            {/* Agent Name */}
+            <Typography variant="body1" sx={{ 
+              color: 'white', 
+              fontWeight: 600, 
+              fontSize: '16px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
             }}>
-              "{getChatName()}"
+              {getAgentName()}
             </Typography>
-          )}
+            
+            {/* Chat Name (if exists) */}
+            {getChatName() && (
+              <Typography variant="body2" sx={{ 
+                color: '#94a3b8', 
+                fontSize: '12px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                "{getChatName()}"
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         {/* AI Participants Section */}
