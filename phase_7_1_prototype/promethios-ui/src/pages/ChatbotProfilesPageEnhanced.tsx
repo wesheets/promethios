@@ -1121,6 +1121,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       });
       console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
       console.log(`🔄 [ChatHistory] Updated chatMessages with ${session.messages?.length || 0} messages`);
+      
+      // Extract and update participants from the selected session
+      if (session.participants) {
+        console.log(`🔄 [ChatHistory] Extracting participants from session:`, session.participants);
+        
+        // Extract human participants
+        const humans = session.participants.filter((p: any) => p.type === 'human' || p.role === 'user');
+        setHumanParticipants(humans.map((h: any) => ({
+          id: h.id || h.userId,
+          name: h.name || h.userName || 'User',
+          email: h.email,
+          avatar: h.avatar,
+          status: h.status || 'active'
+        })));
+        
+        // Extract agent participants (excluding the host agent)
+        const agents = session.participants.filter((p: any) => p.type === 'agent' && p.id !== selectedChatbotId);
+        setSelectedAgents(agents.map((a: any) => a.id));
+        
+        console.log(`🔄 [ChatHistory] Updated participants - Humans: ${humans.length}, Agents: ${agents.length}`);
+      } else {
+        console.log(`🔄 [ChatHistory] No participants found in session, clearing participant lists`);
+        setHumanParticipants([]);
+        setSelectedAgents([]);
+      }
+      
+      // Update loadedHostChatSession for compatibility with existing participant display logic
+      setLoadedHostChatSession(session);
     }
   };
 
