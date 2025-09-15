@@ -1122,27 +1122,52 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
       console.log(`🔄 [ChatHistory] Updated chatMessages with ${session.messages?.length || 0} messages`);
       
-      // Extract and update participants from the selected session
-      if (session.participants) {
-        console.log(`🔄 [ChatHistory] Extracting participants from session:`, session.participants);
+      // Extract participants from message metadata instead of session.participants
+      if (session.messages && session.messages.length > 0) {
+        console.log(`🔄 [ChatHistory] Extracting participants from ${session.messages.length} messages`);
         
-        // Extract human participants
-        const humans = session.participants.filter((p: any) => p.type === 'human' || p.role === 'user');
+        // Extract unique agents from message metadata
+        const agentMap = new Map();
+        const humanMap = new Map();
+        
+        session.messages.forEach((message: any) => {
+          if (message.metadata?.agentId && message.metadata?.agentName) {
+            agentMap.set(message.metadata.agentId, {
+              id: message.metadata.agentId,
+              name: message.metadata.agentName,
+              type: 'agent'
+            });
+          }
+          
+          // Extract human participants from user messages
+          if (message.sender === 'user' && message.userId) {
+            humanMap.set(message.userId, {
+              id: message.userId,
+              name: message.userName || 'User',
+              type: 'human'
+            });
+          }
+        });
+        
+        // Update human participants
+        const humans = Array.from(humanMap.values());
         setHumanParticipants(humans.map((h: any) => ({
-          id: h.id || h.userId,
-          name: h.name || h.userName || 'User',
+          id: h.id,
+          name: h.name,
           email: h.email,
           avatar: h.avatar,
-          status: h.status || 'active'
+          status: 'active'
         })));
         
-        // Extract agent participants (excluding the host agent)
-        const agents = session.participants.filter((p: any) => p.type === 'agent' && p.id !== selectedChatbotId);
+        // Update agent participants (excluding the host agent)
+        const agents = Array.from(agentMap.values()).filter((a: any) => a.id !== selectedChatbotId);
         setSelectedAgents(agents.map((a: any) => a.id));
         
-        console.log(`🔄 [ChatHistory] Updated participants - Humans: ${humans.length}, Agents: ${agents.length}`);
+        console.log(`🔄 [ChatHistory] Extracted from messages - Agents: ${agentMap.size}, Humans: ${humans.length}`);
+        console.log(`🔄 [ChatHistory] Agent details:`, Array.from(agentMap.values()));
+        console.log(`🔄 [ChatHistory] Selected agents (excluding host):`, agents);
       } else {
-        console.log(`🔄 [ChatHistory] No participants found in session, clearing participant lists`);
+        console.log(`🔄 [ChatHistory] No messages found, clearing participant lists`);
         setHumanParticipants([]);
         setSelectedAgents([]);
       }
