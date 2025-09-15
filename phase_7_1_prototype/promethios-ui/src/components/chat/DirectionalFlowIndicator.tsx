@@ -42,16 +42,22 @@ const DirectionalFlowIndicator: React.FC<DirectionalFlowIndicatorProps> = ({
         alignItems: 'center', 
         gap: 0.5 
       }}>
-        {/* Sender Color Dot */}
-        <Box sx={{
-          width: 8,
-          height: 8,
+        {/* Sender Avatar Circle */}
+        <Avatar sx={{
+          width: 16,
+          height: 16,
           backgroundColor: sender.type === 'human' 
             ? '#64748b' // Softer neutral for humans
             : sender.color, // Vibrant colors for agents
-          borderRadius: '50%',
-          flexShrink: 0
-        }} />
+          fontSize: '8px',
+          fontWeight: 'bold'
+        }}>
+          {sender.avatar ? (
+            <img src={sender.avatar} alt={sender.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            sender.name.charAt(0).toUpperCase()
+          )}
+        </Avatar>
         
         {/* Sender Name */}
         <Typography variant="caption" sx={{ 
@@ -76,16 +82,22 @@ const DirectionalFlowIndicator: React.FC<DirectionalFlowIndicatorProps> = ({
         alignItems: 'center', 
         gap: 0.5 
       }}>
-        {/* Recipient Color Dot */}
-        <Box sx={{
-          width: 8,
-          height: 8,
+        {/* Recipient Avatar Circle */}
+        <Avatar sx={{
+          width: 16,
+          height: 16,
           backgroundColor: recipient.type === 'human' 
             ? '#64748b' // Softer neutral for humans
             : recipient.color, // Vibrant colors for agents
-          borderRadius: '50%',
-          flexShrink: 0
-        }} />
+          fontSize: '8px',
+          fontWeight: 'bold'
+        }}>
+          {recipient.avatar ? (
+            <img src={recipient.avatar} alt={recipient.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            recipient.name.charAt(0).toUpperCase()
+          )}
+        </Avatar>
         
         {/* Recipient Name */}
         <Typography variant="caption" sx={{ 
