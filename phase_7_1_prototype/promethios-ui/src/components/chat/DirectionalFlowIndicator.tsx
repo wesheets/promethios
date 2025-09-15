@@ -46,7 +46,9 @@ const DirectionalFlowIndicator: React.FC<DirectionalFlowIndicatorProps> = ({
         <Box sx={{
           width: 8,
           height: 8,
-          backgroundColor: sender.color,
+          backgroundColor: sender.type === 'human' 
+            ? '#64748b' // Softer neutral for humans
+            : sender.color, // Vibrant colors for agents
           borderRadius: '50%',
           flexShrink: 0
         }} />
@@ -78,7 +80,9 @@ const DirectionalFlowIndicator: React.FC<DirectionalFlowIndicatorProps> = ({
         <Box sx={{
           width: 8,
           height: 8,
-          backgroundColor: recipient.color,
+          backgroundColor: recipient.type === 'human' 
+            ? '#64748b' // Softer neutral for humans
+            : recipient.color, // Vibrant colors for agents
           borderRadius: '50%',
           flexShrink: 0
         }} />

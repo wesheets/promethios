@@ -70,7 +70,9 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
         <Box sx={{
           width: 12,
           height: 12,
-          backgroundColor: senderColor,
+          backgroundColor: message.sender.type === 'human' 
+            ? '#64748b' // Softer neutral for humans
+            : senderColor, // Vibrant colors for agents
           borderRadius: 0.5,
           flexShrink: 0
         }} />
@@ -99,17 +101,25 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
       <Box sx={{
         position: 'relative',
         maxWidth: isCurrentUser ? '70%' : '85%',
-        minWidth: '200px'
+        minWidth: '200px',
+        // Premium hover effect
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-1px)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        }
       }}>
-        {/* Colored Left Border */}
+        {/* Colored Left Border - Rounded for premium feel */}
         <Box sx={{
           position: 'absolute',
           left: 0,
           top: 0,
           bottom: 0,
           width: 3,
-          backgroundColor: senderColor,
-          borderRadius: '1.5px 0 0 1.5px'
+          backgroundColor: message.sender.type === 'human' 
+            ? '#64748b' // Softer neutral for humans
+            : senderColor, // Vibrant colors for agents
+          borderRadius: '1.5px' // Pill-like rounded corners
         }} />
         
         {/* Message Bubble */}
@@ -119,7 +129,9 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
           backgroundColor: isCurrentUser ? '#334155' : '#1e293b',
           borderRadius: 2,
           border: '1px solid #334155',
-          position: 'relative'
+          position: 'relative',
+          // Subtle elevation for premium feel
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         }}>
           {/* Message Content */}
           <Typography variant="body1" sx={{ 
