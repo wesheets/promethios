@@ -1125,27 +1125,48 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Extract participants from message metadata instead of session.participants
       if (session.messages && session.messages.length > 0) {
         console.log(`🔄 [ChatHistory] Extracting participants from ${session.messages.length} messages`);
+        console.log(`🔄 [ChatHistory] First message structure:`, session.messages[0]);
+        console.log(`🔄 [ChatHistory] All messages:`, session.messages);
         
         // Extract unique agents from message metadata
         const agentMap = new Map();
         const humanMap = new Map();
         
-        session.messages.forEach((message: any) => {
-          if (message.metadata?.agentId && message.metadata?.agentName) {
-            agentMap.set(message.metadata.agentId, {
-              id: message.metadata.agentId,
-              name: message.metadata.agentName,
+        session.messages.forEach((message: any, index: number) => {
+          console.log(`🔄 [ChatHistory] Message ${index}:`, {
+            sender: message.sender,
+            content: message.content?.substring(0, 100),
+            metadata: message.metadata,
+            agentId: message.agentId,
+            agentName: message.agentName,
+            userId: message.userId,
+            userName: message.userName
+          });
+          
+          // Try multiple possible agent metadata locations
+          const agentId = message.metadata?.agentId || message.agentId;
+          const agentName = message.metadata?.agentName || message.agentName || message.agent?.name;
+          
+          if (agentId && agentName) {
+            agentMap.set(agentId, {
+              id: agentId,
+              name: agentName,
               type: 'agent'
             });
+            console.log(`🔄 [ChatHistory] Found agent: ${agentName} (${agentId})`);
           }
           
           // Extract human participants from user messages
-          if (message.sender === 'user' && message.userId) {
-            humanMap.set(message.userId, {
-              id: message.userId,
-              name: message.userName || 'User',
+          const userId = message.userId || message.user?.id;
+          const userName = message.userName || message.user?.name || message.metadata?.userName;
+          
+          if (message.sender === 'user' && userId) {
+            humanMap.set(userId, {
+              id: userId,
+              name: userName || 'User',
               type: 'human'
             });
+            console.log(`🔄 [ChatHistory] Found human: ${userName || 'User'} (${userId})`);
           }
         });
         
