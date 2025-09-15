@@ -342,6 +342,7 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 onChatSelect={onChatSelect}
                 onNewChat={onNewChat}
                 onShareChat={onShareChat}
+                onClose={() => setActivePanel(null)}
               />
             </Box>
           </Box>
@@ -418,6 +419,7 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 onChatSelect={onChatSelect}
                 onNewChat={onNewChat}
                 onShareChat={onShareChat}
+                onClose={() => setActivePanel(null)}
               />
             </Box>
           </Box>

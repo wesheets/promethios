@@ -33,6 +33,7 @@ interface RightPanelContentProps {
   onChatSelect?: (session: any) => void;
   onNewChat?: (session?: any) => void;
   onShareChat?: (contextId: string) => void;
+  onClose?: () => void;
 }
 
 const RightPanelContent: React.FC<RightPanelContentProps> = ({
@@ -49,9 +50,10 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
   // Chat History Callbacks
   onChatSelect,
   onNewChat,
-  onShareChat
+  onShareChat,
+  onClose
 }) => {
-  // Common props for panels that need them
+  // Common props to pass to all panel components
   const commonProps = {
     userId,
     userName,
