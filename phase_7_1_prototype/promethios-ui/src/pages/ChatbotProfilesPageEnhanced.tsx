@@ -6028,14 +6028,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         if (agent) {
                           const agentName = agent.name || agent.identity?.name || 'Agent';
                           
+                          console.log('🎭 Found agent for interaction:', { agentId, agentName, action });
+                          
                           // Trigger behavioral prompt
-                          if (onBehaviorPrompt) {
-                            onBehaviorPrompt(agentId, agentName, action);
-                          } else {
-                            // Fallback: add a message indicating the interaction
-                            const interactionMessage = `🎭 ${agentName} is ${action}ing on this message...`;
-                            console.log('🎭 Behavioral interaction:', interactionMessage);
-                          }
+                          handleBehaviorPrompt(agentId, agentName, action);
+                        } else {
+                          console.log('❌ Agent not found for interaction:', { agentId, action });
+                          // Fallback: add a message indicating the interaction
+                          const interactionMessage = `🎭 Agent is ${action}ing on this message...`;
+                          console.log('🎭 Behavioral interaction fallback:', interactionMessage);
                         }
                       };
                       
