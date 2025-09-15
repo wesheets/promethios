@@ -81,7 +81,7 @@ const BottomUserSection: React.FC<BottomUserSectionProps> = ({
 
   // User menu for collapsed state
   const UserMenuPopover = () => (
-    <Paper sx={{ p: 1, minWidth: 200, bgcolor: '#1e293b', border: '1px solid #334155' }}>
+    <Paper sx={{ p: 1, minWidth: 250, bgcolor: '#1e293b', border: '1px solid #334155' }}>
       <Box sx={{ p: 2, borderBottom: '1px solid #334155' }}>
         <Typography variant="subtitle2" sx={{ color: '#f1f5f9', fontWeight: 600 }}>
           {userDisplayName}
@@ -92,6 +92,7 @@ const BottomUserSection: React.FC<BottomUserSectionProps> = ({
       </Box>
       
       <List dense sx={{ py: 1 }}>
+        {/* Profile - Direct navigation */}
         <ListItem disablePadding>
           <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToProfile(); }}>
             <ListItemIcon><ProfileIcon sx={{ color: '#94a3b8', fontSize: 20 }} /></ListItemIcon>
@@ -99,22 +100,85 @@ const BottomUserSection: React.FC<BottomUserSectionProps> = ({
           </ListItemButton>
         </ListItem>
         
+        {/* Settings - Show sub-items */}
         <ListItem disablePadding>
-          <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToPreferences(); }}>
+          <ListItemButton onClick={() => setSettingsExpanded(!settingsExpanded)}>
             <ListItemIcon><SettingsIcon sx={{ color: '#94a3b8', fontSize: 20 }} /></ListItemIcon>
             <ListItemText primary="Settings" sx={{ color: '#cbd5e1' }} />
+            {settingsExpanded ? <ExpandLess sx={{ color: '#94a3b8' }} /> : <ExpandMore sx={{ color: '#94a3b8' }} />}
           </ListItemButton>
         </ListItem>
         
+        <Collapse in={settingsExpanded} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToPreferences(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><PreferencesIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="Preferences" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToOrganization(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><OrganizationIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="Organization" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToIntegrations(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><IntegrationsIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="Integrations" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToDataManagement(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><DataIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="Data Management" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToApiKeys(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><ApiKeyIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="API Keys" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+        
+        {/* Help - Show sub-items */}
         <ListItem disablePadding>
-          <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToSupport(); }}>
+          <ListItemButton onClick={() => setHelpExpanded(!helpExpanded)}>
             <ListItemIcon><HelpIcon sx={{ color: '#94a3b8', fontSize: 20 }} /></ListItemIcon>
             <ListItemText primary="Help" sx={{ color: '#cbd5e1' }} />
+            {helpExpanded ? <ExpandLess sx={{ color: '#94a3b8' }} /> : <ExpandMore sx={{ color: '#94a3b8' }} />}
           </ListItemButton>
         </ListItem>
+        
+        <Collapse in={helpExpanded} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToSupport(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><SupportIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="Help & Support" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToGuidedTours(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><ToursIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="Guided Tours" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => { setUserMenuAnchor(null); navigateToDocumentation(); }} sx={{ pl: 4 }}>
+                <ListItemIcon><DocsIcon sx={{ color: '#94a3b8', fontSize: 18 }} /></ListItemIcon>
+                <ListItemText primary="Documentation" sx={{ color: '#cbd5e1' }} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
         
         <Divider sx={{ bgcolor: '#334155', my: 1 }} />
         
+        {/* Logout - Direct action */}
         <ListItem disablePadding>
           <ListItemButton onClick={() => { setUserMenuAnchor(null); handleLogout(); }}>
             <ListItemIcon><LogoutIcon sx={{ color: '#ef4444', fontSize: 20 }} /></ListItemIcon>
