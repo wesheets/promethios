@@ -1121,13 +1121,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       });
       console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
       console.log(`🔄 [ChatHistory] Updated chatMessages with ${session.messages?.length || 0} messages`);
-      
-      // Also update the local chatMessages state for immediate UI feedback
-      if (session.messages && session.messages.length > 0) {
-        setChatMessages(session.messages);
-      } else {
-        setChatMessages([]);
-      }
     }
   };
 
