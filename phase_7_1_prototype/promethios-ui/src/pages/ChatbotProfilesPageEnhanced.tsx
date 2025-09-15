@@ -2529,13 +2529,17 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Helper functions for Agent Avatar Selector
-  const getAgentColor = (agentName: string) => {
-    if (agentName.toLowerCase().includes('claude')) return '#3b82f6';    // Blue
-    if (agentName.toLowerCase().includes('openai') || agentName.toLowerCase().includes('gpt')) return '#10b981';    // Green
-    if (agentName.toLowerCase().includes('gemini') || agentName.toLowerCase().includes('bard')) return '#8b5cf6';   // Purple
-    if (agentName.toLowerCase().includes('anthropic')) return '#06b6d4';  // Cyan
-    if (agentName.toLowerCase().includes('mistral')) return '#f59e0b';    // Orange
-    if (agentName.toLowerCase().includes('llama')) return '#ef4444';      // Red
+  const getAgentColor = (agentId?: string, agentName?: string) => {
+    const name = agentName || agentId || '';
+    if (!name) return '#64748b'; // Default gray for undefined/empty names
+    
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('claude')) return '#3b82f6';    // Blue
+    if (lowerName.includes('openai') || lowerName.includes('gpt')) return '#10b981';    // Green
+    if (lowerName.includes('gemini') || lowerName.includes('bard')) return '#8b5cf6';   // Purple
+    if (lowerName.includes('anthropic')) return '#06b6d4';  // Cyan
+    if (lowerName.includes('mistral')) return '#f59e0b';    // Orange
+    if (lowerName.includes('llama')) return '#ef4444';      // Red
     return '#64748b'; // Default gray
   };
 
@@ -2544,7 +2548,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     return {
       id: selectedChatbot.identity?.id || selectedChatbot.id || '',
       name: selectedChatbot.identity?.name || selectedChatbot.name || 'Host Agent',
-      color: getAgentColor(selectedChatbot.identity?.name || selectedChatbot.name || ''),
+      color: getAgentColor(selectedChatbot.identity?.id || selectedChatbot.id, selectedChatbot.identity?.name || selectedChatbot.name || ''),
       hotkey: 'C' // Claude hotkey
     };
   };
@@ -2556,7 +2560,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     return activeContext.guestAgents.map((guest, index) => ({
       id: guest.agentId,
       name: guest.name,
-      color: getAgentColor(guest.name),
+      color: getAgentColor(guest.id, guest.name),
       hotkey: guest.name.charAt(0).toUpperCase() // First letter as hotkey
     }));
   };
