@@ -134,8 +134,8 @@ const navigationDarkTheme = createTheme({
 const StyledDrawer = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
     width: DRAWER_WIDTH,
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
+    backgroundColor: '#1e293b', // Match right navigation color
+    borderRight: '1px solid #334155', // Match right navigation border
     color: theme.palette.text.primary,
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
@@ -148,8 +148,8 @@ const StyledDrawer = styled(Drawer)(({ theme }) => ({
 const StyledDrawerCollapsed = styled(Drawer)(({ theme }) => ({
   '& .MuiDrawer-paper': {
     width: DRAWER_WIDTH_COLLAPSED,
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
+    backgroundColor: '#1e293b', // Match right navigation color
+    borderRight: '1px solid #334155', // Match right navigation border
     color: theme.palette.text.primary,
     transition: theme.transitions.create('width', {
       easing: theme.transitions.easing.sharp,
