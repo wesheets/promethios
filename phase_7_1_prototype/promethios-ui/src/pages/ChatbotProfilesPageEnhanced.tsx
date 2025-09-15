@@ -7608,9 +7608,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       if (selectedChatbotId) {
                         updateBotState(selectedChatbotId, { 
                           currentChatSession: session,
-                          currentChatName: session.name || `Chat ${session.id.slice(-8)}`
+                          currentChatName: session.name || `Chat ${session.id.slice(-8)}`,
+                          chatMessages: session.messages || []
                         });
                         console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
+                        console.log(`🔄 [ChatHistory] Updated chatMessages with ${session.messages?.length || 0} messages`);
                         
                         // 🔧 NEW: Restore guest agents from chat session to multiChatState
                         try {
