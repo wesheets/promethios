@@ -1210,9 +1210,59 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
-  const handleShareChat = (contextId: string) => {
-    console.log(`🔗 [ChatShare] Sharing chat context: ${contextId}`);
-    // TODO: Implement chat sharing functionality
+  const handleShareChat = async (shareableId: string) => {
+    console.log('🔗 [ShareChat] handleShareChat callback triggered with shareableId:', shareableId);
+    
+    if (selectedChatbotId && user?.uid) {
+      console.log('🔗 [ShareChat] selectedChatbotId found:', selectedChatbotId);
+      
+      try {
+        // Extract the session ID from the shareable ID (format: chat_timestamp_randomId)
+        const sessionId = shareableId;
+        console.log('🔗 [ShareChat] Attempting to get session data for:', sessionId);
+        
+        // Get the session data from ChatHistoryService
+        const session = await chatHistoryService.getChatSessionById(sessionId);
+        
+        if (session) {
+          console.log('🔗 [ShareChat] Session data retrieved:', session);
+          
+          // Extract preview text from the first few messages
+          const previewText = session.messages
+            .slice(0, 2)
+            .map(msg => msg.content)
+            .join(' ')
+            .substring(0, 150) + (session.messages.length > 2 || session.messages.join(' ').length > 150 ? '...' : '');
+          
+          // Extract topics from message content (simple keyword extraction)
+          const allText = session.messages.map(msg => msg.content).join(' ').toLowerCase();
+          const commonTopics = ['audit', 'governance', 'compliance', 'security', 'data', 'policy', 'risk', 'logs', 'monitoring'];
+          const detectedTopics = commonTopics.filter(topic => allText.includes(topic));
+          
+          // Set the active chat reference for visual preview
+          setActiveChatReference({
+            id: sessionId,
+            name: session.name || `Chat ${sessionId.slice(-8)}`,
+            preview: previewText,
+            messageCount: session.messageCount || session.messages.length,
+            lastUpdated: session.lastUpdated || new Date(),
+            topics: detectedTopics.length > 0 ? detectedTopics : undefined
+          });
+          
+          console.log('🔗 [ShareChat] Active chat reference set:', {
+            id: sessionId,
+            name: session.name || `Chat ${sessionId.slice(-8)}`,
+            messageCount: session.messageCount || session.messages.length
+          });
+        } else {
+          console.error('🔗 [ShareChat] Session not found for ID:', sessionId);
+        }
+      } catch (error) {
+        console.error('🔗 [ShareChat] Error retrieving session data:', error);
+      }
+    } else {
+      console.warn('🔗 [ShareChat] Missing selectedChatbotId or user.uid');
+    }
   };
 
   const startAutonomousMode = async (goal: string) => {
