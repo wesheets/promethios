@@ -1128,7 +1128,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       } else {
         setChatMessages([]);
       }
-      }
     }
   };
 
