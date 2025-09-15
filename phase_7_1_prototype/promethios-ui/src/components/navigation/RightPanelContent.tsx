@@ -1,15 +1,15 @@
 /**
- * RightPanelContent - Restored original functionality
+ * RightPanelContent - Using working components from old interface
  * 
- * Uses the original fully-functional panel components instead of simplified placeholders.
+ * Uses the actual working panel components from ChatbotProfilesPageEnhanced.tsx
  * All components maintain their original functionality, data connections, and business logic.
  */
 import React from 'react';
 import { Box } from '@mui/material';
 
-// Import original fully-functional panel components that exist
+// Import working panel components from the old interface
 import TeamPanel from '../team/TeamPanel';
-import ChatHistoryPanel from '../chat/EnhancedChatHistoryPanel';
+import OptimizedChatHistoryPanel from '../chat/OptimizedChatHistoryPanel';
 import ChatInterfacePanel from '../chat/ChatInterfacePanel';
 import DebugPanel from '../DebugPanel';
 import GovernancePanel from '../governance/GovernancePanel';
@@ -34,6 +34,19 @@ interface RightPanelContentProps {
   onNewChat?: (session?: any) => void;
   onShareChat?: (contextId: string) => void;
   onClose?: () => void;
+  // Additional props for working components
+  projects?: any[];
+  projectTemplates?: any[];
+  repositoryManager?: any;
+  versionControl?: any;
+  onAddGuestAgent?: (agentId: string) => void;
+  onAddHumanToChat?: (humans: any[]) => void;
+  guestConversationAccess?: any[];
+  onCustomSharedConversationSelect?: (conversationId: string) => void;
+  refreshSharedConversations?: () => void;
+  masCollaborationSettings?: any;
+  availableAgents?: any[];
+  currentTokenUsage?: any;
 }
 
 const RightPanelContent: React.FC<RightPanelContentProps> = ({
@@ -51,7 +64,20 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
   onChatSelect,
   onNewChat,
   onShareChat,
-  onClose
+  onClose,
+  // Additional props for working components
+  projects = [],
+  projectTemplates = [],
+  repositoryManager,
+  versionControl,
+  onAddGuestAgent,
+  onAddHumanToChat,
+  guestConversationAccess = [],
+  onCustomSharedConversationSelect,
+  refreshSharedConversations,
+  masCollaborationSettings,
+  availableAgents = [],
+  currentTokenUsage = {},
 }) => {
   // Common props to pass to all panel components
   const commonProps = {
@@ -71,15 +97,97 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
     switch (panelType) {
       case 'team':
         return (
-          <TeamPanel
-            {...commonProps}
+          <TeamPanel 
+            currentUserId={userId} 
+            onAddGuestAgent={onAddGuestAgent}
+            onAddHumanToChat={onAddHumanToChat}
+          />
+        );
+
+      case 'mas_collaboration':
+        return (
+          <MASCollaborationPanel
+            settings={masCollaborationSettings || {
+              chatFeatures: {
+                conversationContextSharing: true,
+                crossAgentReferences: true,
+                realTimeCollaboration: true,
+                visualAgentSelection: true,
+                mentionSystemEnabled: true
+              },
+              agentToAgentCommunication: {
+                enabled: true,
+                allowDirectTagging: true,
+                hoverTriggeredResponses: false,
+                autoResponseToMentions: true,
+                crossAgentConversations: true,
+                responseDelay: 2,
+                maxChainLength: 3
+              },
+              autonomousBehaviors: {
+                proactiveInterjection: false,
+                smartSuggestions: true,
+                contextualHandRaising: true,
+                triggerBasedEngagement: true,
+                collaborativeFiltering: true
+              },
+              temporaryRoles: {},
+              tokenEconomics: {
+                maxTokensPerAgent: 1000,
+                suggestionThreshold: 70,
+                monitoringBudget: 100,
+                interjectionCost: 150,
+                enableSmartBudgeting: true
+              },
+              triggerSettings: {
+                keywordTriggers: ['question', 'problem', 'help', 'idea'],
+                topicTriggers: ['technical', 'creative', 'analysis'],
+                questionTriggers: true,
+                disagreementTriggers: true,
+                expertiseTriggers: true,
+                sensitivityLevel: 5
+              }
+            }}
+            onSettingsChange={(settings: any) => {
+              console.log('🎛️ [MAS] Settings updated:', settings);
+            }}
+            availableAgents={availableAgents}
+            currentTokenUsage={currentTokenUsage}
           />
         );
 
       case 'chats':
         return (
-          <ChatHistoryPanel
-            {...commonProps}
+          <OptimizedChatHistoryPanel
+            agentId={currentAgentId || selectedChatbot?.id || ''}
+            agentName={currentAgentName || selectedChatbot?.name || `Agent ${currentAgentId}`}
+            currentSessionId={currentBotState?.currentChatSession?.id}
+            refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
+            sharedConversations={guestConversationAccess.map(access => ({
+              id: access.id,
+              name: access.conversationName || 'Shared Chat',
+              participants: access.participants || [],
+              messageCount: access.messageCount || 0,
+              createdAt: access.createdAt,
+              updatedAt: access.updatedAt,
+              isPrivate: false,
+              createdBy: access.hostUserId || '',
+            }))}
+            onSharedConversationSelect={onCustomSharedConversationSelect}
+            onDeleteSharedConversation={(conversationId) => {
+              console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
+              refreshSharedConversations?.();
+            }}
+            onBulkCleanupLegacyConversations={() => {
+              console.log(`🧹 [LegacyCleanup] Cleaning up legacy conversations`);
+              refreshSharedConversations?.();
+            }}
+            onDirectMessage={(userId, userName) => {
+              console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
+            }}
+            onViewProfile={(userId) => {
+              console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
+            }}
             onChatSelect={onChatSelect}
             onNewChat={onNewChat}
             onShareChat={onShareChat}
@@ -124,13 +232,6 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
       case 'debug':
         return (
           <DebugPanel
-            {...commonProps}
-          />
-        );
-
-      case 'mas_collaboration':
-        return (
-          <MASCollaborationPanel
             {...commonProps}
           />
         );

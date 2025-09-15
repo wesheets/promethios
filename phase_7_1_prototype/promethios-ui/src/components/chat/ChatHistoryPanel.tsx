@@ -114,7 +114,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
   const chatHistoryService = ChatHistoryService.getInstance();
   const chatSharingService = ChatSharingService.getInstance();
 
-  // Load chat sessions
+  // Load chat sessions with enhanced integration
   const loadChatSessions = useCallback(async () => {
     if (!currentUser?.uid) {
       setLoading(false);
@@ -123,6 +123,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
 
     try {
       setLoading(true);
+      console.log('🔍 [ChatHistory] Loading chat sessions for agent:', agentId);
       
       const filter: ChatHistoryFilter = {
         agentId: agentId,
@@ -133,9 +134,16 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
       }
 
       const sessions = await chatHistoryService.getChatSessions(currentUser.uid, filter);
+      console.log('✅ [ChatHistory] Loaded sessions:', {
+        total: sessions.length,
+        hostChats: sessions.filter(s => s.isHost).length,
+        guestChats: sessions.filter(s => !s.isHost).length
+      });
+      
       setChatSessions(sessions);
     } catch (error) {
-      console.error('Failed to load chat sessions:', error);
+      console.error('❌ [ChatHistory] Failed to load chat sessions:', error);
+      setChatSessions([]); // Fallback to empty array
     } finally {
       setLoading(false);
     }
@@ -526,23 +534,7 @@ const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({
                 </Button>
               </Box>
             ) : (
-              <Button
-                sx={{
-                  borderColor: '#334155',
-                  color: '#94a3b8',
-                  '&:hover': {
-                    borderColor: '#3b82f6',
-                    color: 'white',
-                    bgcolor: '#1e293b',
-                  },
-                }}
-              >
-                Start First Chat
-              </Button>
-            )}
-          </Box>
-        ) : (
-          <List sx={{ p: 0 }}>
+              <List sx={{ p: 0 }}>
             {chatSessions.map((session, index) => (
               <React.Fragment key={session.id}>
                 <ListItem

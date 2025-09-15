@@ -49,6 +49,23 @@ interface RightNavigationBarProps {
   onChatSelect?: (session: any) => void;
   onNewChat?: (session?: any) => void;
   onShareChat?: (contextId: string) => void;
+  // Additional props for working components
+  projects?: any[];
+  projectTemplates?: any[];
+  repositoryManager?: any;
+  versionControl?: any;
+  onAddGuestAgent?: (agentId: string) => void;
+  onAddHumanToChat?: (humans: any[]) => void;
+  guestConversationAccess?: any[];
+  onCustomSharedConversationSelect?: (conversationId: string) => void;
+  refreshSharedConversations?: () => void;
+  masCollaborationSettings?: any;
+  availableAgents?: any[];
+  currentTokenUsage?: any;
+  userId?: string;
+  userName?: string;
+  currentAgentId?: string;
+  currentAgentName?: string;
 }
 
 interface NavItem {
@@ -71,7 +88,24 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
   // Chat History Callbacks
   onChatSelect,
   onNewChat,
-  onShareChat
+  onShareChat,
+  // Additional props for working components
+  projects = [],
+  projectTemplates = [],
+  repositoryManager,
+  versionControl,
+  onAddGuestAgent,
+  onAddHumanToChat,
+  guestConversationAccess = [],
+  onCustomSharedConversationSelect,
+  refreshSharedConversations,
+  masCollaborationSettings,
+  availableAgents = [],
+  currentTokenUsage = {},
+  userId,
+  userName,
+  currentAgentId,
+  currentAgentName,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -333,6 +367,10 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
             <Box sx={{ flex: 1, overflow: 'auto' }}>
               <RightPanelContent
                 panelType={activePanel}
+                userId={userId}
+                userName={userName}
+                currentAgentId={currentAgentId}
+                currentAgentName={currentAgentName}
                 chatMessages={chatMessages}
                 humanParticipants={humanParticipants}
                 sharedConversations={sharedConversations}
@@ -343,6 +381,19 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 onNewChat={onNewChat}
                 onShareChat={onShareChat}
                 onClose={() => setActivePanel(null)}
+                // Additional props for working components
+                projects={projects}
+                projectTemplates={projectTemplates}
+                repositoryManager={repositoryManager}
+                versionControl={versionControl}
+                onAddGuestAgent={onAddGuestAgent}
+                onAddHumanToChat={onAddHumanToChat}
+                guestConversationAccess={guestConversationAccess}
+                onCustomSharedConversationSelect={onCustomSharedConversationSelect}
+                refreshSharedConversations={refreshSharedConversations}
+                masCollaborationSettings={masCollaborationSettings}
+                availableAgents={availableAgents}
+                currentTokenUsage={currentTokenUsage}
               />
             </Box>
           </Box>
@@ -410,6 +461,10 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
             <Box sx={{ flex: 1, overflow: 'auto' }}>
               <RightPanelContent
                 panelType={activePanel}
+                userId={userId}
+                userName={userName}
+                currentAgentId={currentAgentId}
+                currentAgentName={currentAgentName}
                 chatMessages={chatMessages}
                 humanParticipants={humanParticipants}
                 sharedConversations={sharedConversations}
@@ -420,6 +475,19 @@ const RightNavigationBar: React.FC<RightNavigationBarProps> = ({
                 onNewChat={onNewChat}
                 onShareChat={onShareChat}
                 onClose={() => setActivePanel(null)}
+                // Additional props for working components
+                projects={projects}
+                projectTemplates={projectTemplates}
+                repositoryManager={repositoryManager}
+                versionControl={versionControl}
+                onAddGuestAgent={onAddGuestAgent}
+                onAddHumanToChat={onAddHumanToChat}
+                guestConversationAccess={guestConversationAccess}
+                onCustomSharedConversationSelect={onCustomSharedConversationSelect}
+                refreshSharedConversations={refreshSharedConversations}
+                masCollaborationSettings={masCollaborationSettings}
+                availableAgents={availableAgents}
+                currentTokenUsage={currentTokenUsage}
               />
             </Box>
           </Box>
