@@ -137,7 +137,7 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
     return '#10b981';
   };
 
-  // Get AI participants
+  // Get AI participants (including host agent)
   const getAIParticipants = () => {
     const activeContext = multiChatState.contexts.find(c => c.isActive);
     const participants = [];
@@ -309,8 +309,8 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
     </Tooltip>
   );
 
-  // Get chat name
-  const getChatName = () => {
+  // Get agent name
+  const getAgentName = () => {
     if (isInSharedMode && activeSharedConversation) {
       const sharedConv = sharedConversations.find(c => c.id === activeSharedConversation);
       const hostUser = sharedConv?.participants?.find(p => 
@@ -321,9 +321,16 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
       return `🤝 ${hostName} - ${conversationName}`;
     }
     
-    const activeContextName = multiChatState.contexts.find(c => c.isActive)?.name || 'Chat';
-    const agentName = selectedChatbot?.identity?.name || selectedChatbot?.name || 'Agent';
-    return `${agentName} - ${currentChatName || activeContextName}`;
+    return selectedChatbot?.identity?.name || selectedChatbot?.name || 'Agent';
+  };
+
+  // Get chat name (separate from agent name)
+  const getChatName = () => {
+    if (isInSharedMode && activeSharedConversation) {
+      return null; // Chat name is included in agent name for shared mode
+    }
+    
+    return currentChatName || null; // Return null if no chat name assigned yet
   };
 
   // Get participants based on mode
@@ -351,8 +358,8 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
         gap: 2,
         minHeight: 56
       }}>
-        {/* Chat Tabs Section */}
-        {!isXsScreen && (
+        {/* Chat Tabs Section - Only show for multi-context scenarios */}
+        {!isXsScreen && multiChatState.contexts.length > 1 && (
           <Box sx={{ 
             display: 'flex', 
             alignItems: 'center',
@@ -422,21 +429,38 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
           </Box>
         )}
 
-        {/* Chat Name Section */}
+        {/* Agent Name and Chat Name Section */}
         <Box sx={{ 
-          flex: isXsScreen ? 1 : '0 1 auto',
-          minWidth: 0
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5
         }}>
-          <Typography variant="body2" sx={{ 
+          {/* Agent Name */}
+          <Typography variant="body1" sx={{ 
             color: 'white', 
             fontWeight: 600, 
-            fontSize: '14px',
+            fontSize: '16px',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
           }}>
-            {getChatName()}
+            {getAgentName()}
           </Typography>
+          
+          {/* Chat Name (if exists) */}
+          {getChatName() && (
+            <Typography variant="body2" sx={{ 
+              color: '#94a3b8', 
+              fontSize: '12px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              "{getChatName()}"
+            </Typography>
+          )}
         </Box>
 
         {/* AI Participants Section */}
