@@ -186,6 +186,7 @@ import CustomGPTTab from '../components/command-center/CustomGPTTab';
 import EnhancedHostChatInterface from '../components/modern/EnhancedHostChatInterface';
 import EnhancedChatWrapper from '../components/modern/EnhancedChatWrapper';
 import ConsolidatedChatHeader from '../components/chat/ConsolidatedChatHeader';
+import ColorCodedChatMessage from '../components/chat/ColorCodedChatMessage';
 
 // Right panel types
 type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | 'custom_gpt' | null;
@@ -2643,19 +2644,65 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
-  // Helper functions for Agent Avatar Selector
-  const getAgentColor = (agentId?: string, agentName?: string) => {
-    const name = agentName || agentId || '';
-    if (!name) return '#64748b'; // Default gray for undefined/empty names
+  // Helper functions for Agent Avatar Selector - Updated Color System
+  // Sequential color assignment for agents (humans are always blue)
+  const agentColorPalette = [
+    '#f97316', // Orange
+    '#8b5cf6', // Purple  
+    '#10b981', // Green
+    '#ec4899', // Pink
+    '#eab308', // Yellow
+    '#06b6d4', // Cyan
+    '#ef4444', // Red
+    '#84cc16', // Lime
+  ];
+
+  const humanColor = '#3b82f6'; // Blue for all humans
+
+  // Get all participants in order (for consistent color assignment)
+  const getAllParticipants = () => {
+    const participants = [];
     
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('claude')) return '#3b82f6';    // Blue
-    if (lowerName.includes('openai') || lowerName.includes('gpt')) return '#10b981';    // Green
-    if (lowerName.includes('gemini') || lowerName.includes('bard')) return '#8b5cf6';   // Purple
-    if (lowerName.includes('anthropic')) return '#06b6d4';  // Cyan
-    if (lowerName.includes('mistral')) return '#f59e0b';    // Orange
-    if (lowerName.includes('llama')) return '#ef4444';      // Red
-    return '#64748b'; // Default gray
+    // Add host agent first
+    if (selectedChatbot) {
+      participants.push({
+        id: selectedChatbot.identity?.id || selectedChatbot.id,
+        name: selectedChatbot.identity?.name || selectedChatbot.name || 'Host Agent',
+        type: 'ai'
+      });
+    }
+    
+    // Add guest agents
+    const activeContext = multiChatState.contexts.find(c => c.isActive);
+    if (activeContext?.guestAgents) {
+      activeContext.guestAgents.forEach(guest => {
+        participants.push({
+          id: guest.agentId,
+          name: guest.name,
+          type: 'ai'
+        });
+      });
+    }
+    
+    return participants;
+  };
+
+  // Get color for participant based on entry order
+  const getParticipantColor = (participantId: string, participantType: 'ai' | 'human') => {
+    if (participantType === 'human') {
+      return humanColor;
+    }
+    
+    // For AI agents, assign colors sequentially based on their position in the participants list
+    const allParticipants = getAllParticipants();
+    const agentIndex = allParticipants.findIndex(p => p.id === participantId);
+    return agentColorPalette[agentIndex % agentColorPalette.length];
+  };
+
+  // Legacy function for backward compatibility
+  const getAgentColor = (agentId?: string, agentName?: string) => {
+    if (!agentId && !agentName) return '#64748b'; // Default gray
+    return getParticipantColor(agentId || agentName || '', 'ai');
   };
 
   const getHostAgent = () => {
@@ -5870,208 +5917,42 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     {/* Removed intrusive Multi-Agent Response Status box - let conversation flow naturally */}
                     
                     {[...chatMessages].reverse().map((message, index) => {
-                      const messageType = getMessageType(message, index, [...chatMessages].reverse());
-                      const indentation = getMessageIndentation(messageType);
-                      const showConnectingLine = shouldShowConnectingLine(messageType);
+                      // Determine sender info for color coding
+                      const isUser = message.sender === 'user';
+                      const isAgent = message.sender === 'assistant' || message.sender === 'agent';
+                      
+                      // Get sender details
+                      const senderId = isUser 
+                        ? (user?.uid || 'current-user')
+                        : (message.metadata?.agentId || selectedChatbot?.identity?.id || selectedChatbot?.id || 'unknown-agent');
+                      
+                      const senderName = isUser
+                        ? (user?.displayName || user?.email || 'You')
+                        : (message.metadata?.agentName || selectedChatbot?.identity?.name || selectedChatbot?.name || 'Assistant');
+                      
+                      const senderType: 'ai' | 'human' = isUser ? 'human' : 'ai';
+                      const senderColor = getParticipantColor(senderId, senderType);
+                      
+                      // Create message object for ColorCodedChatMessage
+                      const colorCodedMessage = {
+                        id: message.id,
+                        content: message.content,
+                        timestamp: message.timestamp.toLocaleTimeString(),
+                        sender: {
+                          id: senderId,
+                          name: senderName,
+                          type: senderType,
+                          avatar: message.metadata?.avatar || (isUser ? user?.photoURL : selectedChatbot?.identity?.avatar)
+                        }
+                      };
                       
                       return (
-                        <Box
+                        <ColorCodedChatMessage
                           key={message.id}
-                          sx={{
-                            display: 'flex',
-                            justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
-                            position: 'relative',
-                            marginLeft: `${indentation}px`,
-                            transition: 'margin-left 0.2s ease'
-                          }}
-                        >
-                          {/* Enhanced Connecting Lines for Behavior Prompt Conversations */}
-                          {showConnectingLine && (
-                            <>
-                              {/* Vertical connecting line */}
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  left: -24,
-                                  top: messageType === 'behavior-response' ? '50%' : 0,
-                                  width: 2,
-                                  height: messageType === 'behavior-response' ? '50%' : '100%',
-                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
-                                  opacity: 0.4,
-                                  zIndex: 1
-                                }}
-                              />
-                              
-                              {/* Horizontal connecting line */}
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  left: -24,
-                                  top: '50%',
-                                  width: 20,
-                                  height: 2,
-                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
-                                  borderRadius: 1,
-                                  transform: 'translateY(-50%)',
-                                  opacity: 0.6,
-                                  zIndex: 2
-                                }}
-                              />
-                              
-                              {/* Connection dot */}
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  left: -28,
-                                  top: '50%',
-                                  width: 6,
-                                  height: 6,
-                                  bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
-                                  borderRadius: '50%',
-                                  transform: 'translateY(-50%)',
-                                  opacity: 0.8,
-                                  zIndex: 3
-                                }}
-                              />
-                            </>
-                          )}
-                          
-                          <Box
-                            sx={{
-                              maxWidth: '75%',
-                              textAlign: message.sender === 'user' ? 'right' : 'left',
-                              // Enhanced styling for behavior prompt conversations
-                              ...(messageType === 'behavior-response' && {
-                                bgcolor: 'rgba(100, 116, 139, 0.08)',
-                                borderRadius: 2,
-                                p: 1.5,
-                                border: '1px solid rgba(100, 116, 139, 0.15)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                              }),
-                              ...(messageType === 'behavior-followup' && {
-                                bgcolor: 'rgba(16, 185, 129, 0.08)',
-                                borderRadius: 2,
-                                p: 1.5,
-                                border: '1px solid rgba(16, 185, 129, 0.15)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                              })
-                            }}
-                          >
-                            {/* Message Type Indicator */}
-                            {messageType !== 'regular' && (
-                              <Box sx={{ mb: 0.5 }}>
-                                <Chip
-                                  label={
-                                    messageType === 'behavior-response' ? '🎭 Behavior Response' : 
-                                    messageType === 'behavior-followup' ? '💬 Follow-up' : ''
-                                  }
-                                  size="small"
-                                  sx={{
-                                    bgcolor: messageType === 'behavior-response' ? '#64748b' : '#10b981',
-                                    color: 'white',
-                                    fontSize: '0.65rem',
-                                    height: 20
-                                  }}
-                                />
-                              </Box>
-                            )}
-                            
-                            {/* Multi-Agent Message Header */}
-                            {message.metadata?.isMultiAgent && (
-                              <Box sx={{ mb: 1 }}>
-                                <Chip
-                                  label={`${message.metadata.agentName} (${Math.floor(message.metadata.processingTime / 1000)}s)`}
-                                  size="small"
-                                  sx={{
-                                    bgcolor: getAgentColor(message.metadata.agentId, message.metadata.agentName),
-                                    color: 'white',
-                                    fontSize: '0.7rem'
-                                  }}
-                                />
-                              </Box>
-                            )}
-                            
-                            {/* Recipient Indicator for User Messages in Multi-Agent Mode */}
-                            {message.sender === 'user' && (selectedAgents.length > 1 || humanParticipants.length > 0) && (
-                              <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography 
-                                  variant="caption" 
-                                  sx={{ 
-                                    color: '#64748b',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 500,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5
-                                  }}
-                                >
-                                  {user?.displayName || user?.email || 'You'}
-                                  <Box component="span" sx={{ color: '#94a3b8', mx: 0.5 }}>→</Box>
-                                  {(() => {
-                                    const recipients = [];
-                                    
-                                    // Add selected AI agents
-                                    selectedAgents.forEach(agentId => {
-                                      const agent = chatbotProfiles.find(p => p.id === agentId || p.key === agentId);
-                                      if (agent) {
-                                        recipients.push(agent.name || agent.identity?.name || 'AI Agent');
-                                      }
-                                    });
-                                    
-                                    // Add human participants
-                                    humanParticipants.forEach(participant => {
-                                      recipients.push(participant.name || participant.email || 'Human');
-                                    });
-                                    
-                                    // If no specific recipients, show current agent
-                                    if (recipients.length === 0 && selectedChatbot) {
-                                      recipients.push(selectedChatbot.name || selectedChatbot.identity?.name || 'AI Agent');
-                                    }
-                                    
-                                    return recipients.length > 0 ? recipients.join(', ') : 'All Participants';
-                                  })()}
-                                </Typography>
-                              </Box>
-                            )}
-                            
-                            {/* Message Content */}
-                            <MarkdownRenderer 
-                              content={message.content}
-                              sx={{ 
-                                fontSize: '0.9rem',
-                                mb: 0.5
-                              }}
-                            />
-                            
-                            {/* Attachments Display */}
-                            <AttachmentRenderer 
-                              attachments={message.attachments || []}
-                              sx={{ mt: 1 }}
-                            />
-                            
-                            {/* Timestamp */}
-                            <Typography variant="caption" sx={{ 
-                              color: '#94a3b8', 
-                              fontSize: '0.75rem'
-                            }}>
-                              {message.timestamp.toLocaleTimeString()}
-                            </Typography>
-
-                            {/* Small token response icon for multi-agent responses */}
-                            {message.metadata?.isMultiAgent && message.sender === 'assistant' && (
-                              <TokenResponseIcon
-                                agentId={message.metadata.agentId}
-                                cost={tokenEconomicsService.estimateMessageCost(message.content)}
-                                quality={8} // Default quality, could be dynamic
-                                value="high" // Could be calculated based on response
-                                onRate={(rating) => {
-                                  console.log('📊 [TokenIcon] Rating submitted:', message.metadata.agentName, rating);
-                                  // This could trigger updates to agent metrics
-                                }}
-                              />
-                            )}
-                          </Box>
-                        </Box>
+                          message={colorCodedMessage}
+                          senderColor={senderColor}
+                          isCurrentUser={isUser}
+                        />
                       );
                     })}
                   </Stack>
