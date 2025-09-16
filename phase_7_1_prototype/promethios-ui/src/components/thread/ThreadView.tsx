@@ -186,6 +186,10 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const parentParticipant = participants?.find(p => p.name === parentMessage.sender);
   const parentMessageColor = parentMessage.senderColor || parentParticipant?.color || getDefaultColor(parentMessage.sender);
 
+  // Check if current user can resolve thread (thread starter or admin)
+  const canResolveThread = threadData?.thread.starterId === currentUserId || 
+                          participants?.find(p => p.id === currentUserId)?.type === 'admin';
+
   // State for multi-agent coordination
   const [agentThinkingStates, setAgentThinkingStates] = useState<{[agentId: string]: boolean}>({});
   const [behaviorPromptActive, setBehaviorPromptActive] = useState<{
