@@ -7714,7 +7714,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             }}
           />
         )}
-          </Container>
+      </Box>
+        ) : (
+          <Box sx={{ p: 2 }}>
+            <Typography sx={{ color: 'white' }}>
+              Select an agent to enter workspace mode
+            </Typography>
+          </Box>
         )}
       </Box>
       
