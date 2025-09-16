@@ -468,6 +468,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     agentColor?: string;
     messageId: string;
     targetMessage?: any;
+    position?: { x: number; y: number }; // Add position for popup
   } | null>(null);
   const [chatInvitationContext, setChatInvitationContext] = useState<{
     chatSessionId: string;
@@ -6083,6 +6084,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           // Get agent color (simplified for now)
                           const agentColor = '#f97316'; // Default orange, could be enhanced later
                           
+                          // Capture current mouse position for popup
+                          const position = { x: window.event?.clientX || 100, y: window.event?.clientY || 100 };
+                          
                           // Set up pending interaction and show modal
                           setPendingInteraction({
                             agentId,
@@ -6090,6 +6094,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             agentColor,
                             messageId,
                             targetMessage,
+                            position,
                           });
                           setShowBehavioralPromptModal(true);
                         } else {
@@ -9517,6 +9522,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         agentColor={pendingInteraction?.agentColor}
         targetMessageContent={pendingInteraction?.targetMessage?.content}
         targetMessageSender={pendingInteraction?.targetMessage?.sender === 'user' ? 'You' : pendingInteraction?.targetMessage?.sender}
+        position={pendingInteraction?.position}
       />
 
       {/* Agent Permission Request Popup */}
