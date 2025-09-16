@@ -3482,18 +3482,64 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (pendingInteraction) {
       console.log('🎭 Behavior selected:', behavior, 'for agent:', pendingInteraction.agentName);
       
-      // Trigger behavioral prompt with selected behavior
-      handleBehaviorPrompt(
+      // Instead of creating a human prompt, directly generate agent response
+      handleDirectAgentResponse(
         pendingInteraction.agentId,
         pendingInteraction.agentName,
         behavior,
-        true, // isDragDrop
-        pendingInteraction.messageId // targetMessageId
+        pendingInteraction.messageId
       );
       
       // Clear pending interaction
       setPendingInteraction(null);
       setShowBehavioralPromptModal(false);
+    }
+  };
+
+  // NEW: Generate direct agent response to target message with behavioral approach
+  const handleDirectAgentResponse = async (agentId: string, agentName: string, behavior: string, targetMessageId: string) => {
+    console.log('🎯 Direct agent response:', { agentId, agentName, behavior, targetMessageId });
+    
+    // Find the target message
+    const targetMessage = chatMessages.find(msg => msg.id === targetMessageId);
+    if (!targetMessage) {
+      console.warn('Target message not found:', targetMessageId);
+      return;
+    }
+
+    // Create behavioral context for the agent response
+    const behaviorPrompts = {
+      collaborate: "I'll work with you on this. Let me build upon your ideas and add my perspective.",
+      analyze: "Let me break this down analytically and examine the key components.",
+      question: "I have some questions to better understand this. Let me explore the details.",
+      critique: "I'll provide constructive feedback and evaluation of this approach.",
+      expand: "Let me add more detail and context to expand on this topic.",
+      solve: "I'll focus on finding practical solutions and next steps for this."
+    };
+
+    const behaviorContext = behaviorPrompts[behavior as keyof typeof behaviorPrompts] || behaviorPrompts.collaborate;
+    
+    // Create a direct instruction for the agent to respond to the specific message
+    const directInstruction = `[DIRECT RESPONSE] ${behaviorContext} Respond to this specific message from ${targetMessage.sender}: "${targetMessage.content}"`;
+
+    try {
+      // Set thinking indicator
+      setSmartThinkingIndicator(agentId, agentName, behavior);
+
+      // Use existing message system but mark it as a direct agent response
+      // This will trigger the agent to respond directly without creating a human prompt
+      await handleSendMessage(directInstruction, [agentId]);
+      
+      console.log('✅ Direct agent response triggered for:', agentName, 'with behavior:', behavior);
+    } catch (error) {
+      console.error('Error generating direct agent response:', error);
+      // Fallback to original method
+      handleBehaviorPrompt(agentId, agentName, behavior, true, targetMessageId);
+    } finally {
+      // Clear thinking indicator after a short delay to allow response generation
+      setTimeout(() => {
+        clearSmartThinkingIndicator();
+      }, 2000);
     }
   };
 
