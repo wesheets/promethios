@@ -760,7 +760,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const getChatInterfaceWidth = () => {
     const navBarWidth = rightNavState.isCollapsed ? 60 : 200; // Navigation bar width
     const panelWidth = rightNavState.activePanel ? rightNavState.panelWidth : 0; // Active panel width
-    const threadWidth = threadViewOpen ? 400 : 0; // Thread panel width
+    const threadWidth = threadViewOpen ? 500 : 0; // Thread panel width
     const totalRightWidth = navBarWidth + panelWidth + threadWidth;
     
     // Calculate available width (assuming full screen width minus right navigation and thread)
@@ -5892,8 +5892,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               <Box sx={{ 
                 display: 'flex',
                 height: '100vh',
-                maxWidth: threadViewOpen ? '1600px' : '1200px', // Adjust max width based on thread state
-                width: threadViewOpen ? 'calc(1200px + 400px)' : '1200px', // Chat width + thread width
+                maxWidth: threadViewOpen ? '1700px' : '1200px', // Adjust max width for 500px thread
+                width: threadViewOpen ? 'calc(1200px + 500px)' : '1200px', // Chat width + thread width
                 transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
               }}>
                 {/* Chat Interface */}
@@ -7117,7 +7117,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             {/* Thread View - Side Panel (Sibling to Chat Interface) */}
             {threadViewOpen && activeThreadId && (
               <Box sx={{ 
-                width: '400px', 
+                width: '500px', // Increased width to match Slack better
                 borderLeft: '1px solid #334155',
                 bgcolor: '#1e293b',
                 display: 'flex',
@@ -7150,6 +7150,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       color: '#f97316'
                     }] : [])
                   ]}
+                  availableAgents={[
+                    ...(selectedChatbot ? [{
+                      id: selectedChatbot.id,
+                      name: selectedChatbot.identity?.name || 'AI Assistant',
+                      avatar: selectedChatbot.identity?.avatar,
+                      color: '#f97316'
+                    }] : []),
+                    // Add other available agents from the multi-agent system
+                    ...selectedAgents.map(agent => ({
+                      id: agent.id,
+                      name: agent.name,
+                      avatar: agent.avatar,
+                      color: agent.color || '#8b5cf6'
+                    }))
+                  ]}
+                  selectedAgents={selectedAgents}
+                  onAgentSelectionChange={(agents) => {
+                    setSelectedAgents(agents);
+                    console.log('🤖 [Thread] Agent selection changed:', agents);
+                  }}
                 />
               </Box>
             )}

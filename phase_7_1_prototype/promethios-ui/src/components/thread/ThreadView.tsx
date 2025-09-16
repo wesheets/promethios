@@ -26,8 +26,10 @@ import {
 } from '@mui/icons-material';
 import { ThreadSubscription, ThreadMessage, AddThreadReplyRequest, ResolveThreadRequest } from '../../types/Thread';
 import ThreadService from '../../services/ThreadService';
+import EnhancedThreadService from '../../services/EnhancedThreadService';
 import { useMessageDropTarget } from '../../hooks/useDragDrop';
 import ThreadResolutionDialog from './ThreadResolutionDialog';
+import AgentAvatarSelector from '../AgentAvatarSelector';
 
 interface ThreadViewProps {
   threadId: string;
@@ -50,6 +52,20 @@ interface ThreadViewProps {
     type: 'user' | 'ai_agent';
     color?: string;
   }>;
+  // Agent selection for thread input
+  availableAgents?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    color?: string;
+  }>;
+  selectedAgents?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    color?: string;
+  }>;
+  onAgentSelectionChange?: (agents: Array<{ id: string; name: string; avatar?: string; color?: string; }>) => void;
 }
 
 // Thread message component with drag & drop
@@ -89,65 +105,80 @@ const ThreadMessageItem: React.FC<{
         p: 1,
         borderRadius: 1,
         transition: 'all 0.2s ease',
-        bgcolor: isOver && canDrop ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-        border: isOver && canDrop ? '2px dashed rgba(59, 130, 246, 0.5)' : '2px solid transparent',
-        '&:hover': {
-          bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
-        }
+    // Thread Message Item Component with drag & drop support
+const ThreadMessageItem: React.FC<{ 
+  message: ThreadMessage; 
+  onAgentDrop?: (agentId: string, agentName: string, messageId: string) => void;
+}> = ({ message, onAgentDrop }) => {
+  // Set up drop target for agent drag & drop
+  const { isOver, drop } = useMessageDropTarget({
+    messageId: message.id,
+    onAgentDrop: onAgentDrop || (() => {})
+  });
+
+  const isAgent = message.senderType === 'ai_agent';
+  const agentColor = isAgent ? getAgentColor(message.senderId) : undefined;
+
+  return (
+    <Box 
+      ref={drop}
+      sx={{ 
+        mb: 2,
+        opacity: isOver ? 0.8 : 1,
+        transition: 'opacity 0.2s ease',
+        border: isOver ? '2px dashed #3b82f6' : '2px solid transparent',
+        borderRadius: 1,
+        p: isOver ? 1 : 0
       }}
     >
-      <Avatar 
-        sx={{ 
-          width: 28, 
-          height: 28, 
-          bgcolor: messageColor,
-          fontSize: '12px',
-          fontWeight: 600,
-          border: `2px solid ${messageColor}20`
-        }}
-      >
-        {message.senderName.charAt(0).toUpperCase()}
-      </Avatar>
-      <Box sx={{ flex: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <Typography 
-            variant="subtitle2" 
-            sx={{ 
-              fontWeight: 600, 
-              fontSize: '13px',
-              color: messageColor
-            }}
-          >
-            {message.senderName}
-          </Typography>
-          <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '11px' }}>
-            {formatMessageTime(message.timestamp)}
-          </Typography>
-          {message.senderType === 'ai_agent' && (
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                fontSize: '10px',
-                bgcolor: `${messageColor}20`,
-                color: messageColor,
-                px: 0.5,
-                py: 0.25,
-                borderRadius: 0.5,
-                fontWeight: 500
-              }}
-            >
-              AI
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+        {/* Avatar */}
+        <Avatar
+          sx={{
+            width: 32,
+            height: 32,
+            bgcolor: isAgent ? agentColor : '#6b7280',
+            fontSize: '14px',
+            fontWeight: 600
+          }}
+        >
+          {message.senderName.charAt(0).toUpperCase()}
+        </Avatar>
+        
+        {/* Message Content */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '14px' }}>
+              {message.senderName}
             </Typography>
-          )}
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '12px' }}>
+              {message.timestamp.toLocaleTimeString()}
+            </Typography>
+            {isAgent && (
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  bgcolor: agentColor, 
+                  color: 'white', 
+                  px: 1, 
+                  py: 0.25, 
+                  borderRadius: 1, 
+                  fontSize: '10px',
+                  fontWeight: 600
+                }}
+              >
+                AI
+              </Typography>
+            )}
+          </Box>
+          <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
+            {message.content}
+          </Typography>
         </Box>
-        <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
-          {message.content}
-        </Typography>
       </Box>
     </Box>
   );
 };
-
 // Utility function for default colors
 const getDefaultColor = (senderId: string): string => {
   const colors = [
@@ -174,7 +205,10 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   onClose,
   onReplyAdded,
   onAgentInteraction,
-  participants
+  participants,
+  availableAgents = [],
+  selectedAgents = [],
+  onAgentSelectionChange
 }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
@@ -191,30 +225,67 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const parentParticipant = participants?.find(p => p.name === parentMessage.sender);
   const parentMessageColor = parentMessage.senderColor || parentParticipant?.color || getDefaultColor(parentMessage.sender);
 
-  // Check if thread can be resolved (active status and user has permission)
-  const canResolveThread = threadData?.thread.status === 'active' && threadData?.thread.participants.includes(currentUserId);
+  // State for multi-agent coordination
+  const [agentThinkingStates, setAgentThinkingStates] = useState<{[agentId: string]: boolean}>({});
+  const [behaviorPromptActive, setBehaviorPromptActive] = useState<{
+    agentId: string;
+    behavior: string;
+    timestamp: number;
+  } | null>(null);
 
-  // Subscribe to thread updates
+  // Handle agent thinking indicators
+  const setAgentThinking = (agentId: string, isThinking: boolean) => {
+    setAgentThinkingStates(prev => ({
+      ...prev,
+      [agentId]: isThinking
+    }));
+  };
+
+  // Clear thinking indicators after timeout
   useEffect(() => {
-    console.log('🧵 [ThreadView] Subscribing to thread:', threadId);
-    
-    const unsubscribe = ThreadService.subscribeToThread(threadId, (data) => {
-      console.log('🔔 [ThreadView] Thread update received:', data);
-      setThreadData(data);
-      setLoading(false);
-      
-      if (!data) {
-        setError('Thread not found');
+    const activeThinkingAgents = Object.entries(agentThinkingStates)
+      .filter(([_, isThinking]) => isThinking)
+      .map(([agentId]) => agentId);
+
+    if (activeThinkingAgents.length > 0) {
+      const timeout = setTimeout(() => {
+        setAgentThinkingStates(prev => {
+          const updated = { ...prev };
+          activeThinkingAgents.forEach(agentId => {
+            updated[agentId] = false;
+          });
+          return updated;
+        });
+      }, 30000); // Clear after 30 seconds
+
+      return () => clearTimeout(timeout);
+    }
+  }, [agentThinkingStates]);  // Subscribe to thread updates with real-time synchronization
+  useEffect(() => {
+    if (!threadId) return;
+
+    console.log('🔄 [ThreadView] Setting up real-time subscription for thread:', threadId);
+
+    // Use EnhancedThreadService for real-time updates
+    const unsubscribe = EnhancedThreadService.subscribeToThread(
+      threadId,
+      (subscription: ThreadSubscription) => {
+        console.log('📡 [ThreadView] Received real-time thread update:', {
+          threadId,
+          messageCount: subscription.messages.length,
+          replyCount: subscription.thread.replyCount
+        });
+
+        setThreadData(subscription);
+        setLoading(false);
       }
-    });
+    );
 
     return () => {
-      console.log('🔕 [ThreadView] Unsubscribing from thread:', threadId);
+      console.log('🔌 [ThreadView] Unsubscribing from thread:', threadId);
       unsubscribe();
     };
-  }, [threadId]);
-
-  // Auto-scroll to bottom when new messages arrive
+  }, [threadId]);  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -226,35 +297,42 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
 
     setSending(true);
     try {
-      const request: AddThreadReplyRequest = {
+      // Use EnhancedThreadService for complete agent functionality
+      const responses = await EnhancedThreadService.sendThreadMessage({
         threadId,
-        reply: {
-          content: replyText.trim(),
-          senderId: currentUserId,
-          senderName: currentUserName,
-          senderType: 'user'
-        }
-      };
+        message: replyText.trim(),
+        targetAgentIds: selectedAgents.map(agent => agent.id),
+        senderId: currentUserId,
+        senderName: currentUserName
+      });
 
-      await ThreadService.addReply(request);
+      console.log('✅ [ThreadView] Message sent successfully, agent responses:', responses.length);
+
+      // Clear the input
       setReplyText('');
-      
-      // Notify parent component
-      if (onReplyAdded && threadData?.messages) {
-        const newReply: ThreadMessage = {
-          id: `temp-${Date.now()}`,
+
+      // Notify parent component if callback provided
+      if (onReplyAdded) {
+        // Create a ThreadMessage object for the callback
+        const replyMessage: ThreadMessage = {
+          id: `temp_${Date.now()}`, // Temporary ID
           content: replyText.trim(),
           senderId: currentUserId,
           senderName: currentUserName,
           senderType: 'user',
-          timestamp: new Date()
+          timestamp: new Date(),
+          attachments: []
         };
-        onReplyAdded(newReply);
+        onReplyAdded(replyMessage);
       }
+
+      // Log agent responses
+      responses.forEach(response => {
+        console.log(`🤖 [ThreadView] Agent ${response.agentName} responded:`, response.content.substring(0, 100) + '...');
+      });
 
     } catch (error) {
       console.error('❌ [ThreadView] Error sending reply:', error);
-      setError('Failed to send reply. Please try again.');
     } finally {
       setSending(false);
     }
@@ -265,6 +343,56 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       e.preventDefault();
       handleSendReply();
     }
+  };
+
+  // Handle behavioral prompts (drag & drop functionality) with thinking indicators
+  const handleBehaviorPrompt = async (
+    agentId: string, 
+    agentName: string, 
+    behavior: string, 
+    targetMessageId?: string
+  ) => {
+    console.log('🎭 [ThreadView] Handling behavioral prompt:', { agentId, agentName, behavior, targetMessageId });
+
+    try {
+      // Set thinking indicator
+      setAgentThinking(agentId, true);
+      
+      // Set behavior prompt active state
+      setBehaviorPromptActive({
+        agentId,
+        behavior,
+        timestamp: Date.now()
+      });
+
+      const response = await EnhancedThreadService.handleBehavioralPrompt({
+        threadId,
+        agentId,
+        agentName,
+        behaviorType: behavior,
+        targetMessageId,
+        senderId: currentUserId,
+        senderName: currentUserName
+      });
+
+      if (response) {
+        console.log('✅ [ThreadView] Behavioral prompt response:', response.content.substring(0, 100) + '...');
+      }
+    } catch (error) {
+      console.error('❌ [ThreadView] Error handling behavioral prompt:', error);
+    } finally {
+      // Clear thinking indicator
+      setAgentThinking(agentId, false);
+      setBehaviorPromptActive(null);
+    }
+  };
+
+  // Handle agent drop on thread messages
+  const handleAgentDrop = (agentId: string, agentName: string, targetMessageId: string) => {
+    console.log('🖱️ [ThreadView] Agent dropped on message:', { agentId, agentName, targetMessageId });
+    
+    // Trigger a generic response behavior when agent is dropped
+    handleBehaviorPrompt(agentId, agentName, 'analyze', targetMessageId);
   };
 
   // Handle thread resolution
@@ -291,7 +419,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: 400,
+          width: 500,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -313,7 +441,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: 400,
+          width: 500,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -337,7 +465,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   return (
     <Paper
       sx={{
-        width: 400,
+        width: 500,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -398,15 +526,16 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
         </Box>
       </Box>
 
-      {/* Parent Message */}
-      <Box sx={{ p: 2, borderBottom: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}` }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+      {/* Original Message with Thread Attribution */}
+      <Box sx={{ p: 3, borderBottom: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}` }}>
+        {/* Original Message */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
           <Avatar 
             sx={{ 
-              width: 32, 
-              height: 32, 
+              width: 36, 
+              height: 36, 
               bgcolor: parentMessageColor,
-              fontSize: '14px',
+              fontSize: '16px',
               fontWeight: 600,
               border: `2px solid ${parentMessageColor}20`
             }}
@@ -414,12 +543,12 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             {parentMessage.sender.charAt(0).toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
               <Typography 
-                variant="subtitle2" 
+                variant="subtitle1" 
                 sx={{ 
                   fontWeight: 600, 
-                  fontSize: '14px',
+                  fontSize: '15px',
                   color: parentMessageColor
                 }}
               >
@@ -429,10 +558,28 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 {parentMessage.timestamp}
               </Typography>
             </Box>
-            <Typography variant="body2" sx={{ fontSize: '14px', lineHeight: 1.4 }}>
+            <Typography variant="body1" sx={{ fontSize: '15px', lineHeight: 1.5, color: theme.palette.text.primary }}>
               {parentMessage.content}
             </Typography>
           </Box>
+        </Box>
+        
+        {/* Thread Starter Attribution */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1, 
+          mt: 2,
+          pl: 6, // Align with message content
+          color: theme.palette.text.secondary 
+        }}>
+          <ForumIcon sx={{ fontSize: '14px', color: '#3b82f6' }} />
+          <Typography variant="caption" sx={{ fontSize: '12px', fontWeight: 500 }}>
+            {currentUserName || 'Someone'} started this thread
+          </Typography>
+          <Typography variant="caption" sx={{ fontSize: '11px', color: theme.palette.text.disabled }}>
+            • {threadData?.messages.length || 0} {threadData?.messages.length === 1 ? 'reply' : 'replies'}
+          </Typography>
         </Box>
       </Box>
 
@@ -442,16 +589,52 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           <ThreadMessageItem
             key={message.id}
             message={message}
-            participants={participants}
-            onAgentInteraction={onAgentInteraction}
+            onAgentDrop={handleAgentDrop}
           />
         ))}
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Reply Input */}
+      {/* Enhanced Reply Input with Agent Selector */}
       <Box sx={{ p: 2, borderTop: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}` }}>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 1, 
+          alignItems: 'flex-end',
+          bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+          borderRadius: 2,
+          border: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}`,
+          p: 1
+        }}>
+          {/* Agent Avatar Selector for Thread */}
+          {availableAgents.length > 0 && (
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              flexShrink: 0,
+              mr: 1
+            }}>
+              <AgentAvatarSelector
+                hostAgent={null}
+                availableAgents={availableAgents}
+                selectedAgents={selectedAgents}
+                onSelectionChange={onAgentSelectionChange || (() => {})}
+                maxVisible={3}
+                size="small"
+                showLabels={false}
+                variant="compact"
+                sx={{
+                  '& .MuiAvatar-root': {
+                    width: 28,
+                    height: 28,
+                    fontSize: '12px'
+                  }
+                }}
+              />
+            </Box>
+          )}
+          
+          {/* Text Input */}
           <TextField
             fullWidth
             multiline
@@ -461,20 +644,31 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             onChange={(e) => setReplyText(e.target.value)}
             onKeyPress={handleKeyPress}
             disabled={sending}
-            size="small"
-            sx={{
-              '& .MuiOutlinedInput-root': {
+            variant="standard"
+            InputProps={{
+              disableUnderline: true,
+              sx: {
                 fontSize: '14px',
-                bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+                '& .MuiInputBase-input': {
+                  padding: '8px 0',
+                  '&::placeholder': {
+                    color: theme.palette.text.secondary,
+                    opacity: 0.7
+                  }
+                }
               }
             }}
           />
+          
+          {/* Send Button */}
           <IconButton
             onClick={handleSendReply}
             disabled={!replyText.trim() || sending}
             sx={{
               bgcolor: '#3b82f6',
               color: 'white',
+              width: 32,
+              height: 32,
               '&:hover': {
                 bgcolor: '#2563eb',
               },
@@ -484,7 +678,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
               }
             }}
           >
-            {sending ? <CircularProgress size={20} /> : <SendIcon />}
+            {sending ? <CircularProgress size={16} /> : <SendIcon sx={{ fontSize: '16px' }} />}
           </IconButton>
         </Box>
       </Box>
