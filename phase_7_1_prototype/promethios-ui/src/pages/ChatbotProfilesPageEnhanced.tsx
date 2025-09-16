@@ -9502,7 +9502,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         chatSession={activeChatInvitationSession}
         agentId={selectedChatbot?.id}
         agentName={selectedChatbot?.identity?.name || 'AI Assistant'}
-        onInviteSuccess={handleChatInvitationSuccess}
       />
 
       {/* Behavioral Prompt Selector Modal */}
