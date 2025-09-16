@@ -139,15 +139,10 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-  // Initialize configuration service
-  const configService = new AgentConfigurationService();
+  // Initialize configuration service only once
+  const configService = React.useMemo(() => new AgentConfigurationService(), []);
 
-  // Load existing configuration on mount
-  useEffect(() => {
-    loadAgentConfiguration();
-  }, [chatbot.identity.id]);
-
-  const loadAgentConfiguration = async () => {
+  const loadAgentConfiguration = React.useCallback(async () => {
     try {
       setLoading(true);
       const config = await configService.getConfiguration(chatbot.identity.id);
@@ -159,7 +154,12 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [configService, chatbot.identity.id]);
+
+  // Load existing configuration on mount
+  useEffect(() => {
+    loadAgentConfiguration();
+  }, [loadAgentConfiguration]);
 
   const saveConfiguration = async () => {
     try {
