@@ -1206,6 +1206,62 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     }
   };
 
+  // Handle agent interaction from drag & drop
+  const handleAgentInteraction = (agentId: string, messageId: string, action: string) => {
+    console.log('🎯 Agent interaction:', { agentId, messageId, action });
+    
+    // Debug: Log available agents
+    const availableGuestAgents = multiChatState.contexts.flatMap(ctx => ctx.guestAgents || []);
+    console.log('🔍 Available guest agents:', availableGuestAgents.map(a => ({ id: a.agentId, name: a.name })));
+    console.log('🔍 Selected chatbot:', { id: selectedChatbot?.id, name: selectedChatbot?.name });
+    console.log('🔍 Looking for agent ID:', agentId);
+    
+    // Find the agent details
+    const agent = multiChatState.contexts
+      .flatMap(ctx => ctx.guestAgents || [])
+      .find(a => a.agentId === agentId) || 
+      // Check selectedChatbot with same logic as ConsolidatedChatHeader
+      (selectedChatbot && (
+        (selectedChatbot.identity?.id || selectedChatbot.id) === agentId ||
+        selectedChatbot.id === agentId
+      ) ? selectedChatbot : null);
+    
+    if (agent) {
+      const agentName = agent.name || agent.identity?.name || 'Agent';
+      
+      console.log('🎭 Found agent for interaction:', { agentId, agentName, action });
+      
+      // Find the target message
+      const targetMessage = chatMessages.find(msg => msg.id === messageId);
+      
+      // Get agent color (simplified for now)
+      const agentColor = '#f97316'; // Default orange, could be enhanced later
+      
+      // Capture current mouse position for popup
+      const position = { x: window.event?.clientX || 100, y: window.event?.clientY || 100 };
+      
+      // Set up pending interaction and show modal
+      setPendingInteraction({
+        agentId,
+        agentName,
+        agentColor,
+        messageId,
+        targetMessage,
+        position,
+      });
+      setShowBehavioralPromptModal(true);
+    } else {
+      console.log('❌ Agent not found for interaction:', { agentId, action });
+      console.log('❌ Available agent IDs:', [
+        ...availableGuestAgents.map(a => a.agentId),
+        selectedChatbot?.id
+      ].filter(Boolean));
+      // Fallback: add a message indicating the interaction
+      const interactionMessage = `🎭 Agent is ${action}ing on this message...`;
+      console.log('🎭 Behavioral interaction fallback:', interactionMessage);
+    }
+  };
+
   // Chat History Callback Functions
   const handleChatSelect = async (session: any) => {
     console.log(`🔄 [ChatHistory] Chat selected:`, session);
@@ -6184,62 +6240,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       };
                       
                       const recipient = getRecipient();
-                      
-                      // Handle agent interaction from drag & drop
-                      const handleAgentInteraction = (agentId: string, messageId: string, action: string) => {
-                        console.log('🎯 Agent interaction:', { agentId, messageId, action });
-                        
-                        // Debug: Log available agents
-                        const availableGuestAgents = multiChatState.contexts.flatMap(ctx => ctx.guestAgents || []);
-                        console.log('🔍 Available guest agents:', availableGuestAgents.map(a => ({ id: a.agentId, name: a.name })));
-                        console.log('🔍 Selected chatbot:', { id: selectedChatbot?.id, name: selectedChatbot?.name });
-                        console.log('🔍 Looking for agent ID:', agentId);
-                        
-                        // Find the agent details
-                        const agent = multiChatState.contexts
-                          .flatMap(ctx => ctx.guestAgents || [])
-                          .find(a => a.agentId === agentId) || 
-                          // Check selectedChatbot with same logic as ConsolidatedChatHeader
-                          (selectedChatbot && (
-                            (selectedChatbot.identity?.id || selectedChatbot.id) === agentId ||
-                            selectedChatbot.id === agentId
-                          ) ? selectedChatbot : null);
-                        
-                        if (agent) {
-                          const agentName = agent.name || agent.identity?.name || 'Agent';
-                          
-                          console.log('🎭 Found agent for interaction:', { agentId, agentName, action });
-                          
-                          // Find the target message
-                          const targetMessage = chatMessages.find(msg => msg.id === messageId);
-                          
-                          // Get agent color (simplified for now)
-                          const agentColor = '#f97316'; // Default orange, could be enhanced later
-                          
-                          // Capture current mouse position for popup
-                          const position = { x: window.event?.clientX || 100, y: window.event?.clientY || 100 };
-                          
-                          // Set up pending interaction and show modal
-                          setPendingInteraction({
-                            agentId,
-                            agentName,
-                            agentColor,
-                            messageId,
-                            targetMessage,
-                            position,
-                          });
-                          setShowBehavioralPromptModal(true);
-                        } else {
-                          console.log('❌ Agent not found for interaction:', { agentId, action });
-                          console.log('❌ Available agent IDs:', [
-                            ...availableGuestAgents.map(a => a.agentId),
-                            selectedChatbot?.id
-                          ].filter(Boolean));
-                          // Fallback: add a message indicating the interaction
-                          const interactionMessage = `🎭 Agent is ${action}ing on this message...`;
-                          console.log('🎭 Behavioral interaction fallback:', interactionMessage);
-                        }
-                      };
                       
                       return (
                         <ColorCodedChatMessage
