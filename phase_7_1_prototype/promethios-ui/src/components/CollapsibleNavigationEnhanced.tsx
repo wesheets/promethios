@@ -601,12 +601,15 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
                     '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
                   }}
                   onClick={() => {
-                    console.log('🖱️ Child navigation item clicked:', child.label, 'Path:', child.path);
-                    if (child.path) {
+                    console.log('🖱️ Child navigation item clicked:', child.label, 'Path:', child.path, 'HasOnClick:', !!child.onClick);
+                    if (child.onClick) {
+                      console.log('🎯 Executing custom onClick for child item:', child.label);
+                      child.onClick();
+                    } else if (child.path) {
                       console.log('🎯 Executing navigation for child item:', child.label);
                       handleNavigation(child.path);
                     } else {
-                      console.warn('⚠️ Child item has no path defined:', child.label);
+                      console.warn('⚠️ Child item has no path or onClick defined:', child.label);
                     }
                   }}
                 >

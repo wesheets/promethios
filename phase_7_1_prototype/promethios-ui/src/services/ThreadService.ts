@@ -107,13 +107,20 @@ export class ThreadService {
 
       // 3. Update the parent message in the main conversation to indicate it has a thread
       const parentMessageRef = doc(db, 'conversations', request.conversationId, 'messages', request.parentMessageId);
-      batch.update(parentMessageRef, {
-        thread: {
-          replyCount: 1,
-          lastReplyAt: serverTimestamp(),
-          participants: [request.initialReply.senderId]
-        }
-      });
+      
+      // Check if the parent message exists before trying to update it
+      const parentMessageDoc = await getDoc(parentMessageRef);
+      if (parentMessageDoc.exists()) {
+        batch.update(parentMessageRef, {
+          thread: {
+            replyCount: 1,
+            lastReplyAt: serverTimestamp(),
+            participants: [request.initialReply.senderId]
+          }
+        });
+      } else {
+        console.warn('⚠️ [ThreadService] Parent message not found, skipping thread update:', request.parentMessageId);
+      }
 
       await batch.commit();
       console.log('✅ [ThreadService] Thread created successfully:', threadId);
