@@ -7141,49 +7141,50 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           </Box>
           
           {/* New Right Navigation Bar */}
-          <RightNavigationBar
-            onStateChange={setRightNavState}
-            chatMessages={chatMessages}
-            humanParticipants={humanParticipants}
-            sharedConversations={sharedConversations}
-            selectedChatbot={selectedChatbot}
-            currentBotState={currentBotState}
-            // Chat History Callbacks
-            onChatSelect={handleChatSelect}
-            onNewChat={handleNewChat}
-            onShareChat={handleShareChat}
-            onSharedConversationSelect={handleCustomSharedConversationSelect}
-            onDeleteSharedConversation={(conversationId) => {
-              console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
-              refreshSharedConversations();
-            }}
-            onBulkCleanupLegacyConversations={() => {
-              console.log('🧹 [SharedChat] Bulk cleanup legacy conversations');
-              refreshSharedConversations();
-            }}
-            unreadCounts={{
-              team: unreadTeamCount,
-              chats: 0,
-              analytics: 0
-            }}
-            // Additional props for OptimizedChatHistoryPanel
-            agentId={selectedChatbotId || selectedChatbot?.id}
-            agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
-            currentSessionId={currentBotState?.currentChatSession?.id}
-            refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
-            guestConversationAccess={guestConversationAccess}
-            updateBotState={updateBotState}
-            selectedChatbotId={selectedChatbotId}
-            setMultiChatState={setMultiChatState}
-            chatHistoryService={chatHistoryService}
-            onDirectMessage={(userId, userName) => {
-              console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
-            }}
-            onViewProfile={(userId) => {
-              console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
-            }}
-          />
-        )}
+          {selectedChatbot && (
+            <RightNavigationBar
+              onStateChange={setRightNavState}
+              chatMessages={chatMessages}
+              humanParticipants={humanParticipants}
+              sharedConversations={sharedConversations}
+              selectedChatbot={selectedChatbot}
+              currentBotState={currentBotState}
+              // Chat History Callbacks
+              onChatSelect={handleChatSelect}
+              onNewChat={handleNewChat}
+              onShareChat={handleShareChat}
+              onSharedConversationSelect={handleCustomSharedConversationSelect}
+              onDeleteSharedConversation={(conversationId) => {
+                console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
+                refreshSharedConversations();
+              }}
+              onBulkCleanupLegacyConversations={() => {
+                console.log('🧹 [SharedChat] Bulk cleanup legacy conversations');
+                refreshSharedConversations();
+              }}
+              unreadCounts={{
+                team: unreadTeamCount,
+                chats: 0,
+                analytics: 0
+              }}
+              // Additional props for OptimizedChatHistoryPanel
+              agentId={selectedChatbotId || selectedChatbot?.id}
+              agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
+              currentSessionId={currentBotState?.currentChatSession?.id}
+              refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
+              guestConversationAccess={guestConversationAccess}
+              updateBotState={updateBotState}
+              selectedChatbotId={selectedChatbotId}
+              setMultiChatState={setMultiChatState}
+              chatHistoryService={chatHistoryService}
+              onDirectMessage={(userId, userName) => {
+                console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
+              }}
+              onViewProfile={(userId) => {
+                console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
+              }}
+            />
+          )}
         
         {/* No chatbots fallback */}
         {!selectedChatbot && (
@@ -7713,8 +7714,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             }}
           />
         )}
+          </Container>
+        )}
       </Box>
-
+      
       {/* Live Agent Panel - Slides out from right */}
       <Slide direction="left" in={liveAgentPanelOpen} mountOnEnter unmountOnExit>
         <Box
