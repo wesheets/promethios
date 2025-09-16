@@ -250,7 +250,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
       id: 'data-analyst',
       name: 'Data Analyst',
       avatar: 'DA',
-      color: '#3b82f6',
+      color: '#6366f1',
       status: 'active',
       expertise: ['Data Analysis', 'Visualization']
     },
@@ -324,8 +324,8 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
       sx={{
         '& .MuiDrawer-paper': {
           width: width,
-          bgcolor: '#1e293b',
-          borderRight: '1px solid #334155',
+          bgcolor: '#1e293b', // Match theme background.paper
+          borderRight: '1px solid #475569', // Match theme divider
           marginLeft: '64px', // Align with existing left nav bar
           height: 'calc(100vh - 0px)', // Full height
           top: 0,
@@ -337,25 +337,25 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
         {/* Header */}
         <Box sx={{ 
           p: 2, 
-          borderBottom: '1px solid #334155',
+          borderBottom: '1px solid #475569', // Match theme divider
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+          <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 600 }}>
             Collaborations
           </Typography>
           <IconButton
             onClick={onClose}
             size="small"
-            sx={{ color: '#94a3b8' }}
+            sx={{ color: '#cbd5e1' }}
           >
             <CloseIcon />
           </IconButton>
         </Box>
 
         {/* Search */}
-        <Box sx={{ p: 2, borderBottom: '1px solid #334155' }}>
+        <Box sx={{ p: 2, borderBottom: '1px solid #475569' }}>
           <TextField
             fullWidth
             placeholder="Search collaborations..."
@@ -365,20 +365,20 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#94a3b8' }} />
+                  <SearchIcon sx={{ color: '#cbd5e1' }} />
                 </InputAdornment>
               ),
               sx: {
-                bgcolor: '#334155',
-                color: 'white',
+                bgcolor: '#475569',
+                color: '#f8fafc', // Match theme text.primary
                 '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#475569'
+                  borderColor: '#475569' // Match theme divider
                 },
                 '&:hover .MuiOutlinedInput-notchedOutline': {
                   borderColor: '#64748b'
                 },
                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#3b82f6'
+                  borderColor: '#6366f1' // Match theme primary
                 }
               }
             }}
@@ -396,23 +396,23 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  '&:hover': { bgcolor: '#334155' }
+                  '&:hover': { bgcolor: '#475569' }
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                  <OrganizationIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  <OrganizationIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                 </ListItemIcon>
                 <ListItemText 
                   primary="Work Collaborations"
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: 600,
-                    color: '#e2e8f0'
+                    color: '#f8fafc'
                   }}
                 />
                 {expandedSections.workCollaborations ? 
-                  <ExpandLess sx={{ color: '#94a3b8' }} /> : 
-                  <ExpandMore sx={{ color: '#94a3b8' }} />
+                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                  <ExpandMore sx={{ color: '#cbd5e1' }} />
                 }
               </ListItemButton>
             </ListItem>
@@ -428,7 +428,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                         px: 1, 
                         py: 0.5, 
                         borderRadius: 1,
-                        '&:hover': { bgcolor: '#334155' }
+                        '&:hover': { bgcolor: '#475569' }
                       }}
                     >
                       <ListItemIcon sx={{ minWidth: 32 }}>
@@ -437,7 +437,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                             width: 20, 
                             height: 20, 
                             fontSize: '0.7rem',
-                            bgcolor: '#3b82f6'
+                            bgcolor: '#6366f1'
                           }}
                         >
                           {workCollab.avatar}
@@ -452,16 +452,16 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                         }}
                         secondaryTypographyProps={{
                           fontSize: '0.7rem',
-                          color: '#94a3b8'
+                          color: '#cbd5e1'
                         }}
                       />
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         {workCollab.isPrivate && (
-                          <PrivateIcon sx={{ color: '#94a3b8', fontSize: 14 }} />
+                          <PrivateIcon sx={{ color: '#cbd5e1', fontSize: 14 }} />
                         )}
                         {expandedWorkCollabs[workCollab.id] ? 
-                          <ExpandLess sx={{ color: '#94a3b8', fontSize: 16 }} /> : 
-                          <ExpandMore sx={{ color: '#94a3b8', fontSize: 16 }} />
+                          <ExpandLess sx={{ color: '#cbd5e1', fontSize: 16 }} /> : 
+                          <ExpandMore sx={{ color: '#cbd5e1', fontSize: 16 }} />
                         }
                       </Box>
                     </ListItemButton>
@@ -476,14 +476,14 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                             px: 1, 
                             py: 0.5, 
                             borderRadius: 1,
-                            '&:hover': { bgcolor: '#334155' }
+                            '&:hover': { bgcolor: '#475569' }
                           }}
                         >
                           <ListItemIcon sx={{ minWidth: 28 }}>
                             {channel.isPrivate ? (
-                              <PrivateIcon sx={{ color: '#94a3b8', fontSize: 16 }} />
+                              <PrivateIcon sx={{ color: '#cbd5e1', fontSize: 16 }} />
                             ) : (
-                              <ChannelIcon sx={{ color: '#94a3b8', fontSize: 16 }} />
+                              <ChannelIcon sx={{ color: '#cbd5e1', fontSize: 16 }} />
                             )}
                           </ListItemIcon>
                           <ListItemText 
@@ -515,7 +515,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
               ))}
             </Collapse>
 
-            <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
+            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
 
             {/* General Channels */}
             <ListItem sx={{ px: 2, py: 1 }}>
@@ -525,26 +525,26 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  '&:hover': { bgcolor: '#334155' }
+                  '&:hover': { bgcolor: '#475569' }
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                  <PublicIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  <PublicIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                 </ListItemIcon>
                 <ListItemText 
                   primary="General Channels"
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: 600,
-                    color: '#e2e8f0'
+                    color: '#f8fafc'
                   }}
                 />
-                <IconButton size="small" sx={{ color: '#94a3b8' }}>
+                <IconButton size="small" sx={{ color: '#cbd5e1' }}>
                   <AddIcon fontSize="small" />
                 </IconButton>
                 {expandedSections.channels ? 
-                  <ExpandLess sx={{ color: '#94a3b8' }} /> : 
-                  <ExpandMore sx={{ color: '#94a3b8' }} />
+                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                  <ExpandMore sx={{ color: '#cbd5e1' }} />
                 }
               </ListItemButton>
             </ListItem>
@@ -557,11 +557,11 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                       px: 1, 
                       py: 0.5, 
                       borderRadius: 1,
-                      '&:hover': { bgcolor: '#334155' }
+                      '&:hover': { bgcolor: '#475569' }
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 28 }}>
-                      <ChannelIcon sx={{ color: '#94a3b8', fontSize: 16 }} />
+                      <ChannelIcon sx={{ color: '#cbd5e1', fontSize: 16 }} />
                     </ListItemIcon>
                     <ListItemText 
                       primary={`# ${channel.name}`}
@@ -572,7 +572,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                       }}
                       secondaryTypographyProps={{
                         fontSize: '0.7rem',
-                        color: '#94a3b8'
+                        color: '#cbd5e1'
                       }}
                     />
                     {channel.unreadCount && channel.unreadCount > 0 && (
@@ -594,7 +594,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
               ))}
             </Collapse>
 
-            <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
+            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
 
             {/* Direct Messages */}
             <ListItem sx={{ px: 2, py: 1 }}>
@@ -604,26 +604,26 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  '&:hover': { bgcolor: '#334155' }
+                  '&:hover': { bgcolor: '#475569' }
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                  <DirectMessageIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  <DirectMessageIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                 </ListItemIcon>
                 <ListItemText 
                   primary="Direct Messages"
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: 600,
-                    color: '#e2e8f0'
+                    color: '#f8fafc'
                   }}
                 />
-                <IconButton size="small" sx={{ color: '#94a3b8' }}>
+                <IconButton size="small" sx={{ color: '#cbd5e1' }}>
                   <AddIcon fontSize="small" />
                 </IconButton>
                 {expandedSections.directMessages ? 
-                  <ExpandLess sx={{ color: '#94a3b8' }} /> : 
-                  <ExpandMore sx={{ color: '#94a3b8' }} />
+                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                  <ExpandMore sx={{ color: '#cbd5e1' }} />
                 }
               </ListItemButton>
             </ListItem>
@@ -636,7 +636,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                       px: 1, 
                       py: 0.5, 
                       borderRadius: 1,
-                      '&:hover': { bgcolor: '#334155' }
+                      '&:hover': { bgcolor: '#475569' }
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 28 }}>
@@ -691,7 +691,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
               ))}
             </Collapse>
 
-            <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
+            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
 
             {/* AI Agents */}
             <ListItem sx={{ px: 2, py: 1 }}>
@@ -701,26 +701,26 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  '&:hover': { bgcolor: '#334155' }
+                  '&:hover': { bgcolor: '#475569' }
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                  <AgentIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  <AgentIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                 </ListItemIcon>
                 <ListItemText 
                   primary="AI Agents"
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: 600,
-                    color: '#e2e8f0'
+                    color: '#f8fafc'
                   }}
                 />
-                <IconButton size="small" sx={{ color: '#94a3b8' }}>
+                <IconButton size="small" sx={{ color: '#cbd5e1' }}>
                   <AddIcon fontSize="small" />
                 </IconButton>
                 {expandedSections.aiAgents ? 
-                  <ExpandLess sx={{ color: '#94a3b8' }} /> : 
-                  <ExpandMore sx={{ color: '#94a3b8' }} />
+                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                  <ExpandMore sx={{ color: '#cbd5e1' }} />
                 }
               </ListItemButton>
             </ListItem>
@@ -733,7 +733,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                       px: 1, 
                       py: 0.5, 
                       borderRadius: 1,
-                      '&:hover': { bgcolor: '#334155' }
+                      '&:hover': { bgcolor: '#475569' }
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 28 }}>
@@ -757,7 +757,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                       }}
                       secondaryTypographyProps={{
                         fontSize: '0.7rem',
-                        color: '#94a3b8'
+                        color: '#cbd5e1'
                       }}
                     />
                     <Chip
@@ -775,7 +775,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
               ))}
             </Collapse>
 
-            <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
+            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
 
             {/* Connections */}
             <ListItem sx={{ px: 2, py: 1 }}>
@@ -785,23 +785,23 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  '&:hover': { bgcolor: '#334155' }
+                  '&:hover': { bgcolor: '#475569' }
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                  <ConnectionIcon sx={{ color: '#94a3b8', fontSize: 20 }} />
+                  <ConnectionIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                 </ListItemIcon>
                 <ListItemText 
                   primary="Connections"
                   primaryTypographyProps={{
                     fontSize: '0.875rem',
                     fontWeight: 600,
-                    color: '#e2e8f0'
+                    color: '#f8fafc'
                   }}
                 />
                 {expandedSections.connections ? 
-                  <ExpandLess sx={{ color: '#94a3b8' }} /> : 
-                  <ExpandMore sx={{ color: '#94a3b8' }} />
+                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                  <ExpandMore sx={{ color: '#cbd5e1' }} />
                 }
               </ListItemButton>
             </ListItem>
@@ -812,7 +812,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                   <Typography 
                     variant="body2" 
                     sx={{ 
-                      color: '#94a3b8', 
+                      color: '#cbd5e1', 
                       fontSize: '0.75rem',
                       fontStyle: 'italic',
                       textAlign: 'center',
@@ -830,7 +830,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                         px: 1, 
                         py: 0.5, 
                         borderRadius: 1,
-                        '&:hover': { bgcolor: '#334155' }
+                        '&:hover': { bgcolor: '#475569' }
                       }}
                     >
                       <ListItemIcon sx={{ minWidth: 28 }}>
@@ -839,7 +839,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                             width: 20, 
                             height: 20, 
                             fontSize: '0.7rem',
-                            bgcolor: connection.type === 'organization' ? '#3b82f6' : '#64748b'
+                            bgcolor: connection.type === 'organization' ? '#6366f1' : '#64748b'
                           }}
                         >
                           {connection.avatar}
@@ -854,7 +854,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                         }}
                         secondaryTypographyProps={{
                           fontSize: '0.7rem',
-                          color: '#94a3b8'
+                          color: '#cbd5e1'
                         }}
                       />
                     </ListItemButton>
