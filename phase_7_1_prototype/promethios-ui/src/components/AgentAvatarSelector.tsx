@@ -463,7 +463,8 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     useUnifiedParticipants, 
     participantContext, 
     handleRemoveParticipant, 
-    getAgentStyle   }) => {
+    getAgentStyle 
+  }) => {
     const isPending = (agent as any).isPending;
     const isAI = agent.type === 'ai_agent';
     
