@@ -55,6 +55,7 @@ import EnhancedTrustMetricsOverviewPage from './pages/EnhancedTrustMetricsOvervi
 import TrustBoundariesPage from './pages/TrustBoundariesPage';
 import TrustAttestationsPage from './pages/TrustAttestationsPage';
 import LinkedInStyleProfilePage from './pages/LinkedInStyleProfilePage';
+import DiscoveryPage from './pages/DiscoveryPage';
 import UserProfilePage from './pages/UserProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import FirebaseUserProfilePage from './pages/FirebaseUserProfilePage';
