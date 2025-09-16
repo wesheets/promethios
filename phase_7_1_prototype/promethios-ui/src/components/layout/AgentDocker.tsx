@@ -488,6 +488,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           <Typography variant="caption" sx={{ color: '#94a3b8' }}>
             No agents yet
           </Typography>
+          {console.log('🐳 [AgentDocker] Showing "No agents yet" - agents.length:', agents.length, 'loading:', loading, 'error:', error, 'user:', user?.uid)}
           <Tooltip title="Create your first agent">
             <IconButton
               size="small"
