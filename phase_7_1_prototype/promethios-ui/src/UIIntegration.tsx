@@ -104,9 +104,9 @@ import HumanHandoffManagement from './components/chat/handoff/HumanHandoffManage
 import QuickStartSetup from './components/chat/setup/QuickStartSetup';
 
 // Social AI Collaboration Platform Pages
-import DiscoveryPage from './pages/DiscoveryPage';
-import SocialFeedPage from './pages/SocialFeedPage';
 import MessagesPage from './pages/MessagesPage';
+import SocialFeedPage from './pages/SocialFeedPage';
+import CollaborationsPage from './pages/CollaborationsPage';
 import OrganizationsPage from './pages/OrganizationsPage';
 import ChannelsPage from './pages/ChannelsPage';
 import ConnectionManagementPage from './pages/ConnectionManagementPage';
@@ -826,6 +826,12 @@ const UIIntegration: React.FC = () => {
             <MainLayoutProxy>
               <MessagesPage />
             </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
+        <Route path="collaborations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <CollaborationsPage />
           </ProtectedRoute>
         } />
         
