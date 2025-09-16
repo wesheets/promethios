@@ -119,6 +119,7 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from './notifications/NotificationBell';
 import ChatButton from './social/ChatButton';
 import UserConnectionsModal from './social/UserConnectionsModal';
+import CollaborationSlidePanel from './collaboration/CollaborationSlidePanel';
 import BottomUserSection from './navigation/BottomUserSection';
 
 const DRAWER_WIDTH = 260;
@@ -187,6 +188,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   const { currentUser } = useAuth();
   const [expandedSections, setExpandedSections] = useState<string[]>(['multi-agent-systems']); // Expand MAS by default
   const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
+  const [collaborationPanelOpen, setCollaborationPanelOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -341,7 +343,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           id: 'collaborations', 
           label: 'Collaborations', 
           icon: <CollaborationIcon />, 
-          path: '/ui/collaborations',
+          onClick: () => handleCollaborationsClick(),
           isNew: true
         },
         { 
@@ -555,6 +557,10 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
 
   const handleConnectionsClick = () => {
     setConnectionsModalOpen(true);
+  };
+
+  const handleCollaborationsClick = () => {
+    setCollaborationPanelOpen(true);
   };
 
   const isActive = (path: string) => {
@@ -876,8 +882,8 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         collapsed={collapsed} 
         onNavigate={handleNavigation}
       />
-    </DrawerComponent>
-
+     </DrawerComponent>
+    
     {/* Connections Modal */}
     {currentUser && (
       <UserConnectionsModal
@@ -887,6 +893,12 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         userName={currentUser.displayName || 'User'}
       />
     )}
+    
+    {/* Collaboration Slide Panel */}
+    <CollaborationSlidePanel
+      open={collaborationPanelOpen}
+      onClose={() => setCollaborationPanelOpen(false)}
+    />
     </ThemeProvider>
   );
 };
