@@ -6030,7 +6030,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         const agent = multiChatState.contexts
                           .flatMap(ctx => ctx.guestAgents || [])
                           .find(a => a.agentId === agentId) || 
-                          (selectedChatbot?.id === agentId ? selectedChatbot : null);
+                          // Check selectedChatbot with same logic as ConsolidatedChatHeader
+                          (selectedChatbot && (
+                            (selectedChatbot.identity?.id || selectedChatbot.id) === agentId ||
+                            selectedChatbot.id === agentId
+                          ) ? selectedChatbot : null);
                         
                         if (agent) {
                           const agentName = agent.name || agent.identity?.name || 'Agent';
