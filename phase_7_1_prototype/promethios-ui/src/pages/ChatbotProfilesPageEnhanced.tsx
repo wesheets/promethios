@@ -756,13 +756,14 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     panelWidth: 0
   });
 
-  // Calculate chat interface width based on right navigation state
+  // Calculate chat interface width based on right navigation state and thread view
   const getChatInterfaceWidth = () => {
     const navBarWidth = rightNavState.isCollapsed ? 60 : 200; // Navigation bar width
     const panelWidth = rightNavState.activePanel ? rightNavState.panelWidth : 0; // Active panel width
-    const totalRightWidth = navBarWidth + panelWidth;
+    const threadWidth = threadViewOpen ? 400 : 0; // Thread panel width
+    const totalRightWidth = navBarWidth + panelWidth + threadWidth;
     
-    // Calculate available width (assuming full screen width minus right navigation)
+    // Calculate available width (assuming full screen width minus right navigation and thread)
     // Use a fixed max width for chat content to maintain readability
     const maxChatWidth = 1200; // Maximum chat content width
     const availableWidth = `calc(100vw - ${totalRightWidth}px)`;
@@ -5887,6 +5888,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 ...getChatInterfaceWidth(),
                 display: 'flex', 
                 flexDirection: 'column', 
+                height: '100vh', // Fixed height to viewport
                 // Removed bgcolor to match main background
                 transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
               }}>
@@ -5912,17 +5914,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               />
 
               {/* Chat Messages Area - Enhanced */}
-              <EnhancedChatWrapper
-                chatMessages={chatMessages}
-                selectedChatbot={selectedChatbot}
-                user={user}
-                chatLoading={chatLoading}
-                enableEnhancedMode={true}
-                showLeftPanel={false} // Start as 1-on-1, show when needed
-                showRightPanel={false} // Start as 1-on-1, show when needed
-                aiAgents={[]} // TODO: Connect to real multi-agent data
-                humanParticipants={[]} // TODO: Connect to real human participants
-              >
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <EnhancedChatWrapper
+                  chatMessages={chatMessages}
+                  selectedChatbot={selectedChatbot}
+                  user={user}
+                  chatLoading={chatLoading}
+                  enableEnhancedMode={true}
+                  showLeftPanel={false} // Start as 1-on-1, show when needed
+                  showRightPanel={false} // Start as 1-on-1, show when needed
+                  aiAgents={[]} // TODO: Connect to real multi-agent data
+                  humanParticipants={[]} // TODO: Connect to real human participants
+                >
                 <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
                 {(() => {
                   console.log(`🎨 [UI Render] Checking shared mode - isInSharedMode: ${isInSharedMode}, activeSharedConversation: ${activeSharedConversation}`);
@@ -6261,6 +6264,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
                 </Box>
               </EnhancedChatWrapper>
+              </Box>
 
               {/* Thread View - Side Panel */}
               {threadViewOpen && activeThreadId && (
