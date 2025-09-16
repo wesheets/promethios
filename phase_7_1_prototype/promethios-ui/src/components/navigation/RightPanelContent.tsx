@@ -104,8 +104,6 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
   availableAgents = [],
   currentTokenUsage = {},
   // Repository props
-  repositoryManager,
-  versionControl,
   autonomousGovernance,
   onProjectCreate,
   onProjectSelect,
