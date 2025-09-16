@@ -676,7 +676,8 @@ export const RAGPolicyPanel: React.FC<RAGPolicyPanelProps> = ({ agentId, onClose
           { key: 'search', label: 'Search', icon: Search },
           { key: 'policies', label: 'Policies', icon: Shield },
           { key: 'knowledge', label: 'Knowledge', icon: FileText },
-          { key: 'graph', label: 'Graph', icon: Network }
+          { key: 'graph', label: 'Graph', icon: Network },
+          { key: 'orgchart', label: 'Orgs', icon: Users }
         ].map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -1133,6 +1134,96 @@ export const RAGPolicyPanel: React.FC<RAGPolicyPanelProps> = ({ agentId, onClose
                   <Network className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                   <p>Select an entity and query type to explore the graph</p>
                   <p className="text-sm mt-2">Discover relationships and connections</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Orgs Tab */}
+        {activeTab === 'orgchart' && (
+          <div className="h-full flex flex-col">
+            {/* Org Chart Header */}
+            <div className="p-4 bg-slate-800 border-b border-slate-600">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-white">Organization Chart</h3>
+                <div className="flex space-x-2">
+                  <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                    Auto-Discover
+                  </button>
+                  <button className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                    Upload CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Org Chart Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {orgChartUsers.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Org Chart Stats */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-slate-800 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-400">{orgChartUsers.length}</div>
+                      <div className="text-sm text-slate-400">Team Members</div>
+                    </div>
+                    <div className="bg-slate-800 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-400">
+                        {orgChartUsers.filter(u => u.status === 'active').length}
+                      </div>
+                      <div className="text-sm text-slate-400">Active</div>
+                    </div>
+                    <div className="bg-slate-800 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-purple-400">
+                        {new Set(orgChartUsers.map(u => u.department)).size}
+                      </div>
+                      <div className="text-sm text-slate-400">Departments</div>
+                    </div>
+                  </div>
+
+                  {/* Org Chart Users */}
+                  <div className="space-y-2">
+                    {orgChartUsers.map((user) => (
+                      <div key={user.id} className="bg-slate-800 rounded-lg p-4 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-medium">
+                            {user.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-medium text-white">{user.name}</div>
+                            <div className="text-sm text-slate-400">{user.role} • {user.department}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {user.status}
+                          </span>
+                          <button className="text-blue-400 hover:text-blue-300 text-sm">
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                  <h4 className="text-lg font-medium text-white mb-2">No Organization Data</h4>
+                  <p className="text-slate-400 mb-4">
+                    Start by auto-discovering team members from your Firebase connections or upload a CSV file.
+                  </p>
+                  <div className="space-y-2">
+                    <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                      Auto-Discover Team Members
+                    </button>
+                    <button className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600">
+                      Upload CSV Template
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

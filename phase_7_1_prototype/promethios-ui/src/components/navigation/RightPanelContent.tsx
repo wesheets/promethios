@@ -274,7 +274,8 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
       case 'rag_policy':
         return (
           <RAGPolicyPanel
-            {...commonProps}
+            agentId={currentAgentId || 'default-agent'}
+            onClose={onClose}
           />
         );
 
