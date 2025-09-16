@@ -48,6 +48,7 @@ export interface UserProfile {
   experienceLevel?: string;
   responseTime?: number;
   collaborations?: number;
+  organizations?: string[]; // Array of organization IDs the user belongs to
   profileURL?: string; // Auto-generated unique URL for public profile
   
   // Beta Signup & Approval System

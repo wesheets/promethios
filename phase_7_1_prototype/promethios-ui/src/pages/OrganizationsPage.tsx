@@ -37,23 +37,16 @@ import {
   Verified,
 } from '@mui/icons-material';
 
-interface Organization {
+// Import Firebase services
+import { FirebaseOrganizationService, Organization } from '../services/FirebaseOrganizationService';
+import { useAuth } from '../context/AuthContext';
+import CreateOrganizationDialog from '../components/organization/CreateOrganizationDialog';
+
+interface OrganizationActivity {
   id: string;
-  name: string;
-  domain: string;
-  logo?: string;
+  type: string;
   description: string;
-  memberCount: number;
-  onlineCount: number;
-  isVerified: boolean;
-  isPublic: boolean;
-  industry: string;
-  location: string;
-  aiAgentsUsed: string[];
-  collaborationRating: number;
-  totalCollaborations: number;
-  departments: Department[];
-  recentActivity: string[];
+  timestamp: Date;
 }
 
 interface Department {
@@ -66,158 +59,71 @@ interface Department {
 }
 
 interface OrganizationsPageProps {
+  onCreateOrganization?: () => void;
   onViewOrganization?: (orgId: string) => void;
   onJoinOrganization?: (orgId: string) => void;
   onManageOrganization?: (orgId: string) => void;
-  currentUserId?: string;
 }
 
 const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
+  onCreateOrganization,
   onViewOrganization,
   onJoinOrganization,
   onManageOrganization,
-  currentUserId = 'current-user',
 }) => {
+  const { currentUser } = useAuth();
   const [myOrganizations, setMyOrganizations] = useState<Organization[]>([]);
   const [publicOrganizations, setPublicOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  
+  const organizationService = FirebaseOrganizationService.getInstance();
 
-  // Mock data
-  const mockMyOrganizations: Organization[] = [
-    {
-      id: '1',
-      name: 'Promethios',
-      domain: 'promethios.com',
-      logo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150',
-      description: 'AI collaboration platform revolutionizing human-AI partnerships',
-      memberCount: 47,
-      onlineCount: 12,
-      isVerified: true,
-      isPublic: false,
-      industry: 'Technology',
-      location: 'San Francisco, CA',
-      aiAgentsUsed: ['Claude', 'OpenAI', 'Gemini'],
-      collaborationRating: 4.8,
-      totalCollaborations: 1247,
-      departments: [
-        { id: '1', name: 'Engineering', memberCount: 15, onlineCount: 5, aiAgentsUsed: ['OpenAI', 'Claude'], isPrivate: false },
-        { id: '2', name: 'Product', memberCount: 8, onlineCount: 3, aiAgentsUsed: ['Claude', 'Gemini'], isPrivate: false },
-        { id: '3', name: 'Marketing', memberCount: 12, onlineCount: 2, aiAgentsUsed: ['Claude', 'OpenAI'], isPrivate: false },
-        { id: '4', name: 'Executive', memberCount: 5, onlineCount: 1, aiAgentsUsed: ['Claude'], isPrivate: true },
-      ],
-      recentActivity: [
-        'Sarah Chen shared AI strategy session results',
-        'Engineering team completed code review with GPT-4',
-        'Marketing launched new AI-powered campaign',
-      ],
-    },
-  ];
-
-  const mockPublicOrganizations: Organization[] = [
-    {
-      id: '2',
-      name: 'TechCorp',
-      domain: 'techcorp.com',
-      logo: 'https://images.unsplash.com/photo-1549923746-c502d488b3ea?w=150',
-      description: 'Leading technology company embracing AI collaboration',
-      memberCount: 234,
-      onlineCount: 45,
-      isVerified: true,
-      isPublic: true,
-      industry: 'Technology',
-      location: 'Seattle, WA',
-      aiAgentsUsed: ['OpenAI', 'Claude'],
-      collaborationRating: 4.6,
-      totalCollaborations: 5678,
-      departments: [
-        { id: '1', name: 'Engineering', memberCount: 89, onlineCount: 23, aiAgentsUsed: ['OpenAI'], isPrivate: false },
-        { id: '2', name: 'Product', memberCount: 34, onlineCount: 8, aiAgentsUsed: ['Claude'], isPrivate: false },
-        { id: '3', name: 'Marketing', memberCount: 45, onlineCount: 7, aiAgentsUsed: ['OpenAI', 'Claude'], isPrivate: false },
-      ],
-      recentActivity: [
-        'Launched new AI product features',
-        'Engineering team achieved 95% AI collaboration adoption',
-        'Product team completed AI-assisted roadmap planning',
-      ],
-    },
-    {
-      id: '3',
-      name: 'Creative Studio',
-      domain: 'creativestudio.com',
-      logo: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=150',
-      description: 'Design agency pioneering AI-human creative collaboration',
-      memberCount: 67,
-      onlineCount: 18,
-      isVerified: false,
-      isPublic: true,
-      industry: 'Design',
-      location: 'New York, NY',
-      aiAgentsUsed: ['Claude', 'Gemini'],
-      collaborationRating: 4.9,
-      totalCollaborations: 892,
-      departments: [
-        { id: '1', name: 'Design', memberCount: 23, onlineCount: 8, aiAgentsUsed: ['Claude'], isPrivate: false },
-        { id: '2', name: 'Strategy', memberCount: 12, onlineCount: 4, aiAgentsUsed: ['Claude', 'Gemini'], isPrivate: false },
-        { id: '3', name: 'Client Services', memberCount: 15, onlineCount: 3, aiAgentsUsed: ['Claude'], isPrivate: false },
-      ],
-      recentActivity: [
-        'Won award for AI-assisted brand campaign',
-        'Design team showcased AI collaboration workflow',
-        'Strategy team published AI creativity research',
-      ],
-    },
-    {
-      id: '4',
-      name: 'Research Institute',
-      domain: 'research.edu',
-      logo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      description: 'Academic institution advancing AI research and collaboration',
-      memberCount: 156,
-      onlineCount: 34,
-      isVerified: true,
-      isPublic: true,
-      industry: 'Education',
-      location: 'Boston, MA',
-      aiAgentsUsed: ['Gemini', 'Claude', 'OpenAI'],
-      collaborationRating: 4.7,
-      totalCollaborations: 2341,
-      departments: [
-        { id: '1', name: 'AI Research', memberCount: 45, onlineCount: 12, aiAgentsUsed: ['Gemini', 'OpenAI'], isPrivate: false },
-        { id: '2', name: 'Data Science', memberCount: 38, onlineCount: 9, aiAgentsUsed: ['Gemini'], isPrivate: false },
-        { id: '3', name: 'Ethics', memberCount: 23, onlineCount: 6, aiAgentsUsed: ['Claude'], isPrivate: false },
-      ],
-      recentActivity: [
-        'Published breakthrough AI collaboration study',
-        'AI Research team achieved new performance benchmarks',
-        'Ethics team released AI collaboration guidelines',
-      ],
-    },
-  ];
 
   useEffect(() => {
-    loadInitialData();
-  }, []);
+    if (currentUser) {
+      loadInitialData();
+    }
+  }, [currentUser]);
 
   const loadInitialData = async () => {
+    if (!currentUser) return;
+    
     setLoading(true);
+    setError(null);
+    
     try {
-      // Simulate API calls
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setMyOrganizations(mockMyOrganizations);
-      setPublicOrganizations(mockPublicOrganizations);
+      // Load user's organizations
+      const userOrgs = await organizationService.getUserOrganizations(currentUser.uid);
+      setMyOrganizations(userOrgs);
+
+      // Load public organizations
+      const publicOrgs = await organizationService.getPublicOrganizations(20);
+      setPublicOrganizations(publicOrgs);
     } catch (err) {
-      setError('Failed to load organizations');
-      console.error('Error loading data:', err);
+      console.error('Error loading organizations:', err);
+      setError('Failed to load organizations. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleJoinOrganization = (orgId: string) => {
-    console.log('Joining organization:', orgId);
-    onJoinOrganization?.(orgId);
+  const handleJoinOrganization = async (orgId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      await organizationService.joinOrganization(orgId, currentUser.uid);
+      await loadInitialData(); // Refresh data
+      if (onJoinOrganization) {
+        onJoinOrganization(orgId);
+      }
+    } catch (err) {
+      console.error('Error joining organization:', err);
+      setError('Failed to join organization. Please try again.');
+    }
   };
+
 
   const renderOrganizationCard = (org: Organization, isMember: boolean = false) => (
     <Card key={org.id} sx={{ 
@@ -385,6 +291,16 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
         </Box>
       </CardContent>
     </Card>
+      
+      {/* Create Organization Dialog */}
+      <CreateOrganizationDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={() => {
+          setCreateDialogOpen(false);
+          loadInitialData();
+        }}
+      />
   );
 
   return (
@@ -414,7 +330,11 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
             My Organizations ({myOrganizations.length})
           </Typography>
           
-          <Button variant="contained" startIcon={<Add />}>
+          <Button 
+            variant="contained" 
+            startIcon={<Add />}
+            onClick={() => setCreateDialogOpen(true)}
+          >
             Create Organization
           </Button>
         </Box>
@@ -441,7 +361,11 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               Create or join an organization to start collaborating with your team
             </Typography>
-            <Button variant="contained" startIcon={<Add />}>
+            <Button 
+              variant="contained" 
+              startIcon={<Add />}
+              onClick={() => setCreateDialogOpen(true)}
+            >
               Create Your First Organization
             </Button>
           </Paper>
@@ -464,6 +388,16 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
         </Grid>
       </Box>
     </Container>
+      
+      {/* Create Organization Dialog */}
+      <CreateOrganizationDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onSuccess={() => {
+          setCreateDialogOpen(false);
+          loadInitialData();
+        }}
+      />
   );
 };
 
