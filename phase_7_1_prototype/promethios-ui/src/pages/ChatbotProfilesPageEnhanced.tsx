@@ -1150,11 +1150,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       // Create thread with a placeholder initial reply
       const initialReply = `Starting a discussion about this message.`;
       
-      const threadId = await createThread(messageId, {
-        content: initialReply,
-        senderId: user?.uid || 'current-user',
-        senderName: user?.displayName || 'You',
-        senderType: 'user'
+      const threadId = await createThread({
+        parentMessageId: messageId,
+        conversationId: conversationId,
+        initialReply: {
+          content: initialReply,
+          senderId: user?.uid || 'current-user',
+          senderName: user?.displayName || 'You',
+          senderType: 'user'
+        }
       });
 
       // Open the newly created thread
