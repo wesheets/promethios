@@ -77,6 +77,7 @@ export const RAGPolicyPanel: React.FC<RAGPolicyPanelProps> = ({ agentId, onClose
   // State management
   const [activeTab, setActiveTab] = useState<'search' | 'policies' | 'knowledge' | 'graph' | 'orgchart'>('search');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchMode, setSearchMode] = useState<'traditional' | 'graph' | 'hybrid'>('traditional');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [policies, setPolicies] = useState<PolicyToggle[]>([]);
