@@ -352,12 +352,14 @@ class PolicyAwareRAGService {
             highlights
           };
         })
-        .filter(Boolean) as SearchResult[]
+        .filter(Boolean) as SearchResult[];
+      
+      const sortedResults = results
         .sort((a, b) => b.relevanceScore - a.relevanceScore)
         .slice(0, options.maxResults || 10);
 
-      console.log(`✅ Found ${results.length} search results`);
-      return results;
+      console.log(`✅ Found ${sortedResults.length} search results`);
+      return sortedResults;
 
     } catch (error) {
       console.error('❌ Knowledge search failed:', error);
