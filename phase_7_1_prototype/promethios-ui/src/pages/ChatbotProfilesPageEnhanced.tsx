@@ -3504,69 +3504,75 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   };
 
   // Handle behavior prompt clicks from agent avatars
-  const handleBehaviorPrompt = async (agentId: string, agentName: string, behavior: string, isDragDrop: boolean = false) => {
-    console.log('🎭 [Behavior Prompt] Triggered:', behavior, 'for agent:', agentName, isDragDrop ? '(via drag & drop)' : '(via click)');
+  const handleBehaviorPrompt = async (agentId: string, agentName: string, behavior: string, isDragDrop: boolean = false, targetMessageId?: string) => {
+    console.log('🎭 [Behavior Prompt] Triggered:', behavior, 'for agent:', agentName, isDragDrop ? '(via drag & drop)' : '(via click)', targetMessageId ? `targeting message: ${targetMessageId}` : '');
     
     // Check if we're in single-agent or multi-agent mode
     const activeContext = multiChatState.contexts.find(c => c.isActive);
     const hasGuestAgents = activeContext?.guestAgents && activeContext.guestAgents.length > 0;
     const isSingleAgentMode = !hasGuestAgents;
     
-    // Get the last message to check who responded last
-    const lastMessage = chatMessages[chatMessages.length - 1];
+    // Get the target message (specific message for drag & drop, or last message for normal prompts)
+    const targetMessage = targetMessageId 
+      ? chatMessages.find(msg => msg.id === targetMessageId)
+      : chatMessages[chatMessages.length - 1];
+    
+    console.log('🎯 [Behavior Prompt] Target message:', { 
+      targetMessageId, 
+      found: !!targetMessage, 
+      messageContent: targetMessage?.content?.substring(0, 50) + '...' 
+    });
     
     // In multi-agent mode, don't allow behavior prompts if this agent was the last responder
     // UNLESS this is a drag & drop interaction (user explicitly chose this agent for this message)
-    if (!isSingleAgentMode && lastMessage && !isDragDrop) {
-      const lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+    if (!isSingleAgentMode && targetMessage && !isDragDrop) {
+      const lastResponderAgentId = getAgentIdFromMessage(targetMessage);
       if (lastResponderAgentId === agentId) {
         console.log('🎭 [Behavior Prompt] Skipping - agent was last responder in multi-agent mode');
         return;
       }
     }
     
-    if (!lastMessage) {
-      console.warn('🎭 [Behavior Prompt] No messages found to respond to');
+    if (!targetMessage) {
+      console.warn('🎭 [Behavior Prompt] No target message found to respond to');
       return;
     }
 
-    // Get the name of who should be mentioned (who made the last message)
+    // Get the name of who should be mentioned (who made the target message)
     const getMentionTarget = () => {
-      if (lastMessage.sender === 'user') {
+      if (targetMessage.sender === 'user') {
         return '@user'; // Mention the user
       } else {
-        // Find the agent who made the last message with improved detection
-        console.log('🎭 [getMentionTarget] Analyzing last message:', {
-          sender: lastMessage.sender,
-          content: lastMessage.content?.substring(0, 100),
-          metadata: lastMessage.metadata
+        // Find the agent who made the target message with improved detection
+        console.log('🎭 [getMentionTarget] Analyzing target message:', {
+          sender: targetMessage.sender,
+          content: targetMessage.content?.substring(0, 100),
+          metadata: targetMessage.metadata
         });
         
         // First try to get agent ID from metadata
-        let lastResponderAgentId = lastMessage.metadata?.agentId;
+        let targetResponderAgentId = targetMessage.metadata?.agentId;
         
         // If no metadata, try to parse from message
-        if (!lastResponderAgentId) {
-          lastResponderAgentId = getAgentIdFromMessage(lastMessage);
+        if (!targetResponderAgentId) {
+          targetResponderAgentId = getAgentIdFromMessage(targetMessage);
         }
         
-        console.log('🎭 [getMentionTarget] Last responder agent ID:', lastResponderAgentId);
-        
-        if (lastResponderAgentId) {
+        console.log('🎭 [getMentionTarget] Target responder agent ID:', targetRespond        
+        if (targetResponderAgentId) {
           const hostAgent = getHostAgent();
           const guestAgents = getGuestAgents();
           
-          console.log('🎭 [getMentionTarget] Available agents:', {
-            host: hostAgent?.name,
-            guests: guestAgents.map(g => g.name)
-          });
-          
-          if (hostAgent && lastResponderAgentId === hostAgent.id) {
+          // Check if it's the host agent
+          if (hostAgent && (hostAgent.id === targetResponderAgentId || hostAgent.agentId === targetResponderAgentId)) {
             console.log('🎭 [getMentionTarget] Found host agent:', hostAgent.name);
             return `@${hostAgent.name}`;
           }
           
-          const guestAgent = guestAgents.find(agent => agent.id === lastResponderAgentId);
+          // Check guest agents
+          const guestAgent = guestAgents.find(agent => 
+            agent.agentId === targetResponderAgentId || agent.id === targetResponderAgentId
+          );
           if (guestAgent) {
             console.log('🎭 [getMentionTarget] Found guest agent:', guestAgent.name);
             return `@${guestAgent.name}`;
@@ -3574,7 +3580,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         }
         
         // Enhanced fallback: try to extract agent name from sender field
-        if (lastMessage.sender && lastMessage.sender !== 'assistant') {
+        if (targetMessage.sender && targetMessage.sender !== 'assistant') {
           // If sender contains agent name, use it
           const hostAgent = getHostAgent();
           const guestAgents = getGuestAgents();
@@ -3582,16 +3588,15 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           // Check if sender matches any agent name
           const allAgents = [hostAgent, ...guestAgents].filter(Boolean);
           const matchingAgent = allAgents.find(agent => 
-            lastMessage.sender.includes(agent.name) || 
-            agent.name.includes(lastMessage.sender)
+            targetMessage.sender.includes(agent.name) || 
+            agent.name.includes(targetMessage.sender)
           );
           
           if (matchingAgent) {
             console.log('🎭 [getMentionTarget] Found agent via sender field:', matchingAgent.name);
             return `@${matchingAgent.name}`;
           }
-        }
-        
+        }        
         console.warn('🎭 [getMentionTarget] Could not identify last responder, using fallback');
         return '@assistant'; // Better fallback than @previous-agent
       }
@@ -6042,7 +6047,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           console.log('🎭 Found agent for interaction:', { agentId, agentName, action });
                           
                           // Trigger behavioral prompt (mark as drag & drop to bypass last responder check)
-                          handleBehaviorPrompt(agentId, agentName, action, true);
+                          // Pass the messageId so the agent responds to the specific message that was dropped on
+                          handleBehaviorPrompt(agentId, agentName, action, true, messageId);
                         } else {
                           console.log('❌ Agent not found for interaction:', { agentId, action });
                           console.log('❌ Available agent IDs:', [
