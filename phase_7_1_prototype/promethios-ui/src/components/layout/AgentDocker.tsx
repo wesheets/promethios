@@ -27,6 +27,7 @@ import {
   Add as AddIcon,
   SmartToy as AgentIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { useAgentDragSource } from '../../hooks/useDragDrop';
@@ -58,6 +59,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
   showBehaviorPrompts = true
 }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [agents, setAgents] = useState<DockerAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -181,9 +183,15 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
     onAgentClick?.(agent.id, agent.name);
   };
 
-  // Handle add agent
+  // Handle add agent - navigate to Quick Start page
   const handleAddAgent = () => {
-    onAddAgent?.();
+    console.log('🐳 [AgentDocker] Navigating to Quick Start page');
+    navigate('/ui/chat/setup/quick-start');
+    
+    // Also call the optional callback if provided
+    if (onAddAgent) {
+      onAddAgent();
+    }
   };
 
   // Handle behavior prompt
@@ -278,7 +286,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
         )}
 
         {/* Add agent button */}
-        <Tooltip title="Add new agent">
+        <Tooltip title="Create new agent (Quick Start)">
           <IconButton
             size="small"
             onClick={handleAddAgent}
