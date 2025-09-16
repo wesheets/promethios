@@ -243,9 +243,17 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
               },
               profile: {
                 name: currentAgentName || 'Default Agent',
-                description: 'Default agent configuration'
+                description: 'Default agent configuration',
+                avatar: '',
+                capabilities: [],
+                specializations: []
               },
-              // Add other required chatbot properties with defaults
+              id: currentAgentId || 'default-agent',
+              name: currentAgentName || 'Default Agent',
+              // Add other required properties with safe defaults
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              isActive: true
             }}
             onClose={() => {
               console.log('🔧 [Tools] Panel closed');

@@ -110,6 +110,21 @@ export const ToolConfigurationPanel: React.FC<ToolConfigurationPanelProps> = ({
   onSave
 }) => {
   const [selectedTab, setSelectedTab] = useState(0);
+  
+  // Safety check for chatbot prop
+  if (!chatbot || !chatbot.identity) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+          Tool Configuration
+        </Typography>
+        <Typography variant="body2" sx={{ color: '#64748b' }}>
+          Loading chatbot configuration...
+        </Typography>
+      </Box>
+    );
+  }
+  
   const [toolProfile, setToolProfile] = useState<AgentToolProfile>({
     agentId: chatbot.identity.id,
     enabledTools: [],
