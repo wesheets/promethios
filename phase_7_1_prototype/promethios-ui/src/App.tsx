@@ -48,6 +48,7 @@ import RealNotificationTestButton from './components/debug/RealNotificationTestB
 import ConnectionTestButton from './components/debug/ConnectionTestButton';
 import DragDropTestPage from './pages/DragDropTestPage';
 import SimpleDragDropTest from './pages/SimpleDragDropTest';
+import ThreadEnabledChatPage from './pages/ThreadEnabledChatPage';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -157,6 +158,7 @@ const AppContent: React.FC = () => {
                   <Route path="/cmu-playground" element={<CMUPlaygroundPage />} />
                   <Route path="/drag-drop-test" element={<DragDropTestPage />} />
                   <Route path="/simple-drag-test" element={<SimpleDragDropTest />} />
+                  <Route path="/thread-chat-demo" element={<ThreadEnabledChatPage />} />
                   <Route path="/admin/export-waitlist" element={<AdminExportWaitlist />} />
                   
                   {/* Public Profile Routes */}

@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
 import DirectionalFlowIndicator from './DirectionalFlowIndicator';
 
 // Import drag & drop functionality
 import { useMessageDropTarget } from '../../hooks/useDragDrop';
+
+// Import thread functionality
+import ThreadIndicator from '../thread/ThreadIndicator';
+import ReplyButton from '../thread/ReplyButton';
+import { ThreadInfo } from '../../types/Thread';
 
 interface ColorCodedChatMessageProps {
   message: {
@@ -16,6 +21,8 @@ interface ColorCodedChatMessageProps {
       type: 'ai' | 'human';
       avatar?: string;
     };
+    thread?: ThreadInfo; // Thread information if message has a thread
+    type?: 'regular' | 'thread_integration'; // Message type
   };
   senderColor: string;
   recipient?: {
@@ -27,6 +34,9 @@ interface ColorCodedChatMessageProps {
   };
   isCurrentUser?: boolean;
   onAgentInteraction?: (agentId: string, messageId: string, action: string) => void;
+  onStartThread?: (messageId: string) => void;
+  onOpenThread?: (threadId: string) => void;
+  currentUserId?: string;
 }
 
 const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
@@ -34,10 +44,14 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
   senderColor,
   recipient,
   isCurrentUser = false,
-  onAgentInteraction
+  onAgentInteraction,
+  onStartThread,
+  onOpenThread,
+  currentUserId
 }) => {
   const isAI = message.sender.type === 'ai';
   const isHuman = message.sender.type === 'human';
+  const [isHovered, setIsHovered] = useState(false);
 
   // Add drop functionality
   const { dropRef, isOver, canDrop, dropHandlers } = useMessageDropTarget(
@@ -63,8 +77,12 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
       display: 'flex',
       flexDirection: 'column',
       alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
-      maxWidth: '100%'
-    }}>
+      maxWidth: '100%',
+      position: 'relative'
+    }}
+    onMouseEnter={() => setIsHovered(true)}
+    onMouseLeave={() => setIsHovered(false)}
+    >
       {/* Directional Flow Indicator */}
       {recipient && (
         <DirectionalFlowIndicator
@@ -176,7 +194,33 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
             {message.content}
           </Typography>
         </Box>
+
+        {/* Reply Button - appears on hover */}
+        {isHovered && onStartThread && !message.thread && (
+          <Box sx={{
+            position: 'absolute',
+            top: -8,
+            right: -8,
+            zIndex: 10
+          }}>
+            <ReplyButton
+              onStartThread={() => onStartThread(message.id)}
+              variant="compact"
+            />
+          </Box>
+        )}
       </Box>
+
+      {/* Thread Indicator - shows if message has a thread */}
+      {message.thread && onOpenThread && (
+        <Box sx={{ mt: 1, ml: isCurrentUser ? 0 : 1 }}>
+          <ThreadIndicator
+            threadInfo={message.thread}
+            onOpenThread={() => onOpenThread(message.id)}
+            variant="compact"
+          />
+        </Box>
+      )}
     </Box>
   );
 };
