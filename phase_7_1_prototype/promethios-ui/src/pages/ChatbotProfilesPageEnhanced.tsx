@@ -659,6 +659,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [participantData, setParticipantData] = useState<ParticipantData[]>([]);
   const [behavioralSettings, setBehavioralSettings] = useState<Map<string, BehavioralSettings>>(new Map());
 
+  // Current bot state (derived from botStates map) - moved here to fix initialization order
+  const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
+  const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+
   // Thread functionality state
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [threadViewOpen, setThreadViewOpen] = useState(false);
@@ -744,10 +748,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [selectedChatbot, setSelectedChatbot] = useState<ChatbotProfile | null>(null);
   const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Hosted API, 2: BYOK, 3: Enterprise
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Current bot state (derived from botStates map) - moved here to fix initialization order
-  const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
-  const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
   
   // Right navigation state for responsive layout
   const [rightNavState, setRightNavState] = useState({
