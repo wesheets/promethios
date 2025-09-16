@@ -463,10 +463,19 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     useUnifiedParticipants, 
     participantContext, 
     handleRemoveParticipant, 
-    getAgentStyle 
-  }) => {
+    getAgentStyle   }) => {
     const isPending = (agent as any).isPending;
     const isAI = agent.type === 'ai_agent';
+    
+    // Debug logging for drag functionality
+    console.log('🎯 [AgentAvatarSelector] Rendering agent:', {
+      id: agent.id,
+      name: agent.name,
+      type: agent.type,
+      isAI,
+      isPending,
+      draggable: isAI && !isPending
+    });
     
     // Make AI agents draggable - this hook is now called consistently
     const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
@@ -475,16 +484,38 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         id: agent.id,
         name: agent.name,
         type: agent.type,
-        color: agent.color,
-        avatar: agent.avatar,
-        hotkey: agent.hotkey,
+        color: agent.color
       },
-      !isAI // isHuman
+      false // isHuman = false for AI agents
     );
 
+    // Enhanced click handler that doesn't interfere with drag
+    const onClick = useCallback((event: React.MouseEvent) => {
+      // Don't handle click if this was a drag operation
+      if (isDragging) {
+        console.log('🎯 [AgentAvatarSelector] Ignoring click during drag');
+        return;
+      }
+      
+      console.log('🎯 [AgentAvatarSelector] Agent clicked:', agent.id);
+      handleAgentClick(agent.id, event);
+    }, [agent.id, isDragging]);
+
+    // Enhanced drag handlers with debugging
+    const enhancedDragHandlers = isAI && !isPending ? {
+      ...dragHandlers,
+      onDragStart: (e: React.DragEvent) => {
+        console.log('🚀 [AgentAvatarSelector] Drag started for agent:', agent.name);
+        dragHandlers.onDragStart?.(e);
+      },
+      onDragEnd: (e: React.DragEvent) => {
+        console.log('🏁 [AgentAvatarSelector] Drag ended for agent:', agent.name);
+        dragHandlers.onDragEnd?.(e);
+      }
+    } : {};
+
     return (
-      <Tooltip 
-        key={agent.id}
+      <Tooltip
         title={
           <Box sx={{ p: 1.5, minWidth: 200 }}>
             {/* Agent Info Header */}
@@ -610,12 +641,12 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
           }}
         >
           <Avatar
-            ref={isAI ? dragRef : undefined}
-            {...(isAI ? dragHandlers : {})}
+            ref={isAI && !isPending ? dragRef : undefined}
+            {...enhancedDragHandlers}
             onClick={onClick}
             sx={{
               ...getAgentStyle(agent),
-              cursor: isAI ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
+              cursor: isAI && !isPending ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
               opacity: isDragging ? 0.7 : (isPending ? 0.6 : 1),
               transform: isDragging ? 'rotate(5deg)' : 'none',
               transition: 'all 0.2s ease',
