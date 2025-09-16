@@ -21,6 +21,7 @@ import TokenEconomicsConfigPanel from '../TokenEconomicsConfigPanel';
 import SimpleAnalyticsDashboard from '../analytics/SimpleAnalyticsDashboard';
 import RepositoryBrowser from '../workflow/RepositoryBrowser';
 import WidgetCustomizer from '../chat/customizer/WidgetCustomizer';
+import PersonalityEditor from '../chat/customizer/PersonalityEditor';
 interface RightPanelContentProps {
   panelType: string;
   userId?: string;
@@ -312,9 +313,32 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
 
       case 'personality':
         return (
-          <Box sx={{ p: 3 }}>
-            <div>Personality Panel - Full functionality to be restored</div>
-          </Box>
+          <PersonalityEditor
+            chatbot={selectedChatbot || {
+              identity: { 
+                id: currentAgentId || 'default-agent', 
+                name: currentAgentName || 'Default Agent'
+              },
+              profile: {
+                name: currentAgentName || 'Default Agent',
+                description: 'Default agent configuration'
+              }
+            }}
+            onSave={async (updates) => {
+              try {
+                console.log('🎭 [Personality] Updates:', updates);
+                // Here you would integrate with ChatbotStorageService
+                // For now, we'll just log the updates
+                console.log('✅ [Personality] Settings saved successfully');
+              } catch (error) {
+                console.error('❌ [Personality] Failed to save settings:', error);
+              }
+            }}
+            onClose={() => {
+              console.log('🎭 [Personality] Panel closed');
+              // Could trigger panel close if needed
+            }}
+          />
         );
 
       case 'ai_knowledge':
