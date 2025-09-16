@@ -140,67 +140,6 @@ const ThreadMessageItem: React.FC<{
     </Box>
   );
 };
-
-  return (
-    <Box 
-      ref={drop}
-      sx={{ 
-        mb: 2,
-        opacity: isOver ? 0.8 : 1,
-        transition: 'opacity 0.2s ease',
-        border: isOver ? '2px dashed #3b82f6' : '2px solid transparent',
-        borderRadius: 1,
-        p: isOver ? 1 : 0
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-        {/* Avatar */}
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            bgcolor: isAgent ? agentColor : '#6b7280',
-            fontSize: '14px',
-            fontWeight: 600
-          }}
-        >
-          {message.senderName.charAt(0).toUpperCase()}
-        </Avatar>
-        
-        {/* Message Content */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '14px' }}>
-              {message.senderName}
-            </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-              {message.timestamp.toLocaleTimeString()}
-            </Typography>
-            {isAgent && (
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  bgcolor: agentColor, 
-                  color: 'white', 
-                  px: 1, 
-                  py: 0.25, 
-                  borderRadius: 1, 
-                  fontSize: '10px',
-                  fontWeight: 600
-                }}
-              >
-                AI
-              </Typography>
-            )}
-          </Box>
-          <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
-            {message.content}
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
-  );
-};
 // Utility function for default colors
 const getDefaultColor = (senderId: string): string => {
   const colors = [
