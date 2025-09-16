@@ -187,7 +187,12 @@ import EnhancedHostChatInterface from '../components/modern/EnhancedHostChatInte
 import EnhancedChatWrapper from '../components/modern/EnhancedChatWrapper';
 import ConsolidatedChatHeader from '../components/chat/ConsolidatedChatHeader';
 import ColorCodedChatMessage from '../components/chat/ColorCodedChatMessage';
+import UnifiedChatMessage from '../components/chat/UnifiedChatMessage';
 import BehavioralPromptSelectorModal from '../components/chat/BehavioralPromptSelectorModal';
+// Thread functionality imports
+import ThreadView from '../components/thread/ThreadView';
+import { useThreads } from '../hooks/useThreads';
+import { MessageWithThread } from '../types/Thread';
 // Right panel types
 type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | 'custom_gpt' | null;
 
@@ -653,6 +658,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Behavioral orchestration state
   const [participantData, setParticipantData] = useState<ParticipantData[]>([]);
   const [behavioralSettings, setBehavioralSettings] = useState<Map<string, BehavioralSettings>>(new Map());
+
+  // Thread functionality state
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [threadViewOpen, setThreadViewOpen] = useState(false);
+  const conversationId = currentSessionId || 'default_conversation';
+  
+  // Thread management hook
+  const {
+    activeThreads,
+    createThread,
+    openThread,
+    closeThread,
+    loading: threadsLoading,
+    error: threadsError
+  } = useThreads(conversationId);
   
   // @Mention system state
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
@@ -1118,6 +1138,46 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
   const handleLiveAgentTabClick = () => {
     toggleLiveAgentPanel();
+  };
+
+  // Thread handler functions
+  const handleStartThread = async (messageId: string) => {
+    console.log('🧵 [Thread] Starting thread for message:', messageId);
+    
+    try {
+      // Create thread with a placeholder initial reply
+      const initialReply = `Starting a discussion about this message.`;
+      
+      const threadId = await createThread(messageId, {
+        content: initialReply,
+        senderId: user?.uid || 'current-user',
+        senderName: user?.displayName || 'You',
+        senderType: 'user'
+      });
+
+      // Open the newly created thread
+      setActiveThreadId(threadId);
+      setThreadViewOpen(true);
+      
+    } catch (error) {
+      console.error('❌ [Thread] Error starting thread:', error);
+    }
+  };
+
+  const handleOpenThread = (threadId: string) => {
+    console.log('📂 [Thread] Opening thread:', threadId);
+    setActiveThreadId(threadId);
+    setThreadViewOpen(true);
+    openThread(threadId);
+  };
+
+  const handleCloseThread = () => {
+    console.log('❌ [Thread] Closing thread view');
+    setThreadViewOpen(false);
+    if (activeThreadId) {
+      closeThread(activeThreadId);
+      setActiveThreadId(null);
+    }
   };
 
   // Chat History Callback Functions
@@ -6162,7 +6222,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           senderColor={senderColor}
                           recipient={recipient}
                           isCurrentUser={isUser}
+                          currentUserId={user?.uid}
                           onAgentInteraction={handleAgentInteraction}
+                          onStartThread={handleStartThread}
+                          onOpenThread={handleOpenThread}
                         />
                       );
                     })}
@@ -6172,6 +6235,45 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 )}
                 </Box>
               </EnhancedChatWrapper>
+
+              {/* Thread View - Side Panel */}
+              {threadViewOpen && activeThreadId && (
+                <Box sx={{ 
+                  width: 400, 
+                  borderLeft: '1px solid #334155',
+                  bgcolor: '#1e293b',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  <ThreadView
+                    threadId={activeThreadId}
+                    parentMessage={{
+                      id: activeThreadId,
+                      content: 'Thread message',
+                      sender: 'Unknown',
+                      timestamp: new Date().toISOString()
+                    }}
+                    currentUserId={user?.uid || 'current-user'}
+                    currentUserName={user?.displayName || 'You'}
+                    onClose={handleCloseThread}
+                    onAgentInteraction={handleAgentInteraction}
+                    participants={[
+                      {
+                        id: user?.uid || 'current-user',
+                        name: user?.displayName || 'You',
+                        type: 'user',
+                        color: '#3b82f6'
+                      },
+                      ...(selectedChatbot ? [{
+                        id: selectedChatbot.id,
+                        name: selectedChatbot.identity?.name || 'AI Assistant',
+                        type: 'ai_agent' as const,
+                        color: '#f97316'
+                      }] : [])
+                    ]}
+                  />
+                </Box>
+              )}
               
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
