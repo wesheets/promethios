@@ -33,6 +33,10 @@ import { PolicyExtension, type EnterprisePolicyConfig } from '../../extensions/P
 import { GraphRAGExtension, type GraphQuery, type GraphResult, type GraphEntity } from '../../extensions/GraphRAGExtension';
 import { RAGPolicyIntegrationService } from '../../services/RAGPolicyIntegrationService';
 import { UniversalGovernanceAdapter } from '../../services/UniversalGovernanceAdapter';
+import { customPolicyService, type CustomPolicy } from '../../services/CustomPolicyService';
+import { policyAwareRAGService, type DocumentMetadata, type SearchResult } from '../../services/PolicyAwareRAGService';
+import { orgChartRAGService, type OrgChartUser, type UserContext } from '../../services/OrgChartRAGService';
+import { documentUploadService, type DocumentUpload, type UploadProgress } from '../../services/DocumentUploadService';
 
 interface RAGPolicyPanelProps {
   agentId: string;
@@ -71,18 +75,23 @@ interface SearchResult {
 
 export const RAGPolicyPanel: React.FC<RAGPolicyPanelProps> = ({ agentId, onClose }) => {
   // State management
-  const [activeTab, setActiveTab] = useState<'search' | 'policies' | 'knowledge' | 'graph'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'policies' | 'knowledge' | 'graph' | 'orgchart'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchMode, setSearchMode] = useState<'traditional' | 'graph' | 'hybrid'>('hybrid');
-  
-  // Policy management
   const [policies, setPolicies] = useState<PolicyToggle[]>([]);
-  const [isUploadingPolicy, setIsUploadingPolicy] = useState(false);
-  
-  // Knowledge management
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([]);
+  const [graphEntities, setGraphEntities] = useState<GraphEntity[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // New state for enhanced functionality
+  const [documents, setDocuments] = useState<DocumentUpload[]>([]);
+  const [customPolicies, setCustomPolicies] = useState<CustomPolicy[]>([]);
+  const [orgChartUsers, setOrgChartUsers] = useState<OrgChartUser[]>([]);
+  const [userContext, setUserContext] = useState<UserContext | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const [complianceReport, setComplianceReport] = useState<any>(null);
   const [isIndexing, setIsIndexing] = useState(false);
   
   // Graph RAG
@@ -121,75 +130,322 @@ export const RAGPolicyPanel: React.FC<RAGPolicyPanelProps> = ({ agentId, onClose
   
   const [ragPolicyService] = useState(() => new RAGPolicyIntegrationService());
 
-  // Initialize services
+  // Enhanced data loading functions
+  const loadEnhancedData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      console.log('🔄 Loading enhanced RAG & Policy data...');
+
+      // Get current user ID (in production, from auth context)
+      const userId = localStorage.getItem('userId') || 'demo_user';
+      
+      // Load all data in parallel
+      await Promise.all([
+        loadPolicies(),
+        loadDocuments(),
+        loadCustomPolicies(userId),
+        loadComplianceReport(userId),
+        loadOrgChartData(userId)
+      ]);
+
+      console.log('✅ Enhanced data loading completed');
+    } catch (error) {
+      console.error('❌ Enhanced data loading failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [agentId]);
+
+  // Load documents for agent
+  const loadDocuments = useCallback(async () => {
+    try {
+      const organizationId = localStorage.getItem('organizationId') || 'demo_org';
+      const agentDocuments = await documentUploadService.getDocuments(agentId, organizationId);
+      setDocuments(agentDocuments);
+      console.log(`✅ Loaded ${agentDocuments.length} documents for agent`);
+    } catch (error) {
+      console.error('❌ Failed to load documents:', error);
+      setDocuments([]);
+    }
+  }, [agentId]);
+
+  // Load custom policies
+  const loadCustomPolicies = useCallback(async (userId: string) => {
+    try {
+      const policies = await customPolicyService.getPoliciesForAgent(userId, agentId);
+      setCustomPolicies(policies);
+      console.log(`✅ Loaded ${policies.length} custom policies`);
+    } catch (error) {
+      console.error('❌ Failed to load custom policies:', error);
+      setCustomPolicies([]);
+    }
+  }, [agentId]);
+
+  // Load compliance report
+  const loadComplianceReport = useCallback(async (userId: string) => {
+    try {
+      const report = await policyAwareRAGService.generateComplianceReport(userId, agentId);
+      setComplianceReport(report);
+      console.log('✅ Compliance report generated:', report);
+    } catch (error) {
+      console.error('❌ Failed to generate compliance report:', error);
+      setComplianceReport(null);
+    }
+  }, [agentId]);
+
+  // Load org chart data
+  const loadOrgChartData = useCallback(async (userId: string) => {
+    try {
+      // In production, get organization ID from user context
+      const organizationId = localStorage.getItem('organizationId') || 'demo_org';
+      
+      const users = await orgChartRAGService.searchOrgChart(organizationId, '', {});
+      setOrgChartUsers(users);
+      
+      // Get current user context
+      const context = await orgChartRAGService.getUserContext(organizationId, userId, agentId);
+      setUserContext(context);
+      
+      console.log(`✅ Loaded ${users.length} org chart users and user context`);
+    } catch (error) {
+      console.error('❌ Failed to load org chart data:', error);
+      setOrgChartUsers([]);
+      setUserContext(null);
+    }
+  }, [agentId]);
+
+  // Handle file upload with policy validation
+  const handleFileUpload = useCallback(async (file: File, options: {
+    category?: string;
+    accessLevel?: string;
+    tags?: string[];
+  } = {}) => {
+    try {
+      setUploadingFile(true);
+      setUploadProgress(null);
+      console.log('📄 Uploading file with policy validation:', file.name);
+
+      const userId = localStorage.getItem('userId') || 'demo_user';
+      const organizationId = localStorage.getItem('organizationId') || 'demo_org';
+      
+      const document = await documentUploadService.uploadDocument(
+        file,
+        agentId,
+        organizationId,
+        userId,
+        (progress) => {
+          setUploadProgress(progress);
+          console.log(`📊 Upload progress: ${progress.progress}% - ${progress.message}`);
+        }
+      );
+
+      // Refresh documents list
+      await loadDocuments();
+      
+      // Refresh compliance report
+      await loadComplianceReport();
+
+      console.log('✅ File uploaded successfully:', document);
+      setUploadProgress(null);
+      return document;
+    } catch (error) {
+      console.error('❌ File upload failed:', error);
+      setUploadProgress(null);
+      throw error;
+    } finally {
+      setUploadingFile(false);
+    }
+  }, [agentId, loadDocuments, loadComplianceReport]);
+
+  // Enhanced search with policy filtering
+  const handleEnhancedSearch = useCallback(async (query: string, filters: {
+    requireCompliance?: boolean;
+    categories?: string[];
+    accessLevels?: string[];
+  } = {}) => {
+    try {
+      setIsSearching(true);
+      console.log('🔍 Enhanced search with policy filtering:', query);
+
+      const organizationId = localStorage.getItem('organizationId') || 'demo_org';
+      
+      const results = await documentUploadService.searchDocuments(
+        agentId,
+        organizationId,
+        query,
+        {
+          maxResults: 20,
+          requireCompliance: filters.requireCompliance !== false,
+          categories: filters.categories,
+          accessLevels: filters.accessLevels
+        }
+      );
+
+      // Transform search results to match expected format
+      const transformedResults = results.map(doc => ({
+        id: doc.id,
+        title: doc.name,
+        content: doc.content || doc.summary || 'No content preview available',
+        source: doc.source || 'Uploaded Document',
+        relevanceScore: doc.relevanceScore || 0.8,
+        metadata: {
+          category: doc.category,
+          accessLevel: doc.accessLevel,
+          tags: doc.tags,
+          uploadDate: doc.uploadedAt,
+          fileType: doc.fileType,
+          complianceStatus: doc.complianceStatus
+        }
+      }));
+
+      setSearchResults(transformedResults);
+      console.log(`✅ Found ${transformedResults.length} search results`);
+    } catch (error) {
+      console.error('❌ Enhanced search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [agentId]);
+
+  // Create custom policy from template
+  const createPolicyFromTemplate = useCallback(async (templateId: string, customizations: any = {}) => {
+    try {
+      console.log('📋 Creating policy from template:', templateId);
+
+      const userId = localStorage.getItem('userId') || 'demo_user';
+      
+      const policy = await customPolicyService.createPolicyFromTemplate(
+        userId,
+        agentId,
+        templateId,
+        customizations
+      );
+
+      // Refresh custom policies
+      await loadCustomPolicies(userId);
+      
+      console.log('✅ Policy created from template:', policy);
+      return policy;
+    } catch (error) {
+      console.error('❌ Failed to create policy from template:', error);
+      throw error;
+    }
+  }, [agentId, loadCustomPolicies]);
   useEffect(() => {
     const initializeServices = async () => {
       try {
-        await policyExtension.initialize();
-        await graphRAG.initialize();
-        await ragPolicyService.initialize();
+        console.log('🚀 Initializing enhanced RAG & Policy services...');
         
-        // Load initial data
-        await loadPolicies();
-        await loadKnowledgeSources();
+        // Initialize services and load enhanced data
+        await loadEnhancedData();
         
-        console.log('✅ RAG + Policy Panel initialized successfully');
+        console.log('✅ Enhanced services initialized successfully');
       } catch (error) {
-        console.error('❌ Failed to initialize RAG + Policy Panel:', error);
+        console.error('❌ Service initialization failed:', error);
       }
     };
 
     initializeServices();
-  }, []);
+  }, [loadEnhancedData]);
 
-  // Load policies
+  // Load policies from real backend API
   const loadPolicies = useCallback(async () => {
     try {
-      // Mock policy data - in production, load from PolicyExtension
-      const mockPolicies: PolicyToggle[] = [
+      console.log('🔄 Loading real policies from backend API...');
+      
+      // Use agentId prop for policy filtering
+      const targetAgentId = agentId || 'all-agents';
+      
+      // Call real policy assignments API
+      const response = await fetch(`https://promethios-phase-7-1-api.onrender.com/api/policy-assignments?agentId=${targetAgentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || 'anonymous'}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Policy API error: ${response.status}`);
+      }
+      
+      const policyData = await response.json();
+      console.log('✅ Real policies loaded:', policyData);
+      
+      // Transform backend policy data to UI format
+      const transformedPolicies: PolicyToggle[] = policyData.data.map((policy: any) => ({
+        id: policy.id,
+        name: policy.policyId || policy.name,
+        description: policy.description,
+        enabled: policy.status === 'active',
+        framework: policy.policyId?.includes('HIPAA') ? 'HIPAA' : 
+                  policy.policyId?.includes('SOC2') ? 'SOC2' :
+                  policy.policyId?.includes('LEGAL') ? 'Legal' : 'Custom',
+        complianceRate: (policy.complianceScore || 0.9) * 100,
+        lastUpdated: policy.lastUpdated || policy.assignedAt,
+        enforcementLevel: policy.enforcementLevel || 'medium',
+        violationCount: policy.violationCount || 0
+      }));
+      
+      setPolicies(transformedPolicies);
+      console.log('✅ Policies transformed and set:', transformedPolicies);
+      
+    } catch (error) {
+      console.error('❌ Failed to load real policies:', error);
+      
+      // Fallback to default policies if API fails
+      const fallbackPolicies: PolicyToggle[] = [
         {
-          id: 'hipaa',
+          id: 'hipaa-default',
           name: 'HIPAA Compliance',
-          description: 'Healthcare data protection and privacy',
+          description: 'Healthcare data protection and privacy (Default)',
           enabled: true,
           framework: 'HIPAA',
-          complianceRate: 94.2,
-          lastUpdated: '2024-08-15'
+          complianceRate: 96.0,
+          lastUpdated: new Date().toISOString(),
+          enforcementLevel: 'high',
+          violationCount: 0
         },
         {
-          id: 'soc2',
+          id: 'soc2-default',
           name: 'SOC2 Controls',
-          description: 'Security, availability, and confidentiality',
+          description: 'Security, availability, and confidentiality (Default)',
           enabled: true,
           framework: 'SOC2',
-          complianceRate: 89.7,
-          lastUpdated: '2024-08-14'
+          complianceRate: 94.0,
+          lastUpdated: new Date().toISOString(),
+          enforcementLevel: 'high',
+          violationCount: 0
         },
         {
-          id: 'gdpr',
-          name: 'GDPR Privacy',
-          description: 'European data protection regulation',
-          enabled: false,
-          framework: 'GDPR',
-          complianceRate: 76.3,
-          lastUpdated: '2024-08-10'
-        },
-        {
-          id: 'custom_data',
-          name: 'Company Data Policy',
-          description: 'Internal data handling and classification',
+          id: 'legal-default',
+          name: 'Legal Compliance',
+          description: 'Legal compliance and risk management (Default)',
           enabled: true,
-          framework: 'Custom',
-          complianceRate: 91.8,
-          lastUpdated: '2024-08-16'
+          framework: 'Legal',
+          complianceRate: 92.0,
+          lastUpdated: new Date().toISOString(),
+          enforcementLevel: 'medium',
+          violationCount: 0
+        },
+        {
+          id: 'ethical-default',
+          name: 'Ethical AI',
+          description: 'Responsible AI practices and bias prevention (Default)',
+          enabled: true,
+          framework: 'Ethical',
+          complianceRate: 90.0,
+          lastUpdated: new Date().toISOString(),
+          enforcementLevel: 'high',
+          violationCount: 0
         }
       ];
       
-      setPolicies(mockPolicies);
-    } catch (error) {
-      console.error('❌ Failed to load policies:', error);
+      setPolicies(fallbackPolicies);
+      console.log('⚠️ Using fallback default policies');
     }
-  }, []);
+  }, [agentId]);
 
   // Load knowledge sources
   const loadKnowledgeSources = useCallback(async () => {

@@ -10,6 +10,7 @@ import HumanChatService, { TeamMember, TeamConversation, HumanMessage } from '..
 import { MultiAgentRoutingService, AgentResponse } from '../services/MultiAgentRoutingService';
 import HumanParticipantService, { HumanParticipant } from '../services/HumanParticipantService';
 import { MultiAgentAuditLogger } from '../services/MultiAgentAuditLogger';
+import { agentContextInjectionService, type ConversationContext } from '../services/AgentContextInjectionService';
 import { MessageParser, ParsedMessage } from '../utils/MessageParser';
 import MultiAgentMentionInput from '../components/MultiAgentMentionInput';
 import AgentAvatarSelector from '../components/AgentAvatarSelector';
@@ -5619,7 +5620,34 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         throw new Error('No active chat session. Please try refreshing the page.');
       }
       
-      const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, messageInput.trim(), attachedFiles.length > 0 ? attachedFiles : undefined);
+      // 🔧 NEW: Inject organizational context before sending message
+      let enhancedMessage = finalMessageContent;
+      try {
+        if (selectedChatbot && user?.uid) {
+          const conversationContext: ConversationContext = {
+            userId: user.uid,
+            agentId: selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id,
+            organizationId: localStorage.getItem('organizationId') || 'demo_org',
+            conversationId: activeSession.sessionId,
+            messageHistory: chatMessages.slice(-5) // Include last 5 messages for context
+          };
+          
+          console.log('🔍 [ContextInjection] Enhancing message with organizational context...');
+          const enhancedPrompt = await agentContextInjectionService.enhanceAgentPrompt(
+            finalMessageContent,
+            conversationContext
+          );
+          
+          enhancedMessage = enhancedPrompt.enhancedPrompt;
+          console.log(`✅ [ContextInjection] Context injected. Added ${enhancedPrompt.metadata.contextLength} characters of context`);
+          console.log('🔍 [ContextInjection] Context sources:', enhancedPrompt.metadata.contextSources);
+        }
+      } catch (contextError) {
+        console.warn('⚠️ [ContextInjection] Failed to inject context, using original message:', contextError);
+        enhancedMessage = finalMessageContent;
+      }
+      
+      const response = await chatPanelGovernanceService.sendMessage(activeSession.sessionId, enhancedMessage, attachedFiles.length > 0 ? attachedFiles : undefined);
       
       // Update messages with bot response only (user message already added immediately)
       // Fix stale closure issue by using functional update to get latest state
