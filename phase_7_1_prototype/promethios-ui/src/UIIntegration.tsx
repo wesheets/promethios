@@ -106,6 +106,7 @@ import QuickStartSetup from './components/chat/setup/QuickStartSetup';
 // Social AI Collaboration Platform Pages
 import DiscoveryPage from './pages/DiscoveryPage';
 import SocialFeedPage from './pages/SocialFeedPage';
+import MessagesPage from './pages/MessagesPage';
 import OrganizationsPage from './pages/OrganizationsPage';
 import ChannelsPage from './pages/ChannelsPage';
 import ConnectionManagementPage from './pages/ConnectionManagementPage';
@@ -823,20 +824,7 @@ const UIIntegration: React.FC = () => {
         <Route path="social/messages" element={
           <ProtectedRoute requireOnboarding={false}>
             <MainLayoutProxy>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '60vh',
-                flexDirection: 'column',
-                gap: '20px'
-              }}>
-                <h2 style={{ color: '#9ca3af' }}>Messages</h2>
-                <p style={{ color: '#6b7280', textAlign: 'center' }}>
-                  Click the MESSAGE button on user profiles or use the floating chat windows<br/>
-                  to start conversations with your connections.
-                </p>
-              </div>
+              <MessagesPage />
             </MainLayoutProxy>
           </ProtectedRoute>
         } />
