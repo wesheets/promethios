@@ -14,6 +14,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // Import components that can be rendered in the panel
 import SocialFeed from '../social/SocialFeed';
 import SocialFeedPage from '../../pages/SocialFeedPage';
+import MessagesPage from '../../pages/MessagesPage';
 
 interface ExpandableLeftPanelProps {
   isOpen: boolean;
@@ -90,14 +91,8 @@ const ExpandableLeftPanel: React.FC<ExpandableLeftPanelProps> = ({
         return <SocialFeedPage />;
       
       case currentRoute.includes('messages') || currentRoute === '/ui/social/messages':
-        console.log('🎯 [ExpandableLeftPanel] Rendering Messages');
-        return (
-          <Box sx={{ p: 3, color: '#e2e8f0', height: '100%' }}>
-            <h2>Messages</h2>
-            <p>Human-to-human messaging system will be implemented here</p>
-            <p>This will include Slack-style channels, direct messages, and agent drop zones.</p>
-          </Box>
-        );
+        console.log('🎯 [ExpandableLeftPanel] Rendering MessagesPage');
+        return <MessagesPage />;
       
       case currentRoute.includes('profile'):
         console.log('🎯 [ExpandableLeftPanel] Rendering Profile placeholder');
