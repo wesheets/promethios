@@ -745,6 +745,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Hosted API, 2: BYOK, 3: Enterprise
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Current bot state (derived from botStates map) - moved here to fix initialization order
+  const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
+  const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+  
   // Right navigation state for responsive layout
   const [rightNavState, setRightNavState] = useState({
     isCollapsed: true,
@@ -770,9 +774,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     };
   };
   
-  // Current bot state (derived from botStates map)
-  const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
-  const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
+  // Derived state from currentBotState
   const rightPanelType = currentBotState?.rightPanelType || null;
   const chatMessages = currentBotState?.chatMessages || [];
   const activeSession = currentBotState?.activeSession || null;
