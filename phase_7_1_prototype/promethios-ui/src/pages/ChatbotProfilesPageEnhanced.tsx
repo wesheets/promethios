@@ -662,7 +662,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Thread functionality state
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [threadViewOpen, setThreadViewOpen] = useState(false);
-  const conversationId = currentSessionId || 'default_conversation';
+  const conversationId = currentBotState?.currentChatSession?.id || 'default_conversation';
   
   // Thread management hook
   const {
