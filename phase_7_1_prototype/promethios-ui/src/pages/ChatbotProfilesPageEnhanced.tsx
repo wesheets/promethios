@@ -3568,7 +3568,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           targetResponderAgentId = getAgentIdFromMessage(targetMessage);
         }
         
-        console.log('🎭 [getMentionTarget] Target responder agent ID:', targetRespond        
+        console.log('🎭 [getMentionTarget] Target responder agent ID:', targetResponderAgentId);
+        
         if (targetResponderAgentId) {
           const hostAgent = getHostAgent();
           const guestAgents = getGuestAgents();
