@@ -271,7 +271,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     });
     
     // Check if this is a human participant
-    const isHuman = humanParticipants.some(h => h.id === targetId);
+    const isHuman = (humanParticipants || []).some(h => h.id === targetId);
     
     if (isHuman) {
       console.log('👤 [AgentAvatarSelector] Selecting human participant:', targetId);
@@ -755,7 +755,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       borderRight: '1px solid #334155'
     }}>
       {/* Human Participant Avatars */}
-      {humanParticipants.map((human) => (
+      {(humanParticipants || []).map((human) => (
         <Tooltip 
           key={`human-${human.id}`}
           title={
@@ -853,7 +853,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       )}
 
       {/* Target Indicator */}
-      {selectedTarget && humanParticipants.find(h => h.id === selectedTarget) && (
+      {selectedTarget && (humanParticipants || []).find(h => h.id === selectedTarget) && (
         <Box sx={{ 
           ml: 1, 
           px: 1, 
@@ -865,7 +865,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
           color: '#10b981',
           fontWeight: 500
         }}>
-          → {humanParticipants.find(h => h.id === selectedTarget)?.name}
+          → {(humanParticipants || []).find(h => h.id === selectedTarget)?.name}
         </Box>
       )}
 

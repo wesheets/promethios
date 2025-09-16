@@ -581,7 +581,7 @@ export const DragDropEnabledAgentAvatarSelector: React.FC<DragDropEnabledAgentAv
       name: agent.name,
       type: agent.type as 'human' | 'ai_agent'
     })),
-    ...humanParticipants.map(human => ({
+    ...(humanParticipants || []).map(human => ({
       id: human.id,
       name: human.name,
       type: human.type
@@ -599,7 +599,7 @@ export const DragDropEnabledAgentAvatarSelector: React.FC<DragDropEnabledAgentAv
       minHeight: 56,
     }}>
       {/* Human Participants */}
-      {humanParticipants.map((human) => (
+      {(humanParticipants || []).map((human) => (
         <Tooltip key={human.id} title={`${human.name} (${human.status})`}>
           <Avatar
             onClick={(e) => handleTargetClick(human.id, e)}
