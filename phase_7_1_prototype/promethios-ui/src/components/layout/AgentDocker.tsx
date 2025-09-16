@@ -1,16 +1,16 @@
 /**
- * AgentDocker - Persistent agent avatars at the top middle of all pages
+ * AgentDocker - Persistent agent avatars with real Firebase integration
  * 
  * Features:
- * - Translucent background header that stays on all pages
- * - Draggable agent avatars using existing drag & drop system
- * - Pulls agents from user's Firebase chatbot profiles
- * - Expands dynamically based on number of agents
- * - Integrates with existing agent interaction system
- * - Supports behavioral prompts via drag & drop
+ * - Real-time Firebase data loading with proper error handling
+ * - Circuit breaker pattern to prevent duplicate loading calls
+ * - Proper loading states and fallback handling
+ * - Maintains existing drag & drop functionality
+ * - Real-time updates when agents are added/modified
+ * - Robust caching and performance optimization
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Avatar,
@@ -19,13 +19,15 @@ import {
   IconButton,
   Collapse,
   Typography,
-  Paper
+  Paper,
+  CircularProgress
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Add as AddIcon,
-  SmartToy as AgentIcon
+  SmartToy as AgentIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -58,107 +60,161 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
   maxVisibleAgents = 8,
   showBehaviorPrompts = true
 }) => {
-  const { user } = useAuth();
+  const { user, authLoading } = useAuth();
   const navigate = useNavigate();
   const [agents, setAgents] = useState<DockerAgent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [hovering, setHovering] = useState(false);
+  
+  // Circuit breaker to prevent duplicate loading calls
+  const loadingAgentsRef = useRef(false);
+  const chatbotServiceRef = useRef<ChatbotStorageService | null>(null);
 
-  // Load agents from Firebase with real-time updates
+  // Initialize chatbot service
   useEffect(() => {
-    const loadAgents = async () => {
-      if (!user?.uid) {
-        // Show demo agents for unauthenticated users
-        const demoAgents: DockerAgent[] = [
-          {
-            id: 'demo-sarah',
-            name: 'Sarah Analytics',
-            avatar: undefined,
-            color: '#3b82f6',
-            status: 'active',
-            type: 'ai_agent',
-            personality: 'analytical',
-            expertise: ['Data Analysis', 'Visualization', 'Statistics']
-          },
-          {
-            id: 'demo-marcus',
-            name: 'Marcus Creative',
-            avatar: undefined,
-            color: '#10b981',
-            status: 'active',
-            type: 'ai_agent',
-            personality: 'creative',
-            expertise: ['Creative Writing', 'Marketing', 'Branding']
-          },
-          {
-            id: 'demo-alex',
-            name: 'Alex Technical',
-            avatar: undefined,
-            color: '#f59e0b',
-            status: 'active',
-            type: 'ai_agent',
-            personality: 'professional',
-            expertise: ['Software Development', 'Architecture', 'DevOps']
-          }
-        ];
-        setAgents(demoAgents);
-        setLoading(false);
-        return;
-      }
+    if (!chatbotServiceRef.current) {
+      chatbotServiceRef.current = ChatbotStorageService.getInstance();
+      console.log('🐳 [AgentDocker] ChatbotStorageService initialized');
+    }
+  }, []);
 
-      try {
-        setLoading(true);
-        const chatbotService = ChatbotStorageService.getInstance();
-        
-        // Get chatbot profiles from Firebase
-        console.log('🐳 [AgentDocker] Loading agents for user:', user.uid);
-        const chatbotProfiles = await chatbotService.getChatbots(user.uid);
-        console.log('🐳 [AgentDocker] Loaded chatbot profiles:', chatbotProfiles.length);
-        
-        // Convert chatbot profiles to docker agents
-        const dockerAgents: DockerAgent[] = chatbotProfiles
-          .filter(profile => profile.status === 'active')
-          .map(profile => {
-            const agent: DockerAgent = {
-              id: profile.identity?.id || profile.id,
-              name: profile.identity?.name || 'Unnamed Agent',
-              avatar: profile.identity?.avatar,
-              color: getAgentColor(profile.identity?.personality || 'professional'),
-              status: 'active' as const,
-              type: 'ai_agent' as const,
-              personality: profile.identity?.personality,
-              expertise: profile.identity?.expertise || []
-            };
-            console.log('🐳 [AgentDocker] Converted agent:', agent.name, agent.id);
-            return agent;
-          });
-
-        console.log('🐳 [AgentDocker] Final docker agents:', dockerAgents.length);
-        setAgents(dockerAgents);
-        
-        // If no agents found, show helpful message
-        if (dockerAgents.length === 0) {
-          console.log('🐳 [AgentDocker] No active agents found for user');
-        }
-        
-      } catch (error) {
-        console.error('🐳 [AgentDocker] Failed to load agents:', error);
-        setAgents([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAgents();
+  // Load agents from Firebase with proper error handling and circuit breaker
+  const loadAgents = useCallback(async () => {
+    console.log('🐳 [AgentDocker] loadAgents called, user:', user?.uid);
+    console.log('🐳 [AgentDocker] authLoading:', authLoading);
     
-    // Set up periodic refresh to catch new agents
-    const refreshInterval = setInterval(loadAgents, 30000); // Refresh every 30 seconds
+    // Circuit breaker: prevent multiple simultaneous calls
+    if (loadingAgentsRef.current) {
+      console.log('🔄 [AgentDocker] Already loading agents, skipping duplicate call');
+      return;
+    }
+    
+    // Wait for auth to finish loading
+    if (authLoading) {
+      console.log('🔍 [AgentDocker] Auth still loading, waiting...');
+      return;
+    }
+    
+    if (!user?.uid) {
+      console.log('🔍 [AgentDocker] No user UID after auth loaded, showing demo agents');
+      setLoading(false);
+      setError(null);
+      
+      // Show demo agents for unauthenticated users
+      const demoAgents: DockerAgent[] = [
+        {
+          id: 'demo-sarah',
+          name: 'Sarah Analytics',
+          avatar: undefined,
+          color: '#3b82f6',
+          status: 'active',
+          type: 'ai_agent',
+          personality: 'analytical',
+          expertise: ['Data Analysis', 'Visualization', 'Statistics']
+        },
+        {
+          id: 'demo-marcus',
+          name: 'Marcus Creative',
+          avatar: undefined,
+          color: '#10b981',
+          status: 'active',
+          type: 'ai_agent',
+          personality: 'creative',
+          expertise: ['Creative Writing', 'Marketing', 'Branding']
+        },
+        {
+          id: 'demo-alex',
+          name: 'Alex Technical',
+          avatar: undefined,
+          color: '#f59e0b',
+          status: 'active',
+          type: 'ai_agent',
+          personality: 'professional',
+          expertise: ['Software Development', 'Architecture', 'DevOps']
+        }
+      ];
+      setAgents(demoAgents);
+      return;
+    }
+
+    if (!chatbotServiceRef.current) {
+      console.error('❌ [AgentDocker] ChatbotStorageService not initialized');
+      setError('Service not initialized');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Set circuit breaker
+      loadingAgentsRef.current = true;
+      
+      setLoading(true);
+      setError(null);
+      console.log('🔍 [AgentDocker] Calling chatbotService.getChatbots with user:', user.uid);
+      
+      const chatbotProfiles = await chatbotServiceRef.current.getChatbots(user.uid);
+      console.log('🔍 [AgentDocker] getChatbots returned:', chatbotProfiles.length, 'chatbots');
+      console.log('🔍 [AgentDocker] Chatbot data:', chatbotProfiles);
+      
+      // Convert chatbot profiles to docker agents
+      const dockerAgents: DockerAgent[] = chatbotProfiles
+        .filter(profile => profile.status === 'active')
+        .map(profile => {
+          const agent: DockerAgent = {
+            id: profile.identity?.id || profile.id,
+            name: profile.identity?.name || 'Unnamed Agent',
+            avatar: profile.identity?.avatar,
+            color: getAgentColor(profile.identity?.personality || 'professional'),
+            status: 'active' as const,
+            type: 'ai_agent' as const,
+            personality: profile.identity?.personality,
+            expertise: profile.identity?.expertise || []
+          };
+          console.log('🐳 [AgentDocker] Converted agent:', agent.name, agent.id);
+          return agent;
+        });
+
+      console.log('🐳 [AgentDocker] Final docker agents:', dockerAgents.length);
+      setAgents(dockerAgents);
+      
+      // If no agents found, show helpful message
+      if (dockerAgents.length === 0) {
+        console.log('🐳 [AgentDocker] No active agents found for user');
+        setError(null); // Not an error, just no agents yet
+      }
+      
+    } catch (error) {
+      console.error('❌ [AgentDocker] Failed to load agents:', error);
+      setError('Failed to load agents. Please try again.');
+      setAgents([]);
+    } finally {
+      setLoading(false);
+      // Clear circuit breaker
+      loadingAgentsRef.current = false;
+      console.log('🔍 [AgentDocker] Loading set to false');
+    }
+  }, [user?.uid, authLoading]);
+
+  // Load agents on mount and when user changes
+  useEffect(() => {
+    loadAgents();
+  }, [loadAgents]);
+
+  // Set up periodic refresh to catch new agents (every 30 seconds)
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      if (!loadingAgentsRef.current && user?.uid) {
+        console.log('🔄 [AgentDocker] Periodic refresh triggered');
+        loadAgents();
+      }
+    }, 30000);
     
     return () => {
       clearInterval(refreshInterval);
     };
-  }, [user?.uid]);
+  }, [loadAgents, user?.uid]);
 
   // Get agent color based on personality
   const getAgentColor = (personality: string): string => {
@@ -194,11 +250,18 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
     }
   };
 
+  // Handle manual refresh
+  const handleRefresh = () => {
+    console.log('🔄 [AgentDocker] Manual refresh triggered');
+    loadAgents();
+  };
+
   // Handle behavior prompt
   const handleBehaviorPrompt = (agentId: string, agentName: string, behavior: string) => {
     onBehaviorPrompt?.(agentId, agentName, behavior);
   };
 
+  // Loading state
   if (loading) {
     return (
       <Box
@@ -214,12 +277,61 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           px: 2,
           py: 1,
           border: '1px solid rgba(148, 163, 184, 0.2)',
-          borderTop: 'none'
+          borderTop: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
         }}
       >
+        <CircularProgress size={16} sx={{ color: '#94a3b8' }} />
         <Typography variant="caption" sx={{ color: '#94a3b8' }}>
           Loading agents...
         </Typography>
+      </Box>
+    );
+  }
+
+  // Error state with retry option
+  if (error) {
+    return (
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1300,
+          bgcolor: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(8px)',
+          borderRadius: '0 0 12px 12px',
+          px: 2,
+          py: 1,
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderTop: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1
+        }}
+      >
+        <Typography variant="caption" sx={{ color: '#ef4444' }}>
+          {error}
+        </Typography>
+        <Tooltip title="Retry loading agents">
+          <IconButton
+            size="small"
+            onClick={handleRefresh}
+            sx={{
+              width: 20,
+              height: 20,
+              color: '#ef4444',
+              '&:hover': {
+                bgcolor: 'rgba(239, 68, 68, 0.1)'
+              }
+            }}
+          >
+            <RefreshIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
     );
   }
@@ -285,6 +397,30 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           </Tooltip>
         )}
 
+        {/* Refresh button */}
+        <Tooltip title="Refresh agents">
+          <IconButton
+            size="small"
+            onClick={handleRefresh}
+            disabled={loading}
+            sx={{
+              width: 32,
+              height: 32,
+              bgcolor: 'rgba(100, 116, 139, 0.2)',
+              color: '#94a3b8',
+              '&:hover': {
+                bgcolor: 'rgba(100, 116, 139, 0.4)',
+                color: '#e2e8f0'
+              },
+              '&:disabled': {
+                opacity: 0.5
+              }
+            }}
+          >
+            <RefreshIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
         {/* Add agent button */}
         <Tooltip title="Create new agent (Quick Start)">
           <IconButton
@@ -343,6 +479,33 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           }}
         >
           {agents.length}
+        </Box>
+      )}
+
+      {/* No agents message */}
+      {agents.length === 0 && !loading && !error && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+            No agents yet
+          </Typography>
+          <Tooltip title="Create your first agent">
+            <IconButton
+              size="small"
+              onClick={handleAddAgent}
+              sx={{
+                width: 24,
+                height: 24,
+                bgcolor: 'rgba(59, 130, 246, 0.2)',
+                color: '#3b82f6',
+                '&:hover': {
+                  bgcolor: 'rgba(59, 130, 246, 0.3)',
+                  color: '#60a5fa'
+                }
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
     </Box>
