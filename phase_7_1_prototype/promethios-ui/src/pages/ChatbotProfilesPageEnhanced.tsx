@@ -737,7 +737,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Current bot state (derived from botStates map) - moved here to fix initialization order
   const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
   const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
-  const conversationId = currentBotState?.currentChatSession?.id || 'default_conversation';
+  const conversationId = currentBotState?.currentChatSession?.id || `conversation_${selectedChatbotId || 'default'}_${Date.now()}`;
   
   // Thread management hook
   const {
@@ -1145,6 +1145,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Thread handler functions
   const handleStartThread = async (messageId: string) => {
     console.log('🧵 [Thread] Starting thread for message:', messageId);
+    console.log('🧵 [Thread] conversationId:', conversationId);
+    console.log('🧵 [Thread] user:', user?.uid);
+    
+    // Validate parameters before creating thread
+    if (!messageId) {
+      console.error('❌ [Thread] messageId is required');
+      return;
+    }
+    
+    if (!conversationId) {
+      console.error('❌ [Thread] conversationId is required');
+      return;
+    }
+    
+    if (!user?.uid) {
+      console.error('❌ [Thread] user.uid is required');
+      return;
+    }
     
     try {
       // Create thread with a placeholder initial reply
@@ -1160,6 +1178,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           senderType: 'user'
         }
       });
+
+      console.log('✅ [Thread] Thread created successfully:', threadId);
 
       // Open the newly created thread
       setActiveThreadId(threadId);

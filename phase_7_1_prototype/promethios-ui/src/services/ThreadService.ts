@@ -53,6 +53,19 @@ export class ThreadService {
   async createThread(request: CreateThreadRequest): Promise<string> {
     console.log('🧵 [ThreadService] Creating thread:', request);
 
+    // Validate required parameters
+    if (!request.parentMessageId) {
+      throw new Error('parentMessageId is required for thread creation');
+    }
+    
+    if (!request.conversationId) {
+      throw new Error('conversationId is required for thread creation');
+    }
+    
+    if (!request.initialReply?.senderId) {
+      throw new Error('initialReply.senderId is required for thread creation');
+    }
+
     const batch = writeBatch(db);
     const threadId = request.parentMessageId;
 
