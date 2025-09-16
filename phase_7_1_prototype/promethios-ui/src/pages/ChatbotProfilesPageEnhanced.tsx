@@ -186,8 +186,8 @@ import CustomGPTTab from '../components/command-center/CustomGPTTab';
 import EnhancedHostChatInterface from '../components/modern/EnhancedHostChatInterface';
 import EnhancedChatWrapper from '../components/modern/EnhancedChatWrapper';
 import ConsolidatedChatHeader from '../components/chat/ConsolidatedChatHeader';
-import ColorCodedChatMessage from '../components/chat/ColorCodedChatMessage';
-
+import { ColorCodedChatMessage } from '../components/chat/ColorCodedChatMessage';
+import BehavioralPromptSelectorModal from '../components/chat/BehavioralPromptSelectorModal';
 // Right panel types
 type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | 'custom_gpt' | null;
 
@@ -459,6 +459,16 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [humanParticipants, setHumanParticipants] = useState<HumanParticipant[]>([]);
   const [showChatInvitationModal, setShowChatInvitationModal] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  
+  // Behavioral prompt modal state
+  const [showBehavioralPromptModal, setShowBehavioralPromptModal] = useState(false);
+  const [pendingInteraction, setPendingInteraction] = useState<{
+    agentId: string;
+    agentName: string;
+    agentColor?: string;
+    messageId: string;
+    targetMessage?: any;
+  } | null>(null);
   const [chatInvitationContext, setChatInvitationContext] = useState<{
     chatSessionId: string;
     chatName: string;
@@ -6046,9 +6056,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           
                           console.log('🎭 Found agent for interaction:', { agentId, agentName, action });
                           
-                          // Trigger behavioral prompt (mark as drag & drop to bypass last responder check)
-                          // Pass the messageId so the agent responds to the specific message that was dropped on
-                          handleBehaviorPrompt(agentId, agentName, action, true, messageId);
+                          // Find the target message
+                          const targetMessage = chatMessages.find(msg => msg.id === messageId);
+                          
+                          // Get agent color (simplified for now)
+                          const agentColor = '#f97316'; // Default orange, could be enhanced later
+                          
+                          // Set up pending interaction and show modal
+                          setPendingInteraction({
+                            agentId,
+                            agentName,
+                            agentColor,
+                            messageId,
+                            targetMessage,
+                          });
+                          setShowBehavioralPromptModal(true);
                         } else {
                           console.log('❌ Agent not found for interaction:', { agentId, action });
                           console.log('❌ Available agent IDs:', [
@@ -6058,6 +6080,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           // Fallback: add a message indicating the interaction
                           const interactionMessage = `🎭 Agent is ${action}ing on this message...`;
                           console.log('🎭 Behavioral interaction fallback:', interactionMessage);
+                        }
+                      };
+                      
+                      // Handle behavior selection from modal
+                      const handleBehaviorSelection = (behavior: string) => {
+                        if (pendingInteraction) {
+                          console.log('🎭 Behavior selected:', behavior, 'for agent:', pendingInteraction.agentName);
+                          
+                          // Trigger behavioral prompt with selected behavior
+                          handleBehaviorPrompt(
+                            pendingInteraction.agentId,
+                            pendingInteraction.agentName,
+                            behavior,
+                            true, // isDragDrop
+                            pendingInteraction.messageId // targetMessageId
+                          );
+                          
+                          // Clear pending interaction
+                          setPendingInteraction(null);
                         }
                       };
                       
@@ -9460,7 +9501,21 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         chatSession={activeChatInvitationSession}
         agentId={selectedChatbot?.id}
         agentName={selectedChatbot?.identity?.name || 'AI Assistant'}
-        user={user}
+        onInviteSuccess={handleChatInvitationSuccess}
+      />
+
+      {/* Behavioral Prompt Selector Modal */}
+      <BehavioralPromptSelectorModal
+        open={showBehavioralPromptModal}
+        onClose={() => {
+          setShowBehavioralPromptModal(false);
+          setPendingInteraction(null);
+        }}
+        onSelect={handleBehaviorSelection}
+        agentName={pendingInteraction?.agentName || 'Agent'}
+        agentColor={pendingInteraction?.agentColor}
+        targetMessageContent={pendingInteraction?.targetMessage?.content}
+        targetMessageSender={pendingInteraction?.targetMessage?.sender === 'user' ? 'You' : pendingInteraction?.targetMessage?.sender}
       />
 
       {/* Agent Permission Request Popup */}
