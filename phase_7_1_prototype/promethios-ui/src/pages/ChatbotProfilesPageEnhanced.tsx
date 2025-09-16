@@ -186,7 +186,7 @@ import CustomGPTTab from '../components/command-center/CustomGPTTab';
 import EnhancedHostChatInterface from '../components/modern/EnhancedHostChatInterface';
 import EnhancedChatWrapper from '../components/modern/EnhancedChatWrapper';
 import ConsolidatedChatHeader from '../components/chat/ConsolidatedChatHeader';
-import { ColorCodedChatMessage } from '../components/chat/ColorCodedChatMessage';
+import ColorCodedChatMessage from '../components/chat/ColorCodedChatMessage';
 import BehavioralPromptSelectorModal from '../components/chat/BehavioralPromptSelectorModal';
 // Right panel types
 type RightPanelType = 'team' | 'chats' | 'analytics' | 'customize' | 'personality' | 'knowledge' | 'automation' | 'deployment' | 'settings' | 'chat' | 'tools' | 'integrations' | 'receipts' | 'memory' | 'sandbox' | 'workspace' | 'ai_knowledge' | 'governance' | 'rag_policy' | 'debug' | 'token_economics' | 'custom_gpt' | null;
