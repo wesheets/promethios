@@ -359,7 +359,7 @@ const DragDropEnabledChatHeader: React.FC<DragDropEnabledChatHeaderProps> = ({
         ))}
 
         {/* Human Participants */}
-        {humanParticipants.map((participant) => (
+        {(humanParticipants || []).map((participant) => (
           <DraggableParticipantChip
             key={participant.id}
             participant={participant}

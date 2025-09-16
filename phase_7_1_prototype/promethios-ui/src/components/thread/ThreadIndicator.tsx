@@ -136,7 +136,7 @@ export const ThreadIndicator: React.FC<ThreadIndicatorProps> = ({
             }
           }}
         >
-          {threadInfo.participants.slice(0, 3).map((participantId, index) => (
+          {(threadInfo.participants || []).slice(0, 3).map((participantId, index) => (
             <Avatar 
               key={participantId}
               sx={{ 

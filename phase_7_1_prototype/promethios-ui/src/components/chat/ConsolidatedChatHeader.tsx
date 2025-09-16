@@ -441,7 +441,7 @@ const ConsolidatedChatHeader: React.FC<ConsolidatedChatHeaderProps> = ({
     ? getSharedConversationParticipants()
     : { 
         aiParticipants: getAIParticipants(), 
-        humanParticipants: humanParticipants.map(human => ({
+        humanParticipants: (humanParticipants || []).map(human => ({
           ...human,
           color: humanColor
         }))
