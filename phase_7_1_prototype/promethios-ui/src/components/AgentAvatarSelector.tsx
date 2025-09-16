@@ -491,7 +491,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     );
 
     // Enhanced click handler that doesn't interfere with drag
-    const onClick = useCallback((event: React.MouseEvent) => {
+    const handleClick = useCallback((event: React.MouseEvent) => {
       // Don't handle click if this was a drag operation
       if (isDragging) {
         console.log('🎯 [AgentAvatarSelector] Ignoring click during drag');
@@ -644,7 +644,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
           <Avatar
             ref={isAI && !isPending ? dragRef : undefined}
             {...enhancedDragHandlers}
-            onClick={onClick}
+            onClick={handleClick}
             sx={{
               ...getAgentStyle(agent),
               cursor: isAI && !isPending ? (isDragging ? 'grabbing' : 'grab') : 'pointer',
