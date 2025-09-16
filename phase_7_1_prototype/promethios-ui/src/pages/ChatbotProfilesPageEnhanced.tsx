@@ -5881,17 +5881,30 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       >
         {isWorkspaceMode ? (
           <Box sx={{ height: '100%', width: '100%' }}>
-            {/* Command Center Layout - Chat on Left, Panels on Right */}
-            <Box sx={{ display: 'flex', height: '100%' }}>
-              {/* Left Side - Chat Interface */}
+            {/* Command Center Layout - Centered Chat + Thread Unit */}
+            <Box sx={{ 
+              display: 'flex', 
+              height: '100%',
+              justifyContent: 'center', // Center the chat+thread unit
+              alignItems: 'stretch'
+            }}>
+              {/* Chat + Thread Container */}
               <Box sx={{ 
-                ...getChatInterfaceWidth(),
-                display: 'flex', 
-                flexDirection: 'column', 
-                height: '100vh', // Fixed height to viewport
-                // Removed bgcolor to match main background
+                display: 'flex',
+                height: '100vh',
+                maxWidth: threadViewOpen ? '1600px' : '1200px', // Adjust max width based on thread state
+                width: threadViewOpen ? 'calc(1200px + 400px)' : '1200px', // Chat width + thread width
                 transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
               }}>
+                {/* Chat Interface */}
+                <Box sx={{ 
+                  width: '1200px', // Fixed chat interface width
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  height: '100vh',
+                  // Removed bgcolor to match main background
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
+                }}>
 
               {/* Consolidated Chat Header */}
               <ConsolidatedChatHeader
@@ -6266,45 +6279,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               </EnhancedChatWrapper>
               </Box>
 
-              {/* Thread View - Side Panel */}
-              {threadViewOpen && activeThreadId && (
-                <Box sx={{ 
-                  width: 400, 
-                  borderLeft: '1px solid #334155',
-                  bgcolor: '#1e293b',
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}>
-                  <ThreadView
-                    threadId={activeThreadId}
-                    parentMessage={{
-                      id: activeThreadId,
-                      content: 'Thread message',
-                      sender: 'Unknown',
-                      timestamp: new Date().toISOString()
-                    }}
-                    currentUserId={user?.uid || 'current-user'}
-                    currentUserName={user?.displayName || 'You'}
-                    onClose={handleCloseThread}
-                    onAgentInteraction={handleAgentInteraction}
-                    participants={[
-                      {
-                        id: user?.uid || 'current-user',
-                        name: user?.displayName || 'You',
-                        type: 'user',
-                        color: '#3b82f6'
-                      },
-                      ...(selectedChatbot ? [{
-                        id: selectedChatbot.id,
-                        name: selectedChatbot.identity?.name || 'AI Assistant',
-                        type: 'ai_agent' as const,
-                        color: '#f97316'
-                      }] : [])
-                    ]}
-                  />
-                </Box>
-              )}
-              
               {/* Chat Input */}
               <Box sx={{ p: 3, borderTop: '1px solid #334155' }}>
                 {/* Token Economics Widgets */}
@@ -7140,8 +7114,49 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               </Box>
             </Box>
 
+            {/* Thread View - Side Panel (Sibling to Chat Interface) */}
+            {threadViewOpen && activeThreadId && (
+              <Box sx={{ 
+                width: '400px', 
+                borderLeft: '1px solid #334155',
+                bgcolor: '#1e293b',
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100vh'
+              }}>
+                <ThreadView
+                  threadId={activeThreadId}
+                  parentMessage={{
+                    id: activeThreadId,
+                    content: 'Thread message',
+                    sender: 'Unknown',
+                    timestamp: new Date().toISOString()
+                  }}
+                  currentUserId={user?.uid || 'current-user'}
+                  currentUserName={user?.displayName || 'You'}
+                  onClose={handleCloseThread}
+                  onAgentInteraction={handleAgentInteraction}
+                  participants={[
+                    ...(user ? [{
+                      id: user.uid,
+                      name: user.displayName || 'You',
+                      type: 'human' as const,
+                      color: '#3b82f6'
+                    }] : []),
+                    ...(selectedChatbot ? [{
+                      id: selectedChatbot.id,
+                      name: selectedChatbot.identity?.name || 'AI Assistant',
+                      type: 'ai_agent' as const,
+                      color: '#f97316'
+                    }] : [])
+                  ]}
+                />
+              </Box>
+            )}
+
             {/* Right Side - Command Panels */}
             {/* Replaced with new RightNavigationBar component */}
+          </Box>
           </Box>
           
           {/* New Right Navigation Bar */}
