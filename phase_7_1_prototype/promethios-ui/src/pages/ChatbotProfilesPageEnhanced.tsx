@@ -3476,6 +3476,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     setTargetAgents(selectedAgentIds); // Update target agents for routing
   };
 
+  // Handle behavior selection from modal
+  const handleBehaviorSelection = (behavior: string) => {
+    if (pendingInteraction) {
+      console.log('🎭 Behavior selected:', behavior, 'for agent:', pendingInteraction.agentName);
+      
+      // Trigger behavioral prompt with selected behavior
+      handleBehaviorPrompt(
+        pendingInteraction.agentId,
+        pendingInteraction.agentName,
+        behavior,
+        true, // isDragDrop
+        pendingInteraction.messageId // targetMessageId
+      );
+      
+      // Clear pending interaction
+      setPendingInteraction(null);
+      setShowBehavioralPromptModal(false);
+    }
+  };
+
   // 🚀 NEW: Handle hover-triggered agent responses with behavioral prompts
   const handleHoverTriggeredResponse = async (agentId: string, agentName: string, behaviorType?: string) => {
     console.log('🖱️ [Hover-Triggered] Triggering response from agent:', agentName, 'with behavior:', behaviorType);
@@ -6081,25 +6101,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           // Fallback: add a message indicating the interaction
                           const interactionMessage = `🎭 Agent is ${action}ing on this message...`;
                           console.log('🎭 Behavioral interaction fallback:', interactionMessage);
-                        }
-                      };
-                      
-                      // Handle behavior selection from modal
-                      const handleBehaviorSelection = (behavior: string) => {
-                        if (pendingInteraction) {
-                          console.log('🎭 Behavior selected:', behavior, 'for agent:', pendingInteraction.agentName);
-                          
-                          // Trigger behavioral prompt with selected behavior
-                          handleBehaviorPrompt(
-                            pendingInteraction.agentId,
-                            pendingInteraction.agentName,
-                            behavior,
-                            true, // isDragDrop
-                            pendingInteraction.messageId // targetMessageId
-                          );
-                          
-                          // Clear pending interaction
-                          setPendingInteraction(null);
                         }
                       };
                       
