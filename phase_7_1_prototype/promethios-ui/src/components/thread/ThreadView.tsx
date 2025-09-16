@@ -105,19 +105,41 @@ const ThreadMessageItem: React.FC<{
         p: 1,
         borderRadius: 1,
         transition: 'all 0.2s ease',
-    // Thread Message Item Component with drag & drop support
-const ThreadMessageItem: React.FC<{ 
-  message: ThreadMessage; 
-  onAgentDrop?: (agentId: string, agentName: string, messageId: string) => void;
-}> = ({ message, onAgentDrop }) => {
-  // Set up drop target for agent drag & drop
-  const { isOver, drop } = useMessageDropTarget({
-    messageId: message.id,
-    onAgentDrop: onAgentDrop || (() => {})
-  });
+        bgcolor: isOver ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+        border: isOver ? '2px dashed #3b82f6' : '2px solid transparent',
+      }}
+    >
+      {/* Avatar */}
+      <Avatar
+        sx={{
+          width: 32,
+          height: 32,
+          bgcolor: messageColor,
+          fontSize: '0.8rem',
+          mt: 0.5
+        }}
+      >
+        {message.senderName?.charAt(0) || 'U'}
+      </Avatar>
 
-  const isAgent = message.senderType === 'ai_agent';
-  const agentColor = isAgent ? getAgentColor(message.senderId) : undefined;
+      {/* Message content */}
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: messageColor }}>
+            {message.senderName || 'Unknown'}
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+            {new Date(message.timestamp).toLocaleTimeString()}
+          </Typography>
+        </Box>
+        
+        <Typography variant="body2" sx={{ color: '#e2e8f0', lineHeight: 1.5 }}>
+          {message.content}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
 
   return (
     <Box 

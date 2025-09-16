@@ -12,6 +12,7 @@ import CollapsibleNavigationEnhanced from '../components/CollapsibleNavigationEn
 import Footer from '../components/layout/Footer';
 import TestAuth from '../components/TestAuth';
 import SuperEnhancedObserverButton from '../components/SuperEnhancedObserverButton';
+import AgentDocker from '../components/layout/AgentDocker';
 
 // Import expandable panel system
 import ExpandableLeftPanel from '../components/layout/ExpandableLeftPanel';
@@ -89,6 +90,25 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <CssBaseline />
       
+      {/* Agent Docker - Persistent across all pages */}
+      <AgentDocker 
+        onAddAgent={() => {
+          // Navigate to agent creation or open agent wizard
+          console.log('🐳 [AgentDocker] Add agent clicked');
+          // You can add navigation logic here
+        }}
+        onAgentClick={(agentId, agentName) => {
+          console.log('🐳 [AgentDocker] Agent clicked:', agentName, agentId);
+          // You can add agent interaction logic here
+        }}
+        onBehaviorPrompt={(agentId, agentName, behavior) => {
+          console.log('🐳 [AgentDocker] Behavior prompt:', agentName, behavior);
+          // You can add behavior prompt logic here
+        }}
+        maxVisibleAgents={8}
+        showBehaviorPrompts={true}
+      />
+      
       <Box sx={{ display: 'flex', flex: 1, height: '100vh' }}>
         {/* Collapsible Left Navigation for logged-in users */}
         <CollapsibleNavigationEnhanced 
@@ -113,7 +133,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
             ml: isPanelOpen 
               ? `calc(${preferences.navigationCollapsed ? '60px' : '260px'} + 50vw)` 
               : (preferences.navigationCollapsed ? '60px' : '260px'),
-            pt: 0, // Remove top padding since no header
+            pt: '60px', // Add top padding to account for AgentDocker
             px: 0, // Remove all horizontal padding for full-width chat interface
             pb: 0, // Remove bottom padding for full-height chat interface
             transition: theme => theme.transitions.create(['margin-left'], {
