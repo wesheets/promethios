@@ -204,7 +204,7 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
             zIndex: 10
           }}>
             <ReplyButton
-              onStartThread={() => onStartThread(message.id)}
+              onReply={() => onStartThread(message.id)}
               variant="compact"
             />
           </Box>
