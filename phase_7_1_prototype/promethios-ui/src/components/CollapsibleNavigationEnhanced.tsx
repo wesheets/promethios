@@ -119,7 +119,6 @@ import { useAuth } from '../context/AuthContext';
 import NotificationBell from './notifications/NotificationBell';
 import ChatButton from './social/ChatButton';
 import UserConnectionsModal from './social/UserConnectionsModal';
-import HumanMessagingDrawer from './social/HumanMessagingDrawer';
 import BottomUserSection from './navigation/BottomUserSection';
 
 const DRAWER_WIDTH = 260;
@@ -188,7 +187,6 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   const { currentUser } = useAuth();
   const [expandedSections, setExpandedSections] = useState<string[]>(['multi-agent-systems']); // Expand MAS by default
   const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
-  const [messagingDrawerOpen, setMessagingDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -336,7 +334,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           id: 'messages', 
           label: 'Messages', 
           icon: <MessageIcon />, 
-          onClick: () => handleMessagesClick(),
+          path: '/ui/social/messages',
           isNew: true
         },
         { 
@@ -550,12 +548,6 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
 
   const handleConnectionsClick = () => {
     setConnectionsModalOpen(true);
-  };
-
-  const handleMessagesClick = () => {
-    console.log('🖱️ Messages clicked - opening messaging drawer');
-    setMessagingDrawerOpen(true);
-    console.log('📱 Messaging drawer state set to true');
   };
 
   const isActive = (path: string) => {
@@ -888,16 +880,6 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
         userName={currentUser.displayName || 'User'}
       />
     )}
-
-    {/* Human Messaging Drawer */}
-    <HumanMessagingDrawer
-      open={messagingDrawerOpen}
-      onClose={() => setMessagingDrawerOpen(false)}
-      onAgentDrop={(agentId, messageId) => {
-        console.log('Agent dropped:', agentId, 'on message:', messageId);
-        // TODO: Implement agent drop functionality
-      }}
-    />
     </ThemeProvider>
   );
 };

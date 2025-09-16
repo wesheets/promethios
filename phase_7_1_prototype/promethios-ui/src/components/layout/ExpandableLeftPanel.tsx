@@ -85,9 +85,19 @@ const ExpandableLeftPanel: React.FC<ExpandableLeftPanelProps> = ({
 
     // Route-based content rendering
     switch (true) {
-      case currentRoute.includes('social-feed') || currentRoute.includes('social'):
+      case currentRoute.includes('social-feed') || currentRoute === '/ui/social/feed':
         console.log('🎯 [ExpandableLeftPanel] Rendering SocialFeedPage');
         return <SocialFeedPage />;
+      
+      case currentRoute.includes('messages') || currentRoute === '/ui/social/messages':
+        console.log('🎯 [ExpandableLeftPanel] Rendering Messages');
+        return (
+          <Box sx={{ p: 3, color: '#e2e8f0', height: '100%' }}>
+            <h2>Messages</h2>
+            <p>Human-to-human messaging system will be implemented here</p>
+            <p>This will include Slack-style channels, direct messages, and agent drop zones.</p>
+          </Box>
+        );
       
       case currentRoute.includes('profile'):
         console.log('🎯 [ExpandableLeftPanel] Rendering Profile placeholder');
