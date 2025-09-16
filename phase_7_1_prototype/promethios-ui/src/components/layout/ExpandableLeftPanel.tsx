@@ -15,6 +15,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import SocialFeed from '../social/SocialFeed';
 import SocialFeedPage from '../../pages/SocialFeedPage';
 import MessagesPage from '../../pages/MessagesPage';
+import DiscoveryPage from '../../pages/DiscoveryPage';
+import LinkedInStyleProfilePage from '../../pages/LinkedInStyleProfilePage';
+import OrganizationsPage from '../../pages/OrganizationsPage';
 
 interface ExpandableLeftPanelProps {
   isOpen: boolean;
@@ -95,31 +98,16 @@ const ExpandableLeftPanel: React.FC<ExpandableLeftPanelProps> = ({
         return <MessagesPage />;
       
       case currentRoute.includes('profile'):
-        console.log('🎯 [ExpandableLeftPanel] Rendering Profile placeholder');
-        return (
-          <Box sx={{ p: 3, color: '#e2e8f0' }}>
-            <h2>Profile</h2>
-            <p>Profile content will be implemented here</p>
-          </Box>
-        );
+        console.log('🎯 [ExpandableLeftPanel] Rendering LinkedInStyleProfilePage');
+        return <LinkedInStyleProfilePage />;
       
       case currentRoute.includes('organization'):
-        console.log('🎯 [ExpandableLeftPanel] Rendering Organization placeholder');
-        return (
-          <Box sx={{ p: 3, color: '#e2e8f0' }}>
-            <h2>Organization</h2>
-            <p>Organization content will be implemented here</p>
-          </Box>
-        );
+        console.log('🎯 [ExpandableLeftPanel] Rendering OrganizationsPage');
+        return <OrganizationsPage />;
       
       case currentRoute.includes('discovery'):
-        console.log('🎯 [ExpandableLeftPanel] Rendering Discovery placeholder');
-        return (
-          <Box sx={{ p: 3, color: '#e2e8f0' }}>
-            <h2>Discovery</h2>
-            <p>Discovery content will be implemented here</p>
-          </Box>
-        );
+        console.log('🎯 [ExpandableLeftPanel] Rendering DiscoveryPage');
+        return <DiscoveryPage />;
       
       default:
         console.log('🎯 [ExpandableLeftPanel] Rendering default loading content for:', currentRoute);
