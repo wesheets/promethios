@@ -241,7 +241,32 @@ const defaultConfig: WidgetConfig = {
 };
 
 const WidgetCustomizer: React.FC<WidgetCustomizerProps> = ({ chatbot, onSave, onClose }) => {
-  const { config, updateConfig, resetConfig, setActiveChatbotId } = useWidgetCustomizer();
+  // Try to use the context, but provide fallback if not available
+  let contextConfig, contextUpdateConfig, contextResetConfig, contextSetActiveChatbotId;
+  
+  try {
+    const context = useWidgetCustomizer();
+    contextConfig = context.config;
+    contextUpdateConfig = context.updateConfig;
+    contextResetConfig = context.resetConfig;
+    contextSetActiveChatbotId = context.setActiveChatbotId;
+  } catch (error) {
+    console.warn('WidgetCustomizerContext not available, using local state');
+  }
+
+  // Local state fallback
+  const [localConfig, setLocalConfig] = useState<WidgetConfig>(defaultConfig);
+  
+  // Use context config if available, otherwise use local config
+  const config = contextConfig || localConfig;
+  const updateConfig = contextUpdateConfig || ((key: keyof WidgetConfig, value: any) => {
+    setLocalConfig(prev => ({ ...prev, [key]: value }));
+  });
+  const resetConfig = contextResetConfig || (() => {
+    setLocalConfig(defaultConfig);
+  });
+  const setActiveChatbotId = contextSetActiveChatbotId || (() => {});
+
   const [activeTab, setActiveTab] = useState(0);
   const [colorPickerOpen, setColorPickerOpen] = useState<string | null>(null);
   const [colorPickerAnchor, setColorPickerAnchor] = useState<HTMLElement | null>(null);

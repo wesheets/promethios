@@ -18,6 +18,9 @@ import ToolConfigurationPanel from '../tools/ToolConfigurationPanel';
 import ConnectedAppsPanel from '../tools/ConnectedAppsPanel';
 import MASCollaborationPanel from '../collaboration/MASCollaborationPanel';
 import TokenEconomicsConfigPanel from '../TokenEconomicsConfigPanel';
+import SimpleAnalyticsDashboard from '../analytics/SimpleAnalyticsDashboard';
+import RepositoryBrowser from '../workflow/RepositoryBrowser';
+import WidgetCustomizer from '../chat/customizer/WidgetCustomizer';
 interface RightPanelContentProps {
   panelType: string;
   userId?: string;
@@ -47,6 +50,12 @@ interface RightPanelContentProps {
   masCollaborationSettings?: any;
   availableAgents?: any[];
   currentTokenUsage?: any;
+  // Repository props
+  repositoryManager?: any;
+  versionControl?: any;
+  autonomousGovernance?: any;
+  onProjectCreate?: (template: any, projectName: string) => Promise<void>;
+  onProjectSelect?: (project: any) => void;
 }
 
 const RightPanelContent: React.FC<RightPanelContentProps> = ({
@@ -78,6 +87,12 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
   masCollaborationSettings,
   availableAgents = [],
   currentTokenUsage = {},
+  // Repository props
+  repositoryManager,
+  versionControl,
+  autonomousGovernance,
+  onProjectCreate,
+  onProjectSelect,
 }) => {
   // Common props to pass to all panel components
   const commonProps = {
@@ -204,7 +219,26 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
       case 'tools':
         return (
           <ToolConfigurationPanel
-            {...commonProps}
+            chatbot={selectedChatbot || {
+              identity: { 
+                id: currentAgentId || 'default-agent', 
+                name: currentAgentName || 'Default Agent',
+                organizationId: 'default-org'
+              },
+              profile: {
+                name: currentAgentName || 'Default Agent',
+                description: 'Default agent configuration'
+              },
+              // Add other required chatbot properties with defaults
+            }}
+            onClose={() => {
+              console.log('🔧 [Tools] Panel closed');
+              // Could trigger panel close if needed
+            }}
+            onSave={(toolProfile) => {
+              console.log('🔧 [Tools] Configuration saved:', toolProfile);
+              // Could trigger save notification or update
+            }}
           />
         );
 
@@ -246,16 +280,34 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
       // Placeholder panels for components that need to be created/found
       case 'analytics':
         return (
-          <Box sx={{ p: 3 }}>
-            <div>Analytics Panel - Full functionality to be restored</div>
-          </Box>
+          <SimpleAnalyticsDashboard 
+            selectedChatbot={selectedChatbot}
+            currentBotState={currentBotState}
+          />
         );
 
       case 'customize':
         return (
-          <Box sx={{ p: 3 }}>
-            <div>Customize Panel - Full functionality to be restored</div>
-          </Box>
+          <WidgetCustomizer
+            chatbot={selectedChatbot || {
+              identity: { 
+                id: currentAgentId || 'default-agent', 
+                name: currentAgentName || 'Default Agent'
+              },
+              profile: {
+                name: currentAgentName || 'Default Agent',
+                description: 'Default agent configuration'
+              }
+            }}
+            onSave={(config) => {
+              console.log('🎨 [Customize] Widget config saved:', config);
+              // Could trigger save notification or update
+            }}
+            onClose={() => {
+              console.log('🎨 [Customize] Panel closed');
+              // Could trigger panel close if needed
+            }}
+          />
         );
 
       case 'personality':
@@ -302,9 +354,21 @@ const RightPanelContent: React.FC<RightPanelContentProps> = ({
 
       case 'repo':
         return (
-          <Box sx={{ p: 3 }}>
-            <div>Repository Panel - Full functionality to be restored</div>
-          </Box>
+          <RepositoryBrowser
+            projects={projects}
+            templates={projectTemplates}
+            onProjectCreate={onProjectCreate || (async (template: any, projectName: string) => {
+              console.log('📁 [Repository] Creating project from template:', template.name);
+              // Default implementation - could be enhanced
+            })}
+            onProjectSelect={onProjectSelect || ((project: any) => {
+              console.log('📁 [Repository] Project selected:', project.name);
+              // Default implementation - could be enhanced
+            })}
+            repositoryManager={repositoryManager}
+            versionControl={versionControl}
+            currentUserId={userId}
+          />
         );
 
       default:
