@@ -6020,6 +6020,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       const handleAgentInteraction = (agentId: string, messageId: string, action: string) => {
                         console.log('🎯 Agent interaction:', { agentId, messageId, action });
                         
+                        // Debug: Log available agents
+                        const availableGuestAgents = multiChatState.contexts.flatMap(ctx => ctx.guestAgents || []);
+                        console.log('🔍 Available guest agents:', availableGuestAgents.map(a => ({ id: a.agentId, name: a.name })));
+                        console.log('🔍 Selected chatbot:', { id: selectedChatbot?.id, name: selectedChatbot?.name });
+                        console.log('🔍 Looking for agent ID:', agentId);
+                        
                         // Find the agent details
                         const agent = multiChatState.contexts
                           .flatMap(ctx => ctx.guestAgents || [])
@@ -6035,6 +6041,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           handleBehaviorPrompt(agentId, agentName, action, true);
                         } else {
                           console.log('❌ Agent not found for interaction:', { agentId, action });
+                          console.log('❌ Available agent IDs:', [
+                            ...availableGuestAgents.map(a => a.agentId),
+                            selectedChatbot?.id
+                          ].filter(Boolean));
                           // Fallback: add a message indicating the interaction
                           const interactionMessage = `🎭 Agent is ${action}ing on this message...`;
                           console.log('🎭 Behavioral interaction fallback:', interactionMessage);
