@@ -7188,6 +7188,1532 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         {/* No chatbots fallback */}
         {!selectedChatbot && (
           <Container sx={{ py: 2, height: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  {!rightPanelCollapsed && (
+                    <>
+                      <Avatar sx={{ bgcolor: '#3b82f6' }}>
+                        {selectedChatbot?.identity?.name?.charAt(0) || 'A'}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" sx={{ color: 'white', fontWeight: 600 }}>
+                          {selectedChatbot?.identity?.name || 'Agent'} • Custom
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#64748b' }}>
+                          Live • Enterprise
+                        </Typography>
+                      </Box>
+                    </>
+                  )}
+                  
+                  {/* Collapse Button */}
+                  <Tooltip title={rightPanelCollapsed ? "Expand panel" : "Collapse panel"}>
+                    <IconButton 
+                      onClick={toggleRightPanel}
+                      sx={{ 
+                        color: '#64748b',
+                        '&:hover': { color: '#94a3b8' },
+                        ml: rightPanelCollapsed ? 0 : 'auto'
+                      }}
+                    >
+                      {rightPanelCollapsed ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                
+                {/* Command Panel Tabs - Only show when expanded */}
+                {!rightPanelCollapsed && (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {[
+                      { key: 'team', label: 'TEAM', badge: unreadTeamCount },
+                      { key: 'chats', label: 'CHATS' },
+                      { key: 'repo', label: 'REPO', badge: projects.length },
+                      { key: 'analytics', label: 'ANALYTICS' },
+                      { key: 'mas_collaboration', label: 'MAS COLLABORATION', badge: 0 },
+                      { key: 'token_economics', label: 'TOKEN ECONOMICS', badge: budgetWarning || budgetExceeded ? 1 : 0 },
+                      { key: 'customize', label: 'CUSTOMIZE' },
+                      { key: 'personality', label: 'PERSONALITY' },
+                      { key: 'knowledge', label: 'AI KNOWLEDGE' },
+                      { key: 'tools', label: 'TOOLS' },
+                      { key: 'chat_interface', label: 'CHAT INTERFACE' },
+                      { key: 'integrations', label: 'INTEGRATIONS' },
+                      { key: 'rag_policy', label: 'RAG + POLICY' },
+                      { key: 'automation', label: 'AUTOMATION' },
+                      { key: 'receipts', label: 'RECEIPTS' },
+                      { key: 'memory', label: 'MEMORY' },
+                      { key: 'sandbox', label: 'SANDBOX' },
+                      { key: 'live_agent', label: 'LIVE AGENT', badge: autonomousMode ? 1 : 0, isLiveAgent: true },
+                      { key: 'governance', label: 'GOVERNANCE' },
+                      ...(selectedChatbot && isCustomGPT(selectedChatbot) ? [{ key: 'custom_gpt', label: 'CUSTOM GPT', badge: 0 }] : []),
+                      { key: 'debug', label: 'DEBUG' }
+                    ].map((tab) => (
+                    <Badge
+                      key={tab.key}
+                      badgeContent={tab.badge || 0}
+                      color={tab.isLiveAgent && autonomousMode ? "success" : "error"}
+                      invisible={!tab.badge || tab.badge === 0}
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          fontSize: '0.6rem',
+                          height: 16,
+                          minWidth: 16
+                        }
+                      }}
+                    >
+                      <Button
+                        size="small"
+                        variant={rightPanelType === tab.key ? 'contained' : 'outlined'}
+                        onClick={() => {
+                          if (tab.key === 'live_agent') {
+                            handleLiveAgentTabClick();
+                          } else {
+                            setRightPanelType(tab.key as RightPanelType);
+                          }
+                        }}
+                        sx={{
+                          fontSize: '0.7rem',
+                          px: 1.5,
+                          py: 0.5,
+                          minWidth: 'auto',
+                          borderColor: '#374151',
+                          color: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? 'white' : '#94a3b8',
+                          bgcolor: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? '#3b82f6' : 'transparent',
+                          '&:hover': { 
+                            borderColor: '#4b5563', 
+                            bgcolor: (rightPanelType === tab.key || (tab.key === 'live_agent' && liveAgentPanelOpen)) ? '#2563eb' : '#374151' 
+                          },
+                        }}
+                      >
+                        {tab.label}
+                      </Button>
+                    </Badge>
+                  ))}
+                </Box>
+                )}
+                
+                {/* Collapsed Icon List State */}
+                {rightPanelCollapsed && (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: 1, 
+                    alignItems: 'center',
+                    mt: 1
+                  }}>
+                    {/* Adaptive Mode Indicator */}
+                    <Box sx={{
+                      width: 3,
+                      height: 20,
+                      bgcolor: recommendedMode === 'minimal' ? '#ef4444' : 
+                               recommendedMode === 'compact' ? '#f59e0b' : 
+                               recommendedMode === 'standard' ? '#10b981' : '#3b82f6',
+                      borderRadius: 1.5,
+                      mb: 1
+                    }} />
+                    
+                    {/* Key Tab Icons */}
+                    {[
+                      { key: 'team', icon: '👥', badge: unreadTeamCount },
+                      { key: 'chats', icon: '💬', badge: 0 },
+                      { key: 'analytics', icon: '📊', badge: 0 },
+                      { key: 'tools', icon: '🔧', badge: 0 },
+                      { key: 'settings', icon: '⚙️', badge: 0 }
+                    ].map((item) => (
+                      <Tooltip key={item.key} title={`${item.key.toUpperCase()} - Click to expand`} placement="left">
+                        <IconButton
+                          onClick={() => {
+                            setRightPanelCollapsed(false);
+                            setRightPanelType(item.key);
+                          }}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            color: rightPanelType === item.key ? '#3b82f6' : '#64748b',
+                            bgcolor: rightPanelType === item.key ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                            '&:hover': {
+                              color: '#94a3b8',
+                              bgcolor: 'rgba(148, 163, 184, 0.1)'
+                            },
+                            fontSize: '14px'
+                          }}
+                        >
+                          <Badge badgeContent={item.badge || 0} color="error" invisible={!item.badge}>
+                            {item.icon}
+                          </Badge>
+                        </IconButton>
+                      </Tooltip>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+
+              {/* Panel Content */}
+              <Box sx={{ 
+                flex: 1, 
+                overflow: 'hidden', 
+                display: 'flex', 
+                flexDirection: 'column',
+                height: '100%', // Ensure full height
+                pb: 0, // Remove any bottom padding
+                mb: 0  // Remove any bottom margin
+              }}>
+                {rightPanelType === 'team' && (
+                  <TeamPanel 
+                    currentUserId={user?.uid} 
+                    onAddGuestAgent={addGuestAgent}
+                    onAddHumanToChat={(humans) => {
+                      setPendingHumanInvites(humans);
+                      setShowHumanInviteConfirmDialog(true);
+                    }}
+                  />
+                )}
+                
+                {rightPanelType === 'repo' && (
+                  <RepositoryBrowser
+                    projects={projects}
+                    templates={projectTemplates}
+                    onProjectCreate={async (template: ProjectTemplate, projectName: string) => {
+                      try {
+                        console.log('📁 [Repository] Creating project from template:', template.name);
+                        
+                        // Create new project
+                        const newProject = await repositoryManager.createProjectFromTemplate(
+                          template,
+                          projectName,
+                          user?.uid || 'anonymous'
+                        );
+                        
+                        // Update projects list
+                        setProjects(prev => [...prev, newProject]);
+                        
+                        // Start autonomous mode for project setup
+                        if (autonomousGovernance) {
+                          const taskPlan = await autonomousGovernance.createTaskPlan({
+                            goal: `Set up ${projectName} project using ${template.name} template`,
+                            context: {
+                              projectId: newProject.id,
+                              templateId: template.id,
+                              projectName,
+                              templateName: template.name
+                            }
+                          });
+                          
+                          console.log('🤖 [Autonomous] Starting project setup task:', taskPlan);
+                        }
+                        
+                        console.log('✅ [Repository] Project created successfully:', newProject);
+                      } catch (error) {
+                        console.error('❌ [Repository] Failed to create project:', error);
+                      }
+                    }}
+                    onProjectSelect={(project: WorkflowProject) => {
+                      console.log('📁 [Repository] Project selected:', project.name);
+                      // Could integrate with Live Agent to show project status
+                    }}
+                    repositoryManager={repositoryManager}
+                    versionControl={versionControl}
+                    currentUserId={user?.uid || 'anonymous'}
+                  />
+                )}
+                
+                {rightPanelType === 'mas_collaboration' && (
+                  <MASCollaborationPanel
+                    settings={{
+                      chatFeatures: {
+                        conversationContextSharing: true,
+                        crossAgentReferences: true,
+                        realTimeCollaboration: true,
+                        visualAgentSelection: true,
+                        mentionSystemEnabled: true
+                      },
+                      // 🔧 CRITICAL FIX: Add missing agentToAgentCommunication property
+                      agentToAgentCommunication: {
+                        enabled: true,
+                        allowDirectTagging: true,
+                        hoverTriggeredResponses: false,
+                        autoResponseToMentions: true,
+                        crossAgentConversations: true,
+                        responseDelay: 2,
+                        maxChainLength: 3
+                      },
+                      autonomousBehaviors: {
+                        proactiveInterjection: false,
+                        smartSuggestions: true,
+                        contextualHandRaising: true,
+                        triggerBasedEngagement: true,
+                        collaborativeFiltering: true
+                      },
+                      temporaryRoles: {},
+                      tokenEconomics: {
+                        maxTokensPerAgent: 1000,
+                        suggestionThreshold: 70,
+                        monitoringBudget: 100,
+                        interjectionCost: 150,
+                        enableSmartBudgeting: true
+                      },
+                      triggerSettings: {
+                        keywordTriggers: ['question', 'problem', 'help', 'idea'],
+                        topicTriggers: ['technical', 'creative', 'analysis'],
+                        questionTriggers: true,
+                        disagreementTriggers: true,
+                        expertiseTriggers: true,
+                        sensitivityLevel: 5
+                      }
+                    }}
+                    onSettingsChange={(settings: MASCollaborationSettings) => {
+                      console.log('🎛️ [MAS] Settings updated:', settings);
+                      // TODO: Persist settings and apply to multi-agent system
+                    }}
+                    availableAgents={[
+                      ...(selectedChatbot ? [{
+                        id: selectedChatbot.id,
+                        name: selectedChatbot.identity?.name || 'Host Agent',
+                        avatar: selectedChatbot.identity?.avatar,
+                        expertise: selectedChatbot.expertise || []
+                      }] : []),
+                      ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).map(guest => ({
+                        id: guest.agentId,
+                        name: guest.name,
+                        avatar: guest.avatar,
+                        expertise: []
+                      }))
+                    ]}
+                    currentTokenUsage={{
+                      ...(selectedChatbot ? {
+                        [selectedChatbot.id]: {
+                          used: 450,
+                          budget: 1000,
+                          efficiency: 0.85
+                        }
+                      } : {}),
+                      ...(multiChatState.contexts.find(c => c.isActive)?.guestAgents || []).reduce((acc, guest) => ({
+                        ...acc,
+                        [guest.agentId]: {
+                          used: 320,
+                          budget: 1000,
+                          efficiency: 0.92
+                        }
+                      }), {})
+                    }}
+                  />
+                )}
+                
+                {rightPanelType === 'chats' && selectedChatbot && (
+                  <OptimizedChatHistoryPanel
+                    agentId={selectedChatbotId || selectedChatbot?.id}
+                    agentName={selectedChatbot?.name || `Agent ${selectedChatbotId}`}
+                    currentSessionId={currentBotState?.currentChatSession?.id}
+                    refreshTrigger={currentBotState?.chatHistoryRefreshTrigger || 0}
+                    sharedConversations={guestConversationAccess.map(access => ({
+                      id: access.id,
+                      name: access.conversationName || 'Shared Chat',
+                      participants: access.participants || [],
+                      messageCount: access.messageCount || 0,
+                      createdAt: access.createdAt,
+                      updatedAt: access.updatedAt,
+                      isPrivate: false,
+                      createdBy: access.hostUserId || '',
+                    }))}
+                    onSharedConversationSelect={handleCustomSharedConversationSelect}
+                    onDeleteSharedConversation={(conversationId) => {
+                      console.log(`🗑️ [SharedChat] Deleting conversation: ${conversationId}`);
+                      // Remove from local state immediately for instant UI feedback
+                      // This would need to be connected to the actual delete service
+                      refreshSharedConversations();
+                    }}
+                    onBulkCleanupLegacyConversations={() => {
+                      console.log(`🧹 [LegacyCleanup] Cleaning up legacy conversations`);
+                      // This would need to be connected to the actual cleanup service
+                      refreshSharedConversations();
+                    }}
+                    onDirectMessage={(userId, userName) => {
+                      // Integrate with existing direct message system
+                      console.log(`🔄 [DirectMessage] Opening DM with ${userName} (${userId})`);
+                      // TODO: Integrate with your existing direct message functionality
+                      // This should open the bottom-right chat window like in the team panel
+                    }}
+                    onViewProfile={(userId) => {
+                      // Integrate with existing profile view system
+                      console.log(`🔄 [Profile] Viewing profile for user ${userId}`);
+                      // TODO: Integrate with your existing profile view functionality
+                    }}
+                    onChatSelect={async (session) => {
+                      console.log(`🔄 [ChatHistory] Chat selected:`, session);
+                      console.log(`🔄 [ChatHistory] Session has ${session.messages?.length || 0} messages`);
+                      console.log(`🔄 [ChatHistory] Selected chatbot ID: ${selectedChatbotId}`);
+                      
+                      if (selectedChatbotId) {
+                        updateBotState(selectedChatbotId, { 
+                          currentChatSession: session,
+                          currentChatName: session.name || `Chat ${session.id.slice(-8)}`,
+                          chatMessages: session.messages || []
+                        });
+                        console.log(`🔄 [ChatHistory] Updated bot state with session: ${session.name}`);
+                        console.log(`🔄 [ChatHistory] Updated chatMessages with ${session.messages?.length || 0} messages`);
+                        
+                        // 🔧 NEW: Restore guest agents from chat session to multiChatState
+                        try {
+                          const guestAgents = await chatHistoryService.getGuestAgentsForSession(session.id);
+                          console.log(`🤖 [ChatHistory] Found ${guestAgents.length} guest agents in session:`, guestAgents);
+                          
+                          if (guestAgents.length > 0) {
+                            // Update multiChatState to include guest agents
+                            setMultiChatState(prev => {
+                              const activeContext = prev.contexts.find(c => c.isActive);
+                              if (!activeContext) return prev;
+                              
+                              const restoredGuestAgents = guestAgents.map(guest => ({
+                                agentId: guest.id,
+                                name: guest.name,
+                                avatar: guest.avatar,
+                                status: 'active' as const
+                              }));
+                              
+                              return {
+                                ...prev,
+                                contexts: prev.contexts.map(context => 
+                                  context.isActive 
+                                    ? {
+                                        ...context,
+                                        guestAgents: restoredGuestAgents
+                                      }
+                                    : context
+                                )
+                              };
+                            });
+                            
+                            // Update selected agents to include restored guest agents
+                            const guestAgentIds = guestAgents.map(guest => guest.id);
+                            setSelectedAgents(prev => {
+                              // Remove duplicates and add guest agents
+                              const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+                              return uniqueIds;
+                            });
+                            setTargetAgents(prev => {
+                              // Remove duplicates and add guest agents
+                              const uniqueIds = [...new Set([...prev, ...guestAgentIds])];
+                              return uniqueIds;
+                            });
+                            
+                            console.log(`✅ [ChatHistory] Restored ${guestAgents.length} guest agents to multiChatState`);
+                          }
+                        } catch (error) {
+                          console.error('❌ [ChatHistory] Failed to restore guest agents from session:', error);
+                          // Continue without guest agents - don't break the flow
+                        }
+                      }
+                      
+                      // Load the chat messages into the current chat interface
+                      const newMessages = session.messages.map(msg => ({
+                        id: msg.id,
+                        content: msg.content,
+                        sender: msg.sender,
+                        timestamp: msg.timestamp,
+                        agentName: msg.agentName,
+                        agentId: msg.agentId,
+                        attachments: msg.attachments,
+                        governanceData: msg.governanceData,
+                        shadowGovernanceData: msg.shadowGovernanceData,
+                      }));
+                      
+                      console.log(`🔄 [ChatHistory] Mapped ${newMessages.length} messages:`, newMessages);
+                      
+                      if (selectedChatbotId) {
+                        console.log(`🔄 [ChatHistory] Loading ${newMessages.length} messages for bot: ${selectedChatbotId}`);
+                        
+                        // Use direct state update to avoid any potential stale closure issues
+                        setBotStates(prev => {
+                          const newStates = new Map(prev);
+                          const currentState = newStates.get(selectedChatbotId) || initializeBotState(selectedChatbotId);
+                          console.log(`🔄 [ChatHistory] Current state before update:`, currentState);
+                          
+                          const updatedState = { ...currentState, chatMessages: newMessages };
+                          console.log(`🔄 [ChatHistory] Updated state:`, updatedState);
+                          
+                          newStates.set(selectedChatbotId, updatedState);
+                          
+                          console.log(`✅ [ChatHistory] Loaded ${newMessages.length} messages successfully`);
+                          console.log(`✅ [ChatHistory] Bot state updated for: ${selectedChatbotId}`);
+                          return newStates;
+                        });
+                      }
+                    }}
+                    onNewChat={(session) => {
+                      if (selectedChatbotId) {
+                        if (session) {
+                          // New chat created - set the session and name
+                          updateBotState(selectedChatbotId, {
+                            currentChatSession: session,
+                            currentChatName: session.name || `Chat ${session.id.slice(-8)}`,
+                            chatMessages: []
+                          });
+                          // Trigger chat history panel refresh
+                          setChatHistoryRefreshTrigger(prev => prev + 1);
+                        } else {
+                          // Clear current chat and start fresh
+                          updateBotState(selectedChatbotId, {
+                            currentChatSession: null,
+                            currentChatName: '',
+                            chatMessages: []
+                          });
+                        }
+                        
+                        // 🔧 NEW: Clear guest agent state when creating new chat
+                        console.log('🧹 [NewChat] Clearing guest agent state for new chat session');
+                        
+                        // Clear multi-agent state
+                        setMultiChatState(prev => ({
+                          ...prev,
+                          contexts: prev.contexts.map(context => 
+                            context.isActive 
+                              ? {
+                                  ...context,
+                                  guestAgents: [] // Clear guest agents
+                                }
+                              : context
+                          )
+                        }));
+                        
+                        // Clear selected agents (keep only host agent)
+                        setSelectedAgents([]);
+                        setTargetAgents([]);
+                        
+                        // Clear multi-agent session state
+                        setCurrentMultiAgentSession(null);
+                        multiAgentSessionRef.current = null;
+                        
+                        // 🚀 NEW: Trigger real-time chat history panel update
+                        console.log('🔄 [RealTime] Triggering chat history panel update after new chat creation');
+                        setChatHistoryRefreshTrigger(prev => prev + 1);
+                        
+                        console.log('✅ [NewChat] Guest agent state cleared for new chat session');
+                      }
+                      setMessageInput('');
+                      setAttachedFiles([]);
+                    }}
+                    onShareChat={async (shareableId: string) => {
+                      console.log('🔗 [ShareChat] onShareChat callback triggered with shareableId:', shareableId);
+                      
+                      if (selectedChatbotId && user?.uid) {
+                        console.log('🔗 [ShareChat] selectedChatbotId found:', selectedChatbotId);
+                        
+                        try {
+                          // Extract the session ID from the shareable ID (format: chat_timestamp_randomId)
+                          const sessionId = shareableId;
+                          console.log('🔗 [ShareChat] Attempting to get session data for:', sessionId);
+                          
+                          // Get the session data from ChatHistoryService
+                          const session = await chatHistoryService.getChatSessionById(sessionId);
+                          
+                          if (session) {
+                            console.log('🔗 [ShareChat] Session data retrieved:', session);
+                            
+                            // Extract preview text from the first few messages
+                            const previewText = session.messages
+                              .slice(0, 2)
+                              .map(msg => msg.content)
+                              .join(' ')
+                              .substring(0, 150) + (session.messages.length > 2 || session.messages.join(' ').length > 150 ? '...' : '');
+                            
+                            // Extract topics from message content (simple keyword extraction)
+                            const allText = session.messages.map(msg => msg.content).join(' ').toLowerCase();
+                            const commonTopics = ['audit', 'governance', 'compliance', 'security', 'data', 'policy', 'risk', 'logs', 'monitoring'];
+                            const detectedTopics = commonTopics.filter(topic => allText.includes(topic));
+                            
+                            // Set the active chat reference for visual preview
+                            setActiveChatReference({
+                              id: sessionId,
+                              name: session.name || `Chat ${sessionId.slice(-8)}`,
+                              preview: previewText,
+                              messageCount: session.messageCount || session.messages.length,
+                              lastUpdated: session.lastUpdated || new Date(),
+                              topics: detectedTopics.length > 0 ? detectedTopics : undefined
+                            });
+                            
+                            console.log('✅ Chat reference preview created for:', sessionId);
+                          } else {
+                            console.error('❌ [ShareChat] Session not found for ID:', sessionId);
+                            // Fallback: create a basic preview with just the ID
+                            setActiveChatReference({
+                              id: sessionId,
+                              name: `Chat ${sessionId.slice(-8)}`,
+                              preview: 'Chat content preview not available',
+                              messageCount: 0,
+                              lastUpdated: new Date()
+                            });
+                          }
+                        } catch (error) {
+                          console.error('❌ [ShareChat] Error retrieving session data:', error);
+                          // Fallback: create a basic preview
+                          setActiveChatReference({
+                            id: shareableId,
+                            name: `Chat ${shareableId.slice(-8)}`,
+                            preview: 'Chat content preview not available',
+                            messageCount: 0,
+                            lastUpdated: new Date()
+                          });
+                        }
+                      } else {
+                        console.error('❌ [ShareChat] No selectedChatbotId or user found');
+                      }
+                    }}                />
+                )}
+              </Box>
+
+              {/* Right Side - Control Panels */}
+              <Box sx={{ flex: '0 0 40%', bgcolor: '#1e293b', borderLeft: '1px solid #334155' }}>
+                {rightPanelType === 'analytics' && selectedChatbot && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      Enhanced Analytics Dashboard
+                    </Typography>
+                    
+                    {/* Real-time Status */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                          <Box sx={{ 
+                            width: 8, 
+                            height: 8, 
+                            borderRadius: '50%', 
+                            bgcolor: autonomousMode ? '#10b981' : '#6b7280',
+                            animation: autonomousMode ? 'pulse 2s infinite' : 'none'
+                          }} />
+                          <Typography variant="body1" sx={{ color: 'white', fontWeight: 600 }}>
+                            Agent Status: {autonomousMode ? 'Autonomous Mode Active' : 'Interactive Mode'}
+                          </Typography>
+                        </Box>
+                        {currentTaskPlan && (
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Current Task: {currentTaskPlan.goal}
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Enhanced Key Metrics */}
+                    <Grid container spacing={1} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Response Time
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getRealMetricsSync(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Avg last 24h
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Satisfaction
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getRealMetricsSync(selectedChatbot).satisfactionScore.toFixed(1)}/5
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              User feedback
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Autonomous Tasks
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {projects.length}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Active projects
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Team Collaboration
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#8b5cf6', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {unreadTeamCount}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.7rem' }}>
+                              Unread messages
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Autonomous Mode Analytics */}
+                    {autonomousMode && currentTaskPlan && (
+                      <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 2 }}>
+                        <CardContent sx={{ p: 2 }}>
+                          <Typography variant="body1" sx={{ color: 'white', mb: 1, fontWeight: 600 }}>
+                            Autonomous Execution Analytics
+                          </Typography>
+                          <Box sx={{ mb: 2 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                              <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                Progress
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#10b981' }}>
+                                {Math.round((currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100)}%
+                              </Typography>
+                            </Box>
+                            <LinearProgress 
+                              variant="determinate" 
+                              value={(currentTaskPlan.currentPhaseId / currentTaskPlan.phases.length) * 100}
+                              sx={{ 
+                                bgcolor: '#334155',
+                                '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                              }}
+                            />
+                          </Box>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Phase {currentTaskPlan.currentPhaseId} of {currentTaskPlan.phases.length}: {
+                              currentTaskPlan.phases.find(p => p.id === currentTaskPlan.currentPhaseId)?.title || 'Unknown'
+                            }
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Team Collaboration Analytics */}
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body1" sx={{ color: 'white', mb: 2, fontWeight: 600 }}>
+                              Team Collaboration Metrics
+                            </Typography>
+                            <Grid container spacing={2}>
+                              <Grid item xs={6}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                  <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                                    {teamMembers.length}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                    Team Members
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                              <Grid item xs={6}>
+                                <Box sx={{ textAlign: 'center' }}>
+                                  <Typography variant="h4" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                                    {teamConversations.length}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ color: '#64748b' }}>
+                                    Active Chats
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Last Active
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).lastActive}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Performance Trends */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Performance Trends
+                        </Typography>
+                        <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            📈 Interactive charts will be displayed here
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+
+                    {/* Usage Statistics */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Usage Statistics
+                        </Typography>
+                        <Stack spacing={2}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Total Conversations
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).messageVolume.toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Governance Alerts
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getRealMetricsSync(selectedChatbot).governanceAlerts > 0 ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).governanceAlerts}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Health Score
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getRealMetricsSync(selectedChatbot).healthScore >= 90 ? '#10b981' : getRealMetricsSync(selectedChatbot).healthScore >= 80 ? '#f59e0b' : '#ef4444', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).healthScore}%
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+
+                {rightPanelType === 'tools' && (
+                  <ToolConfigurationPanel
+                    chatbot={selectedChatbot}
+                    onClose={() => setRightPanelType(null)}
+                    onSave={async (toolProfile: AgentToolProfile) => {
+                      try {
+                        console.log('Tool profile saved:', toolProfile);
+                        
+                        // Save the tool configuration to the backend
+                        const chatbotStorageService = ChatbotStorageService.getInstance();
+                        const updatedChatbot = await chatbotStorageService.updateChatbot(selectedChatbot.identity.id, {
+                          toolProfile: toolProfile
+                        });
+                        
+                        if (updatedChatbot) {
+                          // Update local state
+                          setChatbots(prev => prev.map(bot => 
+                            bot.identity.id === selectedChatbot.identity.id ? updatedChatbot : bot
+                          ));
+                          setSelectedChatbot(updatedChatbot);
+                          console.log('✅ Tool configuration saved successfully');
+                        }
+                        
+                        setRightPanelType(null);
+                      } catch (error) {
+                        console.error('❌ Failed to save tool configuration:', error);
+                      }
+                    }}
+                  />
+                )}
+                
+                {rightPanelType === 'chat_interface' && (
+                  <ChatInterfacePanel />
+                )}
+                
+                {rightPanelType === 'integrations' && (
+                  <ConnectedAppsPanel
+                    onClose={() => setRightPanelType(null)}
+                    onAppConnect={(app: ConnectedApp) => {
+                      console.log('✅ App connected:', app.name);
+                      // You could update the chatbot's connected apps here
+                    }}
+                    onAppDisconnect={(app: ConnectedApp) => {
+                      console.log('✅ App disconnected:', app.name);
+                      // You could update the chatbot's connected apps here
+                    }}
+                  />
+                )}
+                
+                {rightPanelType === 'customize' && (
+                  <WidgetCustomizer
+                    chatbot={selectedChatbot}
+                    onSave={(config) => {
+                      console.log('Widget config saved:', config);
+                      // Here you would save the configuration to the chatbot profile
+                      // For now, we'll just log it
+                    }}
+                    onClose={() => setRightPanelType(null)}
+                  />
+                )}
+                
+                {rightPanelType === 'personality' && (
+                  <PersonalityEditor
+                    chatbot={selectedChatbot}
+                    onSave={async (updates) => {
+                      try {
+                        console.log('Personality updates:', updates);
+                        
+                        // Update the chatbot using ChatbotStorageService
+                        const chatbotStorageService = ChatbotStorageService.getInstance();
+                        const updatedChatbot = await chatbotStorageService.updateChatbot(selectedChatbot.identity.id, updates);
+                        
+                        if (updatedChatbot) {
+                          // Update local state
+                          setChatbots(prev => prev.map(bot => 
+                            bot.identity.id === selectedChatbot.identity.id ? updatedChatbot : bot
+                          ));
+                          setSelectedChatbot(updatedChatbot);
+                          
+                          console.log('✅ Personality settings saved successfully');
+                          // You could show a success message here
+                        }
+                      } catch (error) {
+                        console.error('❌ Failed to save personality settings:', error);
+                      }
+                    }}
+                    onClose={() => setRightPanelType(null)}
+                  />
+                )}
+                
+                {rightPanelType === 'knowledge' && (
+                  <SimplifiedKnowledgeViewer />
+                )}
+                
+                {rightPanelType === 'receipts' && (
+                  <AgentReceiptViewer 
+                    agentId={selectedChatbot?.id || ''}
+                    agentName={selectedChatbot?.name || 'Agent'}
+                    onClose={() => {
+                      if (selectedChatbotId) {
+                        updateBotState(selectedChatbotId, { rightPanelType: null });
+                      }
+                    }}
+                    onReceiptClick={handleReceiptShare}
+                    enableInteractiveMode={true}
+                    currentUserId={user?.uid || ''}
+                    currentSessionId={currentBotState?.currentSessionId || ''}
+                  />
+                )}
+                
+                {rightPanelType === 'memory' && (
+                  <AgentMemoryViewer />
+                )}
+                
+                {rightPanelType === 'sandbox' && (
+                  <LiveAgentSandbox />
+                )}
+                
+                {rightPanelType === 'live_agent' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                      Live Agent Computer
+                    </Typography>
+                    <Card sx={{ bgcolor: '#0f172a', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Agent Activity Monitor
+                        </Typography>
+                        <Typography sx={{ color: '#64748b', mb: 3 }}>
+                          Watch what your agent is doing in real-time
+                        </Typography>
+                        
+                        {/* Computer Screen Simulation */}
+                        <Box sx={{ 
+                          bgcolor: '#000', 
+                          border: '2px solid #334155', 
+                          borderRadius: 2, 
+                          p: 2, 
+                          minHeight: '300px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'column',
+                          gap: 2
+                        }}>
+                          <Typography sx={{ color: '#10b981', fontFamily: 'monospace' }}>
+                            🖥️ Agent Computer Screen
+                          </Typography>
+                          <Typography sx={{ color: '#64748b', textAlign: 'center' }}>
+                            Live agent activity will appear here when the agent is working
+                          </Typography>
+                          <Box sx={{ 
+                            bgcolor: '#1e293b', 
+                            p: 2, 
+                            borderRadius: 1, 
+                            border: '1px solid #334155',
+                            width: '100%'
+                          }}>
+                            <Typography sx={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                              $ agent_status: idle
+                            </Typography>
+                            <Typography sx={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                              $ last_action: waiting_for_user_input
+                            </Typography>
+                            <Typography sx={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+                              $ tools_available: {Math.floor(Math.random() * 20) + 15}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+                
+                {rightPanelType === 'analytics' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 2, fontWeight: 'bold', fontSize: '1.1rem' }}>
+                      Analytics Dashboard
+                    </Typography>
+                    
+                    {/* Key Metrics */}
+                    <Grid container spacing={1} sx={{ mb: 2 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Response Time
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getRealMetricsSync(selectedChatbot).responseTime.toFixed(1)}s
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 0.5, fontSize: '0.75rem' }}>
+                              Satisfaction
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1rem' }}>
+                              {getRealMetricsSync(selectedChatbot).satisfactionScore.toFixed(1)}/5
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Resolution Rate
+                            </Typography>
+                            <Typography variant="h5" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).resolutionRate}%
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                              Last Active
+                            </Typography>
+                            <Typography variant="h6" sx={{ color: '#94a3b8', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).lastActive}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                    
+                    {/* Performance Trends */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Performance Trends
+                        </Typography>
+                        <Box sx={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            📈 Interactive charts will be displayed here
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Usage Statistics */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ color: 'white', mb: 2 }}>
+                          Usage Statistics
+                        </Typography>
+                        <Stack spacing={2}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Total Conversations
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).messageVolume.toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Governance Alerts
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).governanceAlerts}
+                            </Typography>
+                          </Box>
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+                              Health Score
+                            </Typography>
+                            <Typography variant="body1" sx={{ color: getRealMetricsSync(selectedChatbot).healthScore >= 90 ? '#10b981' : getRealMetricsSync(selectedChatbot).healthScore >= 80 ? '#f59e0b' : '#ef4444', fontWeight: 'bold' }}>
+                              {getRealMetricsSync(selectedChatbot).healthScore}%
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+                
+                
+                {!rightPanelType && (
+                  <Box sx={{ textAlign: 'center', mt: 8 }}>
+                    <Typography sx={{ color: '#64748b' }}>
+                      Select a panel above to get started
+                    </Typography>
+                  </Box>
+                )}
+                
+                {rightPanelType === 'automation' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Automation & Workflows
+                    </Typography>
+                    
+                    {/* Automation Stats */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#8b5cf6', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 10) + 3}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Active Workflows
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                          <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="h4" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              {Math.floor(Math.random() * 30) + 70}%
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Automation Rate
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    </Grid>
+
+                    {/* Active Workflows */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                          <Typography variant="h6" sx={{ color: 'white' }}>
+                            Active Workflows
+                          </Typography>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Add />}
+                            sx={{ bgcolor: '#8b5cf6' }}
+                          >
+                            Create
+                          </Button>
+                        </Box>
+                        
+                        <Stack spacing={2}>
+                          {[
+                            { name: 'Lead Qualification', trigger: 'New conversation', status: 'Active' },
+                            { name: 'Escalation to Human', trigger: 'Sentiment < 0.3', status: 'Active' },
+                            { name: 'Follow-up Email', trigger: 'Conversation ends', status: 'Paused' },
+                            { name: 'Data Collection', trigger: 'User provides email', status: 'Active' }
+                          ].map((workflow, index) => (
+                            <Box
+                              key={index}
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                              sx={{
+                                p: 2,
+                                bgcolor: '#0f172a',
+                                borderRadius: 1,
+                                border: '1px solid #334155'
+                              }}
+                            >
+                              <Box display="flex" alignItems="center" gap={2}>
+                                <Avatar sx={{ bgcolor: '#8b5cf6', width: 32, height: 32 }}>
+                                  ⚡
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                                    {workflow.name}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                    Trigger: {workflow.trigger}
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <Chip
+                                  label={workflow.status}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: workflow.status === 'Active' ? '#10b981' : '#f59e0b',
+                                    color: 'white',
+                                    fontSize: '0.75rem'
+                                  }}
+                                />
+                                <IconButton size="small" sx={{ color: '#64748b' }}>
+                                  <Edit fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+                
+                {rightPanelType === 'governance' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3, fontWeight: 'bold' }}>
+                      Governance Sensitivity
+                    </Typography>
+                    
+                    {/* Governance Sensitivity Controls */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+                          Approval Sensitivity
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                          Configure when the agent should ask for approval before taking actions
+                        </Typography>
+                        
+                        <FormControl fullWidth sx={{ mb: 2 }}>
+                          <InputLabel sx={{ color: '#94a3b8' }}>Sensitivity Level</InputLabel>
+                          <Select
+                            value={governanceSensitivity}
+                            onChange={(e) => setGovernanceSensitivity(e.target.value as 'low' | 'medium' | 'high')}
+                            sx={{
+                              color: 'white',
+                              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#374151' },
+                              '& .MuiSvgIcon-root': { color: '#94a3b8' }
+                            }}
+                          >
+                            <MenuItem value="low">Low - Minimal approvals required</MenuItem>
+                            <MenuItem value="medium">Medium - Balanced approach</MenuItem>
+                            <MenuItem value="high">High - Frequent approval requests</MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        {/* Trust Threshold */}
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 1 }}>
+                          Trust Threshold: {trustThreshold}%
+                        </Typography>
+                        <Slider
+                          value={trustThreshold}
+                          onChange={(_, value) => setTrustThreshold(value as number)}
+                          min={0}
+                          max={100}
+                          sx={{
+                            color: '#3b82f6',
+                            '& .MuiSlider-thumb': { bgcolor: '#3b82f6' },
+                            '& .MuiSlider-track': { bgcolor: '#3b82f6' },
+                            '& .MuiSlider-rail': { bgcolor: '#374151' }
+                          }}
+                        />
+
+                        {/* Risk Categories */}
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mt: 3, mb: 2 }}>
+                          Monitor these risk categories:
+                        </Typography>
+                        {['financial_transactions', 'data_access', 'external_communications', 'system_changes'].map(category => (
+                          <FormControlLabel
+                            key={category}
+                            control={
+                              <Checkbox
+                                checked={riskCategories.includes(category)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setRiskCategories([...riskCategories, category]);
+                                  } else {
+                                    setRiskCategories(riskCategories.filter(c => c !== category));
+                                  }
+                                }}
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label={category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                        ))}
+
+                        {/* Apply Button */}
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          onClick={() => {
+                            // Apply governance settings
+                            console.log('Applying governance settings:', {
+                              sensitivity: governanceSensitivity,
+                              trustThreshold,
+                              riskCategories
+                            });
+                          }}
+                          sx={{
+                            mt: 3,
+                            bgcolor: '#3b82f6',
+                            '&:hover': { bgcolor: '#2563eb' }
+                          }}
+                        >
+                          Apply Governance Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Current Governance Status */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold' }}>
+                          Current Governance Status
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Trust Score</Typography>
+                            <Typography variant="h6" sx={{ color: '#10b981', fontWeight: 'bold' }}>
+                              75%
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Compliance</Typography>
+                            <Typography variant="h6" sx={{ color: '#3b82f6', fontWeight: 'bold' }}>
+                              100%
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Violations</Typography>
+                            <Typography variant="h6" sx={{ color: '#ef4444', fontWeight: 'bold' }}>
+                              0
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>Warnings</Typography>
+                            <Typography variant="h6" sx={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                              0
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+
+                {rightPanelType === 'debug' && (
+                  <DebugPanel darkTheme={{
+                    background: '#1e293b',
+                    border: '#334155',
+                    text: {
+                      primary: 'white',
+                      secondary: '#94a3b8'
+                    },
+                    primary: '#3b82f6',
+                    success: '#10b981',
+                    warning: '#f59e0b',
+                    error: '#ef4444',
+                    hover: '#334155'
+                  }} />
+                )}
+
+                {rightPanelType === 'custom_gpt' && selectedChatbot && (
+                  <CustomGPTTab 
+                    agentId={selectedChatbot.identity.id}
+                    onClose={() => setRightPanelType(null)}
+                  />
+                )}
+
+                {rightPanelType === 'rag_policy' && (
+                  <RAGPolicyPanel
+                    agentId={selectedChatbot?.id || ''}
+                    onClose={() => setRightPanelType(null)}
+                  />
+                )}
+
+                {rightPanelType === 'policies' && (
+                  <Box>
+                    <Typography variant="h6" sx={{ color: 'white', mb: 3 }}>
+                      Policy Management
+                    </Typography>
+
+                    {/* Policy Management Section */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155', mb: 3 }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                          🛡️ Policy Management
+                        </Typography>
+
+                        {/* Standard Policies */}
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                            Standard Compliance Policies:
+                          </Typography>
+                          {['HIPAA', 'SOC2', 'GDPR', 'PCI DSS'].map((policy) => (
+                            <FormControlLabel
+                              key={policy}
+                              control={
+                                <Checkbox
+                                  defaultChecked={policy === 'SOC2'}
+                                  sx={{ color: '#3b82f6' }}
+                                />
+                              }
+                              label={policy}
+                              sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                            />
+                          ))}
+                        </Box>
+
+                        {/* Custom Policy Upload */}
+                        <Button
+                          variant="outlined"
+                          fullWidth
+                          component="label"
+                          sx={{
+                            mb: 2,
+                            borderColor: '#f59e0b',
+                            color: '#f59e0b',
+                            '&:hover': { borderColor: '#d97706', bgcolor: 'rgba(245, 158, 11, 0.1)' }
+                          }}
+                        >
+                          📋 Upload Custom Policies
+                          <input
+                            type="file"
+                            hidden
+                            multiple
+                            accept=".json,.yaml,.yml,.txt"
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              console.log('🛡️ [Policy] Uploading custom policies:', files.map(f => f.name));
+                              // TODO: Integrate with PolicyExtension
+                            }}
+                          />
+                        </Button>
+
+                        {/* Policy Status */}
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" sx={{ color: '#64748b', mb: 1 }}>
+                            Active Policies: 3 | Custom Policies: 1
+                          </Typography>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={85} 
+                            sx={{ 
+                              bgcolor: '#374151',
+                              '& .MuiLinearProgress-bar': { bgcolor: '#10b981' }
+                            }}
+                          />
+                          <Typography variant="caption" sx={{ color: '#10b981', mt: 1, display: 'block' }}>
+                            85% Policy Compliance
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+
+                    {/* RAG + Policy Integration */}
+                    <Card sx={{ bgcolor: '#1e293b', border: '1px solid #334155' }}>
+                      <CardContent>
+                        <Typography variant="subtitle1" sx={{ color: 'white', mb: 2, fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                          🔗 RAG + Policy Integration
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2 }}>
+                          Governance-aware knowledge retrieval ensures all RAG responses comply with active policies.
+                        </Typography>
+
+                        {/* Integration Settings */}
+                        <Box sx={{ mb: 2 }}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                defaultChecked
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Filter knowledge by policy compliance"
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                defaultChecked
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Log all RAG retrievals for audit"
+                            sx={{ color: '#94a3b8', display: 'block', mb: 1 }}
+                          />
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                sx={{ color: '#3b82f6' }}
+                              />
+                            }
+                            label="Require approval for sensitive knowledge"
+                            sx={{ color: '#94a3b8', display: 'block' }}
+                          />
+                        </Box>
+
+                        {/* Apply Settings */}
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          onClick={() => {
+                            console.log('🔗 [RAG+Policy] Applying integration settings');
+                            // TODO: Integrate with UniversalGovernanceAdapter
+                          }}
+                          sx={{
+                            bgcolor: '#3b82f6',
+                            '&:hover': { bgcolor: '#2563eb' }
+                          }}
+                        >
+                          Apply RAG + Policy Settings
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Box>
+                )}
+
+                {rightPanelType === 'token_economics' && user?.uid && (
+                  <Box>
+                    <TokenEconomicsConfigPanel
+                      sessionId={currentMultiAgentSession || `session_${selectedChatbot?.identity?.id || selectedChatbot?.id}_${Date.now()}`}
+                      userId={user.uid}
+                      onConfigChange={(config) => {
+                        console.log('💰 [TokenEconomics] Configuration updated:', config);
+                        // Update local state based on config changes
+                        setBudgetWarning(false);
+                        setBudgetExceeded(false);
+                      }}
+                    />
+                  </Box>
+                )}
+
+                {rightPanelType === 'debug' && (
+                  <DebugPanel />
+                )}
+              </Box>
+            </Box>
+        ) : (
+          <Container sx={{ py: 2, height: '100%' }}>
             {/* Header */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h4" sx={{ color: 'white', fontWeight: 700, mb: 1 }}>
