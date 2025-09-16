@@ -553,7 +553,9 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   };
 
   const handleMessagesClick = () => {
+    console.log('🖱️ Messages clicked - opening messaging drawer');
     setMessagingDrawerOpen(true);
+    console.log('📱 Messaging drawer state set to true');
   };
 
   const isActive = (path: string) => {

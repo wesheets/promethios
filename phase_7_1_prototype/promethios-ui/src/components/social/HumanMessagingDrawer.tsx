@@ -119,6 +119,8 @@ const HumanMessagingDrawer: React.FC<HumanMessagingDrawerProps> = ({
   onClose,
   onAgentDrop,
 }) => {
+  console.log('📱 HumanMessagingDrawer render - open:', open);
+  
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
