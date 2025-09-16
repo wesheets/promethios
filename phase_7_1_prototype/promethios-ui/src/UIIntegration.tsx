@@ -829,6 +829,14 @@ const UIIntegration: React.FC = () => {
           </ProtectedRoute>
         } />
         
+        <Route path="ui/collaborations" element={
+          <ProtectedRoute requireOnboarding={false}>
+            <MainLayoutProxy>
+              <CollaborationsPage />
+            </MainLayoutProxy>
+          </ProtectedRoute>
+        } />
+        
         <Route path="collaborations" element={
           <ProtectedRoute requireOnboarding={false}>
             <CollaborationsPage />

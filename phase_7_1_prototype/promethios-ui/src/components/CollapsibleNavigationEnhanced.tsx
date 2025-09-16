@@ -338,6 +338,13 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
           isNew: true
         },
         { 
+          id: 'collaborations', 
+          label: 'Collaborations', 
+          icon: <CollaborationIcon />, 
+          path: '/ui/collaborations',
+          isNew: true
+        },
+        { 
           id: 'connections', 
           label: 'Connections', 
           icon: <ConnectionIcon />, 
