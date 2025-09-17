@@ -43,7 +43,8 @@ import {
   Public as SocialIcon,
   AccountTree as AccountTreeIcon,
   FiberManualRecord as OnlineIcon,
-  RadioButtonUnchecked as OfflineIcon
+  RadioButtonUnchecked as OfflineIcon,
+  Link as ConnectionIcon
 } from '@mui/icons-material';
 import { usePanelManager } from '../../context/PanelManagerContext';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
