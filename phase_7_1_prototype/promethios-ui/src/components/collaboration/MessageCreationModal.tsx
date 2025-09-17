@@ -30,7 +30,15 @@ import { firebaseDirectMessageService, UserConnection, CreateDirectMessageReques
 interface MessageCreationModalProps {
   open: boolean;
   onClose: () => void;
-  onMessageCreated?: (conversationId: string) => void;
+  onMessageCreated?: (messageData: {
+    id: string;
+    participant: {
+      id: string;
+      name: string;
+      avatar?: string;
+      isOnline?: boolean;
+    };
+  }) => void;
 }
 
 const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
@@ -98,7 +106,15 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
       const conversationId = await firebaseDirectMessageService.createDirectMessage(request);
       
       if (onMessageCreated) {
-        onMessageCreated(conversationId);
+        onMessageCreated({
+          id: conversationId,
+          participant: {
+            id: selectedConnection.connectedUserId,
+            name: selectedConnection.name,
+            avatar: selectedConnection.avatar,
+            isOnline: selectedConnection.isOnline
+          }
+        });
       }
       
       onClose();

@@ -51,6 +51,7 @@ import SocialNetworkPanel from '../social/SocialNetworkPanel';
 import WorkflowPanel from '../workflow/WorkflowPanel';
 import ChannelCreationModal from './ChannelCreationModal';
 import MessageCreationModal from './MessageCreationModal';
+import HumanMessagingPanel from './HumanMessagingPanel';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
@@ -184,9 +185,20 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Channel creation modal state
-  const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
-  const [selectedOrganization, setSelectedOrganization] = useState<{id: string, name: string} | null>(null);
+  // Channel creation modal state  const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
+  const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
+  const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
+  const [currentConversation, setCurrentConversation] = useState<{
+    type: 'channel' | 'direct_message';
+    id: string;
+    name: string;
+    participants?: Array<{
+      id: string;
+      name: string;
+      avatar?: string;
+      isOnline?: boolean;
+    }>;
+  } | null>(null);
 
   // Message creation modal state
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
@@ -373,20 +385,72 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     setChannelCreationModalOpen(true);
   };
 
-  const handleChannelCreated = (channelId: string) => {
-    console.log('✅ [CollaborationPanel] Channel created:', channelId);
-    // TODO: Refresh channels list or add the new channel to the state
-    // For now, we'll just close the modal
+  const handleChannelCreated = (channelData: {
+    id: string;
+    name: string;
+    participants: Array<{
+      id: string;
+      name: string;
+      avatar?: string;
+      isOnline?: boolean;
+    }>;
+  }) => {
+    console.log('✅ [CollaborationPanel] Channel created:', channelData);
+    
+    // Close the creation modal
     setChannelCreationModalOpen(false);
     setSelectedOrganization(null);
+    
+    // Set up the conversation for messaging panel
+    setCurrentConversation({
+      type: 'channel',
+      id: channelData.id,
+      name: channelData.name,
+      participants: channelData.participants
+    });
+    
+    // Open messaging panel using panel manager
+    openPanel(`messaging-${channelData.id}`, 'messaging', `#${channelData.name}`);
+    setMessagingPanelOpen(true);
   };
 
   // Handle message creation
-  const handleMessageCreated = (conversationId: string) => {
-    console.log('✅ [CollaborationPanel] Message created:', conversationId);
-    // TODO: Refresh direct messages list or add the new conversation to the state
-    // For now, we'll just close the modal
+  const handleMessageCreated = (messageData: {
+    id: string;
+    participant: {
+      id: string;
+      name: string;
+      avatar?: string;
+      isOnline?: boolean;
+    };
+  }) => {
+    console.log('✅ [CollaborationPanel] Message created:', messageData);
+    
+    // Close the creation modal
     setMessageCreationModalOpen(false);
+    
+    // Set up the conversation for messaging panel
+    setCurrentConversation({
+      type: 'direct_message',
+      id: messageData.id,
+      name: messageData.participant.name,
+      participants: [messageData.participant]
+    });
+    
+    // Open messaging panel using panel manager
+    openPanel(`messaging-${messageData.id}`, 'messaging', messageData.participant.name);
+    setMessagingPanelOpen(true);
+  };
+
+  // Handle messaging panel close
+  const handleMessagingPanelClose = () => {
+    setMessagingPanelOpen(false);
+    setCurrentConversation(null);
+    
+    // Close panel in panel manager
+    if (currentConversation) {
+      closePanel(`messaging-${currentConversation.id}`);
+    }
   };
 
   // Filter items based on search
@@ -1085,6 +1149,19 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         onClose={() => setMessageCreationModalOpen(false)}
         onMessageCreated={handleMessageCreated}
       />
+
+      {/* Human Messaging Panel */}
+      {messagingPanelOpen && currentConversation && (
+        <HumanMessagingPanel
+          open={messagingPanelOpen}
+          onClose={handleMessagingPanelClose}
+          width={getPanelWidth(`messaging-${currentConversation.id}`)}
+          conversationType={currentConversation.type}
+          conversationId={currentConversation.id}
+          conversationName={currentConversation.name}
+          participants={currentConversation.participants || []}
+        />
+      )}
     </>
   );
 };

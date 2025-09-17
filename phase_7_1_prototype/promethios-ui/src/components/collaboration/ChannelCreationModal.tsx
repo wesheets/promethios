@@ -30,7 +30,16 @@ interface ChannelCreationModalProps {
   onClose: () => void;
   organizationId: string;
   organizationName: string;
-  onChannelCreated?: (channelId: string) => void;
+  onChannelCreated?: (channelData: {
+    id: string;
+    name: string;
+    participants: Array<{
+      id: string;
+      name: string;
+      avatar?: string;
+      isOnline?: boolean;
+    }>;
+  }) => void;
 }
 
 const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
@@ -110,7 +119,21 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
       const channelId = await firebaseChannelService.createChannel(request);
       
       if (onChannelCreated) {
-        onChannelCreated(channelId);
+        // Get selected participants data
+        const participants = connections
+          .filter(conn => selectedUserIds.includes(conn.id))
+          .map(conn => ({
+            id: conn.id,
+            name: conn.name,
+            avatar: conn.avatar,
+            isOnline: conn.isOnline
+          }));
+
+        onChannelCreated({
+          id: channelId,
+          name: channelName.trim(),
+          participants
+        });
       }
       
       onClose();
