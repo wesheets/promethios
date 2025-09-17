@@ -46,6 +46,7 @@ import {
   Circle as OnlineIcon,
   RadioButtonUnchecked as OfflineIcon
 } from '@mui/icons-material';
+import SocialNetworkPanel from '../social/SocialNetworkPanel';
 
 interface CollaborationSlidePanel {
   open: boolean;
@@ -118,6 +119,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Social Network Panel state
+  const [socialPanelOpen, setSocialPanelOpen] = useState(false);
 
   // Sample data - will be replaced with real Firebase data
   const [workCollaborations] = useState<WorkCollaboration[]>([
@@ -316,6 +320,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
   };
 
   return (
+    <>
     <Drawer
       anchor="left"
       open={open}
@@ -863,9 +868,50 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
               )}
             </Collapse>
           </List>
+
+          {/* Social Network Button */}
+          <Box sx={{ mt: 2, px: 2 }}>
+            <Divider sx={{ bgcolor: '#475569', mb: 2 }} />
+            <ListItemButton
+              onClick={() => setSocialPanelOpen(true)}
+              sx={{
+                borderRadius: 1,
+                bgcolor: 'rgba(99, 102, 241, 0.1)',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                '&:hover': {
+                  bgcolor: 'rgba(99, 102, 241, 0.2)',
+                  border: '1px solid rgba(99, 102, 241, 0.5)'
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <PublicIcon sx={{ color: '#6366f1', fontSize: '1.2rem' }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Social"
+                secondary="Professional Network"
+                primaryTypographyProps={{
+                  variant: 'body2',
+                  fontWeight: 600,
+                  color: '#6366f1'
+                }}
+                secondaryTypographyProps={{
+                  variant: 'caption',
+                  color: '#94a3b8'
+                }}
+              />
+            </ListItemButton>
+          </Box>
         </Box>
       </Box>
     </Drawer>
+
+    {/* Social Network Panel */}
+    <SocialNetworkPanel
+      open={socialPanelOpen}
+      onClose={() => setSocialPanelOpen(false)}
+    />
+    </>
   );
 };
 
