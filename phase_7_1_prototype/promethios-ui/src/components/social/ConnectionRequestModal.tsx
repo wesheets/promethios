@@ -30,6 +30,7 @@ import {
   Public
 } from '@mui/icons-material';
 import { ConnectionService } from '../../services/ConnectionService';
+import { NavigationService } from '../../services/NavigationService';
 import { UserProfileService } from '../../services/UserProfileService';
 
 interface ConnectionRequestModalProps {
@@ -142,8 +143,9 @@ const ConnectionRequestModal: React.FC<ConnectionRequestModalProps> = ({
   };
 
   const handleViewProfile = () => {
-    // Navigate to the sender's profile page
-    window.open(`/ui/profile/${fromUserId}`, '_blank');
+    // Navigate to the sender's profile page using NavigationService
+    const navigationService = NavigationService.getInstance();
+    navigationService.navigateToProfile(fromUserId, { openInNewTab: true });
   };
 
   const safeRender = (value: any): string => {

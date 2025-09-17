@@ -10,12 +10,13 @@ import {
 import { Refresh } from '@mui/icons-material';
 import ConnectionActivityPost, { ConnectionActivity } from './ConnectionActivityPost';
 import { connectionActivityService } from '../../services/ConnectionActivityService';
-import { useNavigate } from 'react-router-dom';
+import { NavigationService } from '../../services/NavigationService';
 
 interface ConnectionActivitiesFeedProps {
   limit?: number;
   showTitle?: boolean;
   showRefresh?: boolean;
+  onNavigateToProfile?: (userId: string) => void;
 }
 
 /**
@@ -28,14 +29,15 @@ interface ConnectionActivitiesFeedProps {
  * - Supports refreshing the feed
  */
 const ConnectionActivitiesFeed: React.FC<ConnectionActivitiesFeedProps> = ({
-  limit = 5,
+  limit = 10,
   showTitle = true,
   showRefresh = true,
+  onNavigateToProfile
 }) => {
   const [activities, setActivities] = useState<ConnectionActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const navigationService = NavigationService.getInstance();
 
   const loadActivities = async () => {
     try {
@@ -75,11 +77,19 @@ const ConnectionActivitiesFeed: React.FC<ConnectionActivitiesFeedProps> = ({
   };
 
   const handleViewProfile = (userId: string) => {
-    navigate(`/ui/profile/${userId}`);
+    if (onNavigateToProfile) {
+      onNavigateToProfile(userId);
+    } else {
+      navigationService.navigateToProfile(userId);
+    }
   };
 
   const handleConnect = (userId: string) => {
-    navigate(`/ui/profile/${userId}`);
+    if (onNavigateToProfile) {
+      onNavigateToProfile(userId);
+    } else {
+      navigationService.navigateToProfile(userId);
+    }
   };
 
   if (loading) {

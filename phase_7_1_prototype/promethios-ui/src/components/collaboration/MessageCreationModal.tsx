@@ -25,8 +25,7 @@ import {
   Search as SearchIcon,
   FiberManualRecord as OnlineIcon
 } from '@mui/icons-material';
-import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
-import { ConnectionService } from '../../services/ConnectionService';
+import { firebaseDirectMessageService, UserConnection, CreateDirectMessageRequest } from '../../services/FirebaseDirectMessageService';
 import { useAuth } from '../../context/AuthContext';
 
 interface MessageCreationModalProps {
@@ -85,28 +84,11 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
         return;
       }
       
-      // Use ConnectionService for consistency with other components
-      const connectionService = ConnectionService.getInstance();
-      const userConnections = await connectionService.getUserConnections(user.uid);
+      // Use FirebaseDirectMessageService directly
+      const userConnections = await firebaseDirectMessageService.getUserConnections();
       console.log('💬 [MessageModal] Found', userConnections.length, 'user connections');
       
-      // Convert to UserConnection format
-      const formattedConnections: UserConnection[] = userConnections.map(conn => ({
-        id: conn.id,
-        userId: user.uid,
-        connectedUserId: conn.userId,
-        connectedUserName: conn.displayName || conn.name || 'Unknown User',
-        connectedUserAvatar: conn.avatar || '',
-        connectedUserTitle: conn.title || '',
-        connectedUserCompany: conn.company || '',
-        status: 'accepted' as const,
-        isOnline: conn.isOnline || false,
-        lastSeen: conn.lastSeen,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }));
-      
-      setConnections(formattedConnections);
+      setConnections(userConnections);
     } catch (error) {
       console.error('❌ [MessageModal] Error loading connections:', error);
       setError('Failed to load connections');
@@ -142,8 +124,8 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
           id: conversationId,
           participant: {
             id: selectedConnection.connectedUserId,
-            name: selectedConnection.name,
-            avatar: selectedConnection.avatar,
+            name: selectedConnection.connectedUserName,
+            avatar: selectedConnection.connectedUserAvatar,
             isOnline: selectedConnection.isOnline
           }
         });

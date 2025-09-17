@@ -51,6 +51,9 @@ import {
   Terminal as TerminalIcon
 } from '@mui/icons-material';
 import { usePanelManager } from '../../context/PanelManagerContext';
+import { useUrlState } from '../../hooks/useUrlState';
+import { NavigationService } from '../../services/NavigationService';
+import { ShareButton } from '../shared/ShareButton';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
 import WorkflowPanel from '../workflow/WorkflowPanel';
 import ChannelCreationModal from './ChannelCreationModal';
@@ -130,8 +133,74 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   
   const { openPanel, closePanel, isPanelOpen, getPanelWidth, openPanels } = usePanelManager();
   const { currentUser: user, loading: authLoading } = useAuth();
+  const { state: urlState, updateState: updateUrlState, getShareableUrl } = useUrlState();
   
   console.log('🤝 [CollaborationPanel] Auth state - user:', user?.uid, 'authLoading:', authLoading);
+  console.log('🤝 [CollaborationPanel] URL state:', urlState);
+  
+  // Initialize navigation service
+  useEffect(() => {
+    const navigationService = NavigationService.getInstance();
+    navigationService.setUpdateStateCallback(updateUrlState);
+    navigationService.setGetShareableUrlCallback(getShareableUrl);
+  }, [updateUrlState, getShareableUrl]);
+
+  // Handle URL state changes for navigation
+  useEffect(() => {
+    if (urlState.view) {
+      console.log('🔗 [CollaborationPanel] URL state changed, navigating to view:', urlState.view);
+      
+      // Handle different view types
+      switch (urlState.view) {
+        case 'social':
+          if (!socialPanelOpen) {
+            openPanel('social', 'social', 'Professional Network');
+          }
+          break;
+        case 'workflow':
+          if (!workflowPanelOpen) {
+            openPanel('workflow', 'workflow', 'AI Agent Workflows');
+          }
+          break;
+        case 'talent-hub':
+          openPanel('talent-hub', 'talent-hub', 'Talent Hub - Hire Talent');
+          break;
+        case 'marketplace':
+          openPanel('marketplace', 'marketplace', 'Marketplace - Buy Services');
+          break;
+        case 'upwork':
+          openPanel('upwork', 'upwork', 'Upwork Integration');
+          break;
+        case 'agent-command-center':
+          if (urlState.agent) {
+            const agent = aiAgents.find(a => (a.identity?.id || a.chatbotMetadata?.id || a.name) === urlState.agent);
+            if (agent) {
+              const agentName = agent.identity?.name || 'Agent';
+              openPanel(`agent-${urlState.agent}`, 'agent-command-center', `${agentName} Command Center`);
+            }
+          }
+          break;
+        case 'profile':
+          if (urlState.profileId) {
+            // Handle profile view
+            console.log('🔗 [CollaborationPanel] Opening profile view for:', urlState.profileId);
+          }
+          break;
+        case 'channel':
+          if (urlState.channelId) {
+            // Handle channel view
+            console.log('🔗 [CollaborationPanel] Opening channel view for:', urlState.channelId);
+          }
+          break;
+        case 'message':
+          if (urlState.messageId) {
+            // Handle message view
+            console.log('🔗 [CollaborationPanel] Opening message view for:', urlState.messageId);
+          }
+          break;
+      }
+    }
+  }, [urlState, socialPanelOpen, workflowPanelOpen, aiAgents, openPanel]);
   
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -314,19 +383,23 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   // Handle social panel toggle
   const handleSocialToggle = () => {
+    const navigationService = NavigationService.getInstance();
     if (socialPanelOpen) {
+      navigationService.navigateToMain();
       closePanel('social');
     } else {
-      openPanel('social', 'social', 'Professional Network');
+      navigationService.navigateToSocial();
     }
   };
 
   // Handle workflow panel toggle
   const handleWorkflowToggle = () => {
+    const navigationService = NavigationService.getInstance();
     if (workflowPanelOpen) {
+      navigationService.navigateToMain();
       closePanel('workflow');
     } else {
-      openPanel('workflow', 'workflow', 'AI Agent Workflows');
+      navigationService.navigateToWorkflow();
     }
   };
 
@@ -465,60 +538,33 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Handle channel click
   const handleChannelClick = (channelId: string, channelName: string) => {
     console.log('Opening channel:', channelId, channelName);
-    // This would open the channel in the main content area
+    const navigationService = NavigationService.getInstance();
+    navigationService.navigateToChannel(channelId);
   };
 
   // Handle direct message click
   const handleDirectMessageClick = (userId: string, userName: string) => {
     console.log('Opening DM with:', userId, userName);
-    // This would open the DM in the main content area
+    const navigationService = NavigationService.getInstance();
+    navigationService.navigateToMessage(userId);
   };
 
   // Handle AI agent click - Open Command Center in new panel
   const handleAgentClick = (agentId: string, agentName: string) => {
     console.log('🤖 [CollaborationPanel] Opening Command Center for agent:', agentId, agentName);
     
-    // Find the agent to get the full profile
-    const agent = aiAgents.find(a => {
-      const currentAgentId = a.identity?.id || a.chatbotMetadata?.id || a.name;
-      return currentAgentId === agentId;
-    });
-    if (!agent) {
-      console.error('❌ [CollaborationPanel] Agent not found:', agentId);
-      return;
-    }
-
-    // Open the Command Center panel using the same URL pattern as the main chatbots page
-    const commandCenterUrl = `/ui/chat/chatbots/${agentId}/command-center`;
-    
-    // Open as new panel - this will trigger 50/50 split if collaboration panel is already open
-    openPanel(`agent-${agentId}`, 'agent', `${agentName} Command Center`);
-    
-    // Navigate to the command center (this would be handled by the panel content)
-    console.log('🎯 [CollaborationPanel] Command Center URL:', commandCenterUrl);
+    // Use navigation service to navigate to agent command center
+    const navigationService = NavigationService.getInstance();
+    navigationService.navigateToAgentCommandCenter(agentId);
   };
 
   // Handle AI agent Command Center button click - Open embedded Command Center
   const handleAgentCommandCenter = (agentId: string, agentName: string) => {
     console.log('🎯 [CollaborationPanel] Opening embedded Command Center for agent:', agentId, agentName);
     
-    // Find the agent to get the full profile
-    const agent = aiAgents.find(a => {
-      const currentAgentId = a.identity?.id || a.chatbotMetadata?.id || a.name;
-      return currentAgentId === agentId;
-    });
-    
-    if (!agent) {
-      console.error('❌ [CollaborationPanel] Agent not found:', agentId);
-      return;
-    }
-
-    // Open the agent command center panel within the collaboration panel
-    openPanel(`agent-command-center-${agentId}`, 'agent-command-center', `${agentName} Command Center`, {
-      agentId,
-      agentName,
-      agent
-    });
+    // Use navigation service to navigate to agent command center
+    const navigationService = NavigationService.getInstance();
+    navigationService.navigateToAgentCommandCenter(agentId);
   };
 
   // Handle channel creation
@@ -1331,6 +1377,14 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                       color: '#94a3b8'
                     }}
                   />
+                  <ShareButton
+                    onShare={() => {
+                      const navigationService = NavigationService.getInstance();
+                      return navigationService.getShareableUrl('social');
+                    }}
+                    title="Professional Network"
+                    description="Connect with professionals and expand your network"
+                  />
                 </ListItemButton>
 
                 {/* AI Agent Workflows Button */}
@@ -1363,13 +1417,22 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                       color: '#94a3b8'
                     }}
                   />
+                  <ShareButton
+                    onShare={() => {
+                      const navigationService = NavigationService.getInstance();
+                      return navigationService.getShareableUrl('workflow');
+                    }}
+                    title="AI Agent Workflows"
+                    description="Automate tasks with intelligent AI agent workflows"
+                  />
                 </ListItemButton>
 
                 {/* Talent Hub Button */}
                 <ListItemButton
                   onClick={() => {
                     console.log('🔧 [CollaborationPanel] Opening Talent Hub panel');
-                    openPanel('talent-hub', 'talent-hub', 'Talent Hub - Hire Talent');
+                    const navigationService = NavigationService.getInstance();
+                    navigationService.navigateToTalentHub();
                   }}
                   sx={{
                     borderRadius: 1,
@@ -1398,13 +1461,22 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                       color: '#94a3b8'
                     }}
                   />
+                  <ShareButton
+                    onShare={() => {
+                      const navigationService = NavigationService.getInstance();
+                      return navigationService.getShareableUrl('talent-hub');
+                    }}
+                    title="Talent Hub"
+                    description="Find and hire top talent for your projects"
+                  />
                 </ListItemButton>
 
                 {/* Marketplace Button */}
                 <ListItemButton
                   onClick={() => {
                     console.log('🛒 [CollaborationPanel] Opening Marketplace panel');
-                    openPanel('marketplace', 'marketplace', 'Marketplace - Buy & Sell');
+                    const navigationService = NavigationService.getInstance();
+                    navigationService.navigateToMarketplace();
                   }}
                   sx={{
                     borderRadius: 1,
@@ -1432,6 +1504,14 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                       variant: 'caption',
                       color: '#94a3b8'
                     }}
+                  />
+                  <ShareButton
+                    onShare={() => {
+                      const navigationService = NavigationService.getInstance();
+                      return navigationService.getShareableUrl('marketplace');
+                    }}
+                    title="Marketplace"
+                    description="Browse and purchase professional services"
                   />
                 </ListItemButton>
               </Box>
@@ -1501,8 +1581,36 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         }}
       />
 
-      {/* Agent Command Center Panel */}
-      {activeAgentCommandCenter && (
+      {/* Agent Command Center Panel - Render based on URL state */}
+      {urlState.view === 'agent-command-center' && urlState.agent && (
+        <Slide direction="left" in={true} mountOnEnter unmountOnExit>
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: getPanelWidth(`agent-${urlState.agent}`),
+              height: '100vh',
+              bgcolor: '#0f172a',
+              borderLeft: '1px solid #334155',
+              zIndex: 1300,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <AgentCommandCenterPanel
+              agentId={urlState.agent}
+              agentName={aiAgents.find(a => (a.identity?.id || a.chatbotMetadata?.id || a.name) === urlState.agent)?.name || 'Agent'}
+              onClose={() => {
+                updateUrlState({ view: undefined, agent: undefined });
+              }}
+            />
+          </Box>
+        </Slide>
+      )}
+
+      {/* Legacy Agent Command Center Panel - Keep for backward compatibility */}
+      {activeAgentCommandCenter && !urlState.view && (
         <Slide direction="left" in={true} mountOnEnter unmountOnExit>
           <Box
             sx={{

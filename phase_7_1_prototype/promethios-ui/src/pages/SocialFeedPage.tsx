@@ -39,6 +39,7 @@ import { socialFeedService } from '../services/SocialFeedService';
 import { useChatIntegration } from '../components/social/ChatIntegrationProvider';
 import ConnectionActivitiesFeed from '../components/social/ConnectionActivitiesFeed';
 import SocialThemeToggle from '../components/social/SocialThemeToggle';
+import { NavigationService } from '../services/NavigationService';
 
 interface AICollaborationServer {
   id: string;
@@ -75,6 +76,9 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
   
   // Chat integration
   const { openDirectMessage } = useChatIntegration();
+  
+  // Navigation service
+  const navigationService = NavigationService.getInstance();
 
   // Mock AI Collaboration Servers (Discord-inspired)
   const mockServers: AICollaborationServer[] = [
@@ -271,7 +275,13 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
                     cursor: 'pointer',
                     '&:hover': { opacity: 0.8 }
                   }}
-                  onClick={() => onViewProfile(user.id)}
+                  onClick={() => {
+                    if (onViewProfile) {
+                      onViewProfile(user.id);
+                    } else {
+                      navigationService.navigateToProfile(user.id);
+                    }
+                  }}
                 >
                   <Avatar src={user.avatar} />
                   <Box>

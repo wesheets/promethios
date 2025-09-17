@@ -45,6 +45,7 @@ import { socialFeedService } from '../../services/SocialFeedService';
 import { socialRealtimeService, SocialFeedSubscription } from '../../services/SocialRealtimeService';
 import { useUserInteractions } from '../../hooks/useUserInteractions';
 import { useAuth } from '../../context/AuthContext';
+import { NavigationService } from '../../services/NavigationService';
 
 interface FeedFilters {
   postTypes: string[];
@@ -74,6 +75,7 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
   // Hooks
   const { currentUser } = useAuth();
   const { sendInteraction } = useUserInteractions();
+  const navigationService = NavigationService.getInstance();
   
   const [activeTab, setActiveTab] = useState(0);
   const [posts, setPosts] = useState<FeedPost[]>([]);
@@ -547,7 +549,13 @@ const SocialFeed: React.FC<SocialFeedProps> = ({
             onLike={handleLike}
             onComment={handleComment}
             onShare={handleShare}
-            onViewProfile={onViewProfile}
+            onViewProfile={(userId) => {
+              if (onViewProfile) {
+                onViewProfile(userId);
+              } else {
+                navigationService.navigateToProfile(userId);
+              }
+            }}
             onStartCollaboration={onStartCollaboration}
             onViewConversation={onViewConversation}
           />

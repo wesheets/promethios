@@ -24,7 +24,6 @@ import {
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { firebaseChannelService, CreateChannelRequest } from '../../services/FirebaseChannelService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
-import { ConnectionService } from '../../services/ConnectionService';
 import { useAuth } from '../../context/AuthContext';
 
 interface ChannelCreationModalProps {
@@ -88,23 +87,11 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
         return;
       }
       
-      // Use ConnectionService for consistency
-      const connectionService = ConnectionService.getInstance();
-      const userConnections = await connectionService.getUserConnections(user.uid);
+      // Use FirebaseDirectMessageService directly
+      const userConnections = await firebaseDirectMessageService.getUserConnections();
       console.log('🏢 [ChannelModal] Found', userConnections.length, 'user connections');
       
-      // Convert to expected format
-      const formattedConnections = userConnections.map(conn => ({
-        id: conn.id,
-        userId: conn.userId,
-        name: conn.displayName || conn.name || 'Unknown User',
-        avatar: conn.avatar || '',
-        title: conn.title || '',
-        company: conn.company || '',
-        isOnline: conn.isOnline || false
-      }));
-      
-      setConnections(formattedConnections);
+      setConnections(userConnections);
     } catch (error) {
       console.error('Error loading connections:', error);
       setError('Failed to load connections');

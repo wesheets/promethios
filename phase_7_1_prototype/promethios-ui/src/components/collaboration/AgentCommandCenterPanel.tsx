@@ -27,6 +27,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { useAuth } from '../../context/AuthContext';
+import { NavigationService } from '../../services/NavigationService';
 
 interface AgentCommandCenterPanelProps {
   agentId: string;
@@ -41,6 +42,7 @@ const AgentCommandCenterPanel: React.FC<AgentCommandCenterPanelProps> = ({
 }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const navigationService = NavigationService.getInstance();
   const [agent, setAgent] = useState<ChatbotProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,10 @@ const AgentCommandCenterPanel: React.FC<AgentCommandCenterPanelProps> = ({
 
   // Handle opening full command center
   const handleOpenFullCommandCenter = () => {
-    navigate(`/ui/chat/chatbots/${agentId}/command-center`);
+    // Use NavigationService to get shareable URL for this agent's command center
+    const shareableUrl = navigationService.getShareableUrl('agent-command-center', { agent: agentId });
+    // Open in new tab for full command center experience
+    window.open(shareableUrl, '_blank');
   };
 
   // Handle starting chat with agent
