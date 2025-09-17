@@ -117,8 +117,13 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   open, 
   onClose 
 }) => {
+  console.log('🤝 [CollaborationPanel] Component mounted/rendered, open:', open);
+  
   const { openPanel, closePanel, isPanelOpen, getPanelWidth } = usePanelManager();
   const { user, authLoading } = useAuth();
+  
+  console.log('🤝 [CollaborationPanel] Auth state - user:', user?.uid, 'authLoading:', authLoading);
+  
   const [searchTerm, setSearchTerm] = useState('');
   
   // Real agents from Firebase
@@ -196,12 +201,28 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   useEffect(() => {
     console.log('🤝 [CollaborationPanel] useEffect triggered, user:', user?.uid, 'authLoading:', authLoading);
     if (!authLoading) {
+      console.log('🤝 [CollaborationPanel] Auth finished loading, calling loadAgents');
       loadAgents();
       if (user?.uid) {
+        console.log('🤝 [CollaborationPanel] User available, calling loadConnections');
         loadConnections();
       }
+    } else {
+      console.log('🤝 [CollaborationPanel] Auth still loading, waiting...');
     }
   }, [user?.uid, authLoading]);
+
+  // Additional useEffect to force agent loading when component mounts
+  useEffect(() => {
+    console.log('🤝 [CollaborationPanel] Component mount useEffect triggered');
+    // Force load agents after a short delay to ensure auth is ready
+    const timer = setTimeout(() => {
+      console.log('🤝 [CollaborationPanel] Timer triggered, forcing loadAgents');
+      loadAgents();
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load user connections from Firebase
   const loadConnections = async () => {
