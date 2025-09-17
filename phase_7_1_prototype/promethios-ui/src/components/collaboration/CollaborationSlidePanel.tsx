@@ -28,7 +28,8 @@ import {
   Slide,
   Badge,
   CircularProgress,
-  TextField
+  TextField,
+  Chip
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -45,7 +46,8 @@ import {
   FiberManualRecord as OnlineIcon,
   RadioButtonUnchecked as OfflineIcon,
   Link as ConnectionIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Storefront as StorefrontIcon
 } from '@mui/icons-material';
 import { usePanelManager } from '../../context/PanelManagerContext';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
@@ -1292,6 +1294,76 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                       variant: 'body2',
                       fontWeight: 600,
                       color: '#10b981'
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'caption',
+                      color: '#94a3b8'
+                    }}
+                  />
+                </ListItemButton>
+
+                {/* Talent Hub Button */}
+                <ListItemButton
+                  onClick={() => {
+                    console.log('🔧 [CollaborationPanel] Opening Talent Hub panel');
+                    openPanel('talent-hub', 'talent-hub', 'Talent Hub - Hire Talent');
+                  }}
+                  sx={{
+                    borderRadius: 1,
+                    mt: 1,
+                    bgcolor: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.3)',
+                    '&:hover': {
+                      bgcolor: 'rgba(245, 158, 11, 0.2)',
+                      border: '1px solid rgba(245, 158, 11, 0.5)'
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <PersonIcon sx={{ color: '#f59e0b', fontSize: '1.2rem' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Talent Hub"
+                    secondary="Hire Agent Developers"
+                    primaryTypographyProps={{
+                      variant: 'body2',
+                      fontWeight: 600,
+                      color: '#f59e0b'
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'caption',
+                      color: '#94a3b8'
+                    }}
+                  />
+                </ListItemButton>
+
+                {/* Marketplace Button */}
+                <ListItemButton
+                  onClick={() => {
+                    console.log('🛒 [CollaborationPanel] Opening Marketplace panel');
+                    openPanel('marketplace', 'marketplace', 'Marketplace - Buy & Sell');
+                  }}
+                  sx={{
+                    borderRadius: 1,
+                    mt: 1,
+                    bgcolor: 'rgba(168, 85, 247, 0.1)',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    '&:hover': {
+                      bgcolor: 'rgba(168, 85, 247, 0.2)',
+                      border: '1px solid rgba(168, 85, 247, 0.5)'
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <StorefrontIcon sx={{ color: '#a855f7', fontSize: '1.2rem' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Marketplace"
+                    secondary="Buy & Sell Agents"
+                    primaryTypographyProps={{
+                      variant: 'body2',
+                      fontWeight: 600,
+                      color: '#a855f7'
                     }}
                     secondaryTypographyProps={{
                       variant: 'caption',

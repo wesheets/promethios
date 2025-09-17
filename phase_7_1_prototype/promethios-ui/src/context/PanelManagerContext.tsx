@@ -9,7 +9,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-export type PanelType = 'collaboration' | 'social' | 'chat' | 'agent' | 'agent-command-center' | 'messaging';
+export type PanelType = 'collaboration' | 'social' | 'chat' | 'agent' | 'agent-command-center' | 'messaging' | 'talent-hub' | 'marketplace';
 
 interface PanelState {
   id: string;
