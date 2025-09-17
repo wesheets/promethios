@@ -25,6 +25,8 @@ import {
   Search as SearchIcon,
   FiberManualRecord as OnlineIcon
 } from '@mui/icons-material';
+import { useAuth } from '../../context/AuthContext';
+import { ConnectionService } from '../../services/ConnectionService';
 import { firebaseDirectMessageService, UserConnection, CreateDirectMessageRequest } from '../../services/FirebaseDirectMessageService';
 
 interface MessageCreationModalProps {
@@ -46,6 +48,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   onClose,
   onMessageCreated
 }) => {
+  const { user } = useAuth();
   const [selectedConnection, setSelectedConnection] = useState<UserConnection | null>(null);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,14 +79,6 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
       setLoadingConnections(true);
       console.log('💬 [MessageModal] Loading connections...');
       
-      // Import ConnectionService directly like TeamPanel does
-      const { ConnectionService } = await import('../../services/ConnectionService');
-      const connectionService = ConnectionService.getInstance();
-      
-      // Get current user ID from auth context
-      const { useAuth } = await import('../../context/AuthContext');
-      const { user } = useAuth();
-      
       if (!user?.uid) {
         console.log('💬 [MessageModal] No user ID available');
         setConnections([]);
@@ -91,6 +86,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
       }
       
       // Get real user connections using the same method as TeamPanel
+      const connectionService = ConnectionService.getInstance();
       const realConnections = await connectionService.getUserConnections(user.uid);
       console.log('💬 [MessageModal] Found', realConnections.length, 'real connections');
       
