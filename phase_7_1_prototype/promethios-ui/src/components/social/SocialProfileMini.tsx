@@ -33,11 +33,24 @@ import {
   Article,
   TrendingUp,
   Add,
+  Search,
+  AccountCircle,
+  Apartment
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { userProfileService, UserProfile } from '../../services/UserProfileService';
 
-const SocialProfileMini: React.FC = () => {
+interface SocialProfileMiniProps {
+  onNavigateToProfiles?: () => void;
+  onNavigateToDiscovery?: () => void;
+  onNavigateToOrganizations?: () => void;
+}
+
+const SocialProfileMini: React.FC<SocialProfileMiniProps> = ({
+  onNavigateToProfiles,
+  onNavigateToDiscovery,
+  onNavigateToOrganizations
+}) => {
   const { currentUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -226,6 +239,70 @@ const SocialProfileMini: React.FC = () => {
       }}>
         <CardContent sx={{ py: 2 }}>
           <List dense>
+            {/* New Navigation Items */}
+            <ListItem 
+              button 
+              onClick={onNavigateToProfiles}
+              sx={{ 
+                borderRadius: 1,
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)' }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <AccountCircle sx={{ color: '#94a3b8', fontSize: '1.2rem' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Profiles" 
+                primaryTypographyProps={{
+                  variant: 'body2',
+                  color: '#f8fafc'
+                }}
+              />
+            </ListItem>
+
+            <ListItem 
+              button 
+              onClick={onNavigateToDiscovery}
+              sx={{ 
+                borderRadius: 1,
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)' }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <Search sx={{ color: '#94a3b8', fontSize: '1.2rem' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Discovery" 
+                primaryTypographyProps={{
+                  variant: 'body2',
+                  color: '#f8fafc'
+                }}
+              />
+            </ListItem>
+
+            <ListItem 
+              button 
+              onClick={onNavigateToOrganizations}
+              sx={{ 
+                borderRadius: 1,
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)' }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <Apartment sx={{ color: '#94a3b8', fontSize: '1.2rem' }} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Organizations" 
+                primaryTypographyProps={{
+                  variant: 'body2',
+                  color: '#f8fafc'
+                }}
+              />
+            </ListItem>
+
+            <Divider sx={{ my: 1, borderColor: '#475569' }} />
+
+            {/* Existing Navigation Items */}
             <ListItem 
               button 
               sx={{ 

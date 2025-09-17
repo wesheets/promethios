@@ -33,6 +33,8 @@ import {
 } from '@mui/icons-material';
 import SocialFeedPage from '../../pages/SocialFeedPage';
 import LinkedInStyleProfilePage from '../../pages/LinkedInStyleProfilePage';
+import DiscoveryPage from '../../pages/DiscoveryPage';
+import OrganizationsPage from '../../pages/OrganizationsPage';
 import SocialProfileMini from './SocialProfileMini';
 import { useAuth } from '../../context/AuthContext';
 
@@ -50,6 +52,26 @@ const SocialNetworkPanel: React.FC<SocialNetworkPanelProps> = ({
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // View state for different pages within the social network
+  const [currentView, setCurrentView] = useState<'feed' | 'profiles' | 'discovery' | 'organizations'>('feed');
+  const [viewHistory, setViewHistory] = useState<string[]>(['feed']);
+
+  // Navigation functions
+  const navigateToView = (view: typeof currentView) => {
+    setViewHistory(prev => [...prev, view]);
+    setCurrentView(view);
+  };
+
+  const navigateBack = () => {
+    if (viewHistory.length > 1) {
+      const newHistory = [...viewHistory];
+      newHistory.pop(); // Remove current view
+      const previousView = newHistory[newHistory.length - 1];
+      setViewHistory(newHistory);
+      setCurrentView(previousView as typeof currentView);
+    }
+  };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
@@ -65,13 +87,39 @@ const SocialNetworkPanel: React.FC<SocialNetworkPanelProps> = ({
   ];
 
   const renderTabContent = () => {
+    // For Home tab, show different views based on currentView
+    if (activeTab === 0) {
+      switch (currentView) {
+        case 'profiles':
+          return (
+            <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#1e293b' }}>
+              <LinkedInStyleProfilePage />
+            </Box>
+          );
+        case 'discovery':
+          return (
+            <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#1e293b' }}>
+              <DiscoveryPage />
+            </Box>
+          );
+        case 'organizations':
+          return (
+            <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#1e293b' }}>
+              <OrganizationsPage />
+            </Box>
+          );
+        case 'feed':
+        default:
+          return (
+            <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#1e293b' }}>
+              <SocialFeedPage />
+            </Box>
+          );
+      }
+    }
+
+    // Other tabs remain the same
     switch (activeTab) {
-      case 0:
-        return (
-          <Box sx={{ height: '100%', overflow: 'auto', bgcolor: '#1e293b' }}>
-            <SocialFeedPage />
-          </Box>
-        );
       case 1:
         return (
           <Box sx={{ p: 3, color: '#f8fafc', bgcolor: '#1e293b', height: '100%' }}>
@@ -86,7 +134,7 @@ const SocialNetworkPanel: React.FC<SocialNetworkPanelProps> = ({
           <Box sx={{ p: 3, color: '#f8fafc', bgcolor: '#1e293b', height: '100%' }}>
             <Typography variant="h5">Jobs</Typography>
             <Typography variant="body2" sx={{ mt: 1, color: '#cbd5e1' }}>
-              Job listings coming soon...
+              Jobs content coming soon...
             </Typography>
           </Box>
         );
@@ -95,7 +143,7 @@ const SocialNetworkPanel: React.FC<SocialNetworkPanelProps> = ({
           <Box sx={{ p: 3, color: '#f8fafc', bgcolor: '#1e293b', height: '100%' }}>
             <Typography variant="h5">Messaging</Typography>
             <Typography variant="body2" sx={{ mt: 1, color: '#cbd5e1' }}>
-              Professional messaging coming soon...
+              Messaging content coming soon...
             </Typography>
           </Box>
         );
@@ -104,7 +152,7 @@ const SocialNetworkPanel: React.FC<SocialNetworkPanelProps> = ({
           <Box sx={{ p: 3, color: '#f8fafc', bgcolor: '#1e293b', height: '100%' }}>
             <Typography variant="h5">Notifications</Typography>
             <Typography variant="body2" sx={{ mt: 1, color: '#cbd5e1' }}>
-              Notifications coming soon...
+              Notifications content coming soon...
             </Typography>
           </Box>
         );
@@ -113,7 +161,7 @@ const SocialNetworkPanel: React.FC<SocialNetworkPanelProps> = ({
           <Box sx={{ p: 3, color: '#f8fafc', bgcolor: '#1e293b', height: '100%' }}>
             <Typography variant="h5">For Business</Typography>
             <Typography variant="body2" sx={{ mt: 1, color: '#cbd5e1' }}>
-              Business features coming soon...
+              Business content coming soon...
             </Typography>
           </Box>
         );
@@ -311,7 +359,11 @@ const SocialNetworkPanel: React.FC<SocialNetworkPanelProps> = ({
               bgcolor: '#1e293b',
               overflow: 'auto'
             }}>
-              <SocialProfileMini />
+              <SocialProfileMini 
+                onNavigateToProfiles={() => navigateToView('profiles')}
+                onNavigateToDiscovery={() => navigateToView('discovery')}
+                onNavigateToOrganizations={() => navigateToView('organizations')}
+              />
             </Box>
           )}
 

@@ -57,6 +57,10 @@ import MessageCreationModal from './MessageCreationModal';
 import HumanMessagingPanel from './HumanMessagingPanel';
 import AgentCreationPanel from './AgentCreationPanel';
 import AgentCommandCenterPanel from './AgentCommandCenterPanel';
+import DiscoveryPage from '../../pages/DiscoveryPage';
+import LinkedInStyleProfilePage from '../../pages/LinkedInStyleProfilePage';
+import OrganizationsPage from '../../pages/OrganizationsPage';
+import SocialFeedPage from '../../pages/SocialFeedPage';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
@@ -257,6 +261,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // View state for different panel views
+  const [currentView, setCurrentView] = useState<'main' | 'profiles' | 'discovery' | 'organizations' | 'social-feed'>('main');
+  const [viewHistory, setViewHistory] = useState<string[]>(['main']);
+
   // Modal states
   const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
@@ -318,6 +326,22 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
       closePanel('workflow');
     } else {
       openPanel('workflow', 'workflow', 'AI Agent Workflows');
+    }
+  };
+
+  // Navigation functions for view switching
+  const navigateToView = (view: typeof currentView) => {
+    setViewHistory(prev => [...prev, view]);
+    setCurrentView(view);
+  };
+
+  const navigateBack = () => {
+    if (viewHistory.length > 1) {
+      const newHistory = [...viewHistory];
+      newHistory.pop(); // Remove current view
+      const previousView = newHistory[newHistory.length - 1];
+      setViewHistory(newHistory);
+      setCurrentView(previousView as typeof currentView);
     }
   };
 
