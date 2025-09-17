@@ -13,22 +13,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  Slide,
-  Paper,
+  Drawer,
   Typography,
   IconButton,
-  TextField,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Avatar,
-  Badge,
   Collapse,
   Divider,
+  TextField,
+  InputAdornment,
   Chip,
-  Button
+  Avatar,
+  Slide
 } from '@mui/material';
 import {
   Close as CloseIcon,
