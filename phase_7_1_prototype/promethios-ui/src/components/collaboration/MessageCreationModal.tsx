@@ -25,9 +25,9 @@ import {
   Search as SearchIcon,
   FiberManualRecord as OnlineIcon
 } from '@mui/icons-material';
-import { useAuth } from '../../context/AuthContext';
+import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
 import { ConnectionService } from '../../services/ConnectionService';
-import { firebaseDirectMessageService, UserConnection, CreateDirectMessageRequest } from '../../services/FirebaseDirectMessageService';
+import { useAuth } from '../../context/AuthContext';
 
 interface MessageCreationModalProps {
   open: boolean;
@@ -85,11 +85,28 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
         return;
       }
       
-      // Use the Firebase service directly for consistency
-      const userConnections = await firebaseDirectMessageService.getUserConnections();
+      // Use ConnectionService for consistency with other components
+      const connectionService = ConnectionService.getInstance();
+      const userConnections = await connectionService.getUserConnections(user.uid);
       console.log('💬 [MessageModal] Found', userConnections.length, 'user connections');
       
-      setConnections(userConnections);
+      // Convert to UserConnection format
+      const formattedConnections: UserConnection[] = userConnections.map(conn => ({
+        id: conn.id,
+        userId: user.uid,
+        connectedUserId: conn.userId,
+        connectedUserName: conn.displayName || conn.name || 'Unknown User',
+        connectedUserAvatar: conn.avatar || '',
+        connectedUserTitle: conn.title || '',
+        connectedUserCompany: conn.company || '',
+        status: 'accepted' as const,
+        isOnline: conn.isOnline || false,
+        lastSeen: conn.lastSeen,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }));
+      
+      setConnections(formattedConnections);
     } catch (error) {
       console.error('❌ [MessageModal] Error loading connections:', error);
       setError('Failed to load connections');

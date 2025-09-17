@@ -24,6 +24,8 @@ import {
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { firebaseChannelService, CreateChannelRequest } from '../../services/FirebaseChannelService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
+import { ConnectionService } from '../../services/ConnectionService';
+import { useAuth } from '../../context/AuthContext';
 
 interface ChannelCreationModalProps {
   open: boolean;
@@ -79,8 +81,30 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
   const loadConnections = async () => {
     try {
       setLoadingConnections(true);
-      const userConnections = await firebaseDirectMessageService.getUserConnections();
-      setConnections(userConnections);
+      
+      if (!user?.uid) {
+        console.log('🏢 [ChannelModal] No user ID available');
+        setConnections([]);
+        return;
+      }
+      
+      // Use ConnectionService for consistency
+      const connectionService = ConnectionService.getInstance();
+      const userConnections = await connectionService.getUserConnections(user.uid);
+      console.log('🏢 [ChannelModal] Found', userConnections.length, 'user connections');
+      
+      // Convert to expected format
+      const formattedConnections = userConnections.map(conn => ({
+        id: conn.id,
+        userId: conn.userId,
+        name: conn.displayName || conn.name || 'Unknown User',
+        avatar: conn.avatar || '',
+        title: conn.title || '',
+        company: conn.company || '',
+        isOnline: conn.isOnline || false
+      }));
+      
+      setConnections(formattedConnections);
     } catch (error) {
       console.error('Error loading connections:', error);
       setError('Failed to load connections');

@@ -47,7 +47,8 @@ import {
   RadioButtonUnchecked as OfflineIcon,
   Link as ConnectionIcon,
   Add as AddIcon,
-  Storefront as StorefrontIcon
+  Storefront as StorefrontIcon,
+  Terminal as TerminalIcon
 } from '@mui/icons-material';
 import { usePanelManager } from '../../context/PanelManagerContext';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
@@ -495,6 +496,29 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     
     // Navigate to the command center (this would be handled by the panel content)
     console.log('🎯 [CollaborationPanel] Command Center URL:', commandCenterUrl);
+  };
+
+  // Handle AI agent Command Center button click - Open embedded Command Center
+  const handleAgentCommandCenter = (agentId: string, agentName: string) => {
+    console.log('🎯 [CollaborationPanel] Opening embedded Command Center for agent:', agentId, agentName);
+    
+    // Find the agent to get the full profile
+    const agent = aiAgents.find(a => {
+      const currentAgentId = a.identity?.id || a.chatbotMetadata?.id || a.name;
+      return currentAgentId === agentId;
+    });
+    
+    if (!agent) {
+      console.error('❌ [CollaborationPanel] Agent not found:', agentId);
+      return;
+    }
+
+    // Open the agent command center panel within the collaboration panel
+    openPanel(`agent-command-center-${agentId}`, 'agent-command-center', `${agentName} Command Center`, {
+      agentId,
+      agentName,
+      agent
+    });
   };
 
   // Handle channel creation
@@ -1137,6 +1161,21 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                                   color: '#94a3b8'
                                 }}
                               />
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAgentCommandCenter(agentId, agentName);
+                                }}
+                                size="small"
+                                sx={{ 
+                                  color: '#6366f1',
+                                  mr: 1,
+                                  '&:hover': { bgcolor: '#334155' }
+                                }}
+                                title="Open Command Center"
+                              >
+                                <TerminalIcon sx={{ fontSize: 14 }} />
+                              </IconButton>
                               <Chip
                                 label="ACTIVE"
                                 size="small"
