@@ -47,6 +47,11 @@ import SocialNetworkPanel from '../social/SocialNetworkPanel';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 
+interface CollaborationSlidePanelProps {
+  open: boolean;
+  onClose: () => void;
+}
+
 interface CollaborationSlidePanel {
   open: boolean;
   onClose: () => void;
@@ -140,7 +145,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     if (user?.uid && !authLoading) {
       loadAgents();
     }
-  }, [user?.uid, authLoading]); [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+  }, [user?.uid, authLoading]);
+
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     workCollaborations: true,
     channels: true,
     directMessages: true,
@@ -322,7 +329,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     console.log('🤖 [CollaborationPanel] Opening Command Center for agent:', agentId, agentName);
     
     // Find the agent to get the full profile
-    const agent = aiAgents.find(a => (a.identity?.id || a.id) === agentId);
+    const agent = aiAgents.find(a => {
+      const currentAgentId = a.identity?.id || a.chatbotMetadata?.id || a.name;
+      return currentAgentId === agentId;
+    });
     if (!agent) {
       console.error('❌ [CollaborationPanel] Agent not found:', agentId);
       return;
@@ -715,7 +725,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                       </ListItem>
                     ) : (
                       filterBySearch(aiAgents, ['identity.name', 'name']).map((agent) => {
-                        const agentId = agent.identity?.id || agent.id;
+                        const agentId = agent.identity?.id || agent.chatbotMetadata?.id || agent.name;
                         const agentName = agent.identity?.name || 'Unnamed Agent';
                         const agentAvatar = agent.identity?.avatar || agentName.charAt(0).toUpperCase();
                         
