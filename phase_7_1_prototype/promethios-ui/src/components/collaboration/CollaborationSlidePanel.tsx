@@ -591,7 +591,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 32 }}>
-                      <DirectMessageIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
+                      <PersonIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                     </ListItemIcon>
                     <ListItemText 
                       primary="Direct Messages"
