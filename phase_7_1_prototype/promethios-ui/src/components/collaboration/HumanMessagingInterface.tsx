@@ -312,9 +312,10 @@ const HumanMessagingInterface: React.FC<HumanMessagingInterfaceProps> = ({
               {getFilteredParticipants().map((participant) => (
                 <ListItem
                   key={participant.id}
-                  button
+                  component="div"
                   onClick={() => handleMentionSelect(participant)}
                   sx={{
+                    cursor: 'pointer',
                     '&:hover': {
                       bgcolor: '#475569'
                     }

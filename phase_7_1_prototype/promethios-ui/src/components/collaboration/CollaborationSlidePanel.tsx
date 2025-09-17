@@ -200,9 +200,6 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     }>;
   } | null>(null);
 
-  // Message creation modal state
-  const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
-
   // Check if social panel is open
   const socialPanelOpen = isPanelOpen('social');
   
