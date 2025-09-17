@@ -890,7 +890,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <PublicIcon sx={{ color: '#6366f1', fontSize: '1.2rem' }} />
+                    <SocialIcon sx={{ color: '#6366f1', fontSize: '1.2rem' }} />
                   </ListItemIcon>
                   <ListItemText
                     primary="Social"
