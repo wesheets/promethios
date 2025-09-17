@@ -53,6 +53,7 @@ import WorkflowPanel from '../workflow/WorkflowPanel';
 import ChannelCreationModal from './ChannelCreationModal';
 import MessageCreationModal from './MessageCreationModal';
 import HumanMessagingPanel from './HumanMessagingPanel';
+import AgentCreationPanel from './AgentCreationPanel';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
@@ -252,8 +253,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Channel creation modal state  const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
+  // Modal states
+  const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
+  const [agentCreationPanelOpen, setAgentCreationPanelOpen] = useState(false);
   const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
   const [selectedOrganization, setSelectedOrganization] = useState<{
     id: string;
@@ -917,6 +920,20 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                         color: '#f8fafc'
                       }}
                     />
+                    <IconButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAgentCreationPanelOpen(true);
+                      }}
+                      sx={{ 
+                        color: '#10b981', 
+                        p: 0.5,
+                        mr: 1,
+                        '&:hover': { bgcolor: '#334155' }
+                      }}
+                    >
+                      <AddIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
                     {expandedSections.aiAgents ? 
                       <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
                       <ExpandMore sx={{ color: '#cbd5e1' }} />
@@ -1230,6 +1247,19 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           participants={currentConversation.participants || []}
         />
       )}
+
+      {/* Agent Creation Panel */}
+      <AgentCreationPanel
+        open={agentCreationPanelOpen}
+        onClose={() => setAgentCreationPanelOpen(false)}
+        onAgentCreated={(agentData) => {
+          console.log('🤖 [CollaborationPanel] New agent created:', agentData);
+          // Refresh the agents list
+          loadAgents();
+          // Close the panel
+          setAgentCreationPanelOpen(false);
+        }}
+      />
     </>
   );
 };
