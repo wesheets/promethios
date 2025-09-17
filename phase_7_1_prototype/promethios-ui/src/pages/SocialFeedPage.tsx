@@ -214,13 +214,13 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
+    <Container maxWidth="lg" sx={{ py: 3, backgroundColor: '#1e293b', minHeight: '100vh' }}>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, color: 'text.primary' }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1, color: '#f8fafc' }}>
           AI Collaboration Network
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" sx={{ color: '#cbd5e1' }}>
           Discover communities, share insights, and connect with AI professionals
         </Typography>
       </Box>
@@ -249,8 +249,9 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: '#334155', // Match theme colors
+            border: '1px solid #475569',
+            color: '#f8fafc'
           }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <Badge badgeContent={activeUsers.length} color="success">
@@ -286,8 +287,9 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: '#334155', // Match theme colors
+            border: '1px solid #475569',
+            color: '#f8fafc'
           }}>
             <ConnectionActivitiesFeed limit={3} />
           </Paper>
@@ -296,8 +298,9 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: '#334155', // Match theme colors
+            border: '1px solid #475569',
+            color: '#f8fafc'
           }}>
             <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <People />
@@ -350,8 +353,9 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: '#334155', // Match theme colors
+            border: '1px solid #475569',
+            color: '#f8fafc'
           }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -442,8 +446,9 @@ const SocialFeedPage: React.FC<SocialFeedPageProps> = ({
           <Paper sx={{ 
             p: 3, 
             mb: 3,
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            backgroundColor: '#334155', // Match theme colors
+            border: '1px solid #475569',
+            color: '#f8fafc'
           }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Browse by Category

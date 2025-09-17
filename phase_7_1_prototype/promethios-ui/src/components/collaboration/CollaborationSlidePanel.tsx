@@ -28,7 +28,8 @@ import {
   TextField,
   InputAdornment,
   Chip,
-  Tooltip
+  Tooltip,
+  Slide
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -47,6 +48,7 @@ import {
   RadioButtonUnchecked as OfflineIcon
 } from '@mui/icons-material';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
+import { usePanelManager } from '../../context/PanelManagerContext';
 
 interface CollaborationSlidePanel {
   open: boolean;
@@ -105,6 +107,8 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
   onClose,
   width = 320
 }) => {
+  const { openPanel, closePanel, isPanelOpen, getPanelWidth } = usePanelManager();
+  
   // State for expanded sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     workCollaborations: true,
@@ -120,8 +124,20 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Social Network Panel state
-  const [socialPanelOpen, setSocialPanelOpen] = useState(false);
+  // Check if social panel is open
+  const socialPanelOpen = isPanelOpen('social');
+
+  // Handle social panel toggle
+  const handleSocialToggle = () => {
+    if (socialPanelOpen) {
+      closePanel('social');
+    } else {
+      openPanel('social', 'social', 'Professional Network');
+    }
+  };
+
+  // Calculate panel width based on panel manager
+  const panelWidth = open ? getPanelWidth('collaboration') : '0px';
 
   // Sample data - will be replaced with real Firebase data
   const [workCollaborations] = useState<WorkCollaboration[]>([
@@ -152,29 +168,29 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
           lastActivity: new Date()
         },
         {
-          id: 'acme-leadership',
-          name: 'leadership',
-          description: 'Leadership team private channel',
+          id: 'acme-design',
+          name: 'design',
+          description: 'Design team discussions',
           unreadCount: 0,
           isPrivate: true,
-          memberCount: 5,
-          lastActivity: new Date(Date.now() - 3600000)
+          memberCount: 8,
+          lastActivity: new Date()
         }
       ]
     },
     {
-      id: 'project-alpha',
+      id: 'startup-alpha',
       name: 'Project Alpha',
-      description: 'Alpha project collaboration',
+      description: 'Stealth startup project',
       avatar: 'PA',
       memberCount: 8,
       isPrivate: true,
       channels: [
         {
-          id: 'alpha-planning',
-          name: 'planning',
-          description: 'Project planning and coordination',
-          unreadCount: 2,
+          id: 'alpha-general',
+          name: 'general',
+          description: 'General project discussions',
+          unreadCount: 12,
           isPrivate: false,
           memberCount: 8,
           lastActivity: new Date()
@@ -185,46 +201,16 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
           description: 'Development discussions',
           unreadCount: 5,
           isPrivate: false,
-          memberCount: 6,
+          memberCount: 4,
           lastActivity: new Date()
         }
       ]
     }
   ]);
 
-  const [generalChannels] = useState<Channel[]>([
-    {
-      id: 'public-general',
-      name: 'general',
-      description: 'Open community discussions',
-      unreadCount: 12,
-      isPrivate: false,
-      memberCount: 234,
-      lastActivity: new Date()
-    },
-    {
-      id: 'public-announcements',
-      name: 'announcements',
-      description: 'Platform announcements',
-      unreadCount: 1,
-      isPrivate: false,
-      memberCount: 456,
-      lastActivity: new Date()
-    },
-    {
-      id: 'public-help',
-      name: 'help',
-      description: 'Community help and support',
-      unreadCount: 0,
-      isPrivate: false,
-      memberCount: 189,
-      lastActivity: new Date(Date.now() - 7200000)
-    }
-  ]);
-
   const [directMessages] = useState<DirectMessage[]>([
     {
-      id: 'dm-alice',
+      id: 'alice-johnson',
       name: 'Alice Johnson',
       avatar: 'AJ',
       isOnline: true,
@@ -232,20 +218,20 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
       lastActivity: new Date()
     },
     {
-      id: 'dm-bob',
+      id: 'bob-smith',
       name: 'Bob Smith',
       avatar: 'BS',
       isOnline: false,
       unreadCount: 0,
-      lastActivity: new Date(Date.now() - 3600000)
+      lastActivity: new Date()
     },
     {
-      id: 'dm-carol',
+      id: 'carol-davis',
       name: 'Carol Davis',
       avatar: 'CD',
       isOnline: true,
       unreadCount: 1,
-      lastActivity: new Date(Date.now() - 1800000)
+      lastActivity: new Date()
     }
   ]);
 
@@ -254,7 +240,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
       id: 'data-analyst',
       name: 'Data Analyst',
       avatar: 'DA',
-      color: '#6366f1',
+      color: '#10b981',
       status: 'active',
       expertise: ['Data Analysis', 'Visualization']
     },
@@ -262,7 +248,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
       id: 'content-writer',
       name: 'Content Writer',
       avatar: 'CW',
-      color: '#10b981',
+      color: '#8b5cf6',
       status: 'active',
       expertise: ['Writing', 'Marketing']
     },
@@ -270,7 +256,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
       id: 'research-assistant',
       name: 'Research Assistant',
       avatar: 'RA',
-      color: '#8b5cf6',
+      color: '#f59e0b',
       status: 'active',
       expertise: ['Research', 'Analysis']
     }
@@ -278,26 +264,33 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
 
   const [connections] = useState<Connection[]>([
     {
-      id: 'conn-1',
-      name: 'Tech Innovators',
+      id: 'tech-corp',
+      name: 'Tech Corp',
       type: 'organization',
-      avatar: 'TI',
+      avatar: 'TC',
+      isOnline: false
+    },
+    {
+      id: 'jane-doe',
+      name: 'Jane Doe',
+      type: 'user',
+      avatar: 'JD',
       isOnline: true
     },
     {
-      id: 'conn-2',
-      name: 'Sarah Wilson',
-      type: 'user',
-      avatar: 'SW',
+      id: 'startup-inc',
+      name: 'Startup Inc',
+      type: 'organization',
+      avatar: 'SI',
       isOnline: false
     }
   ]);
 
   // Toggle section expansion
-  const toggleSection = (section: string) => {
+  const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
       ...prev,
-      [section]: !prev[section]
+      [sectionId]: !prev[sectionId]
     }));
   };
 
@@ -307,6 +300,24 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
       ...prev,
       [collabId]: !prev[collabId]
     }));
+  };
+
+  // Handle channel click
+  const handleChannelClick = (channelId: string, channelName: string) => {
+    console.log('Opening channel:', channelId, channelName);
+    // This would open the channel in the main content area
+  };
+
+  // Handle direct message click
+  const handleDirectMessageClick = (userId: string, userName: string) => {
+    console.log('Opening DM with:', userId, userName);
+    // This would open the DM in the main content area
+  };
+
+  // Handle AI agent click
+  const handleAgentClick = (agentId: string, agentName: string) => {
+    console.log('Starting conversation with agent:', agentId, agentName);
+    // This would start a conversation with the AI agent
   };
 
   // Filter items based on search
@@ -321,193 +332,304 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
 
   return (
     <>
-    <Drawer
-      anchor="left"
-      open={open}
-      onClose={onClose}
-      variant="temporary"
-      sx={{
-        '& .MuiDrawer-paper': {
-          width: width,
-          bgcolor: '#1e293b', // Match theme background.paper
-          borderRight: '1px solid #475569', // Match theme divider
-          marginLeft: '64px', // Align with existing left nav bar
-          height: 'calc(100vh - 0px)', // Full height
-          top: 0,
-          zIndex: 1200 // Below AgentDocker but above main content
-        }
-      }}
-    >
-      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
-        <Box sx={{ 
-          p: 2, 
-          borderBottom: '1px solid #475569', // Match theme divider
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 600 }}>
-            Collaborations
-          </Typography>
-          <IconButton
-            onClick={onClose}
-            size="small"
-            sx={{ color: '#cbd5e1' }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-
-        {/* Search */}
-        <Box sx={{ p: 2, borderBottom: '1px solid #475569' }}>
-          <TextField
-            fullWidth
-            placeholder="Search collaborations..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            size="small"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#cbd5e1' }} />
-                </InputAdornment>
-              ),
-              sx: {
-                bgcolor: '#475569',
-                color: '#f8fafc', // Match theme text.primary
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#475569' // Match theme divider
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#64748b'
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#6366f1' // Match theme primary
-                }
-              }
-            }}
-          />
-        </Box>
-
-        {/* Content */}
-        <Box sx={{ flex: 1, overflow: 'auto' }}>
-          <List sx={{ p: 0 }}>
-            {/* Work Collaborations */}
-            <ListItem sx={{ px: 2, py: 1 }}>
-              <ListItemButton
-                onClick={() => toggleSection('workCollaborations')}
+      <Slide direction="right" in={open} mountOnEnter unmountOnExit>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: '64px', // Position after left nav
+            width: width,
+            height: '100vh',
+            bgcolor: '#1e293b', // Exact match with left navigation
+            borderRight: '1px solid #334155', // Exact match with left navigation border
+            zIndex: 1200, // Below AgentDocker but above main content
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <Box sx={{ 
+              p: 2, 
+              borderBottom: '1px solid #334155',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 600 }}>
+                Collaborations
+              </Typography>
+              <IconButton 
+                onClick={onClose}
+                size="small"
                 sx={{ 
-                  px: 1, 
-                  py: 0.5, 
-                  borderRadius: 1,
-                  '&:hover': { bgcolor: '#475569' }
+                  color: '#cbd5e1',
+                  '&:hover': { bgcolor: '#334155' }
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <OrganizationIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Work Collaborations"
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: '#f8fafc'
-                  }}
-                />
-                {expandedSections.workCollaborations ? 
-                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
-                  <ExpandMore sx={{ color: '#cbd5e1' }} />
-                }
-              </ListItemButton>
-            </ListItem>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
 
-            <Collapse in={expandedSections.workCollaborations}>
-              {filterBySearch(workCollaborations, ['name', 'description']).map((workCollab) => (
-                <Box key={workCollab.id}>
-                  {/* Work Collaboration Header */}
-                  <ListItem sx={{ px: 3, py: 0.5 }}>
-                    <ListItemButton
-                      onClick={() => toggleWorkCollab(workCollab.id)}
-                      sx={{ 
-                        px: 1, 
-                        py: 0.5, 
-                        borderRadius: 1,
-                        '&:hover': { bgcolor: '#475569' }
+            {/* Search */}
+            <Box sx={{ p: 2 }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search collaborations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: '#94a3b8', fontSize: '1.1rem' }} />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    bgcolor: '#334155',
+                    border: '1px solid #475569',
+                    borderRadius: 1,
+                    color: '#f8fafc',
+                    '& input::placeholder': {
+                      color: '#94a3b8',
+                      opacity: 1
+                    },
+                    '&:hover': {
+                      border: '1px solid #64748b'
+                    },
+                    '&.Mui-focused': {
+                      border: '1px solid #6366f1'
+                    }
+                  }
+                }}
+              />
+            </Box>
+
+            {/* Content */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              <List sx={{ py: 0 }}>
+                {/* Work Collaborations */}
+                <ListItem sx={{ px: 2, py: 1 }}>
+                  <ListItemButton
+                    onClick={() => toggleSection('workCollaborations')}
+                    sx={{ 
+                      px: 1, 
+                      py: 0.5, 
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: '#334155' }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <OrganizationIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Work Collaborations"
+                      primaryTypographyProps={{
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: '#f8fafc'
                       }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 32 }}>
-                        <Avatar
-                          sx={{ 
-                            width: 20, 
-                            height: 20, 
-                            fontSize: '0.7rem',
-                            bgcolor: '#6366f1'
-                          }}
-                        >
-                          {workCollab.avatar}
-                        </Avatar>
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={workCollab.name}
-                        secondary={`${workCollab.memberCount} members`}
-                        primaryTypographyProps={{
-                          fontSize: '0.8rem',
-                          color: '#f1f5f9'
-                        }}
-                        secondaryTypographyProps={{
-                          fontSize: '0.7rem',
-                          color: '#cbd5e1'
-                        }}
-                      />
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        {workCollab.isPrivate && (
-                          <PrivateIcon sx={{ color: '#cbd5e1', fontSize: 14 }} />
-                        )}
-                        {expandedWorkCollabs[workCollab.id] ? 
-                          <ExpandLess sx={{ color: '#cbd5e1', fontSize: 16 }} /> : 
-                          <ExpandMore sx={{ color: '#cbd5e1', fontSize: 16 }} />
-                        }
-                      </Box>
-                    </ListItemButton>
-                  </ListItem>
+                    />
+                    {expandedSections.workCollaborations ? 
+                      <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                      <ExpandMore sx={{ color: '#cbd5e1' }} />
+                    }
+                  </ListItemButton>
+                </ListItem>
 
-                  {/* Work Collaboration Channels */}
-                  <Collapse in={expandedWorkCollabs[workCollab.id]}>
-                    {workCollab.channels.map((channel) => (
-                      <ListItem key={channel.id} sx={{ px: 4, py: 0.25 }}>
+                <Collapse in={expandedSections.workCollaborations} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding sx={{ pl: 2 }}>
+                    {filterBySearch(workCollaborations, ['name', 'description']).map((collab) => (
+                      <Box key={collab.id}>
+                        <ListItem sx={{ px: 2, py: 0.5 }}>
+                          <ListItemButton
+                            onClick={() => toggleWorkCollab(collab.id)}
+                            sx={{ 
+                              px: 1, 
+                              py: 0.5, 
+                              borderRadius: 1,
+                              '&:hover': { bgcolor: '#334155' }
+                            }}
+                          >
+                            <ListItemIcon sx={{ minWidth: 28 }}>
+                              <Avatar
+                                sx={{ 
+                                  width: 20, 
+                                  height: 20, 
+                                  fontSize: '0.7rem',
+                                  bgcolor: collab.isPrivate ? '#ef4444' : '#10b981'
+                                }}
+                              >
+                                {collab.avatar}
+                              </Avatar>
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={collab.name}
+                              secondary={`${collab.memberCount} members`}
+                              primaryTypographyProps={{
+                                fontSize: '0.8rem',
+                                color: '#f8fafc'
+                              }}
+                              secondaryTypographyProps={{
+                                fontSize: '0.7rem',
+                                color: '#94a3b8'
+                              }}
+                            />
+                            {collab.isPrivate && (
+                              <PrivateIcon sx={{ color: '#94a3b8', fontSize: 14, mr: 1 }} />
+                            )}
+                            {expandedWorkCollabs[collab.id] ? 
+                              <ExpandLess sx={{ color: '#cbd5e1', fontSize: 16 }} /> : 
+                              <ExpandMore sx={{ color: '#cbd5e1', fontSize: 16 }} />
+                            }
+                          </ListItemButton>
+                        </ListItem>
+
+                        {/* Channels under this collaboration */}
+                        <Collapse in={expandedWorkCollabs[collab.id]} timeout="auto" unmountOnExit>
+                          <List component="div" disablePadding sx={{ pl: 3 }}>
+                            {collab.channels.map((channel) => (
+                              <ListItem key={channel.id} sx={{ px: 1, py: 0.25 }}>
+                                <ListItemButton
+                                  onClick={() => handleChannelClick(channel.id, channel.name)}
+                                  sx={{ 
+                                    px: 1, 
+                                    py: 0.25, 
+                                    borderRadius: 1,
+                                    '&:hover': { bgcolor: '#334155' }
+                                  }}
+                                >
+                                  <ListItemIcon sx={{ minWidth: 24 }}>
+                                    <ChannelIcon sx={{ color: '#94a3b8', fontSize: 16 }} />
+                                  </ListItemIcon>
+                                  <ListItemText 
+                                    primary={`# ${channel.name}`}
+                                    primaryTypographyProps={{
+                                      fontSize: '0.75rem',
+                                      color: '#cbd5e1'
+                                    }}
+                                  />
+                                  {channel.isPrivate && (
+                                    <PrivateIcon sx={{ color: '#94a3b8', fontSize: 12, mr: 0.5 }} />
+                                  )}
+                                  {channel.unreadCount > 0 && (
+                                    <Badge 
+                                      badgeContent={channel.unreadCount} 
+                                      color="error"
+                                      sx={{
+                                        '& .MuiBadge-badge': {
+                                          fontSize: '0.6rem',
+                                          height: 16,
+                                          minWidth: 16
+                                        }
+                                      }}
+                                    />
+                                  )}
+                                </ListItemButton>
+                              </ListItem>
+                            ))}
+                          </List>
+                        </Collapse>
+                      </Box>
+                    ))}
+                  </List>
+                </Collapse>
+
+                <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
+
+                {/* Direct Messages */}
+                <ListItem sx={{ px: 2, py: 1 }}>
+                  <ListItemButton
+                    onClick={() => toggleSection('directMessages')}
+                    sx={{ 
+                      px: 1, 
+                      py: 0.5, 
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: '#334155' }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <DirectMessageIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="Direct Messages"
+                      primaryTypographyProps={{
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: '#f8fafc'
+                      }}
+                    />
+                    {expandedSections.directMessages ? 
+                      <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                      <ExpandMore sx={{ color: '#cbd5e1' }} />
+                    }
+                  </ListItemButton>
+                </ListItem>
+
+                <Collapse in={expandedSections.directMessages} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding sx={{ pl: 2 }}>
+                    {filterBySearch(directMessages, ['name']).map((dm) => (
+                      <ListItem key={dm.id} sx={{ px: 2, py: 0.5 }}>
                         <ListItemButton
+                          onClick={() => handleDirectMessageClick(dm.id, dm.name)}
                           sx={{ 
                             px: 1, 
                             py: 0.5, 
                             borderRadius: 1,
-                            '&:hover': { bgcolor: '#475569' }
+                            '&:hover': { bgcolor: '#334155' }
                           }}
                         >
                           <ListItemIcon sx={{ minWidth: 28 }}>
-                            {channel.isPrivate ? (
-                              <PrivateIcon sx={{ color: '#cbd5e1', fontSize: 16 }} />
-                            ) : (
-                              <ChannelIcon sx={{ color: '#cbd5e1', fontSize: 16 }} />
-                            )}
+                            <Box sx={{ position: 'relative' }}>
+                              <Avatar
+                                sx={{ 
+                                  width: 20, 
+                                  height: 20, 
+                                  fontSize: '0.7rem',
+                                  bgcolor: '#64748b'
+                                }}
+                              >
+                                {dm.avatar}
+                              </Avatar>
+                              {dm.isOnline ? (
+                                <OnlineIcon 
+                                  sx={{ 
+                                    position: 'absolute',
+                                    bottom: -2,
+                                    right: -2,
+                                    fontSize: 8,
+                                    color: '#10b981'
+                                  }} 
+                                />
+                              ) : (
+                                <OfflineIcon 
+                                  sx={{ 
+                                    position: 'absolute',
+                                    bottom: -2,
+                                    right: -2,
+                                    fontSize: 8,
+                                    color: '#6b7280'
+                                  }} 
+                                />
+                              )}
+                            </Box>
                           </ListItemIcon>
                           <ListItemText 
-                            primary={`# ${channel.name}`}
+                            primary={dm.name}
                             primaryTypographyProps={{
-                              fontSize: '0.75rem',
-                              color: '#cbd5e1'
+                              fontSize: '0.8rem',
+                              color: '#f8fafc'
                             }}
                           />
-                          {channel.unreadCount && channel.unreadCount > 0 && (
-                            <Badge
-                              badgeContent={channel.unreadCount}
+                          {dm.unreadCount > 0 && (
+                            <Badge 
+                              badgeContent={dm.unreadCount} 
+                              color="error"
                               sx={{
                                 '& .MuiBadge-badge': {
-                                  bgcolor: '#ef4444',
-                                  color: 'white',
                                   fontSize: '0.6rem',
-                                  minWidth: 16,
-                                  height: 16
+                                  height: 16,
+                                  minWidth: 16
                                 }
                               }}
                             />
@@ -515,402 +637,211 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
                         </ListItemButton>
                       </ListItem>
                     ))}
-                  </Collapse>
-                </Box>
-              ))}
-            </Collapse>
+                  </List>
+                </Collapse>
 
-            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
+                <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
 
-            {/* General Channels */}
-            <ListItem sx={{ px: 2, py: 1 }}>
-              <ListItemButton
-                onClick={() => toggleSection('channels')}
-                sx={{ 
-                  px: 1, 
-                  py: 0.5, 
-                  borderRadius: 1,
-                  '&:hover': { bgcolor: '#475569' }
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <PublicIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="General Channels"
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: '#f8fafc'
-                  }}
-                />
-                <IconButton size="small" sx={{ color: '#cbd5e1' }}>
-                  <AddIcon fontSize="small" />
-                </IconButton>
-                {expandedSections.channels ? 
-                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
-                  <ExpandMore sx={{ color: '#cbd5e1' }} />
-                }
-              </ListItemButton>
-            </ListItem>
-
-            <Collapse in={expandedSections.channels}>
-              {filterBySearch(generalChannels, ['name', 'description']).map((channel) => (
-                <ListItem key={channel.id} sx={{ px: 3, py: 0.25 }}>
+                {/* AI Agents */}
+                <ListItem sx={{ px: 2, py: 1 }}>
                   <ListItemButton
+                    onClick={() => toggleSection('aiAgents')}
                     sx={{ 
                       px: 1, 
                       py: 0.5, 
                       borderRadius: 1,
-                      '&:hover': { bgcolor: '#475569' }
+                      '&:hover': { bgcolor: '#334155' }
                     }}
                   >
-                    <ListItemIcon sx={{ minWidth: 28 }}>
-                      <ChannelIcon sx={{ color: '#cbd5e1', fontSize: 16 }} />
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <AgentIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                     </ListItemIcon>
                     <ListItemText 
-                      primary={`# ${channel.name}`}
-                      secondary={`${channel.memberCount} members`}
+                      primary="AI Agents"
                       primaryTypographyProps={{
-                        fontSize: '0.8rem',
-                        color: '#f1f5f9'
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: '0.7rem',
-                        color: '#cbd5e1'
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: '#f8fafc'
                       }}
                     />
-                    {channel.unreadCount && channel.unreadCount > 0 && (
-                      <Badge
-                        badgeContent={channel.unreadCount}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            bgcolor: '#ef4444',
-                            color: 'white',
-                            fontSize: '0.6rem',
-                            minWidth: 16,
-                            height: 16
-                          }
-                        }}
-                      />
-                    )}
+                    {expandedSections.aiAgents ? 
+                      <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                      <ExpandMore sx={{ color: '#cbd5e1' }} />
+                    }
                   </ListItemButton>
                 </ListItem>
-              ))}
-            </Collapse>
 
-            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
-
-            {/* Direct Messages */}
-            <ListItem sx={{ px: 2, py: 1 }}>
-              <ListItemButton
-                onClick={() => toggleSection('directMessages')}
-                sx={{ 
-                  px: 1, 
-                  py: 0.5, 
-                  borderRadius: 1,
-                  '&:hover': { bgcolor: '#475569' }
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <DirectMessageIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Direct Messages"
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: '#f8fafc'
-                  }}
-                />
-                <IconButton size="small" sx={{ color: '#cbd5e1' }}>
-                  <AddIcon fontSize="small" />
-                </IconButton>
-                {expandedSections.directMessages ? 
-                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
-                  <ExpandMore sx={{ color: '#cbd5e1' }} />
-                }
-              </ListItemButton>
-            </ListItem>
-
-            <Collapse in={expandedSections.directMessages}>
-              {filterBySearch(directMessages, ['name']).map((dm) => (
-                <ListItem key={dm.id} sx={{ px: 3, py: 0.25 }}>
-                  <ListItemButton
-                    sx={{ 
-                      px: 1, 
-                      py: 0.5, 
-                      borderRadius: 1,
-                      '&:hover': { bgcolor: '#475569' }
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 28 }}>
-                      <Box sx={{ position: 'relative' }}>
-                        <Avatar
+                <Collapse in={expandedSections.aiAgents} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding sx={{ pl: 2 }}>
+                    {filterBySearch(aiAgents, ['name', 'expertise']).map((agent) => (
+                      <ListItem key={agent.id} sx={{ px: 2, py: 0.5 }}>
+                        <ListItemButton
+                          onClick={() => handleAgentClick(agent.id, agent.name)}
                           sx={{ 
-                            width: 20, 
-                            height: 20, 
-                            fontSize: '0.7rem',
-                            bgcolor: '#64748b'
+                            px: 1, 
+                            py: 0.5, 
+                            borderRadius: 1,
+                            '&:hover': { bgcolor: '#334155' }
                           }}
                         >
-                          {dm.avatar}
-                        </Avatar>
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            bottom: -2,
-                            right: -2,
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            bgcolor: dm.isOnline ? '#10b981' : '#6b7280',
-                            border: '1px solid #1e293b'
-                          }}
-                        />
-                      </Box>
-                    </ListItemIcon>
-                    <ListItemText 
-                      primary={dm.name}
-                      primaryTypographyProps={{
-                        fontSize: '0.8rem',
-                        color: '#f1f5f9'
-                      }}
-                    />
-                    {dm.unreadCount && dm.unreadCount > 0 && (
-                      <Badge
-                        badgeContent={dm.unreadCount}
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            bgcolor: '#ef4444',
-                            color: 'white',
-                            fontSize: '0.6rem',
-                            minWidth: 16,
-                            height: 16
-                          }
-                        }}
-                      />
-                    )}
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </Collapse>
+                          <ListItemIcon sx={{ minWidth: 28 }}>
+                            <Avatar
+                              sx={{ 
+                                width: 20, 
+                                height: 20, 
+                                fontSize: '0.7rem',
+                                bgcolor: agent.color
+                              }}
+                            >
+                              {agent.avatar}
+                            </Avatar>
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={agent.name}
+                            secondary={agent.expertise?.join(', ')}
+                            primaryTypographyProps={{
+                              fontSize: '0.8rem',
+                              color: '#f8fafc'
+                            }}
+                            secondaryTypographyProps={{
+                              fontSize: '0.7rem',
+                              color: '#94a3b8'
+                            }}
+                          />
+                          <Chip
+                            label={agent.status}
+                            size="small"
+                            sx={{
+                              height: 16,
+                              fontSize: '0.6rem',
+                              bgcolor: agent.status === 'active' ? '#10b981' : '#6b7280',
+                              color: 'white'
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
 
-            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
+                <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
 
-            {/* AI Agents */}
-            <ListItem sx={{ px: 2, py: 1 }}>
-              <ListItemButton
-                onClick={() => toggleSection('aiAgents')}
-                sx={{ 
-                  px: 1, 
-                  py: 0.5, 
-                  borderRadius: 1,
-                  '&:hover': { bgcolor: '#475569' }
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <AgentIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="AI Agents"
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: '#f8fafc'
-                  }}
-                />
-                <IconButton size="small" sx={{ color: '#cbd5e1' }}>
-                  <AddIcon fontSize="small" />
-                </IconButton>
-                {expandedSections.aiAgents ? 
-                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
-                  <ExpandMore sx={{ color: '#cbd5e1' }} />
-                }
-              </ListItemButton>
-            </ListItem>
-
-            <Collapse in={expandedSections.aiAgents}>
-              {filterBySearch(aiAgents, ['name']).map((agent) => (
-                <ListItem key={agent.id} sx={{ px: 3, py: 0.25 }}>
+                {/* Connections */}
+                <ListItem sx={{ px: 2, py: 1 }}>
                   <ListItemButton
+                    onClick={() => toggleSection('connections')}
                     sx={{ 
                       px: 1, 
                       py: 0.5, 
                       borderRadius: 1,
-                      '&:hover': { bgcolor: '#475569' }
+                      '&:hover': { bgcolor: '#334155' }
                     }}
                   >
-                    <ListItemIcon sx={{ minWidth: 28 }}>
-                      <Avatar
-                        sx={{ 
-                          width: 20, 
-                          height: 20, 
-                          fontSize: '0.7rem',
-                          bgcolor: agent.color
-                        }}
-                      >
-                        {agent.avatar}
-                      </Avatar>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <ConnectionIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                     </ListItemIcon>
                     <ListItemText 
-                      primary={agent.name}
-                      secondary={agent.expertise?.slice(0, 2).join(', ')}
+                      primary="Connections"
                       primaryTypographyProps={{
-                        fontSize: '0.8rem',
-                        color: '#f1f5f9'
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: '0.7rem',
-                        color: '#cbd5e1'
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: '#f8fafc'
                       }}
                     />
-                    <Chip
-                      label={agent.status}
-                      size="small"
-                      sx={{
-                        height: 16,
-                        fontSize: '0.6rem',
-                        bgcolor: agent.status === 'active' ? '#10b981' : '#6b7280',
-                        color: 'white'
-                      }}
-                    />
+                    {expandedSections.connections ? 
+                      <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                      <ExpandMore sx={{ color: '#cbd5e1' }} />
+                    }
                   </ListItemButton>
                 </ListItem>
-              ))}
-            </Collapse>
 
-            <Divider sx={{ bgcolor: '#475569', mx: 2, my: 1 }} />
-
-            {/* Connections */}
-            <ListItem sx={{ px: 2, py: 1 }}>
-              <ListItemButton
-                onClick={() => toggleSection('connections')}
-                sx={{ 
-                  px: 1, 
-                  py: 0.5, 
-                  borderRadius: 1,
-                  '&:hover': { bgcolor: '#475569' }
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <ConnectionIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Connections"
-                  primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    color: '#f8fafc'
-                  }}
-                />
-                {expandedSections.connections ? 
-                  <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
-                  <ExpandMore sx={{ color: '#cbd5e1' }} />
-                }
-              </ListItemButton>
-            </ListItem>
-
-            <Collapse in={expandedSections.connections}>
-              {connections.length === 0 ? (
-                <ListItem sx={{ px: 3, py: 1 }}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      color: '#cbd5e1', 
-                      fontSize: '0.75rem',
-                      fontStyle: 'italic',
-                      textAlign: 'center',
-                      width: '100%'
-                    }}
-                  >
-                    No connections yet
-                  </Typography>
-                </ListItem>
-              ) : (
-                filterBySearch(connections, ['name']).map((connection) => (
-                  <ListItem key={connection.id} sx={{ px: 3, py: 0.25 }}>
-                    <ListItemButton
-                      sx={{ 
-                        px: 1, 
-                        py: 0.5, 
-                        borderRadius: 1,
-                        '&:hover': { bgcolor: '#475569' }
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 28 }}>
-                        <Avatar
+                <Collapse in={expandedSections.connections} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding sx={{ pl: 2 }}>
+                    {filterBySearch(connections, ['name', 'type']).map((connection) => (
+                      <ListItem key={connection.id} sx={{ px: 2, py: 0.5 }}>
+                        <ListItemButton
                           sx={{ 
-                            width: 20, 
-                            height: 20, 
-                            fontSize: '0.7rem',
-                            bgcolor: connection.type === 'organization' ? '#6366f1' : '#64748b'
+                            px: 1, 
+                            py: 0.5, 
+                            borderRadius: 1,
+                            '&:hover': { bgcolor: '#334155' }
                           }}
                         >
-                          {connection.avatar}
-                        </Avatar>
-                      </ListItemIcon>
-                      <ListItemText 
-                        primary={connection.name}
-                        secondary={connection.type}
-                        primaryTypographyProps={{
-                          fontSize: '0.8rem',
-                          color: '#f1f5f9'
-                        }}
-                        secondaryTypographyProps={{
-                          fontSize: '0.7rem',
-                          color: '#cbd5e1'
-                        }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                ))
-              )}
-            </Collapse>
-          </List>
+                          <ListItemIcon sx={{ minWidth: 28 }}>
+                            <Avatar
+                              sx={{ 
+                                width: 20, 
+                                height: 20, 
+                                fontSize: '0.7rem',
+                                bgcolor: connection.type === 'organization' ? '#6366f1' : '#64748b'
+                              }}
+                            >
+                              {connection.avatar}
+                            </Avatar>
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={connection.name}
+                            secondary={connection.type}
+                            primaryTypographyProps={{
+                              fontSize: '0.8rem',
+                              color: '#f8fafc'
+                            }}
+                            secondaryTypographyProps={{
+                              fontSize: '0.7rem',
+                              color: '#94a3b8'
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
+              </List>
 
-          {/* Social Network Button */}
-          <Box sx={{ mt: 2, px: 2 }}>
-            <Divider sx={{ bgcolor: '#475569', mb: 2 }} />
-            <ListItemButton
-              onClick={() => setSocialPanelOpen(true)}
-              sx={{
-                borderRadius: 1,
-                bgcolor: 'rgba(99, 102, 241, 0.1)',
-                border: '1px solid rgba(99, 102, 241, 0.3)',
-                '&:hover': {
-                  bgcolor: 'rgba(99, 102, 241, 0.2)',
-                  border: '1px solid rgba(99, 102, 241, 0.5)'
-                }
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                <PublicIcon sx={{ color: '#6366f1', fontSize: '1.2rem' }} />
-              </ListItemIcon>
-              <ListItemText
-                primary="Social"
-                secondary="Professional Network"
-                primaryTypographyProps={{
-                  variant: 'body2',
-                  fontWeight: 600,
-                  color: '#6366f1'
-                }}
-                secondaryTypographyProps={{
-                  variant: 'caption',
-                  color: '#94a3b8'
-                }}
-              />
-            </ListItemButton>
+              {/* Social Network Button */}
+              <Box sx={{ mt: 2, px: 2 }}>
+                <Divider sx={{ bgcolor: '#334155', mb: 2 }} />
+                <ListItemButton
+                  onClick={handleSocialToggle}
+                  sx={{
+                    borderRadius: 1,
+                    bgcolor: socialPanelOpen ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)',
+                    border: socialPanelOpen ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid rgba(99, 102, 241, 0.3)',
+                    '&:hover': {
+                      bgcolor: 'rgba(99, 102, 241, 0.2)',
+                      border: '1px solid rgba(99, 102, 241, 0.5)'
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <PublicIcon sx={{ color: '#6366f1', fontSize: '1.2rem' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Social"
+                    secondary="Professional Network"
+                    primaryTypographyProps={{
+                      variant: 'body2',
+                      fontWeight: 600,
+                      color: '#6366f1'
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'caption',
+                      color: '#94a3b8'
+                    }}
+                  />
+                </ListItemButton>
+              </Box>
+            </Box>
           </Box>
         </Box>
-      </Box>
-    </Drawer>
+      </Slide>
 
-    {/* Social Network Panel */}
-    <SocialNetworkPanel
-      open={socialPanelOpen}
-      onClose={() => setSocialPanelOpen(false)}
-    />
+      {/* Social Network Panel */}
+      <SocialNetworkPanel
+        open={socialPanelOpen}
+        onClose={() => closePanel('social')}
+        width={socialPanelOpen ? getPanelWidth('social') : '0%'}
+      />
     </>
   );
 };

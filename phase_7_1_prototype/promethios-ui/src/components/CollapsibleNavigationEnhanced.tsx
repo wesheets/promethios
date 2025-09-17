@@ -121,6 +121,7 @@ import ChatButton from './social/ChatButton';
 import UserConnectionsModal from './social/UserConnectionsModal';
 import CollaborationSlidePanel from './collaboration/CollaborationSlidePanel';
 import BottomUserSection from './navigation/BottomUserSection';
+import { usePanelManager } from '../context/PanelManagerContext';
 
 const DRAWER_WIDTH = 260;
 const DRAWER_WIDTH_COLLAPSED = 60;
@@ -186,13 +187,14 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
 }) => {
   const { preferences, updateNavigationState } = useUserPreferences();
   const { currentUser } = useAuth();
+  const { openPanel, closePanel, isPanelOpen } = usePanelManager();
   const [expandedSections, setExpandedSections] = useState<string[]>(['multi-agent-systems']); // Expand MAS by default
   const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
-  const [collaborationPanelOpen, setCollaborationPanelOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const collapsed = preferences.navigationCollapsed;
+  const collaborationPanelOpen = isPanelOpen('collaboration');
 
   const navigationItems: NavigationItem[] = [
     // Hidden for social AI platform focus
@@ -560,7 +562,11 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   };
 
   const handleCollaborationsClick = () => {
-    setCollaborationPanelOpen(true);
+    if (collaborationPanelOpen) {
+      closePanel('collaboration');
+    } else {
+      openPanel('collaboration', 'collaboration', 'Team Collaborations');
+    }
   };
 
   const isActive = (path: string) => {
@@ -897,7 +903,7 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
     {/* Collaboration Slide Panel */}
     <CollaborationSlidePanel
       open={collaborationPanelOpen}
-      onClose={() => setCollaborationPanelOpen(false)}
+      onClose={() => closePanel('collaboration')}
     />
     </ThemeProvider>
   );

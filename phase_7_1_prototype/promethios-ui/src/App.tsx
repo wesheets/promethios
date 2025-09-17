@@ -49,6 +49,7 @@ import ConnectionTestButton from './components/debug/ConnectionTestButton';
 import DragDropTestPage from './pages/DragDropTestPage';
 import SimpleDragDropTest from './pages/SimpleDragDropTest';
 import ThreadEnabledChatPage from './pages/ThreadEnabledChatPage';
+import { PanelManagerProvider } from './context/PanelManagerContext';
 
 // Create a wrapper component to use the useLocation hook
 const AppContent: React.FC = () => {
@@ -207,7 +208,9 @@ const App: React.FC = () => {
         <Router>
           <MockAuthProvider>
             <ChatIntegrationProvider>
-              <AppContent />
+              <PanelManagerProvider>
+                <AppContent />
+              </PanelManagerProvider>
             </ChatIntegrationProvider>
           </MockAuthProvider>
         </Router>
