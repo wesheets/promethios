@@ -24,7 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { FirebaseProfileService } from './FirebaseProfileService';
-import { FirebaseTeamService } from './FirebaseTeamService';
+import FirebaseTeamService from './FirebaseTeamService';
 
 export interface Organization {
   id: string;

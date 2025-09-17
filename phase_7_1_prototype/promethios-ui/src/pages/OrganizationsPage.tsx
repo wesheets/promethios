@@ -291,16 +291,6 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
         </Box>
       </CardContent>
     </Card>
-      
-      {/* Create Organization Dialog */}
-      <CreateOrganizationDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onSuccess={() => {
-          setCreateDialogOpen(false);
-          loadInitialData();
-        }}
-      />
   );
 
   return (
@@ -387,8 +377,7 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
           ))}
         </Grid>
       </Box>
-    </Container>
-      
+
       {/* Create Organization Dialog */}
       <CreateOrganizationDialog
         open={createDialogOpen}
@@ -398,6 +387,7 @@ const OrganizationsPage: React.FC<OrganizationsPageProps> = ({
           loadInitialData();
         }}
       />
+    </Container>
   );
 };
 
