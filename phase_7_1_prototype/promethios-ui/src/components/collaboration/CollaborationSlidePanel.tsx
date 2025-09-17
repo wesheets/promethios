@@ -54,6 +54,7 @@ import ChannelCreationModal from './ChannelCreationModal';
 import MessageCreationModal from './MessageCreationModal';
 import HumanMessagingPanel from './HumanMessagingPanel';
 import AgentCreationPanel from './AgentCreationPanel';
+import AgentCommandCenterPanel from './AgentCommandCenterPanel';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
@@ -120,7 +121,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 }) => {
   console.log('🤝 [CollaborationPanel] Component mounted/rendered, open:', open);
   
-  const { openPanel, closePanel, isPanelOpen, getPanelWidth } = usePanelManager();
+  const { openPanel, closePanel, isPanelOpen, getPanelWidth, openPanels } = usePanelManager();
   const { currentUser: user, loading: authLoading } = useAuth();
   
   console.log('🤝 [CollaborationPanel] Auth state - user:', user?.uid, 'authLoading:', authLoading);
@@ -259,6 +260,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
   const [agentCreationPanelOpen, setAgentCreationPanelOpen] = useState(false);
   const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
+  const [activeAgentCommandCenter, setActiveAgentCommandCenter] = useState<{
+    agentId: string;
+    agentName: string;
+  } | null>(null);
   const [selectedOrganization, setSelectedOrganization] = useState<{
     id: string;
     name: string;
@@ -280,6 +285,21 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   
   // Check if workflow panel is open
   const workflowPanelOpen = isPanelOpen('workflow');
+
+  // Check for agent command center panels
+  useEffect(() => {
+    const agentPanels = openPanels.filter(panel => panel.type === 'agent-command-center');
+    if (agentPanels.length > 0) {
+      const latestAgentPanel = agentPanels[agentPanels.length - 1];
+      const agentId = latestAgentPanel.id.replace('agent-', '');
+      setActiveAgentCommandCenter({
+        agentId,
+        agentName: latestAgentPanel.title.replace(' Command Center', '')
+      });
+    } else {
+      setActiveAgentCommandCenter(null);
+    }
+  }, [openPanels]);
 
   // Handle social panel toggle
   const handleSocialToggle = () => {
@@ -1345,6 +1365,35 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           setAgentCreationPanelOpen(false);
         }}
       />
+
+      {/* Agent Command Center Panel */}
+      {activeAgentCommandCenter && (
+        <Slide direction="left" in={true} mountOnEnter unmountOnExit>
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: getPanelWidth(`agent-${activeAgentCommandCenter.agentId}`),
+              height: '100vh',
+              bgcolor: '#0f172a',
+              borderLeft: '1px solid #334155',
+              zIndex: 1300,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <AgentCommandCenterPanel
+              agentId={activeAgentCommandCenter.agentId}
+              agentName={activeAgentCommandCenter.agentName}
+              onClose={() => {
+                closePanel(`agent-${activeAgentCommandCenter.agentId}`);
+                setActiveAgentCommandCenter(null);
+              }}
+            />
+          </Box>
+        </Slide>
+      )}
     </>
   );
 };

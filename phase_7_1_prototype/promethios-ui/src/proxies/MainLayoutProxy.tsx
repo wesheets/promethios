@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Box, CssBaseline } from '@mui/material';
+import { usePanelManager } from '../context/PanelManagerContext';
 import { useAuth } from '../context/AuthContext';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import { useAdminCheck } from '../hooks/useAdminCheck';
@@ -36,13 +37,14 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const { currentUser, logout } = useAuth();
   const { preferences } = useUserPreferences();
   const { isAdmin } = useAdminCheck();
+  const { openPanel } = usePanelManager();
 
   // Expandable panel state
   const { 
     isOpen: isPanelOpen, 
     route: panelRoute, 
     width: panelWidth,
-    openPanel,
+    openPanel: openExpandablePanel,
     closePanel 
   } = useExpandablePanel();
 
@@ -99,8 +101,8 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         }}
         onAgentClick={(agentId, agentName) => {
           console.log('🐳 [AgentDocker] Agent clicked:', agentName, agentId);
-          // Navigate to the agent's command center
-          window.location.href = `/ui/chat/chatbots/${agentId}/command-center`;
+          // Open Command Center in collaboration panel
+          openPanel(`agent-${agentId}`, 'agent-command-center', `${agentName} Command Center`);
         }}
         onBehaviorPrompt={(agentId, agentName, behavior) => {
           console.log('🐳 [AgentDocker] Behavior prompt:', agentName, behavior);
@@ -115,7 +117,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
         <CollapsibleNavigationEnhanced 
           userPermissions={['view']}
           isAdmin={isAdmin}
-          onOpenExpandablePanel={openPanel}
+          onOpenExpandablePanel={openExpandablePanel}
         />
         
         {/* Expandable Left Panel */}
