@@ -158,10 +158,21 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
       console.log('🔍 [AgentDocker] getChatbots returned:', chatbotProfiles.length, 'chatbots');
       console.log('🔍 [AgentDocker] Chatbot data:', chatbotProfiles);
       
-      // Convert chatbot profiles to docker agents
+      // Debug: Check the status of each agent
+      chatbotProfiles.forEach((profile, index) => {
+        console.log(`🔍 [AgentDocker] Agent ${index + 1}:`, {
+          name: profile.identity?.name || 'Unnamed',
+          status: profile.status,
+          chatbotMetadata: profile.chatbotMetadata,
+          isActive: profile.chatbotMetadata?.isActive,
+          fullProfile: profile
+        });
+      });
+      
+      // TEMPORARILY REMOVE FILTERING - Show all agents to debug
       const dockerAgents: DockerAgent[] = chatbotProfiles
-        .filter(profile => profile.status === 'active')
         .map(profile => {
+          console.log(`🔍 [AgentDocker] Converting agent "${profile.identity?.name}" to docker agent`);
           const agent: DockerAgent = {
             id: profile.identity?.id || profile.id,
             name: profile.identity?.name || 'Unnamed Agent',
@@ -202,19 +213,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
     loadAgents();
   }, [loadAgents]);
 
-  // Set up periodic refresh to catch new agents (every 30 seconds)
-  useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      if (!loadingAgentsRef.current && user?.uid) {
-        console.log('🔄 [AgentDocker] Periodic refresh triggered');
-        loadAgents();
-      }
-    }, 30000);
-    
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, [loadAgents, user?.uid]);
+  // Removed auto-refresh - agents will only load on mount or manual refresh
 
   // Get agent color based on personality
   const getAgentColor = (personality: string): string => {
