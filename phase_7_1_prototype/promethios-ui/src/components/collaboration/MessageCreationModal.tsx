@@ -74,11 +74,57 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   const loadConnections = async () => {
     try {
       setLoadingConnections(true);
-      const userConnections = await firebaseDirectMessageService.getUserConnections();
+      console.log('💬 [MessageModal] Loading connections...');
+      
+      // Import ConnectionService directly like TeamPanel does
+      const { ConnectionService } = await import('../../services/ConnectionService');
+      const connectionService = ConnectionService.getInstance();
+      
+      // Get current user ID from auth context
+      const { useAuth } = await import('../../context/AuthContext');
+      const { user } = useAuth();
+      
+      if (!user?.uid) {
+        console.log('💬 [MessageModal] No user ID available');
+        setConnections([]);
+        return;
+      }
+      
+      // Get real user connections using the same method as TeamPanel
+      const realConnections = await connectionService.getUserConnections(user.uid);
+      console.log('💬 [MessageModal] Found', realConnections.length, 'real connections');
+      
+      // Convert to UserConnection format for the modal
+      const userConnections: UserConnection[] = realConnections.map(connection => {
+        // Determine which user is the connected user (not the current user)
+        const isCurrentUserUserId1 = connection.userId1 === user.uid;
+        const connectedUserId = isCurrentUserUserId1 ? connection.userId2 : connection.userId1;
+        const connectedUserName = isCurrentUserUserId1 ? connection.user2Name : connection.user1Name;
+        const connectedUserAvatar = isCurrentUserUserId1 ? connection.user2Avatar : connection.user1Avatar;
+        
+        return {
+          id: connection.id,
+          userId1: connection.userId1,
+          userId2: connection.userId2,
+          user1Name: connection.user1Name,
+          user2Name: connection.user2Name,
+          user1Avatar: connection.user1Avatar,
+          user2Avatar: connection.user2Avatar,
+          status: connection.status,
+          createdAt: connection.createdAt,
+          // Add display properties for the modal
+          displayName: connectedUserName || 'Connected User',
+          displayAvatar: connectedUserAvatar,
+          isOnline: true // Default to online, could be enhanced
+        };
+      });
+      
+      console.log('💬 [MessageModal] Converted to', userConnections.length, 'user connections');
       setConnections(userConnections);
     } catch (error) {
-      console.error('Error loading connections:', error);
+      console.error('❌ [MessageModal] Error loading connections:', error);
       setError('Failed to load connections');
+      setConnections([]);
     } finally {
       setLoadingConnections(false);
     }
@@ -128,9 +174,9 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
 
   // Filter connections based on search
   const filteredConnections = connections.filter(connection =>
-    connection.connectedUserName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    connection.connectedUserCompany?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    connection.connectedUserTitle?.toLowerCase().includes(searchQuery.toLowerCase())
+    (connection.displayName || connection.connectedUserName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (connection.connectedUserCompany || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (connection.connectedUserTitle || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -249,7 +295,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
             ) : (
               <List sx={{ maxHeight: 200, overflow: 'auto', border: '1px solid #334155', borderRadius: 1 }}>
                 {filteredConnections.map((connection) => (
-                  <ListItem key={connection.connectedUserId} sx={{ px: 0 }}>
+                  <ListItem key={connection.id} sx={{ px: 0 }}>
                     <ListItemButton
                       onClick={() => handleConnectionSelect(connection)}
                       sx={{
@@ -261,10 +307,10 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
                       <ListItemAvatar>
                         <Box sx={{ position: 'relative' }}>
                           <Avatar
-                            src={connection.connectedUserAvatar}
+                            src={connection.displayAvatar || connection.connectedUserAvatar}
                             sx={{ width: 40, height: 40 }}
                           >
-                            {connection.connectedUserName.charAt(0).toUpperCase()}
+                            {(connection.displayName || connection.connectedUserName || 'U').charAt(0).toUpperCase()}
                           </Avatar>
                           {connection.isOnline && (
                             <OnlineIcon
@@ -282,7 +328,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
                         </Box>
                       </ListItemAvatar>
                       <ListItemText
-                        primary={connection.connectedUserName}
+                        primary={connection.displayName || connection.connectedUserName || 'Connected User'}
                         secondary={
                           <Box>
                             {connection.connectedUserTitle && (
