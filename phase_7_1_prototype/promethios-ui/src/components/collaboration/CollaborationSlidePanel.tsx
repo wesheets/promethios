@@ -189,6 +189,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Channel creation modal state  const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
   const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
+  const [selectedOrganization, setSelectedOrganization] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [currentConversation, setCurrentConversation] = useState<{
     type: 'channel' | 'direct_message';
     id: string;
