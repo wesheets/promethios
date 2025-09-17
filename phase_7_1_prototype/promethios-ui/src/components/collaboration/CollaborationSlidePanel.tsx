@@ -41,7 +41,9 @@ import {
   SmartToy as AgentIcon,
   Business as OrganizationIcon,
   Public as SocialIcon,
-  AccountTree as AccountTreeIcon
+  AccountTree as AccountTreeIcon,
+  FiberManualRecord as OnlineIcon,
+  RadioButtonUnchecked as OfflineIcon
 } from '@mui/icons-material';
 import { usePanelManager } from '../../context/PanelManagerContext';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
