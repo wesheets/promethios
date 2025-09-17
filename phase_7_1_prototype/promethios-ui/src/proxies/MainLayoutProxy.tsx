@@ -93,13 +93,14 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
       {/* Agent Docker - Persistent across all pages */}
       <AgentDocker 
         onAddAgent={() => {
-          // Navigate to agent creation or open agent wizard
+          // Navigate to agent creation QuickStart
           console.log('🐳 [AgentDocker] Add agent clicked');
-          // You can add navigation logic here
+          window.location.href = '/ui/chat/setup/quick-start';
         }}
         onAgentClick={(agentId, agentName) => {
           console.log('🐳 [AgentDocker] Agent clicked:', agentName, agentId);
-          // You can add agent interaction logic here
+          // Navigate to the agent's command center
+          window.location.href = `/ui/chat/chatbots/${agentId}/command-center`;
         }}
         onBehaviorPrompt={(agentId, agentName, behavior) => {
           console.log('🐳 [AgentDocker] Behavior prompt:', agentName, behavior);

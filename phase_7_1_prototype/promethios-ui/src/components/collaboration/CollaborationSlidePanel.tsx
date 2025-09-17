@@ -121,7 +121,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   console.log('🤝 [CollaborationPanel] Component mounted/rendered, open:', open);
   
   const { openPanel, closePanel, isPanelOpen, getPanelWidth } = usePanelManager();
-  const { user, authLoading } = useAuth();
+  const { currentUser: user, loading: authLoading } = useAuth();
   
   console.log('🤝 [CollaborationPanel] Auth state - user:', user?.uid, 'authLoading:', authLoading);
   
@@ -241,6 +241,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     workCollaborations: true,
+    generalChannels: true,
     channels: true,
     directMessages: true,
     aiAgents: true,
@@ -761,6 +762,90 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                           </List>
                         </Collapse>
                       </Box>
+                    ))}
+                  </List>
+                </Collapse>
+
+                <Divider sx={{ bgcolor: '#334155', mx: 2, my: 1 }} />
+
+                {/* General Channels */}
+                <ListItem sx={{ px: 2, py: 1 }}>
+                  <ListItemButton
+                    onClick={() => toggleSection('generalChannels')}
+                    sx={{ 
+                      px: 1, 
+                      py: 0.5, 
+                      borderRadius: 1,
+                      '&:hover': { bgcolor: '#334155' }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <SocialIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
+                    </ListItemIcon>
+                    <ListItemText 
+                      primary="General Channels"
+                      primaryTypographyProps={{
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        color: '#f8fafc'
+                      }}
+                    />
+                    {expandedSections.generalChannels ? 
+                      <ExpandLess sx={{ color: '#cbd5e1' }} /> : 
+                      <ExpandMore sx={{ color: '#cbd5e1' }} />
+                    }
+                  </ListItemButton>
+                </ListItem>
+
+                <Collapse in={expandedSections.generalChannels} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding sx={{ pl: 2 }}>
+                    {/* Public General Channels */}
+                    {[
+                      { id: 'general-announcements', name: 'announcements', description: 'Platform announcements', unreadCount: 2, memberCount: 1250 },
+                      { id: 'general-help', name: 'help', description: 'Get help from the community', unreadCount: 0, memberCount: 890 },
+                      { id: 'general-feedback', name: 'feedback', description: 'Share your feedback', unreadCount: 5, memberCount: 456 },
+                      { id: 'general-random', name: 'random', description: 'Random discussions', unreadCount: 12, memberCount: 678 }
+                    ].map((channel) => (
+                      <ListItem key={channel.id} sx={{ px: 2, py: 0.25 }}>
+                        <ListItemButton
+                          onClick={() => handleChannelClick(channel.id, channel.name)}
+                          sx={{ 
+                            px: 1, 
+                            py: 0.25, 
+                            borderRadius: 1,
+                            '&:hover': { bgcolor: '#334155' }
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 24 }}>
+                            <ChannelIcon sx={{ color: '#94a3b8', fontSize: 16 }} />
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={`# ${channel.name}`}
+                            secondary={`${channel.memberCount} members`}
+                            primaryTypographyProps={{
+                              fontSize: '0.75rem',
+                              color: '#cbd5e1'
+                            }}
+                            secondaryTypographyProps={{
+                              fontSize: '0.65rem',
+                              color: '#94a3b8'
+                            }}
+                          />
+                          {channel.unreadCount > 0 && (
+                            <Badge 
+                              badgeContent={channel.unreadCount} 
+                              color="error"
+                              sx={{
+                                '& .MuiBadge-badge': {
+                                  fontSize: '0.6rem',
+                                  height: 16,
+                                  minWidth: 16
+                                }
+                              }}
+                            />
+                          )}
+                        </ListItemButton>
+                      </ListItem>
                     ))}
                   </List>
                 </Collapse>

@@ -193,11 +193,11 @@ export class FirebaseDirectMessageService {
       }
 
       const connectionsRef = collection(db, 'userConnections');
+      // Simplified query to avoid Firebase index requirement
       const q = query(
         connectionsRef,
         where('userId', '==', this.currentUserId),
-        where('status', '==', 'accepted'),
-        orderBy('updatedAt', 'desc')
+        where('status', '==', 'accepted')
       );
 
       const snapshot = await getDocs(q);
@@ -224,6 +224,13 @@ export class FirebaseDirectMessageService {
           updatedAt: data.updatedAt?.toDate()
         });
       }
+
+      // Sort by updatedAt manually to replace orderBy
+      connections.sort((a, b) => {
+        const aTime = a.updatedAt?.getTime() || 0;
+        const bTime = b.updatedAt?.getTime() || 0;
+        return bTime - aTime; // Descending order
+      });
 
       return connections;
     } catch (error) {

@@ -85,37 +85,10 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
         return;
       }
       
-      // Get real user connections using the same method as TeamPanel
-      const connectionService = ConnectionService.getInstance();
-      const realConnections = await connectionService.getUserConnections(user.uid);
-      console.log('💬 [MessageModal] Found', realConnections.length, 'real connections');
+      // Use the Firebase service directly for consistency
+      const userConnections = await firebaseDirectMessageService.getUserConnections();
+      console.log('💬 [MessageModal] Found', userConnections.length, 'user connections');
       
-      // Convert to UserConnection format for the modal
-      const userConnections: UserConnection[] = realConnections.map(connection => {
-        // Determine which user is the connected user (not the current user)
-        const isCurrentUserUserId1 = connection.userId1 === user.uid;
-        const connectedUserId = isCurrentUserUserId1 ? connection.userId2 : connection.userId1;
-        const connectedUserName = isCurrentUserUserId1 ? connection.user2Name : connection.user1Name;
-        const connectedUserAvatar = isCurrentUserUserId1 ? connection.user2Avatar : connection.user1Avatar;
-        
-        return {
-          id: connection.id,
-          userId1: connection.userId1,
-          userId2: connection.userId2,
-          user1Name: connection.user1Name,
-          user2Name: connection.user2Name,
-          user1Avatar: connection.user1Avatar,
-          user2Avatar: connection.user2Avatar,
-          status: connection.status,
-          createdAt: connection.createdAt,
-          // Add display properties for the modal
-          displayName: connectedUserName || 'Connected User',
-          displayAvatar: connectedUserAvatar,
-          isOnline: true // Default to online, could be enhanced
-        };
-      });
-      
-      console.log('💬 [MessageModal] Converted to', userConnections.length, 'user connections');
       setConnections(userConnections);
     } catch (error) {
       console.error('❌ [MessageModal] Error loading connections:', error);
@@ -170,7 +143,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
 
   // Filter connections based on search
   const filteredConnections = connections.filter(connection =>
-    (connection.displayName || connection.connectedUserName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (connection.connectedUserName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     (connection.connectedUserCompany || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     (connection.connectedUserTitle || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -303,10 +276,10 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
                       <ListItemAvatar>
                         <Box sx={{ position: 'relative' }}>
                           <Avatar
-                            src={connection.displayAvatar || connection.connectedUserAvatar}
+                            src={connection.connectedUserAvatar}
                             sx={{ width: 40, height: 40 }}
                           >
-                            {(connection.displayName || connection.connectedUserName || 'U').charAt(0).toUpperCase()}
+                            {(connection.connectedUserName || 'U').charAt(0).toUpperCase()}
                           </Avatar>
                           {connection.isOnline && (
                             <OnlineIcon
@@ -324,7 +297,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
                         </Box>
                       </ListItemAvatar>
                       <ListItemText
-                        primary={connection.displayName || connection.connectedUserName || 'Connected User'}
+                        primary={connection.connectedUserName || 'Connected User'}
                         secondary={
                           <Box>
                             {connection.connectedUserTitle && (
