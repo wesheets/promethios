@@ -23,12 +23,11 @@ import {
   ListItemText,
   Collapse,
   Divider,
-  TextField,
   InputAdornment,
-  Chip,
   Avatar,
   Slide,
-  Badge
+  Badge,
+  CircularProgress
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -44,13 +43,17 @@ import {
   AccountTree as AccountTreeIcon,
   FiberManualRecord as OnlineIcon,
   RadioButtonUnchecked as OfflineIcon,
-  Link as ConnectionIcon
+  Link as ConnectionIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { usePanelManager } from '../../context/PanelManagerContext';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
 import WorkflowPanel from '../workflow/WorkflowPanel';
+import ChannelCreationModal from './ChannelCreationModal';
+import MessageCreationModal from './MessageCreationModal';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
+import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
 
 interface CollaborationSlidePanelProps {
   open: boolean;
@@ -149,8 +152,23 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   useEffect(() => {
     if (user?.uid && !authLoading) {
       loadAgents();
+      loadConnections();
     }
   }, [user?.uid, authLoading]);
+
+  // Load user connections from Firebase
+  const loadConnections = async () => {
+    try {
+      setConnectionsLoading(true);
+      const userConnections = await firebaseDirectMessageService.getUserConnections();
+      setConnections(userConnections);
+    } catch (error) {
+      console.error('❌ [CollaborationPanel] Failed to load connections:', error);
+      setConnections([]);
+    } finally {
+      setConnectionsLoading(false);
+    }
+  };
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     workCollaborations: true,
@@ -165,6 +183,13 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Channel creation modal state
+  const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
+  const [selectedOrganization, setSelectedOrganization] = useState<{id: string, name: string} | null>(null);
+
+  // Message creation modal state
+  const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
 
   // Check if social panel is open
   const socialPanelOpen = isPanelOpen('social');
@@ -288,32 +313,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
       lastActivity: new Date()
     }
   ]);
+  const [connections, setConnections] = useState<UserConnection[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
 
-  const [connections] = useState<Connection[]>([
-    {
-      id: 'tech-corp',
-      name: 'Tech Corp',
-      type: 'organization',
-      avatar: 'TC',
-      isOnline: false
-    },
-    {
-      id: 'jane-doe',
-      name: 'Jane Doe',
-      type: 'user',
-      avatar: 'JD',
-      isOnline: true
-    },
-    {
-      id: 'startup-inc',
-      name: 'Startup Inc',
-      type: 'organization',
-      avatar: 'SI',
-      isOnline: false
-    }
-  ]);
-
-  // Toggle section expansion
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -363,6 +365,28 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     
     // Navigate to the command center (this would be handled by the panel content)
     console.log('🎯 [CollaborationPanel] Command Center URL:', commandCenterUrl);
+  };
+
+  // Handle channel creation
+  const handleCreateChannel = (organizationId: string, organizationName: string) => {
+    setSelectedOrganization({ id: organizationId, name: organizationName });
+    setChannelCreationModalOpen(true);
+  };
+
+  const handleChannelCreated = (channelId: string) => {
+    console.log('✅ [CollaborationPanel] Channel created:', channelId);
+    // TODO: Refresh channels list or add the new channel to the state
+    // For now, we'll just close the modal
+    setChannelCreationModalOpen(false);
+    setSelectedOrganization(null);
+  };
+
+  // Handle message creation
+  const handleMessageCreated = (conversationId: string) => {
+    console.log('✅ [CollaborationPanel] Message created:', conversationId);
+    // TODO: Refresh direct messages list or add the new conversation to the state
+    // For now, we'll just close the modal
+    setMessageCreationModalOpen(false);
   };
 
   // Filter items based on search
@@ -573,6 +597,32 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                                 </ListItemButton>
                               </ListItem>
                             ))}
+                            
+                            {/* Add Channel Button */}
+                            <ListItem sx={{ px: 1, py: 0.25 }}>
+                              <ListItemButton
+                                onClick={() => handleCreateChannel(collab.id, collab.name)}
+                                sx={{ 
+                                  px: 1, 
+                                  py: 0.25, 
+                                  borderRadius: 1,
+                                  opacity: 0.7,
+                                  '&:hover': { opacity: 1, bgcolor: '#334155' }
+                                }}
+                              >
+                                <ListItemIcon sx={{ minWidth: 24 }}>
+                                  <AddIcon sx={{ color: '#10b981', fontSize: 16 }} />
+                                </ListItemIcon>
+                                <ListItemText 
+                                  primary="Add Channel"
+                                  primaryTypographyProps={{
+                                    fontSize: '0.75rem',
+                                    color: '#10b981',
+                                    fontStyle: 'italic'
+                                  }}
+                                />
+                              </ListItemButton>
+                            </ListItem>
                           </List>
                         </Collapse>
                       </Box>
@@ -682,6 +732,32 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                         </ListItemButton>
                       </ListItem>
                     ))}
+                    
+                    {/* Add Message Button */}
+                    <ListItem sx={{ px: 2, py: 0.5 }}>
+                      <ListItemButton
+                        onClick={() => setMessageCreationModalOpen(true)}
+                        sx={{ 
+                          px: 1, 
+                          py: 0.5, 
+                          borderRadius: 1,
+                          opacity: 0.7,
+                          '&:hover': { opacity: 1, bgcolor: '#334155' }
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 28 }}>
+                          <AddIcon sx={{ color: '#10b981', fontSize: 16 }} />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary="New Message"
+                          primaryTypographyProps={{
+                            fontSize: '0.8rem',
+                            color: '#10b981',
+                            fontStyle: 'italic'
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
                   </List>
                 </Collapse>
 
@@ -833,43 +909,74 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
                 <Collapse in={expandedSections.connections} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding sx={{ pl: 2 }}>
-                    {filterBySearch(connections, ['name', 'type']).map((connection) => (
-                      <ListItem key={connection.id} sx={{ px: 2, py: 0.5 }}>
-                        <ListItemButton
-                          sx={{ 
-                            px: 1, 
-                            py: 0.5, 
-                            borderRadius: 1,
-                            '&:hover': { bgcolor: '#334155' }
-                          }}
-                        >
-                          <ListItemIcon sx={{ minWidth: 28 }}>
-                            <Avatar
-                              sx={{ 
-                                width: 20, 
-                                height: 20, 
-                                fontSize: '0.7rem',
-                                bgcolor: connection.type === 'organization' ? '#6366f1' : '#64748b'
-                              }}
-                            >
-                              {connection.avatar}
-                            </Avatar>
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary={connection.name}
-                            secondary={connection.type}
-                            primaryTypographyProps={{
-                              fontSize: '0.8rem',
-                              color: '#f8fafc'
-                            }}
-                            secondaryTypographyProps={{
-                              fontSize: '0.7rem',
-                              color: '#94a3b8'
-                            }}
-                          />
-                        </ListItemButton>
+                    {connectionsLoading ? (
+                      <ListItem sx={{ px: 2, py: 2, justifyContent: 'center' }}>
+                        <CircularProgress size={20} sx={{ color: '#10b981' }} />
                       </ListItem>
-                    ))}
+                    ) : connections.length === 0 ? (
+                      <ListItem sx={{ px: 2, py: 2 }}>
+                        <ListItemText 
+                          primary="No connections yet"
+                          primaryTypographyProps={{
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                            textAlign: 'center'
+                          }}
+                        />
+                      </ListItem>
+                    ) : (
+                      filterBySearch(connections, ['connectedUserName', 'connectedUserCompany']).map((connection) => (
+                        <ListItem key={connection.id} sx={{ px: 2, py: 0.5 }}>
+                          <ListItemButton
+                            sx={{ 
+                              px: 1, 
+                              py: 0.5, 
+                              borderRadius: 1,
+                              '&:hover': { bgcolor: '#334155' }
+                            }}
+                          >
+                            <ListItemIcon sx={{ minWidth: 28 }}>
+                              <Box sx={{ position: 'relative' }}>
+                                <Avatar
+                                  src={connection.connectedUserAvatar}
+                                  sx={{ 
+                                    width: 20, 
+                                    height: 20, 
+                                    fontSize: '0.7rem',
+                                    bgcolor: '#64748b'
+                                  }}
+                                >
+                                  {connection.connectedUserName.charAt(0).toUpperCase()}
+                                </Avatar>
+                                {connection.isOnline && (
+                                  <OnlineIcon 
+                                    sx={{ 
+                                      position: 'absolute', 
+                                      bottom: -2, 
+                                      right: -2,
+                                      fontSize: 8,
+                                      color: '#10b981'
+                                    }} 
+                                  />
+                                )}
+                              </Box>
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={connection.connectedUserName}
+                              secondary={connection.connectedUserTitle || connection.connectedUserCompany}
+                              primaryTypographyProps={{
+                                fontSize: '0.8rem',
+                                color: '#f8fafc'
+                              }}
+                              secondaryTypographyProps={{
+                                fontSize: '0.7rem',
+                                color: '#94a3b8'
+                              }}
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      ))
+                    )}
                   </List>
                 </Collapse>
               </List>
@@ -956,6 +1063,27 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         open={workflowPanelOpen}
         onClose={() => closePanel('workflow')}
         width={workflowPanelOpen ? getPanelWidth('workflow') : '0%'}
+      />
+
+      {/* Channel Creation Modal */}
+      {selectedOrganization && (
+        <ChannelCreationModal
+          open={channelCreationModalOpen}
+          onClose={() => {
+            setChannelCreationModalOpen(false);
+            setSelectedOrganization(null);
+          }}
+          organizationId={selectedOrganization.id}
+          organizationName={selectedOrganization.name}
+          onChannelCreated={handleChannelCreated}
+        />
+      )}
+
+      {/* Message Creation Modal */}
+      <MessageCreationModal
+        open={messageCreationModalOpen}
+        onClose={() => setMessageCreationModalOpen(false)}
+        onMessageCreated={handleMessageCreated}
       />
     </>
   );

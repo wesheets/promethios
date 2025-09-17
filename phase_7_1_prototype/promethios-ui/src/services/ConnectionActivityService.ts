@@ -11,6 +11,34 @@ import { ConnectionActivity, ConnectionActivityUser } from '../components/social
  * - Liking, commenting, and sharing connection activities
  */
 export class ConnectionActivityService {
+  private currentUserId: string | null = null;
+
+  constructor() {
+    // Initialize current user ID from Firebase Auth
+    this.initializeCurrentUser();
+  }
+
+  /**
+   * Initialize current user ID from Firebase Auth
+   */
+  private async initializeCurrentUser(): Promise<void> {
+    try {
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      
+      if (auth.currentUser) {
+        this.currentUserId = auth.currentUser.uid;
+      }
+      
+      // Listen for auth state changes
+      auth.onAuthStateChanged((user) => {
+        this.currentUserId = user?.uid || null;
+      });
+    } catch (error) {
+      console.error('Error initializing current user:', error);
+    }
+  }
+
   /**
    * Create a new connection activity post when users connect
    */
@@ -66,14 +94,14 @@ export class ConnectionActivityService {
   /**
    * Get recent connection activities for the social feed
    */
-  async getRecentConnectionActivities(limit = 10): Promise<ConnectionActivity[]> {
+  async getRecentConnectionActivities(limitCount = 10): Promise<ConnectionActivity[]> {
     try {
       const activitiesRef = collection(db, 'connectionActivities');
       const q = query(
         activitiesRef,
         where('visibility', '==', 'public'),
         orderBy('createdAt', 'desc'),
-        limit(limit)
+        limit(limitCount)
       );
 
       const snapshot = await getDocs(q);
@@ -110,7 +138,7 @@ export class ConnectionActivityService {
             comments: data.metrics.comments || 0,
             shares: data.metrics.shares || 0,
           },
-          isLiked: data.likedBy?.includes(this.currentUserId) || false,
+          isLiked: data.likedBy?.includes(this.currentUserId || '') || false,
         });
       });
 

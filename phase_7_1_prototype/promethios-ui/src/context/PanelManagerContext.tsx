@@ -90,19 +90,49 @@ export const PanelManagerProvider: React.FC<PanelManagerProviderProps> = ({ chil
   }, [openPanels]);
 
   const getPanelWidth = useCallback((id: string) => {
-    const panelCount = openPanels.length;
-    if (panelCount === 0) return '0%';
-    if (panelCount === 1) return '100%';
-    if (panelCount === 2) return '50%';
-    return '50%'; // Fallback, should never reach here due to max 2 panels
+    const panel = openPanels.find(p => p.id === id);
+    if (!panel) return '0px';
+    
+    // Collaboration panel always has fixed width
+    if (panel.type === 'collaboration') {
+      return '320px';
+    }
+    
+    // For other panels, calculate based on available space
+    const collaborationPanelOpen = openPanels.some(p => p.type === 'collaboration');
+    const nonCollaborationPanels = openPanels.filter(p => p.type !== 'collaboration');
+    
+    if (nonCollaborationPanels.length === 0) return '0px';
+    if (nonCollaborationPanels.length === 1) {
+      // Single non-collaboration panel takes remaining space
+      return collaborationPanelOpen ? 'calc(100vw - 384px)' : 'calc(100vw - 64px)'; // 320px + 64px nav
+    }
+    if (nonCollaborationPanels.length === 2) {
+      // Two non-collaboration panels split remaining space 50/50
+      const availableWidth = collaborationPanelOpen ? 'calc((100vw - 384px) / 2)' : 'calc((100vw - 64px) / 2)';
+      return availableWidth;
+    }
+    
+    return '50%'; // Fallback
   }, [openPanels]);
 
   const getAvailableWidth = useCallback(() => {
-    const panelCount = openPanels.length;
-    if (panelCount === 0) return 'calc(100vw - 64px)'; // Full width minus left nav
-    if (panelCount === 1) return 'calc(100vw - 384px)'; // Minus left nav + one panel (320px)
-    if (panelCount === 2) return 'calc(100vw - 704px)'; // Minus left nav + two panels (640px)
-    return 'calc(100vw - 704px)'; // Fallback
+    const collaborationPanelOpen = openPanels.some(p => p.type === 'collaboration');
+    const nonCollaborationPanels = openPanels.filter(p => p.type !== 'collaboration');
+    
+    let usedWidth = 64; // Left navigation width
+    
+    if (collaborationPanelOpen) {
+      usedWidth += 320; // Fixed collaboration panel width
+    }
+    
+    if (nonCollaborationPanels.length === 1) {
+      usedWidth += 320; // Assume standard panel width for calculation
+    } else if (nonCollaborationPanels.length === 2) {
+      usedWidth += 640; // Two panels at 320px each
+    }
+    
+    return `calc(100vw - ${usedWidth}px)`;
   }, [openPanels]);
 
   const value: PanelManagerContextType = {
