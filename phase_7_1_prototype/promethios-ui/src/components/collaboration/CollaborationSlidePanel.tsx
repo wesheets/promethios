@@ -135,26 +135,71 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   // Load real agents from Firebase
   const loadAgents = async () => {
-    if (!user?.uid || authLoading || !chatbotServiceRef.current) return;
+    console.log('🤝 [CollaborationPanel] loadAgents called, user:', user?.uid);
+    console.log('🤝 [CollaborationPanel] authLoading:', authLoading);
+    
+    if (authLoading) {
+      console.log('🔍 [CollaborationPanel] Auth still loading, waiting...');
+      return;
+    }
+
+    if (!user?.uid) {
+      console.log('🔍 [CollaborationPanel] No user UID after auth loaded');
+      setAgentsLoading(false);
+      setAiAgents([]);
+      return;
+    }
+
+    if (!chatbotServiceRef.current) {
+      console.error('❌ [CollaborationPanel] ChatbotStorageService not initialized');
+      setAgentsLoading(false);
+      return;
+    }
 
     try {
       setAgentsLoading(true);
+      console.log('🔍 [CollaborationPanel] Calling chatbotService.getChatbots with user:', user.uid);
+      
       const chatbotProfiles = await chatbotServiceRef.current.getChatbots(user.uid);
-      console.log('🤝 [CollaborationPanel] Loaded agents:', chatbotProfiles.length);
+      console.log('🔍 [CollaborationPanel] getChatbots returned:', chatbotProfiles.length, 'chatbots');
+      console.log('🔍 [CollaborationPanel] Chatbot data:', chatbotProfiles);
+      
+      // Debug: Check the status of each agent
+      chatbotProfiles.forEach((profile, index) => {
+        console.log(`🔍 [CollaborationPanel] Agent ${index + 1}:`, {
+          name: profile.identity?.name || 'Unnamed',
+          status: profile.status,
+          chatbotMetadata: profile.chatbotMetadata,
+          isActive: profile.chatbotMetadata?.isActive,
+          fullProfile: profile
+        });
+      });
+      
+      console.log('🤝 [CollaborationPanel] Final agents loaded:', chatbotProfiles.length);
       setAiAgents(chatbotProfiles);
+      
+      // If no agents found, show helpful message
+      if (chatbotProfiles.length === 0) {
+        console.log('🤝 [CollaborationPanel] No agents found for user');
+      }
+      
     } catch (error) {
       console.error('❌ [CollaborationPanel] Failed to load agents:', error);
       setAiAgents([]);
     } finally {
       setAgentsLoading(false);
+      console.log('🔍 [CollaborationPanel] Loading set to false');
     }
   };
 
   // Load agents when user is available
   useEffect(() => {
-    if (user?.uid && !authLoading) {
+    console.log('🤝 [CollaborationPanel] useEffect triggered, user:', user?.uid, 'authLoading:', authLoading);
+    if (!authLoading) {
       loadAgents();
-      loadConnections();
+      if (user?.uid) {
+        loadConnections();
+      }
     }
   }, [user?.uid, authLoading]);
 
