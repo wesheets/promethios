@@ -40,10 +40,12 @@ import {
   Person as PersonIcon,
   SmartToy as AgentIcon,
   Business as OrganizationIcon,
-  Public as SocialIcon
+  Public as SocialIcon,
+  AccountTree as AccountTreeIcon
 } from '@mui/icons-material';
 import { usePanelManager } from '../../context/PanelManagerContext';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
+import WorkflowPanel from '../workflow/WorkflowPanel';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 
@@ -163,6 +165,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   // Check if social panel is open
   const socialPanelOpen = isPanelOpen('social');
+  
+  // Check if workflow panel is open
+  const workflowPanelOpen = isPanelOpen('workflow');
 
   // Handle social panel toggle
   const handleSocialToggle = () => {
@@ -170,6 +175,15 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
       closePanel('social');
     } else {
       openPanel('social', 'social', 'Professional Network');
+    }
+  };
+
+  // Handle workflow panel toggle
+  const handleWorkflowToggle = () => {
+    if (workflowPanelOpen) {
+      closePanel('workflow');
+    } else {
+      openPanel('workflow', 'workflow', 'AI Agent Workflows');
     }
   };
 
@@ -366,7 +380,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
             position: 'fixed',
             top: 0,
             left: '64px', // Position after left nav
-            width: width,
+            width: panelWidth,
             height: '100vh',
             bgcolor: '#1e293b', // Exact match with left navigation
             borderRight: '1px solid #334155', // Exact match with left navigation border
@@ -889,6 +903,38 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                     }}
                   />
                 </ListItemButton>
+
+                {/* AI Agent Workflows Button */}
+                <ListItemButton
+                  onClick={handleWorkflowToggle}
+                  sx={{
+                    borderRadius: 1,
+                    mt: 1,
+                    bgcolor: workflowPanelOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+                    border: workflowPanelOpen ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(16, 185, 129, 0.3)',
+                    '&:hover': {
+                      bgcolor: 'rgba(16, 185, 129, 0.2)',
+                      border: '1px solid rgba(16, 185, 129, 0.5)'
+                    }
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <AccountTreeIcon sx={{ color: '#10b981', fontSize: '1.2rem' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Workflows"
+                    secondary="AI Agent Automation"
+                    primaryTypographyProps={{
+                      variant: 'body2',
+                      fontWeight: 600,
+                      color: '#10b981'
+                    }}
+                    secondaryTypographyProps={{
+                      variant: 'caption',
+                      color: '#94a3b8'
+                    }}
+                  />
+                </ListItemButton>
               </Box>
             </Box>
           </Box>
@@ -900,6 +946,13 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         open={socialPanelOpen}
         onClose={() => closePanel('social')}
         width={socialPanelOpen ? getPanelWidth('social') : '0%'}
+      />
+
+      {/* AI Agent Workflow Panel */}
+      <WorkflowPanel
+        open={workflowPanelOpen}
+        onClose={() => closePanel('workflow')}
+        width={workflowPanelOpen ? getPanelWidth('workflow') : '0%'}
       />
     </>
   );
