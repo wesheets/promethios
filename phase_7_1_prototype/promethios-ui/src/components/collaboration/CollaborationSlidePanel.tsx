@@ -1,54 +1,51 @@
 /**
- * CollaborationSlidePanel - Slide-out panel for collaborations
+ * CollaborationSlidePanel - Enhanced slide-out panel for team collaboration
  * 
  * Features:
- * - Slides out from the left when triggered
- * - Aligns with existing left navigation bar
+ * - Slides from left side with smooth animations
+ * - Matches left navigation background color (#1e293b)
  * - Preserves main content area (doesn't take over entire screen)
  * - Hierarchical organization structure (Work Collaborations > Channels)
  * - General public channels section
  * - Smooth animations and responsive design
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
-  Drawer,
+  Slide,
+  Paper,
   Typography,
   IconButton,
+  TextField,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Collapse,
-  Badge,
   Avatar,
+  Badge,
+  Collapse,
   Divider,
-  TextField,
-  InputAdornment,
   Chip,
-  Tooltip,
-  Slide
+  Button
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Search as SearchIcon,
-  ExpandLess,
   ExpandMore,
-  Add as AddIcon,
+  ExpandLess,
   Tag as ChannelIcon,
-  Message as DirectMessageIcon,
-  SmartToy as AgentIcon,
-  Link as ConnectionIcon,
-  Business as OrganizationIcon,
-  Public as PublicIcon,
   Lock as PrivateIcon,
-  Circle as OnlineIcon,
-  RadioButtonUnchecked as OfflineIcon
+  Person as PersonIcon,
+  SmartToy as AgentIcon,
+  Business as OrganizationIcon,
+  Public as SocialIcon
 } from '@mui/icons-material';
-import SocialNetworkPanel from '../social/SocialNetworkPanel';
 import { usePanelManager } from '../../context/PanelManagerContext';
+import SocialNetworkPanel from '../social/SocialNetworkPanel';
+import { useAuth } from '../../context/AuthContext';
+import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 
 interface CollaborationSlidePanel {
   open: boolean;
@@ -101,16 +98,49 @@ interface Connection {
   avatar?: string;
   isOnline?: boolean;
 }
-
-const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
-  open,
-  onClose,
-  width = 320
+const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({ 
+  open, 
+  onClose 
 }) => {
   const { openPanel, closePanel, isPanelOpen, getPanelWidth } = usePanelManager();
+  const { user, authLoading } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
   
-  // State for expanded sections
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+  // Real agents from Firebase
+  const [aiAgents, setAiAgents] = useState<ChatbotProfile[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const chatbotServiceRef = useRef<ChatbotStorageService | null>(null);
+
+  // Initialize chatbot service
+  useEffect(() => {
+    if (!chatbotServiceRef.current) {
+      chatbotServiceRef.current = ChatbotStorageService.getInstance();
+    }
+  }, []);
+
+  // Load real agents from Firebase
+  const loadAgents = async () => {
+    if (!user?.uid || authLoading || !chatbotServiceRef.current) return;
+
+    try {
+      setAgentsLoading(true);
+      const chatbotProfiles = await chatbotServiceRef.current.getChatbots(user.uid);
+      console.log('🤝 [CollaborationPanel] Loaded agents:', chatbotProfiles.length);
+      setAiAgents(chatbotProfiles);
+    } catch (error) {
+      console.error('❌ [CollaborationPanel] Failed to load agents:', error);
+      setAiAgents([]);
+    } finally {
+      setAgentsLoading(false);
+    }
+  };
+
+  // Load agents when user is available
+  useEffect(() => {
+    if (user?.uid && !authLoading) {
+      loadAgents();
+    }
+  }, [user?.uid, authLoading]); [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     workCollaborations: true,
     channels: true,
     directMessages: true,
@@ -235,33 +265,6 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
     }
   ]);
 
-  const [aiAgents] = useState<AIAgent[]>([
-    {
-      id: 'data-analyst',
-      name: 'Data Analyst',
-      avatar: 'DA',
-      color: '#10b981',
-      status: 'active',
-      expertise: ['Data Analysis', 'Visualization']
-    },
-    {
-      id: 'content-writer',
-      name: 'Content Writer',
-      avatar: 'CW',
-      color: '#8b5cf6',
-      status: 'active',
-      expertise: ['Writing', 'Marketing']
-    },
-    {
-      id: 'research-assistant',
-      name: 'Research Assistant',
-      avatar: 'RA',
-      color: '#f59e0b',
-      status: 'active',
-      expertise: ['Research', 'Analysis']
-    }
-  ]);
-
   const [connections] = useState<Connection[]>([
     {
       id: 'tech-corp',
@@ -314,10 +317,25 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
     // This would open the DM in the main content area
   };
 
-  // Handle AI agent click
+  // Handle AI agent click - Open Command Center in new panel
   const handleAgentClick = (agentId: string, agentName: string) => {
-    console.log('Starting conversation with agent:', agentId, agentName);
-    // This would start a conversation with the AI agent
+    console.log('🤖 [CollaborationPanel] Opening Command Center for agent:', agentId, agentName);
+    
+    // Find the agent to get the full profile
+    const agent = aiAgents.find(a => (a.identity?.id || a.id) === agentId);
+    if (!agent) {
+      console.error('❌ [CollaborationPanel] Agent not found:', agentId);
+      return;
+    }
+
+    // Open the Command Center panel using the same URL pattern as the main chatbots page
+    const commandCenterUrl = `/ui/chat/chatbots/${agentId}/command-center`;
+    
+    // Open as new panel - this will trigger 50/50 split if collaboration panel is already open
+    openPanel(`agent-${agentId}`, 'agent', `${agentName} Command Center`);
+    
+    // Navigate to the command center (this would be handled by the panel content)
+    console.log('🎯 [CollaborationPanel] Command Center URL:', commandCenterUrl);
   };
 
   // Filter items based on search
@@ -673,54 +691,85 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanel> = ({
 
                 <Collapse in={expandedSections.aiAgents} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding sx={{ pl: 2 }}>
-                    {filterBySearch(aiAgents, ['name', 'expertise']).map((agent) => (
-                      <ListItem key={agent.id} sx={{ px: 2, py: 0.5 }}>
-                        <ListItemButton
-                          onClick={() => handleAgentClick(agent.id, agent.name)}
-                          sx={{ 
-                            px: 1, 
-                            py: 0.5, 
-                            borderRadius: 1,
-                            '&:hover': { bgcolor: '#334155' }
+                    {agentsLoading ? (
+                      <ListItem sx={{ px: 2, py: 1 }}>
+                        <ListItemText 
+                          primary="Loading agents..."
+                          primaryTypographyProps={{
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                            fontStyle: 'italic'
                           }}
-                        >
-                          <ListItemIcon sx={{ minWidth: 28 }}>
-                            <Avatar
+                        />
+                      </ListItem>
+                    ) : aiAgents.length === 0 ? (
+                      <ListItem sx={{ px: 2, py: 1 }}>
+                        <ListItemText 
+                          primary="No agents available"
+                          primaryTypographyProps={{
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                            fontStyle: 'italic'
+                          }}
+                        />
+                      </ListItem>
+                    ) : (
+                      filterBySearch(aiAgents, ['identity.name', 'name']).map((agent) => {
+                        const agentId = agent.identity?.id || agent.id;
+                        const agentName = agent.identity?.name || 'Unnamed Agent';
+                        const agentAvatar = agent.identity?.avatar || agentName.charAt(0).toUpperCase();
+                        
+                        return (
+                          <ListItem key={agentId} sx={{ px: 2, py: 0.5 }}>
+                            <ListItemButton
+                              onClick={() => handleAgentClick(agentId, agentName)}
                               sx={{ 
-                                width: 20, 
-                                height: 20, 
-                                fontSize: '0.7rem',
-                                bgcolor: agent.color
+                                px: 1, 
+                                py: 0.5, 
+                                borderRadius: 1,
+                                '&:hover': { bgcolor: '#334155' }
                               }}
                             >
-                              {agent.avatar}
-                            </Avatar>
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary={agent.name}
-                            secondary={agent.expertise?.join(', ')}
-                            primaryTypographyProps={{
-                              fontSize: '0.8rem',
-                              color: '#f8fafc'
-                            }}
-                            secondaryTypographyProps={{
-                              fontSize: '0.7rem',
-                              color: '#94a3b8'
-                            }}
-                          />
-                          <Chip
-                            label={agent.status}
-                            size="small"
-                            sx={{
-                              height: 16,
-                              fontSize: '0.6rem',
-                              bgcolor: agent.status === 'active' ? '#10b981' : '#6b7280',
-                              color: 'white'
-                            }}
-                          />
-                        </ListItemButton>
-                      </ListItem>
-                    ))}
+                              <ListItemIcon sx={{ minWidth: 28 }}>
+                                <Avatar
+                                  sx={{ 
+                                    width: 20, 
+                                    height: 20, 
+                                    fontSize: '0.7rem',
+                                    bgcolor: '#10b981' // Default green for active agents
+                                  }}
+                                >
+                                  {agentAvatar}
+                                </Avatar>
+                              </ListItemIcon>
+                              <ListItemText 
+                                primary={agentName}
+                                secondary="Command Center"
+                                primaryTypographyProps={{
+                                  fontSize: '0.8rem',
+                                  color: '#f8fafc'
+                                }}
+                                secondaryTypographyProps={{
+                                  fontSize: '0.7rem',
+                                  color: '#94a3b8'
+                                }}
+                              />
+                              <Chip
+                                label="ACTIVE"
+                                size="small"
+                                sx={{
+                                  height: 16,
+                                  fontSize: '0.6rem',
+                                  bgcolor: '#10b981',
+                                  color: 'white',
+                                  '& .MuiChip-label': { px: 1 }
+                                }}
+                              />
+                            </ListItemButton>
+                          </ListItem>
+                        );
+                      })
+                    )}
                   </List>
                 </Collapse>
 
