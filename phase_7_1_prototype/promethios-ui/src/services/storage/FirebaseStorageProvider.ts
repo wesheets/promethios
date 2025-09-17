@@ -330,35 +330,45 @@ export class FirebaseStorageProvider implements StorageProvider {
         // Query common collections that might contain user data
         const collections = ['agents', 'multiAgentSystems', 'user', 'singleAgentChats', 'multiAgentChats', 'governance', 'preferences', 'notifications'];
         
-        // Querying Firebase collections for keys...
+        console.log('🔍 [Firebase] Querying collections for keys:', collections);
         
         for (const collectionName of collections) {
           try {
+            console.log(`🔍 [Firebase] Querying collection: ${collectionName}`);
             const collectionRef = collection(db, collectionName);
-            const snapshot = await getDocs(collectionRef);
+            
+            // Add timeout to prevent hanging
+            const queryPromise = getDocs(collectionRef);
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error(`Timeout querying ${collectionName}`)), 10000);
+            });
+            
+            const snapshot = await Promise.race([queryPromise, timeoutPromise]);
+            
+            console.log(`🔍 [Firebase] Collection ${collectionName} returned ${snapshot.size} documents`);
             
             snapshot.forEach((doc) => {
               // Convert Firestore document path back to storage key format
               const key = `${collectionName}.${doc.id}`;
               keys.push(key);
+              console.log(`🔍 [Firebase] Found key: ${key}`);
             });
             
-            // Found documents in collection
           } catch (collectionError) {
-            console.warn(`Failed to query collection ${collectionName}:`, collectionError);
+            console.warn(`⚠️ [Firebase] Failed to query collection ${collectionName}:`, collectionError);
           }
         }
 
-        // Retrieved keys from Firebase collections
+        console.log(`🔍 [Firebase] Total keys found: ${keys.length}`);
         
         // If we got keys from Firebase, return them
         if (keys.length > 0) {
-          // Returning keys from Firebase
+          console.log('✅ [Firebase] Returning keys from Firebase:', keys);
           return keys;
         }
         
         // If Firebase returned no keys, fall back to localStorage
-        // Firebase returned 0 keys, falling back to localStorage...
+        console.log('⚠️ [Firebase] No keys found in Firebase, falling back to localStorage...');
         if (this.fallbackProvider) {
           const fallbackKeys = await this.fallbackProvider.keys();
           console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys`);
@@ -368,10 +378,10 @@ export class FirebaseStorageProvider implements StorageProvider {
         return [];
 
       } catch (queryError) {
-        console.error('Firebase keys query error:', queryError);
+        console.error('❌ [Firebase] Keys query error:', queryError);
         
         // Fall back to localStorage on any Firebase error
-        // Firebase query failed, falling back to localStorage...
+        console.log('📱 [Firebase] Query failed, falling back to localStorage...');
         if (this.fallbackProvider) {
           const fallbackKeys = await this.fallbackProvider.keys();
           console.log(`📱 Fallback provider returned ${fallbackKeys.length} keys after Firebase error`);

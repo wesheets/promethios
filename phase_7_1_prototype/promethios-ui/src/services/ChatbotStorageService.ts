@@ -329,19 +329,44 @@ export class ChatbotStorageService {
         }
       }
       
-      // Check if already loading - if so, wait for that promise
+      // Check if already loading - if so, wait for that promise with timeout
       const existingPromise = this.loadingPromises.get(ownerId);
       if (existingPromise) {
         console.log('🔄 Already loading chatbots for user, waiting for existing promise:', ownerId);
-        return await existingPromise;
+        
+        // Add timeout to prevent infinite waiting
+        const timeoutPromise = new Promise<ChatbotProfile[]>((_, reject) => {
+          setTimeout(() => {
+            console.error('⏰ [ChatbotStorage] Timeout waiting for existing promise, clearing and retrying');
+            this.loadingPromises.delete(ownerId);
+            reject(new Error('Timeout waiting for existing chatbot loading promise'));
+          }, 15000); // 15 second timeout
+        });
+        
+        try {
+          return await Promise.race([existingPromise, timeoutPromise]);
+        } catch (timeoutError) {
+          console.warn('⚠️ [ChatbotStorage] Existing promise timed out, creating new one');
+          // Continue to create new promise below
+        }
       }
       
-      // Create new loading promise
-      const loadingPromise = this.loadChatbotsFromStorage(ownerId, cacheKey, now);
+      // Create new loading promise with timeout
+      const loadingPromise = Promise.race([
+        this.loadChatbotsFromStorage(ownerId, cacheKey, now),
+        new Promise<ChatbotProfile[]>((_, reject) => {
+          setTimeout(() => {
+            console.error('⏰ [ChatbotStorage] Timeout loading chatbots from storage');
+            reject(new Error('Timeout loading chatbots from storage'));
+          }, 20000); // 20 second timeout
+        })
+      ]);
+      
       this.loadingPromises.set(ownerId, loadingPromise);
       
       try {
         const result = await loadingPromise;
+        console.log(`✅ [ChatbotStorage] Successfully loaded ${result.length} chatbots for user: ${ownerId}`);
         return result;
       } finally {
         // Clean up the loading promise
@@ -349,9 +374,12 @@ export class ChatbotStorageService {
       }
       
     } catch (error) {
-      console.error('Error in getChatbots:', error);
+      console.error('❌ [ChatbotStorage] Error in getChatbots:', error);
       // Clean up on error
       this.loadingPromises.delete(ownerId);
+      
+      // Return empty array instead of throwing to prevent UI crashes
+      console.log('🤖 [ChatbotStorage] Returning empty array due to error');
       return [];
     }
   }
