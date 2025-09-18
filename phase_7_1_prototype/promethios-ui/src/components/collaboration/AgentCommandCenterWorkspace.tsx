@@ -61,13 +61,38 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
             display: none !important;
           }
           
-          /* Hide top docker/header */
+          /* Hide top docker/header with agent avatars */
           .top-docker,
           .header-docker,
           .app-header,
           .top-navigation,
           [data-testid="top-header"],
-          .MuiAppBar-root {
+          .MuiAppBar-root,
+          .agent-docker,
+          .agent-header,
+          .agent-selector,
+          .top-agent-bar,
+          .agent-navigation,
+          .chatbot-header,
+          .agent-tabs,
+          .agent-switcher {
+            display: none !important;
+          }
+          
+          /* Hide any header with agent avatars/circles */
+          header,
+          .header,
+          [role="banner"],
+          .top-bar,
+          .navigation-header {
+            display: none !important;
+          }
+          
+          /* Hide specific agent avatar containers */
+          .agent-avatar-container,
+          .agent-circle-container,
+          .chatbot-avatar-bar,
+          .agent-selection-bar {
             display: none !important;
           }
           
@@ -75,11 +100,17 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
           main,
           .main-content,
           .chat-container,
-          .content-area {
+          .content-area,
+          .chat-interface,
+          .workspace-content {
             margin-left: 0 !important;
+            margin-top: 0 !important;
             padding-left: 0 !important;
+            padding-top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
           }
           
           /* Hide any floating navigation elements */
@@ -89,10 +120,17 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
             display: none !important;
           }
           
-          /* Ensure full height usage */
+          /* Ensure full height usage and remove any top spacing */
           body, html, #root {
             margin: 0 !important;
             padding: 0 !important;
+            overflow-x: hidden !important;
+          }
+          
+          /* Hide any top-positioned fixed elements */
+          [style*="position: fixed"][style*="top:"],
+          [style*="position: absolute"][style*="top: 0"] {
+            display: none !important;
           }
         `;
         iframeDoc.head.appendChild(style);
