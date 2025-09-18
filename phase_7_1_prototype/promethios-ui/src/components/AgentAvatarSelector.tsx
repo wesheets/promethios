@@ -441,7 +441,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   };
 
   // Get current participant IDs for guest selector
-  const currentParticipants = allAgents.map(agent => agent.id);
+  const currentParticipants = (allAgents || []).map(agent => agent.id);
 
   // Draggable Agent Avatar Component (separate component to avoid hook rule violations)
   const DraggableAgentAvatar: React.FC<{
@@ -674,7 +674,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
     });
     
     // Find the agent to check if it's pending
-    const agent = allAgents.find(a => a.id === agentId);
+    const agent = (allAgents || []).find(a => a.id === agentId);
     console.log('🔍 [AgentAvatarSelector] Found agent:', agent);
     
     if ((agent as any)?.isPending) {
@@ -734,7 +734,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         return;
       }
 
-      const agent = allAgents.find(a => a.hotkey?.toLowerCase() === event.key.toLowerCase());
+      const agent = (allAgents || []).find(a => a.hotkey?.toLowerCase() === event.key.toLowerCase());
       if (agent) {
         event.preventDefault();
         const mockEvent = { ctrlKey: event.ctrlKey, metaKey: event.metaKey } as React.MouseEvent;
@@ -796,7 +796,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       ))}
 
       {/* Agent Avatars with Behavior Prompts */}
-      {allAgents.map((agent) => (
+      {(allAgents || []).map((agent) => (
         <DraggableAgentAvatar
           key={agent.id}
           agent={agent}
