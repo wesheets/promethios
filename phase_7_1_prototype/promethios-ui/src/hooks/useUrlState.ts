@@ -23,6 +23,7 @@ export const useUrlState = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [state, setState] = useState<CollaborationState>({});
+  const [isUpdatingFromUrl, setIsUpdatingFromUrl] = useState(false);
 
   // Parse URL parameters into state
   const parseUrlState = useCallback((): CollaborationState => {
@@ -65,17 +66,35 @@ export const useUrlState = () => {
     }
   }, [location.pathname, location.search, navigate]);
 
-  // Initialize state from URL on mount
+  // Initialize state from URL on mount and when location changes
   useEffect(() => {
-    const urlState = parseUrlState();
+    setIsUpdatingFromUrl(true);
+    const params = new URLSearchParams(location.search);
+    const urlState: CollaborationState = {};
+    
+    // Parse all URL parameters
+    params.forEach((value, key) => {
+      if (value === 'true') {
+        urlState[key] = true;
+      } else if (value === 'false') {
+        urlState[key] = false;
+      } else {
+        urlState[key] = value;
+      }
+    });
+    
     setState(urlState);
-  }, [parseUrlState]);
+    setIsUpdatingFromUrl(false);
+  }, [location.search]); // Only depend on location.search, not parseUrlState
 
   // Update state and URL
   const updateState = useCallback((newState: Partial<CollaborationState>, replace = true) => {
     setState(prev => ({ ...prev, ...newState }));
-    updateUrl(newState, replace);
-  }, [updateUrl]);
+    // Only update URL if we're not currently updating from URL to prevent circular updates
+    if (!isUpdatingFromUrl) {
+      updateUrl(newState, replace);
+    }
+  }, [updateUrl, isUpdatingFromUrl]);
 
   // Clear specific state keys
   const clearState = useCallback((keys: string[]) => {
