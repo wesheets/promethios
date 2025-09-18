@@ -1619,7 +1619,27 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           >
             <AgentCommandCenterWorkspace
               agentId={urlState.agent}
-              agentName={aiAgents.find(a => (a.identity?.id || a.chatbotMetadata?.id || a.name) === urlState.agent)?.name || 'Agent'}
+              agentName={(() => {
+                // Try multiple ways to find the agent and get its name
+                const agent = aiAgents.find(a => {
+                  const agentId = a.identity?.id || a.chatbotMetadata?.id || a.id || a.name;
+                  return agentId === urlState.agent;
+                });
+                
+                if (agent) {
+                  // Try multiple ways to get the agent name
+                  return agent.identity?.name || agent.name || agent.chatbotMetadata?.name || 'Agent';
+                }
+                
+                // Fallback: try to find by partial match or use a default name
+                console.log('🔍 [CollaborationPanel] Could not find agent with ID:', urlState.agent);
+                console.log('🔍 [CollaborationPanel] Available agents:', aiAgents.map(a => ({
+                  id: a.identity?.id || a.chatbotMetadata?.id || a.id,
+                  name: a.identity?.name || a.name || a.chatbotMetadata?.name
+                })));
+                
+                return 'Agent Command Center';
+              })()}
               onClose={() => {
                 updateUrlState({ view: undefined, agent: undefined });
               }}
