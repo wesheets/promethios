@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAdminDashboard } from './AdminDashboardContext';
 
