@@ -60,7 +60,7 @@ import ChannelCreationModal from './ChannelCreationModal';
 import MessageCreationModal from './MessageCreationModal';
 import HumanMessagingPanel from './HumanMessagingPanel';
 import AgentCreationPanel from './AgentCreationPanel';
-import AgentCommandCenterPanel from './AgentCommandCenterPanel';
+import AgentCommandCenterWorkspace from './AgentCommandCenterWorkspace';
 import DiscoveryPage from '../../pages/DiscoveryPage';
 import LinkedInStyleProfilePage from '../../pages/LinkedInStyleProfilePage';
 import OrganizationsPage from '../../pages/OrganizationsPage';
@@ -568,14 +568,13 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     navigationService.navigateToMessage(userId);
   };
 
-  // Handle AI agent click - Open full Command Center in new tab (like main page buttons)
+  // Handle AI agent click - Open Command Center as slide-out drawer
   const handleAgentClick = (agentId: string, agentName: string) => {
-    console.log('🤖 [CollaborationPanel] Opening full Command Center for agent:', agentId, agentName);
+    console.log('🤖 [CollaborationPanel] Opening Command Center drawer for agent:', agentId, agentName);
     
-    // Use navigation service to get shareable URL and open full command center in new tab
+    // Use navigation service to navigate to agent command center (embedded drawer)
     const navigationService = NavigationService.getInstance();
-    const shareableUrl = navigationService.getShareableUrl('agent-command-center', { agent: agentId });
-    window.open(shareableUrl, '_blank');
+    navigationService.navigateToAgentCommandCenter(agentId);
   };
 
   // Handle AI agent Command Center button click - Open embedded Command Center
@@ -1618,7 +1617,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
               flexDirection: 'column'
             }}
           >
-            <AgentCommandCenterPanel
+            <AgentCommandCenterWorkspace
               agentId={urlState.agent}
               agentName={aiAgents.find(a => (a.identity?.id || a.chatbotMetadata?.id || a.name) === urlState.agent)?.name || 'Agent'}
               onClose={() => {
@@ -1646,7 +1645,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
               flexDirection: 'column'
             }}
           >
-            <AgentCommandCenterPanel
+            <AgentCommandCenterWorkspace
               agentId={activeAgentCommandCenter.agentId}
               agentName={activeAgentCommandCenter.agentName}
               onClose={() => {
