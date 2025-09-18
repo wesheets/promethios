@@ -510,32 +510,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     }
   ]);
 
-  const [directMessages] = useState<DirectMessage[]>([
-    {
-      id: 'alice-johnson',
-      name: 'Alice Johnson',
-      avatar: 'AJ',
-      isOnline: true,
-      unreadCount: 2,
-      lastActivity: new Date()
-    },
-    {
-      id: 'bob-smith',
-      name: 'Bob Smith',
-      avatar: 'BS',
-      isOnline: false,
-      unreadCount: 0,
-      lastActivity: new Date()
-    },
-    {
-      id: 'carol-davis',
-      name: 'Carol Davis',
-      avatar: 'CD',
-      isOnline: true,
-      unreadCount: 1,
-      lastActivity: new Date()
-    }
-  ]);
+  const [directMessages] = useState<DirectMessage[]>([]);
   const [connections, setConnections] = useState<UserConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
 
