@@ -149,23 +149,22 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   useEffect(() => {
     console.log('🔍 [DEBUG] URL state useEffect triggered');
     console.log('🔍 [DEBUG] urlState:', urlState);
-    console.log('🔍 [DEBUG] socialPanelOpen in useEffect:', socialPanelOpen);
-    console.log('🔍 [DEBUG] workflowPanelOpen in useEffect:', workflowPanelOpen);
+    console.log('🔍 [DEBUG] isPanelOpen function:', isPanelOpen);
     console.log('🔍 [DEBUG] aiAgents in useEffect:', aiAgents);
     console.log('🔍 [DEBUG] openPanel in useEffect:', openPanel);
     
-    if (urlState.view) {
+    if (urlState.view && isPanelOpen) {
       console.log('🔗 [CollaborationPanel] URL state changed, navigating to view:', urlState.view);
       
       // Handle different view types
       switch (urlState.view) {
         case 'social':
-          if (socialPanelOpen !== undefined && !socialPanelOpen) {
+          if (!isPanelOpen('social')) {
             openPanel('social', 'social', 'Professional Network');
           }
           break;
         case 'workflow':
-          if (workflowPanelOpen !== undefined && !workflowPanelOpen) {
+          if (!isPanelOpen('workflow')) {
             openPanel('workflow', 'workflow', 'AI Agent Workflows');
           }
           break;
@@ -207,7 +206,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           break;
       }
     }
-  }, [urlState, socialPanelOpen, workflowPanelOpen, aiAgents, openPanel]);
+  }, [urlState, aiAgents, openPanel, isPanelOpen]);
   
   const [searchTerm, setSearchTerm] = useState('');
   
