@@ -340,8 +340,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
 
   // Panel state checks - moved here to be available before useEffect
-  const socialPanelOpen = isPanelOpen('social');
-  const workflowPanelOpen = isPanelOpen('workflow');
+  // Add guards to prevent accessing before PanelManager is ready
+  const socialPanelOpen = isPanelOpen ? isPanelOpen('social') : false;
+  const workflowPanelOpen = isPanelOpen ? isPanelOpen('workflow') : false;
   const [agentCreationPanelOpen, setAgentCreationPanelOpen] = useState(false);
   const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
   const [activeAgentCommandCenter, setActiveAgentCommandCenter] = useState<{
