@@ -572,18 +572,18 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   const handleAgentClick = (agentId: string, agentName: string) => {
     console.log('🤖 [CollaborationPanel] Opening Command Center drawer for agent:', agentId, agentName);
     
-    // Navigate to the actual command center page instead of opening in slide panel
-    const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}`;
-    window.location.href = commandCenterUrl;
+    // Use navigation service to navigate to agent command center (embedded drawer)
+    const navigationService = NavigationService.getInstance();
+    navigationService.navigateToAgentCommandCenter(agentId);
   };
 
   // Handle AI agent Command Center button click - Open embedded Command Center
   const handleAgentCommandCenter = (agentId: string, agentName: string) => {
     console.log('🤝 [CollaborationPanel] Opening agent command center for:', agentName, agentId);
     
-    // Navigate to the actual command center page instead of opening in slide panel
-    const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}`;
-    window.location.href = commandCenterUrl;
+    // Use navigation service to open agent command center in embedded panel
+    const navigationService = NavigationService.getInstance();
+    navigationService.navigateToAgentCommandCenter(agentId);
   };
 
   // Handle channel creation
@@ -1600,8 +1600,82 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         }}
       />
 
-      {/* Agent Command Center Panel - Removed since we navigate to main page instead */}
-      {/* Legacy Agent Command Center Panel - Removed since we navigate to main page instead */}
+      {/* Agent Command Center Panel - Render based on URL state */}
+      {urlState.view === 'agent-command-center' && urlState.agent && (
+        <Slide direction="left" in={true} mountOnEnter unmountOnExit>
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: getPanelWidth(`agent-${urlState.agent}`),
+              height: '100vh',
+              bgcolor: '#0f172a',
+              borderLeft: '1px solid #334155',
+              zIndex: 1300,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <AgentCommandCenterWorkspace
+              agentId={urlState.agent}
+              agentName={(() => {
+                // Try multiple ways to find the agent and get its name
+                const agent = aiAgents.find(a => {
+                  const agentId = a.identity?.id || a.chatbotMetadata?.id || a.id || a.name;
+                  return agentId === urlState.agent;
+                });
+                
+                if (agent) {
+                  // Try multiple ways to get the agent name
+                  return agent.identity?.name || agent.name || agent.chatbotMetadata?.name || 'Agent';
+                }
+                
+                // Fallback: try to find by partial match or use a default name
+                console.log('🔍 [CollaborationPanel] Could not find agent with ID:', urlState.agent);
+                console.log('🔍 [CollaborationPanel] Available agents:', aiAgents.map(a => ({
+                  id: a.identity?.id || a.chatbotMetadata?.id || a.id,
+                  name: a.identity?.name || a.name || a.chatbotMetadata?.name
+                })));
+                
+                return 'Agent Command Center';
+              })()}
+              onClose={() => {
+                updateUrlState({ view: undefined, agent: undefined });
+              }}
+            />
+          </Box>
+        </Slide>
+      )}
+
+      {/* Legacy Agent Command Center Panel - Keep for backward compatibility */}
+      {activeAgentCommandCenter && !urlState.view && (
+        <Slide direction="left" in={true} mountOnEnter unmountOnExit>
+          <Box
+            sx={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              width: getPanelWidth(`agent-${activeAgentCommandCenter.agentId}`),
+              height: '100vh',
+              bgcolor: '#0f172a',
+              borderLeft: '1px solid #334155',
+              zIndex: 1300,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <AgentCommandCenterWorkspace
+              agentId={activeAgentCommandCenter.agentId}
+              agentName={activeAgentCommandCenter.agentName}
+              onClose={() => {
+                closePanel(`agent-${activeAgentCommandCenter.agentId}`);
+                setActiveAgentCommandCenter(null);
+              }}
+            />
+          </Box>
+        </Slide>
+      )}
     </>
   );
 };
