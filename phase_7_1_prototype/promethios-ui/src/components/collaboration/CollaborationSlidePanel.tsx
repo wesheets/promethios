@@ -169,20 +169,29 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           }
           break;
         case 'talent-hub':
-          openPanel('talent-hub', 'talent-hub', 'Talent Hub - Hire Talent');
+          if (!isPanelOpen('talent-hub')) {
+            openPanel('talent-hub', 'talent-hub', 'Talent Hub - Hire Talent');
+          }
           break;
         case 'marketplace':
-          openPanel('marketplace', 'marketplace', 'Marketplace - Buy Services');
+          if (!isPanelOpen('marketplace')) {
+            openPanel('marketplace', 'marketplace', 'Marketplace - Buy Services');
+          }
           break;
         case 'upwork':
-          openPanel('upwork', 'upwork', 'Upwork Integration');
+          if (!isPanelOpen('upwork')) {
+            openPanel('upwork', 'upwork', 'Upwork Integration');
+          }
           break;
         case 'agent-command-center':
           if (urlState.agent && aiAgents && aiAgents.length > 0) {
             const agent = aiAgents.find(a => (a.identity?.id || a.chatbotMetadata?.id || a.name) === urlState.agent);
             if (agent) {
               const agentName = agent.identity?.name || 'Agent';
-              openPanel(`agent-${urlState.agent}`, 'agent-command-center', `${agentName} Command Center`);
+              const panelId = `agent-${urlState.agent}`;
+              if (!isPanelOpen(panelId)) {
+                openPanel(panelId, 'agent-command-center', `${agentName} Command Center`);
+              }
             }
           }
           break;
