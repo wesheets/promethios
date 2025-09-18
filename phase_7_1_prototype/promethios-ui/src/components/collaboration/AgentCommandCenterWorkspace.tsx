@@ -88,11 +88,35 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
             display: none !important;
           }
           
-          /* Hide specific agent avatar containers */
+          /* Hide specific agent avatar containers and docker agents */
           .agent-avatar-container,
           .agent-circle-container,
           .chatbot-avatar-bar,
-          .agent-selection-bar {
+          .agent-selection-bar,
+          .docker-agents,
+          .agent-docker-container,
+          .agent-avatars,
+          .agent-selector-bar,
+          .collaboration-agents,
+          .agent-collaboration-bar {
+            display: none !important;
+          }
+          
+          /* Hide docker agent circles specifically */
+          .MuiAvatar-root[style*="position"],
+          .agent-avatar-circle,
+          .docker-agent-avatar,
+          .collaboration-avatar,
+          .agent-circle,
+          .chatbot-circle {
+            display: none !important;
+          }
+          
+          /* Hide any floating agent elements */
+          [class*="agent"][style*="position: fixed"],
+          [class*="agent"][style*="position: absolute"],
+          [class*="docker"][style*="position: fixed"],
+          [class*="docker"][style*="position: absolute"] {
             display: none !important;
           }
           
