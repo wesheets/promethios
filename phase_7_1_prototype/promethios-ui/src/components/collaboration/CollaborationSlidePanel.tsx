@@ -210,11 +210,6 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Real agents from Firebase
-  const [aiAgents, setAiAgents] = useState<ChatbotProfile[]>([]);
-  const [agentsLoading, setAgentsLoading] = useState(false);
-  const chatbotServiceRef = useRef<ChatbotStorageService | null>(null);
-
   // Initialize chatbot service
   useEffect(() => {
     if (!chatbotServiceRef.current) {
@@ -344,6 +339,11 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Modal states
   const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
+
+  // Real agents from Firebase - moved here to be available before useEffect
+  const [aiAgents, setAiAgents] = useState<ChatbotProfile[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const chatbotServiceRef = useRef<ChatbotStorageService | null>(null);
 
   // Panel state checks - moved here to be available before useEffect
   // Add guards to prevent accessing before PanelManager is ready
