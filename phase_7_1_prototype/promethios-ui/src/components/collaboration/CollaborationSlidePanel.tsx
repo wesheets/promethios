@@ -338,6 +338,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Modal states
   const [channelCreationModalOpen, setChannelCreationModalOpen] = useState(false);
   const [messageCreationModalOpen, setMessageCreationModalOpen] = useState(false);
+
+  // Panel state checks - moved here to be available before useEffect
+  const socialPanelOpen = isPanelOpen('social');
+  const workflowPanelOpen = isPanelOpen('workflow');
   const [agentCreationPanelOpen, setAgentCreationPanelOpen] = useState(false);
   const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
   const [activeAgentCommandCenter, setActiveAgentCommandCenter] = useState<{
@@ -359,12 +363,6 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
       isOnline?: boolean;
     }>;
   } | null>(null);
-
-  // Check if social panel is open
-  const socialPanelOpen = isPanelOpen('social');
-  
-  // Check if workflow panel is open
-  const workflowPanelOpen = isPanelOpen('workflow');
 
   // Check for agent command center panels
   useEffect(() => {
