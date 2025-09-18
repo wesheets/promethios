@@ -32,7 +32,7 @@ import UserDiscoveryDialog, { PromethiosUser } from '../components/collaboration
 import InAppNotificationPopup, { ConversationInvitationNotification } from '../components/collaboration/InAppNotificationPopup';
 import ConversationNotificationService from '../services/ConversationNotificationService';
 import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../services/ChatInvitationService';
-import { useConnections } from '../hooks/useConnections';
+import { ConnectionService } from '../services/ConnectionService';
 import { useAdaptiveRightPanel, useAdaptiveTransitions } from '../hooks/useAdaptiveRightPanel';
 import RightNavigationBar from '../components/navigation/RightNavigationBar';
 // Removed MultiAgentResponseIndicator - intrusive orange popup
@@ -374,7 +374,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser: user, loading: authLoading } = useAuth();
-  const { connections, loading: connectionsLoading } = useConnections();
+  // Use ConnectionService directly (same as left navigation)
+  const [connections, setConnections] = useState<any[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
   
   // Debug counter to track re-renders
   const renderCountRef = useRef(0);
@@ -556,6 +558,29 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
       setActiveHeaderConversations(prev => [...prev, activeSharedConversation]);
     }
   }, [activeSharedConversation, activeHeaderConversations]);
+  
+  // Load connections using ConnectionService (same as left navigation)
+  useEffect(() => {
+    const loadConnections = async () => {
+      if (!user?.uid) return;
+      
+      setConnectionsLoading(true);
+      try {
+        console.log('🤝 [Connections] Loading connections for user:', user.uid);
+        const connectionService = ConnectionService.getInstance();
+        const userConnections = await connectionService.getUserConnections(user.uid);
+        setConnections(userConnections);
+        console.log('🤝 [Connections] Loaded connections:', userConnections.length);
+      } catch (error) {
+        console.error('❌ [Connections] Failed to load connections:', error);
+        setConnections([]);
+      } finally {
+        setConnectionsLoading(false);
+      }
+    };
+
+    loadConnections();
+  }, [user?.uid]);
   
   // Load host chat session data when active shared conversation changes
   useEffect(() => {
