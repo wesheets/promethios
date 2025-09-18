@@ -348,9 +348,8 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Panel state checks - moved here to be available before useEffect
   // Add guards to prevent accessing before PanelManager is ready
   console.log('🔍 [DEBUG] isPanelOpen function:', typeof isPanelOpen, isPanelOpen);
-  const socialPanelOpen = isPanelOpen ? isPanelOpen('social') : false;
-  const workflowPanelOpen = isPanelOpen ? isPanelOpen('workflow') : false;
-  console.log('🔍 [DEBUG] socialPanelOpen:', socialPanelOpen, 'workflowPanelOpen:', workflowPanelOpen);
+  // Removed socialPanelOpen and workflowPanelOpen computed variables to prevent initialization issues
+  // Will use isPanelOpen('social') and isPanelOpen('workflow') directly where needed
   const [agentCreationPanelOpen, setAgentCreationPanelOpen] = useState(false);
   const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
   const [activeAgentCommandCenter, setActiveAgentCommandCenter] = useState<{
@@ -391,7 +390,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Handle social panel toggle
   const handleSocialToggle = () => {
     const navigationService = NavigationService.getInstance();
-    if (socialPanelOpen) {
+    if (isPanelOpen && isPanelOpen('social')) {
       navigationService.navigateToMain();
       closePanel('social');
     } else {
@@ -402,7 +401,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   // Handle workflow panel toggle
   const handleWorkflowToggle = () => {
     const navigationService = NavigationService.getInstance();
-    if (workflowPanelOpen) {
+    if (isPanelOpen && isPanelOpen('workflow')) {
       navigationService.navigateToMain();
       closePanel('workflow');
     } else {
@@ -1360,8 +1359,8 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                   onClick={handleSocialToggle}
                   sx={{
                     borderRadius: 1,
-                    bgcolor: socialPanelOpen ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)',
-                    border: socialPanelOpen ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid rgba(99, 102, 241, 0.3)',
+                    bgcolor: (isPanelOpen && isPanelOpen('social')) ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)',
+                    border: (isPanelOpen && isPanelOpen('social')) ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid rgba(99, 102, 241, 0.3)',
                     '&:hover': {
                       bgcolor: 'rgba(99, 102, 241, 0.2)',
                       border: '1px solid rgba(99, 102, 241, 0.5)'
@@ -1400,8 +1399,8 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                   sx={{
                     borderRadius: 1,
                     mt: 1,
-                    bgcolor: workflowPanelOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
-                    border: workflowPanelOpen ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(16, 185, 129, 0.3)',
+                    bgcolor: (isPanelOpen && isPanelOpen('workflow')) ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+                    border: (isPanelOpen && isPanelOpen('workflow')) ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(16, 185, 129, 0.3)',
                     '&:hover': {
                       bgcolor: 'rgba(16, 185, 129, 0.2)',
                       border: '1px solid rgba(16, 185, 129, 0.5)'
@@ -1529,16 +1528,16 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
       {/* Social Network Panel */}
       <SocialNetworkPanel
-        open={socialPanelOpen}
+        open={isPanelOpen ? isPanelOpen('social') : false}
         onClose={() => closePanel('social')}
-        width={socialPanelOpen ? getPanelWidth('social') : '0%'}
+        width={(isPanelOpen && isPanelOpen('social')) ? getPanelWidth('social') : '0%'}
       />
 
       {/* AI Agent Workflow Panel */}
       <WorkflowPanel
-        open={workflowPanelOpen}
+        open={isPanelOpen ? isPanelOpen('workflow') : false}
         onClose={() => closePanel('workflow')}
-        width={workflowPanelOpen ? getPanelWidth('workflow') : '0%'}
+        width={(isPanelOpen && isPanelOpen('workflow')) ? getPanelWidth('workflow') : '0%'}
       />
 
       {/* Channel Creation Modal */}
