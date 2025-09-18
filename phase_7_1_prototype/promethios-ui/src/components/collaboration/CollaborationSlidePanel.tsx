@@ -568,13 +568,14 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     navigationService.navigateToMessage(userId);
   };
 
-  // Handle AI agent click - Open Command Center in new panel
+  // Handle AI agent click - Open full Command Center in new tab (like main page buttons)
   const handleAgentClick = (agentId: string, agentName: string) => {
-    console.log('🤖 [CollaborationPanel] Opening Command Center for agent:', agentId, agentName);
+    console.log('🤖 [CollaborationPanel] Opening full Command Center for agent:', agentId, agentName);
     
-    // Use navigation service to navigate to agent command center
+    // Use navigation service to get shareable URL and open full command center in new tab
     const navigationService = NavigationService.getInstance();
-    navigationService.navigateToAgentCommandCenter(agentId);
+    const shareableUrl = navigationService.getShareableUrl('agent-command-center', { agent: agentId });
+    window.open(shareableUrl, '_blank');
   };
 
   // Handle AI agent Command Center button click - Open embedded Command Center
