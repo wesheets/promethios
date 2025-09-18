@@ -37,6 +37,8 @@ interface ColorCodedChatMessageProps {
   onStartThread?: (messageId: string) => void;
   onOpenThread?: (threadId: string) => void;
   currentUserId?: string;
+  isInThread?: boolean; // Flag to indicate if message is displayed in a thread
+  truncateContent?: boolean; // Flag to truncate content and show on hover
 }
 
 const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
@@ -47,7 +49,9 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
   onAgentInteraction,
   onStartThread,
   onOpenThread,
-  currentUserId
+  currentUserId,
+  isInThread = false,
+  truncateContent = false
 }) => {
   const isAI = message.sender.type === 'ai';
   const isHuman = message.sender.type === 'human';
@@ -189,9 +193,18 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
             lineHeight: 1.6,
             fontSize: '14px',
             whiteSpace: 'pre-wrap',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            ...(truncateContent && !isHovered && {
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              cursor: 'pointer'
+            })
           }}>
-            {message.content}
+            {truncateContent && !isHovered && message.content.length > 150
+              ? `${message.content.substring(0, 150)}...`
+              : message.content}
           </Typography>
         </Box>
 

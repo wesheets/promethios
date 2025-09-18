@@ -339,11 +339,23 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
 
     setSending(true);
     try {
+      // Auto-include the original message sender if they're an AI agent
+      let targetAgentIds = selectedAgents.map(agent => agent.id);
+      
+      // If the original message sender is an AI agent and not already selected, include them
+      if (parentMessage.senderType === 'ai' || parentMessage.sender.includes('Assistant') || parentMessage.sender.includes('Claude')) {
+        const originalSenderId = parentMessage.senderId || parentMessage.sender;
+        if (!targetAgentIds.includes(originalSenderId)) {
+          targetAgentIds.push(originalSenderId);
+          console.log('🤖 [ThreadView] Auto-including original sender in thread response:', originalSenderId);
+        }
+      }
+
       // Use EnhancedThreadService for complete agent functionality
       const responses = await EnhancedThreadService.sendThreadMessage({
         threadId,
         message: replyText.trim(),
-        targetAgentIds: selectedAgents.map(agent => agent.id),
+        targetAgentIds,
         senderId: currentUserId,
         senderName: currentUserName
       });
@@ -461,7 +473,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: 500,
+          width: 600,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -483,7 +495,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: 500,
+          width: 600,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -507,7 +519,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   return (
     <Paper
       sx={{
-        width: 500,
+        width: 600,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -569,59 +581,35 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       </Box>
 
       {/* Original Message with Thread Attribution */}
-      <Box sx={{ p: 3, borderBottom: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}` }}>
-        {/* Original Message */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            alignItems: 'flex-start', 
-            gap: 2, 
-            mb: 2,
-            cursor: onScrollToMessage ? 'pointer' : 'default',
-            borderRadius: 1,
-            p: 1,
-            mx: -1,
-            '&:hover': onScrollToMessage ? {
-              bgcolor: isDarkMode ? '#334155' : '#f1f5f9',
-              transition: 'background-color 0.2s ease'
-            } : {}
-          }}
-          onClick={() => onScrollToMessage?.(parentMessage.id)}
-        >
-          <Avatar 
-            sx={{ 
-              width: 36, 
-              height: 36, 
-              bgcolor: parentMessageColor,
-              fontSize: '16px',
-              fontWeight: 600,
-              border: `2px solid ${parentMessageColor}20`
+      <Box sx={{ p: 2, borderBottom: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}` }}>
+        <Typography variant="h6" sx={{ mb: 2, color: theme.palette.text.primary, fontSize: '16px', fontWeight: 600 }}>
+          Original Message
+        </Typography>
+        <Box sx={{ bgcolor: '#0f172a', borderRadius: 2, p: 1 }}>
+          <ColorCodedChatMessage
+            message={{
+              id: parentMessage.id,
+              content: parentMessage.content,
+              timestamp: typeof parentMessage.timestamp === 'string' 
+                ? parentMessage.timestamp 
+                : new Date(parentMessage.timestamp).toLocaleTimeString(),
+              sender: {
+                id: parentMessage.senderId || parentMessage.sender,
+                name: parentMessage.sender,
+                type: parentMessage.senderType || 'ai',
+                avatar: parentMessage.avatar
+              }
             }}
-          >
-            {parentMessage.sender.charAt(0).toUpperCase()}
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <Typography 
-                variant="subtitle1" 
-                sx={{ 
-                  fontWeight: 600, 
-                  fontSize: '15px',
-                  color: parentMessageColor
-                }}
-              >
-                {parentMessage.sender}
-              </Typography>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '12px' }}>
-                {typeof parentMessage.timestamp === 'string' 
-                  ? parentMessage.timestamp 
-                  : new Date(parentMessage.timestamp).toLocaleString()}
-              </Typography>
-            </Box>
-            <Typography variant="body1" sx={{ fontSize: '15px', lineHeight: 1.5, color: theme.palette.text.primary }}>
-              {parentMessage.content}
-            </Typography>
-          </Box>
+            senderColor={parentMessageColor}
+            recipient={null}
+            isCurrentUser={false}
+            currentUserId={currentUserId}
+            onAgentInteraction={onAgentInteraction}
+            onStartThread={() => {}} // Disable nested threading
+            onOpenThread={() => {}} // Disable nested threading
+            isInThread={true} // Add flag to indicate this is in a thread
+            truncateContent={true} // Add flag to truncate content
+          />
         </Box>
       </Box>
 
