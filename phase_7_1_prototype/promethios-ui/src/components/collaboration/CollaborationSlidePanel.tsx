@@ -391,10 +391,12 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   const handleSocialToggle = () => {
     const navigationService = NavigationService.getInstance();
     if (isPanelOpen && isPanelOpen('social')) {
-      navigationService.navigateToMain();
+      // Close the social panel and navigate back to main view
       closePanel('social');
+      updateUrlState({ view: undefined }, true);
     } else {
-      navigationService.navigateToSocial();
+      // Open social panel and navigate to social feed
+      navigationService.navigateToSocialFeed();
     }
   };
 
@@ -402,10 +404,12 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
   const handleWorkflowToggle = () => {
     const navigationService = NavigationService.getInstance();
     if (isPanelOpen && isPanelOpen('workflow')) {
-      navigationService.navigateToMain();
+      // Close the workflow panel and navigate back to main view
       closePanel('workflow');
+      updateUrlState({ view: undefined }, true);
     } else {
-      navigationService.navigateToWorkflow();
+      // Open workflow panel and navigate to workflows
+      navigationService.navigateToWorkflows();
     }
   };
 
