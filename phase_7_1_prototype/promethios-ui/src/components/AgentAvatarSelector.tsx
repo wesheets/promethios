@@ -199,7 +199,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
 
   // Determine which agents/participants to show
   const allAgents = useUnifiedParticipants 
-    ? (participantContext?.participants || realTimeParticipants).map(participant => ({
+    ? (participantContext?.participants || realTimeParticipants || []).map(participant => ({
         id: participant.id,
         name: getAgentDisplayName(participant),
         avatar: participant.avatar || participant.agentConfig?.avatar,
@@ -211,7 +211,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         permissions: participant.permissions
       }))
     : isSharedMode 
-      ? (unifiedParticipants || sharedConversationParticipants)
+      ? (unifiedParticipants || sharedConversationParticipants || [])
           .filter(participant => {
             // In shared mode, filter out the host agent if hideHostAgent is true
             console.log('🔍 [AgentAvatarSelector] Filtering participant:', {
@@ -238,8 +238,8 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
             isPending: participant.status === 'pending' // Flag for visual styling
           }))
       : hideHostAgent 
-        ? guestAgents 
-        : hostAgent ? [hostAgent, ...guestAgents] : guestAgents;
+        ? (guestAgents || [])
+        : hostAgent ? [hostAgent, ...(guestAgents || [])] : (guestAgents || []);
 
   // Debug logging to see what props are received
   console.log('🔍 [AgentAvatarSelector] Props received:');
