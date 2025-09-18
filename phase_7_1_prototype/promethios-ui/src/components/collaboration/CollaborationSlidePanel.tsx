@@ -147,18 +147,25 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   // Handle URL state changes for navigation
   useEffect(() => {
+    console.log('🔍 [DEBUG] URL state useEffect triggered');
+    console.log('🔍 [DEBUG] urlState:', urlState);
+    console.log('🔍 [DEBUG] socialPanelOpen in useEffect:', socialPanelOpen);
+    console.log('🔍 [DEBUG] workflowPanelOpen in useEffect:', workflowPanelOpen);
+    console.log('🔍 [DEBUG] aiAgents in useEffect:', aiAgents);
+    console.log('🔍 [DEBUG] openPanel in useEffect:', openPanel);
+    
     if (urlState.view) {
       console.log('🔗 [CollaborationPanel] URL state changed, navigating to view:', urlState.view);
       
       // Handle different view types
       switch (urlState.view) {
         case 'social':
-          if (!socialPanelOpen) {
+          if (socialPanelOpen !== undefined && !socialPanelOpen) {
             openPanel('social', 'social', 'Professional Network');
           }
           break;
         case 'workflow':
-          if (!workflowPanelOpen) {
+          if (workflowPanelOpen !== undefined && !workflowPanelOpen) {
             openPanel('workflow', 'workflow', 'AI Agent Workflows');
           }
           break;
@@ -341,8 +348,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   // Panel state checks - moved here to be available before useEffect
   // Add guards to prevent accessing before PanelManager is ready
+  console.log('🔍 [DEBUG] isPanelOpen function:', typeof isPanelOpen, isPanelOpen);
   const socialPanelOpen = isPanelOpen ? isPanelOpen('social') : false;
   const workflowPanelOpen = isPanelOpen ? isPanelOpen('workflow') : false;
+  console.log('🔍 [DEBUG] socialPanelOpen:', socialPanelOpen, 'workflowPanelOpen:', workflowPanelOpen);
   const [agentCreationPanelOpen, setAgentCreationPanelOpen] = useState(false);
   const [messagingPanelOpen, setMessagingPanelOpen] = useState(false);
   const [activeAgentCommandCenter, setActiveAgentCommandCenter] = useState<{
