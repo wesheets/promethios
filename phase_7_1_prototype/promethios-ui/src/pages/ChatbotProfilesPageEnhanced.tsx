@@ -660,9 +660,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [participantData, setParticipantData] = useState<ParticipantData[]>([]);
   const [behavioralSettings, setBehavioralSettings] = useState<Map<string, BehavioralSettings>>(new Map());
 
-  // Thread functionality state
+  // Thread state
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [threadViewOpen, setThreadViewOpen] = useState(false);
+  const [activeThreadParentMessage, setActiveThreadParentMessage] = useState<any>(null);
   
   // @Mention system state
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
@@ -1150,6 +1151,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     console.log('🧵 [Thread] conversationId:', conversationId);
     console.log('🧵 [Thread] user:', user?.uid);
     
+    // Find the parent message from chatMessages
+    const parentMessage = chatMessages.find(msg => msg.id === messageId);
+    console.log('🧵 [Thread] Found parent message:', parentMessage);
+    
     // Validate parameters before creating thread
     if (!messageId) {
       console.error('❌ [Thread] messageId is required');
@@ -1183,6 +1188,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
 
       console.log('✅ [Thread] Thread created successfully:', threadId);
 
+      // Store the parent message for the thread
+      setActiveThreadParentMessage(parentMessage);
+      
       // Open the newly created thread
       setActiveThreadId(threadId);
       setThreadViewOpen(true);
@@ -1205,7 +1213,32 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     if (activeThreadId) {
       closeThread(activeThreadId);
       setActiveThreadId(null);
+      setActiveThreadParentMessage(null);
     }
+  };
+
+  const handleScrollToMessage = (messageId: string) => {
+    console.log('📍 [Thread] Scrolling to message:', messageId);
+    
+    // Find the message element by ID and scroll to it
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+      messageElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      
+      // Add a highlight effect
+      messageElement.classList.add('message-highlight');
+      setTimeout(() => {
+        messageElement.classList.remove('message-highlight');
+      }, 2000);
+    } else {
+      console.warn('⚠️ [Thread] Message element not found for ID:', messageId);
+    }
+    
+    // Close the thread view to show the main chat
+    setThreadViewOpen(false);
   };
 
   // Handle agent interaction from drag & drop
@@ -7154,7 +7187,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               }}>
                 <ThreadView
                   threadId={activeThreadId}
-                  parentMessage={{
+                  parentMessage={activeThreadParentMessage ? {
+                    id: activeThreadParentMessage.id,
+                    content: activeThreadParentMessage.content,
+                    sender: activeThreadParentMessage.sender || activeThreadParentMessage.senderName || 'Unknown',
+                    timestamp: activeThreadParentMessage.timestamp || new Date().toISOString(),
+                    senderColor: activeThreadParentMessage.senderColor
+                  } : {
                     id: activeThreadId,
                     content: 'Thread message',
                     sender: 'Unknown',
@@ -7163,6 +7202,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   currentUserId={user?.uid || 'current-user'}
                   currentUserName={user?.displayName || 'You'}
                   onClose={handleCloseThread}
+                  onScrollToMessage={handleScrollToMessage}
                   onAgentInteraction={handleAgentInteraction}
                   participants={[
                     ...(user ? [{

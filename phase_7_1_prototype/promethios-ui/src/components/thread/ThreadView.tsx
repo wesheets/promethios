@@ -45,6 +45,7 @@ interface ThreadViewProps {
   onClose: () => void;
   onReplyAdded?: (reply: ThreadMessage) => void;
   onAgentInteraction?: (agentId: string, messageId: string, action: string) => void;
+  onScrollToMessage?: (messageId: string) => void; // New prop for scrolling to original message
   // Agent/participant data for consistent coloring
   participants?: Array<{
     id: string;
@@ -166,6 +167,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   onClose,
   onReplyAdded,
   onAgentInteraction,
+  onScrollToMessage,
   participants,
   availableAgents = [],
   selectedAgents = [],
@@ -494,7 +496,23 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       {/* Original Message with Thread Attribution */}
       <Box sx={{ p: 3, borderBottom: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}` }}>
         {/* Original Message */}
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'flex-start', 
+            gap: 2, 
+            mb: 2,
+            cursor: onScrollToMessage ? 'pointer' : 'default',
+            borderRadius: 1,
+            p: 1,
+            mx: -1,
+            '&:hover': onScrollToMessage ? {
+              bgcolor: isDarkMode ? '#334155' : '#f1f5f9',
+              transition: 'background-color 0.2s ease'
+            } : {}
+          }}
+          onClick={() => onScrollToMessage?.(parentMessage.id)}
+        >
           <Avatar 
             sx={{ 
               width: 36, 
@@ -527,24 +545,6 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
               {parentMessage.content}
             </Typography>
           </Box>
-        </Box>
-        
-        {/* Thread Starter Attribution */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 1, 
-          mt: 2,
-          pl: 6, // Align with message content
-          color: theme.palette.text.secondary 
-        }}>
-          <ForumIcon sx={{ fontSize: '14px', color: '#3b82f6' }} />
-          <Typography variant="caption" sx={{ fontSize: '12px', fontWeight: 500 }}>
-            {currentUserName || 'Someone'} started this thread
-          </Typography>
-          <Typography variant="caption" sx={{ fontSize: '11px', color: theme.palette.text.disabled }}>
-            • {threadData?.messages.length || 0} {threadData?.messages.length === 1 ? 'reply' : 'replies'}
-          </Typography>
         </Box>
       </Box>
 
