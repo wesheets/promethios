@@ -25,6 +25,7 @@ import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { firebaseChannelService, CreateChannelRequest } from '../../services/FirebaseChannelService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
 import { useAuth } from '../../context/AuthContext';
+import ConnectionService from '../../services/ConnectionService';
 
 interface ChannelCreationModalProps {
   open: boolean;
@@ -87,8 +88,8 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
         return;
       }
       
-      // Use FirebaseDirectMessageService directly
-      const userConnections = await firebaseDirectMessageService.getUserConnections();
+      // Use the same ConnectionService that the left navigation uses successfully
+      const userConnections = await ConnectionService.getInstance().getUserConnections();
       console.log('🏢 [ChannelModal] Found', userConnections.length, 'user connections');
       
       setConnections(userConnections);

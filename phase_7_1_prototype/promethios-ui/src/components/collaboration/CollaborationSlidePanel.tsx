@@ -957,6 +957,34 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                         </ListItemButton>
                       </ListItem>
                     ))}
+                    
+                    {/* Add Channel Button */}
+                    <ListItem sx={{ px: 2, py: 0.25 }}>
+                      <ListItemButton
+                        onClick={() => {
+                          setSelectedOrganization({ id: 'general', name: 'General Channels' });
+                          setChannelCreationModalOpen(true);
+                        }}
+                        sx={{ 
+                          px: 1, 
+                          py: 0.25, 
+                          borderRadius: 1,
+                          '&:hover': { bgcolor: '#334155' }
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 24 }}>
+                          <AddIcon sx={{ color: '#10b981', fontSize: 16 }} />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary="Add Channel"
+                          primaryTypographyProps={{
+                            fontSize: '0.75rem',
+                            color: '#10b981',
+                            fontWeight: 500
+                          }}
+                        />
+                      </ListItemButton>
+                    </ListItem>
                   </List>
                 </Collapse>
 
