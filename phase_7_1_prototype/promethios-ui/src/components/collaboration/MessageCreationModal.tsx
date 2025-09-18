@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { firebaseDirectMessageService, UserConnection, CreateDirectMessageRequest } from '../../services/FirebaseDirectMessageService';
 import { useAuth } from '../../context/AuthContext';
+import ConnectionService from '../../services/ConnectionService';
 
 interface MessageCreationModalProps {
   open: boolean;
@@ -84,8 +85,8 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
         return;
       }
       
-      // Use FirebaseDirectMessageService directly
-      const userConnections = await firebaseDirectMessageService.getUserConnections();
+      // Use the same ConnectionService that the left navigation uses successfully
+      const userConnections = await ConnectionService.getInstance().getUserConnections();
       console.log('💬 [MessageModal] Found', userConnections.length, 'user connections');
       
       setConnections(userConnections);
