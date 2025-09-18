@@ -178,7 +178,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           openPanel('upwork', 'upwork', 'Upwork Integration');
           break;
         case 'agent-command-center':
-          if (urlState.agent) {
+          if (urlState.agent && aiAgents && aiAgents.length > 0) {
             const agent = aiAgents.find(a => (a.identity?.id || a.chatbotMetadata?.id || a.name) === urlState.agent);
             if (agent) {
               const agentName = agent.identity?.name || 'Agent';
@@ -206,7 +206,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           break;
       }
     }
-  }, [urlState, aiAgents, openPanel, isPanelOpen]);
+  }, [urlState, openPanel, isPanelOpen]);
   
   const [searchTerm, setSearchTerm] = useState('');
   
