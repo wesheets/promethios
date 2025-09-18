@@ -538,7 +538,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 {parentMessage.sender}
               </Typography>
               <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontSize: '12px' }}>
-                {parentMessage.timestamp}
+                {typeof parentMessage.timestamp === 'string' 
+                  ? parentMessage.timestamp 
+                  : new Date(parentMessage.timestamp).toLocaleString()}
               </Typography>
             </Box>
             <Typography variant="body1" sx={{ fontSize: '15px', lineHeight: 1.5, color: theme.palette.text.primary }}>
