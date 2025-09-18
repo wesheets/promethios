@@ -1,10 +1,10 @@
 /**
  * AgentCommandCenterWorkspace - Embeds the actual command center interface
- * Uses EnhancedHostChatInterface component directly instead of iframe
+ * Uses iframe with CSS to hide navigation elements (clean content only)
  * Adapts between 100% and 50% width for side-by-side collaboration
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -17,8 +17,6 @@ import {
   Close as CloseIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
-import { useAuth } from '../../context/AuthContext';
-import { EnhancedHostChatInterface } from '../modern/EnhancedHostChatInterface';
 
 interface AgentCommandCenterWorkspaceProps {
   agentId: string;
@@ -34,19 +32,79 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
   position = 'primary'
 }) => {
   const theme = useTheme();
-  const { currentUser } = useAuth();
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [chatLoading, setChatLoading] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Create mock selectedChatbot object for the EnhancedHostChatInterface
-  const selectedChatbot = {
-    id: agentId,
-    name: agentName,
-    identity: {
-      id: agentId,
-      name: agentName
-    }
-  };
+  // Construct the actual command center URL
+  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}`;
+
+  // Inject CSS to hide navigation elements when iframe loads
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const handleLoad = () => {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) return;
+
+        // Inject CSS to hide navigation elements
+        const style = iframeDoc.createElement('style');
+        style.textContent = `
+          /* Hide left navigation */
+          nav[aria-label="Main navigation"],
+          .left-navigation,
+          .sidebar,
+          .navigation-panel,
+          [data-testid="left-nav"],
+          .MuiDrawer-root,
+          .navigation-drawer {
+            display: none !important;
+          }
+          
+          /* Hide top docker/header */
+          .top-docker,
+          .header-docker,
+          .app-header,
+          .top-navigation,
+          [data-testid="top-header"],
+          .MuiAppBar-root {
+            display: none !important;
+          }
+          
+          /* Adjust main content to fill space */
+          main,
+          .main-content,
+          .chat-container,
+          .content-area {
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          
+          /* Hide any floating navigation elements */
+          .floating-nav,
+          .nav-overlay,
+          .navigation-overlay {
+            display: none !important;
+          }
+          
+          /* Ensure full height usage */
+          body, html, #root {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+        `;
+        iframeDoc.head.appendChild(style);
+      } catch (error) {
+        // Cross-origin restrictions - can't inject CSS
+        console.log('Cannot inject CSS due to cross-origin restrictions');
+      }
+    };
+
+    iframe.addEventListener('load', handleLoad);
+    return () => iframe.removeEventListener('load', handleLoad);
+  }, []);
 
   return (
     <Box sx={{ 
@@ -138,17 +196,20 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
         </Box>
       </Box>
 
-      {/* Embedded Command Center Interface */}
+      {/* Embedded Command Center with Hidden Navigation */}
       <Box sx={{ flex: 1, position: 'relative' }}>
-        <EnhancedHostChatInterface
-          chatMessages={chatMessages}
-          selectedChatbot={selectedChatbot}
-          user={currentUser}
-          chatLoading={chatLoading}
-          showLeftPanel={false}
-          showRightPanel={position === 'primary'} // Show right panel only in single mode
-          aiAgents={[]}
-          humanParticipants={[]}
+        <iframe
+          ref={iframeRef}
+          src={commandCenterUrl}
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            backgroundColor: theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff'
+          }}
+          title={`${agentName} Command Center`}
+          allow="clipboard-read; clipboard-write"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
         />
       </Box>
     </Box>
