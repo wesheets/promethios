@@ -49,13 +49,15 @@ interface AgentCapability {
 }
 
 interface AgentCommandCenterWorkspaceProps {
-  item: CollaborationItem;
+  agentId: string;
+  agentName: string;
   onClose: () => void;
   position?: 'primary' | 'secondary';
 }
 
 const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = ({
-  item,
+  agentId,
+  agentName,
   onClose,
   position = 'primary'
 }) => {
@@ -98,10 +100,10 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
     ];
 
     // Customize based on agent name/type
-    if (item.name.toLowerCase().includes('analyst')) {
+    if (agentName.toLowerCase().includes('analyst')) {
       baseCapabilities[0].active = true;
       baseCapabilities[2].active = true;
-    } else if (item.name.toLowerCase().includes('writer')) {
+    } else if (agentName.toLowerCase().includes('writer')) {
       baseCapabilities[1].active = true;
       baseCapabilities[3].active = true;
     }
@@ -115,9 +117,9 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
   const [messages, setMessages] = useState([
     {
       id: '1',
-      content: `Hello! I'm ${item.name}, your AI collaboration partner. I'm specialized in ${capabilities.filter(c => c.active).map(c => c.name.toLowerCase()).join(', ')}. How can I assist you today?`,
-      senderId: item.id,
-      senderName: item.name,
+      content: `Hello! I'm ${agentName}, your AI collaboration partner. I'm specialized in ${capabilities.filter(c => c.active).map(c => c.name.toLowerCase()).join(', ')}. How can I assist you today?`,
+      senderId: agentId,
+      senderName: agentName,
       senderType: 'ai_agent' as const,
       timestamp: new Date(Date.now() - 300000), // 5 minutes ago
       attachments: [],
@@ -127,7 +129,7 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
 
   // Handle sending messages with enhanced agent integration
   const handleSendMessage = (message: string, selectedAgents?: string[]) => {
-    console.log('🤖 [AgentCommandCenter] Processing message:', { message, agent: item.name });
+    console.log('🤖 [AgentCommandCenter] Processing message:', { message, agent: agentName });
     
     // Add user message
     const userMessage = {
@@ -138,7 +140,7 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
       senderType: 'human' as const,
       timestamp: new Date(),
       attachments: [],
-      mentions: [item.id] // Always mention the agent in command center
+      mentions: [agentId] // Always mention the agent in command center
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -154,8 +156,8 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
           const agentResponse = {
             id: (Date.now() + index + 1).toString(),
             content: response,
-            senderId: item.id,
-            senderName: item.name,
+            senderId: agentId,
+            senderName: agentName,
             senderType: 'ai_agent' as const,
             timestamp: new Date(),
             attachments: [],
@@ -250,12 +252,12 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
             sx={{
               width: 40,
               height: 40,
-              bgcolor: item.color || theme.palette.primary.main,
+              bgcolor: theme.palette.primary.main,
               fontSize: '16px',
               fontWeight: 600
             }}
           >
-            {item.avatar || item.name.charAt(0).toUpperCase()}
+            {agentName.charAt(0).toUpperCase()}
           </Avatar>
           {/* Status Indicator */}
           <Box
@@ -277,7 +279,7 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
         <Box sx={{ flex: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {item.name}
+              {agentName}
             </Typography>
             <Chip
               label="AI Agent"
@@ -286,7 +288,7 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
                 height: 18,
                 fontSize: '10px',
                 fontWeight: 600,
-                bgcolor: item.color || theme.palette.primary.main,
+                bgcolor: theme.palette.primary.main,
                 color: 'white'
               }}
             />
@@ -301,11 +303,9 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
               {agentStatus}
             </Typography>
           </Box>
-          {item.description && (
-            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              {item.description}
-            </Typography>
-          )}
+          <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+            AI Agent Command Center
+          </Typography>
         </Box>
 
         {/* Position Indicator */}
@@ -386,11 +386,16 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
 
       {/* Agent Command Center Messaging */}
       <CollaborationMessaging
-        item={item}
+        item={{
+          id: agentId,
+          type: 'agent_command_center' as const,
+          name: agentName,
+          description: 'AI Agent Command Center'
+        }}
         messages={messages}
         onSendMessage={handleSendMessage}
         onTyping={(isTyping) => {
-          console.log(`🤖 [${item.name}] User is ${isTyping ? 'typing' : 'not typing'}`);
+          console.log(`🤖 [${agentName}] User is ${isTyping ? 'typing' : 'not typing'}`);
         }}
       />
 
