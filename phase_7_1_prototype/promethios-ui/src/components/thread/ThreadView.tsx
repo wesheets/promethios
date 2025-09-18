@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Stack,
   useTheme
 } from '@mui/material';
 import {
@@ -28,6 +29,34 @@ import { ThreadSubscription, ThreadMessage, AddThreadReplyRequest, ResolveThread
 import ThreadService from '../../services/ThreadService';
 import EnhancedThreadService from '../../services/EnhancedThreadService';
 import { useMessageDropTarget } from '../../hooks/useDragDrop';
+import ColorCodedChatMessage from '../chat/ColorCodedChatMessage';
+
+// Import the getParticipantColor function from main chat
+const getParticipantColor = (participantId: string, type: 'ai' | 'human'): string => {
+  // Hash function to generate consistent colors
+  let hash = 0;
+  for (let i = 0; i < participantId.length; i++) {
+    const char = participantId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Color palettes for different types
+  const aiColors = [
+    '#f97316', '#3b82f6', '#10b981', '#8b5cf6', 
+    '#ef4444', '#f59e0b', '#06b6d4', '#ec4899',
+    '#6366f1', '#84cc16', '#f43f5e', '#14b8a6'
+  ];
+  
+  const humanColors = [
+    '#64748b', '#6b7280', '#78716c', '#71717a',
+    '#737373', '#525252', '#404040', '#262626'
+  ];
+  
+  const colors = type === 'ai' ? aiColors : humanColors;
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
 import ThreadResolutionDialog from './ThreadResolutionDialog';
 import AgentAvatarSelector from '../AgentAvatarSelector';
 
@@ -67,78 +96,122 @@ interface ThreadViewProps {
     color?: string;
   }>;
   onAgentSelectionChange?: (agents: Array<{ id: string; name: string; avatar?: string; color?: string; }>) => void;
+  // Additional props needed for exact main chat formatting
+  selectedChatbot?: any;
+  user?: any;
 }
 
-// Thread message component with drag & drop
+// Thread message component using exact same rendering as main chat
 const ThreadMessageItem: React.FC<{
   message: ThreadMessage;
   participants?: Array<{ id: string; name: string; type: string; color?: string }>;
   onAgentInteraction?: (agentId: string, messageId: string, action: string) => void;
-}> = ({ message, participants, onAgentInteraction }) => {
+  currentUserId?: string;
+  selectedChatbot?: any;
+  user?: any;
+}> = ({ message, participants, onAgentInteraction, currentUserId, selectedChatbot, user }) => {
   const theme = useTheme();
   
-  // Find participant data for consistent coloring
-  const participant = participants?.find(p => p.id === message.senderId);
-  const messageColor = participant?.color || getDefaultColor(message.senderId);
+  // Use exact same logic as main chat for sender identification
+  const isUser = message.senderId === currentUserId || message.senderType === 'user';
+  const isAgent = !isUser;
   
-  // Add drop functionality to thread messages
-  const { dropRef, isOver, canDrop, dropHandlers } = useMessageDropTarget(
-    `thread-message-${message.id}`,
-    message,
-    (source, context) => {
-      console.log('🎯 [ThreadMessage] Agent dropped on thread message:', { source, context, messageId: message.id });
-      
-      const agentId = source.data?.agentId || source.id.replace('agent-', '');
-      if (onAgentInteraction) {
-        onAgentInteraction(agentId, message.id, 'behavioral_prompt');
-      }
-    }
-  );
-
-  return (
-    <Box 
-      ref={dropRef}
-      {...dropHandlers}
-      sx={{ 
-        display: 'flex', 
-        alignItems: 'flex-start', 
-        gap: 2, 
-        p: 1,
-        borderRadius: 1,
-        transition: 'all 0.2s ease',
-        bgcolor: isOver ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-        border: isOver ? '2px dashed #3b82f6' : '2px solid transparent',
-      }}
-    >
-      {/* Avatar */}
-      <Avatar
-        sx={{
-          width: 32,
-          height: 32,
-          bgcolor: messageColor,
-          fontSize: '0.8rem',
-          mt: 0.5
-        }}
-      >
-        {message.senderName?.charAt(0) || 'U'}
-      </Avatar>
-
-      {/* Message content */}
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: messageColor }}>
-            {message.senderName || 'Unknown'}
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-            {new Date(message.timestamp).toLocaleTimeString()}
-          </Typography>
-        </Box>
+  // Get sender details with improved agent identification (copied from main chat)
+  const senderId = isUser 
+    ? (currentUserId || 'current-user')
+    : (() => {
+        // First try metadata
+        if (message.metadata?.agentId) {
+          return message.metadata.agentId;
+        }
         
-        <Typography variant="body2" sx={{ color: '#e2e8f0', lineHeight: 1.5 }}>
-          {message.content}
-        </Typography>
-      </Box>
-    </Box>
+        // Try to identify agent from message content
+        const content = message.content.toLowerCase();
+        if (content.includes("i'm mark the claude") || content.includes("mark the claude")) {
+          return 'mark-the-claude';
+        }
+        
+        // Fallback to selected chatbot
+        return selectedChatbot?.identity?.id || selectedChatbot?.id || 'unknown-agent';
+      })();
+  
+  const senderName = isUser
+    ? (user?.displayName || user?.email || 'You')
+    : (() => {
+        // First try metadata
+        if (message.metadata?.agentName) {
+          return message.metadata.agentName;
+        }
+        
+        // Try to identify agent from message content
+        const content = message.content.toLowerCase();
+        if (content.includes("i'm mark the claude") || content.includes("mark the claude")) {
+          return 'Mark the Claude';
+        }
+        
+        // Fallback to selected chatbot
+        return selectedChatbot?.identity?.name || selectedChatbot?.name || 'Assistant';
+      })();
+  
+  const senderType: 'ai' | 'human' = isUser ? 'human' : 'ai';
+  const senderColor = getParticipantColor(senderId, senderType);
+  
+  // Determine recipient for directional flow (copied from main chat)
+  const getRecipient = () => {
+    if (isUser) {
+      // User message - recipient is the target agent(s)
+      const hostAgent = selectedChatbot;
+      if (hostAgent) {
+        const recipientId = hostAgent.identity?.id || hostAgent.id || 'host-agent';
+        return {
+          id: recipientId,
+          name: hostAgent.identity?.name || hostAgent.name || 'Assistant',
+          type: 'ai' as const,
+          avatar: hostAgent.identity?.avatar,
+          color: getParticipantColor(recipientId, 'ai')
+        };
+      }
+    } else {
+      // Agent message - recipient is the user
+      return {
+        id: currentUserId || 'current-user',
+        name: user?.displayName || user?.email || 'You',
+        type: 'human' as const,
+        avatar: user?.photoURL,
+        color: getParticipantColor(currentUserId || 'current-user', 'human')
+      };
+    }
+    return null;
+  };
+  
+  // Create message object for ColorCodedChatMessage (exact same format as main chat)
+  const colorCodedMessage = {
+    id: message.id,
+    content: message.content,
+    timestamp: typeof message.timestamp === 'string' 
+      ? message.timestamp 
+      : new Date(message.timestamp).toLocaleString(),
+    sender: {
+      id: senderId,
+      name: senderName,
+      type: senderType,
+      avatar: message.metadata?.avatar || (isUser ? user?.photoURL : selectedChatbot?.identity?.avatar)
+    }
+  };
+  
+  const recipient = getRecipient();
+  
+  return (
+    <ColorCodedChatMessage
+      message={colorCodedMessage}
+      senderColor={senderColor}
+      recipient={recipient}
+      isCurrentUser={isUser}
+      currentUserId={currentUserId}
+      onAgentInteraction={onAgentInteraction}
+      onStartThread={() => {}} // Disable nested threading
+      onOpenThread={() => {}} // Disable nested threading
+    />
   );
 };
 // Utility function for default colors
@@ -171,7 +244,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   participants,
   availableAgents = [],
   selectedAgents = [],
-  onAgentSelectionChange
+  onAgentSelectionChange,
+  selectedChatbot,
+  user
 }) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
@@ -551,14 +626,28 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       </Box>
 
       {/* Thread Messages */}
-      <Box sx={{ flex: 1, overflow: 'auto', p: 1 }}>
-        {threadData.messages.map((message) => (
-          <ThreadMessageItem
-            key={message.id}
-            message={message}
-            onAgentDrop={handleAgentDrop}
-          />
-        ))}
+      <Box sx={{ flex: 1, overflow: 'auto', p: 1, bgcolor: '#0f172a' }}>
+        <Stack 
+          spacing={3}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column-reverse', // Reverse direction for bottom-up flow
+            justifyContent: 'flex-start', // Start from bottom
+            minHeight: '100%',
+            paddingBottom: 2
+          }}
+        >
+          {[...threadData.messages].reverse().map((message) => (
+            <ThreadMessageItem
+              key={message.id}
+              message={message}
+              onAgentInteraction={onAgentInteraction}
+              currentUserId={currentUserId}
+              selectedChatbot={selectedChatbot}
+              user={user}
+            />
+          ))}
+        </Stack>
         <div ref={messagesEndRef} />
       </Box>
 
