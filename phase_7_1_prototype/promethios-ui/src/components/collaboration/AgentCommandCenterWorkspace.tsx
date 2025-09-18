@@ -1,10 +1,10 @@
 /**
  * AgentCommandCenterWorkspace - Embeds the actual command center interface
- * Uses iframe to display the real command center from the chatbot page
+ * Uses EnhancedHostChatInterface component directly instead of iframe
  * Adapts between 100% and 50% width for side-by-side collaboration
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -17,6 +17,8 @@ import {
   Close as CloseIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
+import { useAuth } from '../../context/AuthContext';
+import { EnhancedHostChatInterface } from '../modern/EnhancedHostChatInterface';
 
 interface AgentCommandCenterWorkspaceProps {
   agentId: string;
@@ -32,9 +34,19 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
   position = 'primary'
 }) => {
   const theme = useTheme();
+  const { currentUser } = useAuth();
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
 
-  // Construct the actual command center URL
-  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}`;
+  // Create mock selectedChatbot object for the EnhancedHostChatInterface
+  const selectedChatbot = {
+    id: agentId,
+    name: agentName,
+    identity: {
+      id: agentId,
+      name: agentName
+    }
+  };
 
   return (
     <Box sx={{ 
@@ -126,18 +138,17 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
         </Box>
       </Box>
 
-      {/* Embedded Command Center */}
+      {/* Embedded Command Center Interface */}
       <Box sx={{ flex: 1, position: 'relative' }}>
-        <iframe
-          src={commandCenterUrl}
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            backgroundColor: theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff'
-          }}
-          title={`${agentName} Command Center`}
-          allow="clipboard-read; clipboard-write"
+        <EnhancedHostChatInterface
+          chatMessages={chatMessages}
+          selectedChatbot={selectedChatbot}
+          user={currentUser}
+          chatLoading={chatLoading}
+          showLeftPanel={false}
+          showRightPanel={position === 'primary'} // Show right panel only in single mode
+          aiAgents={[]}
+          humanParticipants={[]}
         />
       </Box>
     </Box>
