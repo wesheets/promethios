@@ -226,6 +226,22 @@ export class NavigationService {
   }
 
   /**
+   * Navigate to chatbot management
+   */
+  navigateToChatbotManagement(options: NavigationOptions = {}) {
+    if (this.updateStateCallback) {
+      this.updateStateCallback({
+        view: 'chatbot-management',
+        profile: undefined,
+        agent: undefined,
+        channel: undefined,
+        post: undefined,
+        workflow: undefined
+      }, options.replace);
+    }
+  }
+
+  /**
    * Generate shareable URLs
    */
   generateUrls(entityType: string, entityId: string, view?: string) {

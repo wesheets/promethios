@@ -676,13 +676,34 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             return null;
           })()}
           guestAgents={[]} // Thread-specific: No guest agents to avoid duplication with hostAgent
-          selectedAgents={selectedAgents?.map(agent => agent.id) || []}
+          selectedAgents={(() => {
+            // 🔧 FIX: Ensure host agent is selected by default in thread interface
+            const selectedIds = selectedAgents?.map(agent => agent.id) || [];
+            const hostAgentId = selectedChatbot?.identity?.id || selectedChatbot?.id || selectedChatbot?.key;
+            
+            // If no agents are selected and we have a host agent, select it by default
+            if (selectedIds.length === 0 && hostAgentId) {
+              console.log('🤖 [ThreadView] Auto-selecting host agent:', hostAgentId);
+              return [hostAgentId];
+            }
+            
+            console.log('🤖 [ThreadView] Selected agents:', selectedIds);
+            return selectedIds;
+          })()}
           onAgentSelectionChange={async (agentIds: string[]) => {
+            console.log('🤖 [Thread] Agent selection changed:', agentIds);
+            console.log('🤖 [Thread] Available agents:', availableAgents);
+            console.log('🤖 [Thread] Current reply text:', replyText);
+            console.log('🤖 [Thread] Thread ID:', threadId);
+            
             // Convert agent IDs back to agent objects
             const selectedAgentObjects = (availableAgents || []).filter(agent => 
               agentIds.includes(agent.id)
             );
+            console.log('🤖 [Thread] Selected agent objects:', selectedAgentObjects);
+            
             if (onAgentSelectionChange) {
+              console.log('🤖 [Thread] Calling parent onAgentSelectionChange with:', selectedAgentObjects);
               onAgentSelectionChange(selectedAgentObjects);
             }
             
@@ -718,6 +739,8 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
               } finally {
                 setSending(false);
               }
+            } else if (agentIds.length > 0) {
+              console.log('🤖 [ThreadView] Agent selected but no message text to send');
             }
           }}
           isSharedMode={false} // Threads are not shared mode

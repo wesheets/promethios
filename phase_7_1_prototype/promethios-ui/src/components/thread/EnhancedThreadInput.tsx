@@ -241,7 +241,12 @@ export const EnhancedThreadInput: React.FC<EnhancedThreadInputProps> = ({
                   hostAgent={hostAgent}
                   guestAgents={guestAgents}
                   selectedAgents={selectedAgents}
-                  onSelectionChange={onAgentSelectionChange}
+                  onSelectionChange={(agentIds: string[]) => {
+                    console.log('🎯 [EnhancedThreadInput] AgentAvatarSelector selection changed:', agentIds);
+                    console.log('🎯 [EnhancedThreadInput] Host agent ID:', hostAgent?.id);
+                    console.log('🎯 [EnhancedThreadInput] Calling onAgentSelectionChange with:', agentIds);
+                    onAgentSelectionChange(agentIds);
+                  }}
                   teamMembers={[]} // Thread-specific: no team members in thread context
                   aiAgents={
                     // Thread-specific: Only show the host agent (original message sender)
@@ -250,8 +255,10 @@ export const EnhancedThreadInput: React.FC<EnhancedThreadInputProps> = ({
                       id: hostAgent.id,
                       name: hostAgent.name,
                       avatar: hostAgent.avatar,
-                      type: 'agent' as const,
-                      status: 'active' as const
+                      color: hostAgent.color || '#f97316', // 🔧 FIX: Ensure color is set for highlighting
+                      type: 'ai_agent' as const, // 🔧 FIX: Use correct type
+                      status: 'active' as const,
+                      hotkey: 'c' // Add hotkey for Claude Assistant
                     }] : []
                   }
                   connectionsLoading={false}

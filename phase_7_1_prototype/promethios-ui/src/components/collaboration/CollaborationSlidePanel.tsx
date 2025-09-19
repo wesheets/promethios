@@ -56,6 +56,7 @@ import { NavigationService } from '../../services/NavigationService';
 import { ShareButton } from '../shared/ShareButton';
 import SocialNetworkPanel from '../social/SocialNetworkPanel';
 import WorkflowPanel from '../workflow/WorkflowPanel';
+import ChatbotManagementPanel from './ChatbotManagementPanel';
 import ChannelCreationModal from './ChannelCreationModal';
 import MessageCreationModal from './MessageCreationModal';
 import HumanMessagingPanel from './HumanMessagingPanel';
@@ -193,6 +194,11 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                 openPanel(panelId, 'agent-command-center', `${agentName} Command Center`);
               }
             }
+          }
+          break;
+        case 'chatbot-management':
+          if (!isPanelOpen('chatbot-management')) {
+            openPanel('chatbot-management', 'chatbot-management', 'Chatbot Management');
           }
           break;
         case 'profile':
@@ -1189,76 +1195,111 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                         />
                       </ListItem>
                     ) : (
-                      filterBySearch(aiAgents, ['identity.name', 'name']).map((agent) => {
-                        const agentId = agent.identity?.id || agent.chatbotMetadata?.id || agent.name;
-                        const agentName = agent.identity?.name || 'Unnamed Agent';
-                        const agentAvatar = agent.identity?.avatar || agentName.charAt(0).toUpperCase();
+                      <>
+                        {/* Show first 3 agents */}
+                        {filterBySearch(aiAgents, ['identity.name', 'name']).slice(0, 3).map((agent) => {
+                          const agentId = agent.identity?.id || agent.chatbotMetadata?.id || agent.name;
+                          const agentName = agent.identity?.name || 'Unnamed Agent';
+                          const agentAvatar = agent.identity?.avatar || agentName.charAt(0).toUpperCase();
+                          
+                          return (
+                            <ListItem key={agentId} sx={{ px: 2, py: 0.5 }}>
+                              <ListItemButton
+                                onClick={() => handleAgentClick(agentId, agentName)}
+                                sx={{ 
+                                  px: 1, 
+                                  py: 0.5, 
+                                  borderRadius: 1,
+                                  '&:hover': { bgcolor: '#334155' }
+                                }}
+                              >
+                                <ListItemIcon sx={{ minWidth: 28 }}>
+                                  <Avatar
+                                    sx={{ 
+                                      width: 20, 
+                                      height: 20, 
+                                      fontSize: '0.7rem',
+                                      bgcolor: '#10b981' // Default green for active agents
+                                    }}
+                                  >
+                                    {agentAvatar}
+                                  </Avatar>
+                                </ListItemIcon>
+                                <ListItemText 
+                                  primary={agentName}
+                                  secondary="Command Center"
+                                  primaryTypographyProps={{
+                                    fontSize: '0.8rem',
+                                    color: '#f8fafc'
+                                  }}
+                                  secondaryTypographyProps={{
+                                    fontSize: '0.7rem',
+                                    color: '#94a3b8'
+                                  }}
+                                />
+                                <IconButton
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAgentCommandCenter(agentId, agentName);
+                                  }}
+                                  size="small"
+                                  sx={{ 
+                                    color: '#6366f1',
+                                    mr: 1,
+                                    '&:hover': { bgcolor: '#334155' }
+                                  }}
+                                  title="Open Command Center"
+                                >
+                                  <TerminalIcon sx={{ fontSize: 14 }} />
+                                </IconButton>
+                                <Chip
+                                  label="ACTIVE"
+                                  size="small"
+                                  sx={{
+                                    height: 16,
+                                    fontSize: '0.6rem',
+                                    bgcolor: '#10b981',
+                                    color: 'white',
+                                    '& .MuiChip-label': { px: 1 }
+                                  }}
+                                />
+                              </ListItemButton>
+                            </ListItem>
+                          );
+                        })}
                         
-                        return (
-                          <ListItem key={agentId} sx={{ px: 2, py: 0.5 }}>
+                        {/* Show "See more" button if there are more than 3 agents */}
+                        {filterBySearch(aiAgents, ['identity.name', 'name']).length > 3 && (
+                          <ListItem sx={{ px: 2, py: 0.5 }}>
                             <ListItemButton
-                              onClick={() => handleAgentClick(agentId, agentName)}
+                              onClick={() => {
+                                console.log('🤖 [CollaborationPanel] Opening Chatbot Management Panel');
+                                const navigationService = NavigationService.getInstance();
+                                navigationService.navigateToChatbotManagement();
+                              }}
                               sx={{ 
                                 px: 1, 
                                 py: 0.5, 
                                 borderRadius: 1,
-                                '&:hover': { bgcolor: '#334155' }
+                                opacity: 0.8,
+                                '&:hover': { opacity: 1, bgcolor: '#334155' }
                               }}
                             >
                               <ListItemIcon sx={{ minWidth: 28 }}>
-                                <Avatar
-                                  sx={{ 
-                                    width: 20, 
-                                    height: 20, 
-                                    fontSize: '0.7rem',
-                                    bgcolor: '#10b981' // Default green for active agents
-                                  }}
-                                >
-                                  {agentAvatar}
-                                </Avatar>
+                                <AgentIcon sx={{ color: '#8b5cf6', fontSize: 16 }} />
                               </ListItemIcon>
                               <ListItemText 
-                                primary={agentName}
-                                secondary="Command Center"
+                                primary={`See ${filterBySearch(aiAgents, ['identity.name', 'name']).length - 3} more agents`}
                                 primaryTypographyProps={{
                                   fontSize: '0.8rem',
-                                  color: '#f8fafc'
-                                }}
-                                secondaryTypographyProps={{
-                                  fontSize: '0.7rem',
-                                  color: '#94a3b8'
-                                }}
-                              />
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAgentCommandCenter(agentId, agentName);
-                                }}
-                                size="small"
-                                sx={{ 
-                                  color: '#6366f1',
-                                  mr: 1,
-                                  '&:hover': { bgcolor: '#334155' }
-                                }}
-                                title="Open Command Center"
-                              >
-                                <TerminalIcon sx={{ fontSize: 14 }} />
-                              </IconButton>
-                              <Chip
-                                label="ACTIVE"
-                                size="small"
-                                sx={{
-                                  height: 16,
-                                  fontSize: '0.6rem',
-                                  bgcolor: '#10b981',
-                                  color: 'white',
-                                  '& .MuiChip-label': { px: 1 }
+                                  color: '#8b5cf6',
+                                  fontStyle: 'italic'
                                 }}
                               />
                             </ListItemButton>
                           </ListItem>
-                        );
-                      })
+                        )}
+                      </>
                     )}
                   </List>
                 </Collapse>
@@ -1554,6 +1595,13 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         open={isPanelOpen ? isPanelOpen('workflow') : false}
         onClose={() => closePanel('workflow')}
         width={(isPanelOpen && isPanelOpen('workflow')) ? getPanelWidth('workflow') : '0%'}
+      />
+
+      {/* Chatbot Management Panel */}
+      <ChatbotManagementPanel
+        open={isPanelOpen ? isPanelOpen('chatbot-management') : false}
+        onClose={() => closePanel('chatbot-management')}
+        width={(isPanelOpen && isPanelOpen('chatbot-management')) ? getPanelWidth('chatbot-management') : '0%'}
       />
 
       {/* Channel Creation Modal */}
