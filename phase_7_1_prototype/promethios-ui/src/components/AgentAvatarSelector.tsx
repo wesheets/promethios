@@ -241,11 +241,30 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
         ? (guestAgents || [])
         : hostAgent ? [hostAgent, ...(guestAgents || [])] : (guestAgents || []);
 
+  // Defensive deduplication to prevent duplicate agents
+  const deduplicatedAgents = allAgents.reduce((unique: AgentInfo[], agent: AgentInfo) => {
+    const existingAgent = unique.find(existing => existing.id === agent.id);
+    if (!existingAgent) {
+      unique.push(agent);
+    } else {
+      console.log('🔍 [AgentAvatarSelector] Duplicate agent filtered out:', {
+        duplicateId: agent.id,
+        duplicateName: agent.name,
+        existingName: existingAgent.name
+      });
+    }
+    return unique;
+  }, []);
+
+  // Use deduplicated agents for rendering
+  const finalAgents = deduplicatedAgents;
+
   // Debug logging to see what props are received
   console.log('🔍 [AgentAvatarSelector] Props received:');
   console.log('🔍 [AgentAvatarSelector] isSharedMode:', isSharedMode);
   console.log('🔍 [AgentAvatarSelector] sharedConversationParticipants:', sharedConversationParticipants);
-  console.log('🔍 [AgentAvatarSelector] allAgents:', allAgents);
+  console.log('🔍 [AgentAvatarSelector] allAgents (before dedup):', allAgents);
+  console.log('🔍 [AgentAvatarSelector] finalAgents (after dedup):', finalAgents);
   console.log('🔍 [AgentAvatarSelector] teamMembers:', teamMembers);
   console.log('🔍 [AgentAvatarSelector] teamMembers.length:', teamMembers.length);
   console.log('🔍 [AgentAvatarSelector] aiAgents:', aiAgents);
@@ -441,7 +460,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
   };
 
   // Get current participant IDs for guest selector
-  const currentParticipants = (allAgents || []).map(agent => agent.id);
+  const currentParticipants = (finalAgents || []).map(agent => agent.id);
 
   // Draggable Agent Avatar Component (separate component to avoid hook rule violations)
   const DraggableAgentAvatar: React.FC<{
@@ -796,7 +815,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
       ))}
 
       {/* Agent Avatars with Behavior Prompts */}
-      {(allAgents || []).map((agent) => (
+      {(finalAgents || []).map((agent) => (
         <DraggableAgentAvatar
           key={agent.id}
           agent={agent}

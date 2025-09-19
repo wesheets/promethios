@@ -381,18 +381,36 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
           {messages.map((message, index) => {
             // Get participant color helper function (copied from ChatbotProfilesPageEnhanced)
             const getParticipantColor = (participantId: string, type: 'human' | 'ai') => {
-              const colors = {
-                human: ['#64748b', '#6b7280', '#71717a', '#737373'],
-                ai: ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#06b6d4', '#84cc16']
-              };
+              // Use exact same color system as host chat
+              if (type === 'human') {
+                return '#3b82f6'; // Blue for humans
+              }
               
-              const colorArray = colors[type];
-              const hash = participantId.split('').reduce((a, b) => {
-                a = ((a << 5) - a) + b.charCodeAt(0);
-                return a & a;
-              }, 0);
+              // Agent color palette (exact same as host chat)
+              const agentColorPalette = [
+                '#f97316', // Orange
+                '#8b5cf6', // Purple  
+                '#10b981', // Green
+                '#ec4899', // Pink
+                '#eab308', // Yellow
+                '#06b6d4', // Cyan
+                '#ef4444', // Red
+                '#84cc16', // Lime
+                '#6366f1', // Indigo
+                '#f59e0b', // Amber
+                '#14b8a6', // Teal
+                '#f43f5e'  // Rose
+              ];
               
-              return colorArray[Math.abs(hash) % colorArray.length];
+              // Hash function to generate consistent colors (same as host chat)
+              let hash = 0;
+              for (let i = 0; i < participantId.length; i++) {
+                const char = participantId.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+              }
+              
+              return agentColorPalette[Math.abs(hash) % agentColorPalette.length];
             };
 
             // Determine sender info for shared conversation context
@@ -422,9 +440,39 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                   avatar: message.metadata?.userAvatar
                 };
               } else {
-                // For AI messages, use session or conversation info
-                const agentId = chatSession?.agentId || 'ai-assistant';
-                const agentName = chatSession?.agentName || 'AI Assistant';
+                // For AI messages, improve agent name detection
+                let agentId = chatSession?.agentId || 'ai-assistant';
+                let agentName = chatSession?.agentName || 'AI Assistant';
+                
+                // Try message metadata first
+                if (message.metadata?.agentId) {
+                  agentId = message.metadata.agentId;
+                  agentName = message.metadata.agentName || agentName;
+                }
+                
+                // Try to find agent in chat session participants
+                if (chatSession?.participants?.guests) {
+                  const agent = chatSession.participants.guests.find(g => 
+                    g.type === 'ai_agent' && (g.id === agentId || g.id === message.metadata?.agentId)
+                  );
+                  if (agent) {
+                    agentName = agent.agentConfig?.name || agent.identity?.name || agent.name || agentName;
+                  }
+                }
+                
+                // Fallback: try to identify from message content patterns
+                if (agentName === 'AI Assistant') {
+                  const content = message.content.toLowerCase();
+                  if (content.includes("i'm mark the claude") || content.includes("mark the claude")) {
+                    agentName = 'Mark the Claude';
+                  } else if (content.includes("chatbot-")) {
+                    // Extract agent name from chatbot ID if present
+                    const match = content.match(/chatbot-(\d+)/);
+                    if (match) {
+                      agentName = `Agent ${match[1]}`;
+                    }
+                  }
+                }
                 
                 return {
                   id: agentId,
