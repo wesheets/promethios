@@ -24,7 +24,7 @@ import {
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { firebaseChannelService, CreateChannelRequest } from '../../services/FirebaseChannelService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
-import { connectionService } from '../../services/ConnectionService';
+import { connectionService, Connection } from '../../services/ConnectionService';
 
 interface ChannelCreationModalProps {
   open: boolean;
@@ -102,10 +102,41 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
       console.log('🏢 [ChannelModal] User ID available:', user.uid);
       console.log('🏢 [ChannelModal] Calling connectionService.getUserConnections with:', user.uid);
       
-      // Use the same ConnectionService that the left navigation uses successfully
-      const userConnections = await connectionService.getUserConnections(user.uid);
-      console.log('🏢 [ChannelModal] Found', userConnections.length, 'user connections:', userConnections);
+      const rawConnections = await connectionService.getUserConnections(user.uid);
+      console.log('🏢 [ChannelModal] Found', rawConnections.length, 'raw connections:', rawConnections);
       
+      // Transform Connection objects to UserConnection format
+      const userConnections: UserConnection[] = rawConnections.map(connection => {
+        // Determine which user is the "connected user" (not the current user)
+        const isCurrentUserUser1 = connection.userId1 === user.uid;
+        const connectedUserId = isCurrentUserUser1 ? connection.userId2 : connection.userId1;
+        const connectedUserName = isCurrentUserUser1 ? connection.user2Name : connection.user1Name;
+        const connectedUserAvatar = isCurrentUserUser1 ? connection.user2Avatar : connection.user1Avatar;
+        
+        console.log('🏢 [ChannelModal] Transforming connection:', {
+          connectionId: connection.id,
+          isCurrentUserUser1,
+          connectedUserId,
+          connectedUserName,
+          connectedUserAvatar
+        });
+        
+        return {
+          id: connection.id,
+          userId: user.uid,
+          connectedUserId,
+          connectedUserName: connectedUserName || 'Unknown User',
+          connectedUserAvatar,
+          connectedUserTitle: '', // Not available in Connection data
+          connectedUserCompany: '', // Not available in Connection data
+          status: 'accepted' as const, // Connections are already accepted
+          isOnline: false, // TODO: Add online status logic
+          createdAt: connection.connectedAt,
+          updatedAt: connection.connectedAt
+        };
+      });
+      
+      console.log('🏢 [ChannelModal] Transformed to', userConnections.length, 'user connections:', userConnections);
       setConnections(userConnections);
     } catch (error) {
       console.error('❌ [ChannelModal] Error loading connections:', error);

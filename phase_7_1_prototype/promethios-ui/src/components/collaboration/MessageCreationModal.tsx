@@ -26,7 +26,7 @@ import {
   FiberManualRecord as OnlineIcon
 } from '@mui/icons-material';
 import { firebaseDirectMessageService, UserConnection, CreateDirectMessageRequest } from '../../services/FirebaseDirectMessageService';
-import { connectionService } from '../../services/ConnectionService';
+import { connectionService, Connection } from '../../services/ConnectionService';
 
 interface MessageCreationModalProps {
   open: boolean;
@@ -71,34 +71,64 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
     }
   }, [open, user?.uid]);
 
-  // Reset form when modal closes
-  useEffect(() => {
-    if (!open) {
-      setSelectedConnection(null);
-      setMessage('');
-      setSearchQuery('');
-      setError(null);
-    }
-  }, [open]);
-
   const loadConnections = async () => {
+    if (!user?.uid) {
+      console.log('💬 [MessageModal] No user ID available for loading connections');
+      return;
+    }
+
     try {
       setLoadingConnections(true);
+      setError(null);
+      
       console.log('💬 [MessageModal] Loading connections...');
       console.log('💬 [MessageModal] User object:', user);
-      console.log('💬 [MessageModal] User UID:', user?.uid);
+      console.log('💬 [MessageModal] User UID:', user.uid);
       
-      if (!user?.uid) {
-        console.log('💬 [MessageModal] No user ID available');
+      if (!user.uid) {
+        console.log('💬 [MessageModal] User ID not available');
         setConnections([]);
         return;
       }
       
+      console.log('💬 [MessageModal] User ID available:', user.uid);
       console.log('💬 [MessageModal] Calling connectionService.getUserConnections with:', user.uid);
-      // Use the same ConnectionService that the left navigation uses successfully
-      const userConnections = await connectionService.getUserConnections(user.uid);
-      console.log('💬 [MessageModal] Found', userConnections.length, 'user connections:', userConnections);
       
+      const rawConnections = await connectionService.getUserConnections(user.uid);
+      console.log('💬 [MessageModal] Found', rawConnections.length, 'raw connections:', rawConnections);
+      
+      // Transform Connection objects to UserConnection format
+      const userConnections: UserConnection[] = rawConnections.map(connection => {
+        // Determine which user is the "connected user" (not the current user)
+        const isCurrentUserUser1 = connection.userId1 === user.uid;
+        const connectedUserId = isCurrentUserUser1 ? connection.userId2 : connection.userId1;
+        const connectedUserName = isCurrentUserUser1 ? connection.user2Name : connection.user1Name;
+        const connectedUserAvatar = isCurrentUserUser1 ? connection.user2Avatar : connection.user1Avatar;
+        
+        console.log('💬 [MessageModal] Transforming connection:', {
+          connectionId: connection.id,
+          isCurrentUserUser1,
+          connectedUserId,
+          connectedUserName,
+          connectedUserAvatar
+        });
+        
+        return {
+          id: connection.id,
+          userId: user.uid,
+          connectedUserId,
+          connectedUserName: connectedUserName || 'Unknown User',
+          connectedUserAvatar,
+          connectedUserTitle: '', // Not available in Connection data
+          connectedUserCompany: '', // Not available in Connection data
+          status: 'accepted' as const, // Connections are already accepted
+          isOnline: false, // TODO: Add online status logic
+          createdAt: connection.connectedAt,
+          updatedAt: connection.connectedAt
+        };
+      });
+      
+      console.log('💬 [MessageModal] Transformed to', userConnections.length, 'user connections:', userConnections);
       setConnections(userConnections);
     } catch (error) {
       console.error('❌ [MessageModal] Error loading connections:', error);
@@ -108,6 +138,16 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
       setLoadingConnections(false);
     }
   };
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!open) {
+      setSelectedConnection(null);
+      setMessage('');
+      setSearchQuery('');
+      setError(null);
+    }
+  }, [open]);
 
   const handleConnectionSelect = (connection: UserConnection) => {
     setSelectedConnection(connection);
