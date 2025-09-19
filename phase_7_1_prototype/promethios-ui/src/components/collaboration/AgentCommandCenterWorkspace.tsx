@@ -18,6 +18,7 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useDropTarget } from '../../hooks/useDragDrop';
+import { useAuth } from '../../context/AuthContext';
 
 interface AgentCommandCenterWorkspaceProps {
   agentId: string;
@@ -60,8 +61,11 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
     { agentId, agentName }
   );
 
-  // Construct the actual command center URL with navigation hiding parameters
-  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}&hideNav=true&hideDocker=true`;
+  // Get current user for context passing
+  const { currentUser } = useAuth();
+  
+  // Construct the actual command center URL with navigation hiding parameters and user context
+  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}&hideNav=true&hideDocker=true&userId=${currentUser?.uid || ''}`;
 
   // Inject CSS to hide navigation elements when iframe loads
   useEffect(() => {
