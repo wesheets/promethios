@@ -3,8 +3,9 @@
  * 
  * Features:
  * - Slides from left side with smooth animations
- * - Matches left navigation background color (#1e293b)
- * - Preserves main content area (doesn't take over entire screen)
+ * - Fixed dark header (#161a1f) with spark logo and notification bell
+ * - Scrollable middle content area
+ * - Fixed dark footer (#161a1f) with user profile functionality
  * - Hierarchical organization structure (Work Collaborations > Channels)
  * - General public channels section
  * - Smooth animations and responsive design
@@ -69,6 +70,8 @@ import SocialFeedPage from '../../pages/SocialFeedPage';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
+import NotificationBell from '../notifications/NotificationBell';
+import BottomUserSection from '../navigation/BottomUserSection';
 
 interface CollaborationSlidePanelProps {
   open: boolean;
@@ -479,72 +482,57 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           description: 'General company discussions',
           unreadCount: 3,
           isPrivate: false,
-          memberCount: 45,
-          lastActivity: new Date()
+          lastActivity: new Date(),
+          memberCount: 45
         },
         {
-          id: 'acme-engineering',
-          name: 'engineering',
-          description: 'Engineering team discussions',
-          unreadCount: 7,
-          isPrivate: false,
-          memberCount: 12,
-          lastActivity: new Date()
-        },
-        {
-          id: 'acme-design',
-          name: 'design',
-          description: 'Design team discussions',
+          id: 'acme-dev',
+          name: 'development',
+          description: 'Development team discussions',
           unreadCount: 0,
           isPrivate: true,
-          memberCount: 8,
-          lastActivity: new Date()
-        }
-      ]
-    },
-    {
-      id: 'startup-alpha',
-      name: 'Project Alpha',
-      description: 'Stealth startup project',
-      avatar: 'PA',
-      memberCount: 8,
-      isPrivate: true,
-      channels: [
-        {
-          id: 'alpha-general',
-          name: 'general',
-          description: 'General project discussions',
-          unreadCount: 12,
-          isPrivate: false,
-          memberCount: 8,
-          lastActivity: new Date()
-        },
-        {
-          id: 'alpha-dev',
-          name: 'development',
-          description: 'Development discussions',
-          unreadCount: 5,
-          isPrivate: false,
-          memberCount: 4,
-          lastActivity: new Date()
+          lastActivity: new Date(),
+          memberCount: 12
         }
       ]
     }
   ]);
 
-  const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
+  const [generalChannels] = useState<Channel[]>([
+    {
+      id: 'general-announcements',
+      name: 'announcements',
+      description: 'Platform announcements',
+      unreadCount: 1,
+      isPrivate: false,
+      lastActivity: new Date(),
+      memberCount: 1250
+    },
+    {
+      id: 'general-help',
+      name: 'help',
+      description: 'Get help from the community',
+      unreadCount: 0,
+      isPrivate: false,
+      lastActivity: new Date(),
+      memberCount: 890
+    }
+  ]);
+
+  // State for direct messages and connections
+  const [directMessages, setDirectMessages] = useState<any[]>([]);
+  const [directMessagesLoading, setDirectMessagesLoading] = useState(false);
   const [connections, setConnections] = useState<UserConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
-  const [directMessagesLoading, setDirectMessagesLoading] = useState(false);
 
-  const toggleSection = (sectionId: string) => {
+  // Toggle functions
+  const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
-      [sectionId]: !prev[sectionId]
+      [section]: !prev[section]
     }));
   };
 
-  // Toggle work collaboration expansion
   const toggleWorkCollab = (collabId: string) => {
     setExpandedWorkCollabs(prev => ({
       ...prev,
@@ -554,46 +542,34 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
   // Handle channel click
   const handleChannelClick = (channelId: string, channelName: string) => {
-    console.log('Opening channel:', channelId, channelName);
-    const navigationService = NavigationService.getInstance();
-    navigationService.navigateToChannel(channelId);
+    console.log('🔗 [CollaborationPanel] Channel clicked:', channelId, channelName);
+    // TODO: Implement channel navigation
   };
 
-  // Handle direct message click - Open standalone chat interface
-  const handleDirectMessageClick = (userId: string, userName: string) => {
-    console.log('💬 [CollaborationPanel] Opening standalone DM chat with:', userId, userName);
+  // Handle direct message click
+  const handleDirectMessageClick = (messageId: string, participantName: string) => {
+    console.log('💬 [CollaborationPanel] Direct message clicked:', messageId, participantName);
     
-    // Set up the conversation for messaging panel (similar to handleMessageCreated)
+    // Set up the conversation for messaging panel
     setCurrentConversation({
       type: 'direct_message',
-      id: userId,
-      name: userName,
+      id: messageId,
+      name: participantName,
       participants: [{
-        id: userId,
-        name: userName,
-        isOnline: true // Could be enhanced with real online status
+        id: messageId,
+        name: participantName,
+        isOnline: true
       }]
     });
     
     // Open messaging panel using panel manager
-    openPanel(`messaging-${userId}`, 'messaging', userName);
+    openPanel(`messaging-${messageId}`, 'messaging', participantName);
     setMessagingPanelOpen(true);
   };
 
-  // Handle AI agent click - Open Command Center as slide-out drawer
+  // Handle agent click
   const handleAgentClick = (agentId: string, agentName: string) => {
-    console.log('🤖 [CollaborationPanel] Opening Command Center drawer for agent:', agentId, agentName);
-    
-    // Use navigation service to navigate to agent command center (embedded drawer)
-    const navigationService = NavigationService.getInstance();
-    navigationService.navigateToAgentCommandCenter(agentId);
-  };
-
-  // Handle AI agent Command Center button click - Open embedded Command Center
-  const handleAgentCommandCenter = (agentId: string, agentName: string) => {
-    console.log('🤝 [CollaborationPanel] Opening agent command center for:', agentName, agentId);
-    
-    // Use navigation service to open agent command center in embedded panel
+    console.log('🤖 [CollaborationPanel] Agent clicked:', agentId, agentName);
     const navigationService = NavigationService.getInstance();
     navigationService.navigateToAgentCommandCenter(agentId);
   };
@@ -703,27 +679,45 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           }}
         >
           <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Header */}
+            {/* Fixed Header with Spark Logo and Notification Bell */}
             <Box sx={{ 
               p: 2, 
+              bgcolor: '#161a1f',
               borderBottom: '1px solid #334155',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              minHeight: '60px'
             }}>
-              <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 600 }}>
-                Collaborations
-              </Typography>
-              <IconButton 
-                onClick={onClose}
-                size="small"
-                sx={{ 
-                  color: '#cbd5e1',
-                  '&:hover': { bgcolor: '#334155' }
-                }}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
+              {/* Spark Logo */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <img 
+                  src="/embossflame.png" 
+                  alt="Promethios" 
+                  style={{ 
+                    width: '32px', 
+                    height: '32px',
+                    objectFit: 'contain'
+                  }} 
+                />
+              </Box>
+              
+              {/* Right side with Notification Bell and Close */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {/* Notification Bell */}
+                <NotificationBell collapsed={false} />
+                
+                <IconButton 
+                  onClick={onClose}
+                  size="small"
+                  sx={{ 
+                    color: '#cbd5e1',
+                    '&:hover': { bgcolor: '#334155' }
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
             </Box>
 
             {/* Search */}
@@ -760,7 +754,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
               />
             </Box>
 
-            {/* Content */}
+            {/* Scrollable Content */}
             <Box sx={{ flex: 1, overflow: 'auto' }}>
               <List sx={{ py: 0 }}>
                 {/* Work Collaborations */}
@@ -892,8 +886,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                                   px: 1, 
                                   py: 0.25, 
                                   borderRadius: 1,
-                                  opacity: 0.7,
-                                  '&:hover': { opacity: 1, bgcolor: '#334155' }
+                                  '&:hover': { bgcolor: '#334155' }
                                 }}
                               >
                                 <ListItemIcon sx={{ minWidth: 24 }}>
@@ -904,7 +897,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                                   primaryTypographyProps={{
                                     fontSize: '0.75rem',
                                     color: '#10b981',
-                                    fontStyle: 'italic'
+                                    fontWeight: 500
                                   }}
                                 />
                               </ListItemButton>
@@ -930,7 +923,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 32 }}>
-                      <SocialIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
+                      <ChannelIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
                     </ListItemIcon>
                     <ListItemText 
                       primary="General Channels"
@@ -949,13 +942,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
                 <Collapse in={expandedSections.generalChannels} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding sx={{ pl: 2 }}>
-                    {/* Public General Channels */}
-                    {[
-                      { id: 'general-announcements', name: 'announcements', description: 'Platform announcements', unreadCount: 2, memberCount: 1250 },
-                      { id: 'general-help', name: 'help', description: 'Get help from the community', unreadCount: 0, memberCount: 890 },
-                      { id: 'general-feedback', name: 'feedback', description: 'Share your feedback', unreadCount: 5, memberCount: 456 },
-                      { id: 'general-random', name: 'random', description: 'Random discussions', unreadCount: 12, memberCount: 678 }
-                    ].map((channel) => (
+                    {filterBySearch(generalChannels, ['name', 'description']).map((channel) => (
                       <ListItem key={channel.id} sx={{ px: 2, py: 0.25 }}>
                         <ListItemButton
                           onClick={() => handleChannelClick(channel.id, channel.name)}
@@ -1292,52 +1279,38 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                               >
                                 <ListItemIcon sx={{ minWidth: 28 }}>
                                   <Avatar
+                                    src={typeof agentAvatar === 'string' && agentAvatar.startsWith('http') ? agentAvatar : undefined}
                                     sx={{ 
                                       width: 20, 
                                       height: 20, 
                                       fontSize: '0.7rem',
-                                      bgcolor: '#10b981' // Default green for active agents
+                                      bgcolor: '#8b5cf6'
                                     }}
                                   >
-                                    {agentAvatar}
+                                    {typeof agentAvatar === 'string' && !agentAvatar.startsWith('http') ? agentAvatar : agentName.charAt(0).toUpperCase()}
                                   </Avatar>
                                 </ListItemIcon>
                                 <ListItemText 
                                   primary={agentName}
-                                  secondary="Command Center"
+                                  secondary={agent.chatbotMetadata?.isActive ? 'Active' : 'Inactive'}
                                   primaryTypographyProps={{
                                     fontSize: '0.8rem',
                                     color: '#f8fafc'
                                   }}
                                   secondaryTypographyProps={{
                                     fontSize: '0.7rem',
-                                    color: '#94a3b8'
+                                    color: agent.chatbotMetadata?.isActive ? '#10b981' : '#94a3b8'
                                   }}
                                 />
-                                <IconButton
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAgentCommandCenter(agentId, agentName);
-                                  }}
-                                  size="small"
-                                  sx={{ 
-                                    color: '#6366f1',
-                                    mr: 1,
-                                    '&:hover': { bgcolor: '#334155' }
-                                  }}
-                                  title="Open Command Center"
-                                >
-                                  <TerminalIcon sx={{ fontSize: 14 }} />
-                                </IconButton>
                                 <Chip
-                                  label="ACTIVE"
                                   size="small"
+                                  label={agent.chatbotMetadata?.isActive ? 'Active' : 'Inactive'}
                                   sx={{
                                     height: 16,
                                     fontSize: '0.6rem',
-                                    bgcolor: '#10b981',
-                                    color: 'white',
-                                    '& .MuiChip-label': { px: 1 }
+                                    bgcolor: agent.chatbotMetadata?.isActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.2)',
+                                    color: agent.chatbotMetadata?.isActive ? '#10b981' : '#94a3b8',
+                                    border: `1px solid ${agent.chatbotMetadata?.isActive ? '#10b981' : '#94a3b8'}`
                                   }}
                                 />
                               </ListItemButton>
@@ -1345,31 +1318,27 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                           );
                         })}
                         
-                        {/* Show "See more" button if there are more than 3 agents */}
-                        {filterBySearch(aiAgents, ['identity.name', 'name']).length > 3 && (
+                        {/* Show "View All" if more than 3 agents */}
+                        {aiAgents.length > 3 && (
                           <ListItem sx={{ px: 2, py: 0.5 }}>
                             <ListItemButton
                               onClick={() => {
-                                console.log('🤖 [CollaborationPanel] Opening Chatbot Management Panel');
-                                const navigationService = NavigationService.getInstance();
-                                navigationService.navigateToChatbotManagement();
+                                console.log('🤖 [CollaborationPanel] Opening Chatbot Management panel');
+                                openPanel('chatbot-management', 'chatbot-management', 'Chatbot Management');
                               }}
                               sx={{ 
                                 px: 1, 
                                 py: 0.5, 
                                 borderRadius: 1,
-                                opacity: 0.8,
+                                opacity: 0.7,
                                 '&:hover': { opacity: 1, bgcolor: '#334155' }
                               }}
                             >
-                              <ListItemIcon sx={{ minWidth: 28 }}>
-                                <AgentIcon sx={{ color: '#8b5cf6', fontSize: 16 }} />
-                              </ListItemIcon>
                               <ListItemText 
-                                primary={`See ${filterBySearch(aiAgents, ['identity.name', 'name']).length - 3} more agents`}
+                                primary={`View all ${aiAgents.length} agents`}
                                 primaryTypographyProps={{
                                   fontSize: '0.8rem',
-                                  color: '#8b5cf6',
+                                  color: '#6366f1',
                                   fontStyle: 'italic'
                                 }}
                               />
@@ -1484,177 +1453,189 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                     )}
                   </List>
                 </Collapse>
+
+                {/* Social Network Button */}
+                <Box sx={{ mt: 2, px: 2 }}>
+                  <Divider sx={{ bgcolor: '#334155', mb: 2 }} />
+                  <ListItemButton
+                    onClick={handleSocialToggle}
+                    sx={{
+                      borderRadius: 1,
+                      bgcolor: (isPanelOpen && isPanelOpen('social')) ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)',
+                      border: (isPanelOpen && isPanelOpen('social')) ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid rgba(99, 102, 241, 0.3)',
+                      '&:hover': {
+                        bgcolor: 'rgba(99, 102, 241, 0.2)',
+                        border: '1px solid rgba(99, 102, 241, 0.5)'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <SocialIcon sx={{ color: '#6366f1', fontSize: '1.2rem' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Social"
+                      secondary="Professional Network"
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 600,
+                        color: '#6366f1'
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                        color: '#94a3b8'
+                      }}
+                    />
+                    <ShareButton
+                      onShare={() => {
+                        const navigationService = NavigationService.getInstance();
+                        return navigationService.getShareableUrl('social');
+                      }}
+                      title="Professional Network"
+                      description="Connect with professionals and expand your network"
+                    />
+                  </ListItemButton>
+
+                  {/* AI Agent Workflows Button */}
+                  <ListItemButton
+                    onClick={handleWorkflowToggle}
+                    sx={{
+                      borderRadius: 1,
+                      mt: 1,
+                      bgcolor: (isPanelOpen && isPanelOpen('workflow')) ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+                      border: (isPanelOpen && isPanelOpen('workflow')) ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(16, 185, 129, 0.3)',
+                      '&:hover': {
+                        bgcolor: 'rgba(16, 185, 129, 0.2)',
+                        border: '1px solid rgba(16, 185, 129, 0.5)'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <AccountTreeIcon sx={{ color: '#10b981', fontSize: '1.2rem' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Workflows"
+                      secondary="AI Agent Automation"
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 600,
+                        color: '#10b981'
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                        color: '#94a3b8'
+                      }}
+                    />
+                    <ShareButton
+                      onShare={() => {
+                        const navigationService = NavigationService.getInstance();
+                        return navigationService.getShareableUrl('workflow');
+                      }}
+                      title="AI Agent Workflows"
+                      description="Automate tasks with intelligent AI agent workflows"
+                    />
+                  </ListItemButton>
+
+                  {/* Talent Hub Button */}
+                  <ListItemButton
+                    onClick={() => {
+                      console.log('🔧 [CollaborationPanel] Opening Talent Hub panel');
+                      const navigationService = NavigationService.getInstance();
+                      navigationService.navigateToTalentHub();
+                    }}
+                    sx={{
+                      borderRadius: 1,
+                      mt: 1,
+                      bgcolor: 'rgba(245, 158, 11, 0.1)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      '&:hover': {
+                        bgcolor: 'rgba(245, 158, 11, 0.2)',
+                        border: '1px solid rgba(245, 158, 11, 0.5)'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <PersonIcon sx={{ color: '#f59e0b', fontSize: '1.2rem' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Talent Hub"
+                      secondary="Hire Agent Developers"
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 600,
+                        color: '#f59e0b'
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                        color: '#94a3b8'
+                      }}
+                    />
+                    <ShareButton
+                      onShare={() => {
+                        const navigationService = NavigationService.getInstance();
+                        return navigationService.getShareableUrl('talent-hub');
+                      }}
+                      title="Talent Hub"
+                      description="Find and hire top talent for your projects"
+                    />
+                  </ListItemButton>
+
+                  {/* Marketplace Button */}
+                  <ListItemButton
+                    onClick={() => {
+                      console.log('🛒 [CollaborationPanel] Opening Marketplace panel');
+                      const navigationService = NavigationService.getInstance();
+                      navigationService.navigateToMarketplace();
+                    }}
+                    sx={{
+                      borderRadius: 1,
+                      mt: 1,
+                      bgcolor: 'rgba(168, 85, 247, 0.1)',
+                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                      '&:hover': {
+                        bgcolor: 'rgba(168, 85, 247, 0.2)',
+                        border: '1px solid rgba(168, 85, 247, 0.5)'
+                      }
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>
+                      <StorefrontIcon sx={{ color: '#a855f7', fontSize: '1.2rem' }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Marketplace"
+                      secondary="Buy & Sell Agents"
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 600,
+                        color: '#a855f7'
+                      }}
+                      secondaryTypographyProps={{
+                        variant: 'caption',
+                        color: '#94a3b8'
+                      }}
+                    />
+                    <ShareButton
+                      onShare={() => {
+                        const navigationService = NavigationService.getInstance();
+                        return navigationService.getShareableUrl('marketplace');
+                      }}
+                      title="Marketplace"
+                      description="Browse and purchase professional services"
+                    />
+                  </ListItemButton>
+                </Box>
               </List>
+            </Box>
 
-              {/* Social Network Button */}
-              <Box sx={{ mt: 2, px: 2 }}>
-                <Divider sx={{ bgcolor: '#334155', mb: 2 }} />
-                <ListItemButton
-                  onClick={handleSocialToggle}
-                  sx={{
-                    borderRadius: 1,
-                    bgcolor: (isPanelOpen && isPanelOpen('social')) ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)',
-                    border: (isPanelOpen && isPanelOpen('social')) ? '1px solid rgba(99, 102, 241, 0.5)' : '1px solid rgba(99, 102, 241, 0.3)',
-                    '&:hover': {
-                      bgcolor: 'rgba(99, 102, 241, 0.2)',
-                      border: '1px solid rgba(99, 102, 241, 0.5)'
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <SocialIcon sx={{ color: '#6366f1', fontSize: '1.2rem' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Social"
-                    secondary="Professional Network"
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 600,
-                      color: '#6366f1'
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'caption',
-                      color: '#94a3b8'
-                    }}
-                  />
-                  <ShareButton
-                    onShare={() => {
-                      const navigationService = NavigationService.getInstance();
-                      return navigationService.getShareableUrl('social');
-                    }}
-                    title="Professional Network"
-                    description="Connect with professionals and expand your network"
-                  />
-                </ListItemButton>
-
-                {/* AI Agent Workflows Button */}
-                <ListItemButton
-                  onClick={handleWorkflowToggle}
-                  sx={{
-                    borderRadius: 1,
-                    mt: 1,
-                    bgcolor: (isPanelOpen && isPanelOpen('workflow')) ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
-                    border: (isPanelOpen && isPanelOpen('workflow')) ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(16, 185, 129, 0.3)',
-                    '&:hover': {
-                      bgcolor: 'rgba(16, 185, 129, 0.2)',
-                      border: '1px solid rgba(16, 185, 129, 0.5)'
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <AccountTreeIcon sx={{ color: '#10b981', fontSize: '1.2rem' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Workflows"
-                    secondary="AI Agent Automation"
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 600,
-                      color: '#10b981'
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'caption',
-                      color: '#94a3b8'
-                    }}
-                  />
-                  <ShareButton
-                    onShare={() => {
-                      const navigationService = NavigationService.getInstance();
-                      return navigationService.getShareableUrl('workflow');
-                    }}
-                    title="AI Agent Workflows"
-                    description="Automate tasks with intelligent AI agent workflows"
-                  />
-                </ListItemButton>
-
-                {/* Talent Hub Button */}
-                <ListItemButton
-                  onClick={() => {
-                    console.log('🔧 [CollaborationPanel] Opening Talent Hub panel');
-                    const navigationService = NavigationService.getInstance();
-                    navigationService.navigateToTalentHub();
-                  }}
-                  sx={{
-                    borderRadius: 1,
-                    mt: 1,
-                    bgcolor: 'rgba(245, 158, 11, 0.1)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    '&:hover': {
-                      bgcolor: 'rgba(245, 158, 11, 0.2)',
-                      border: '1px solid rgba(245, 158, 11, 0.5)'
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <PersonIcon sx={{ color: '#f59e0b', fontSize: '1.2rem' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Talent Hub"
-                    secondary="Hire Agent Developers"
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 600,
-                      color: '#f59e0b'
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'caption',
-                      color: '#94a3b8'
-                    }}
-                  />
-                  <ShareButton
-                    onShare={() => {
-                      const navigationService = NavigationService.getInstance();
-                      return navigationService.getShareableUrl('talent-hub');
-                    }}
-                    title="Talent Hub"
-                    description="Find and hire top talent for your projects"
-                  />
-                </ListItemButton>
-
-                {/* Marketplace Button */}
-                <ListItemButton
-                  onClick={() => {
-                    console.log('🛒 [CollaborationPanel] Opening Marketplace panel');
-                    const navigationService = NavigationService.getInstance();
-                    navigationService.navigateToMarketplace();
-                  }}
-                  sx={{
-                    borderRadius: 1,
-                    mt: 1,
-                    bgcolor: 'rgba(168, 85, 247, 0.1)',
-                    border: '1px solid rgba(168, 85, 247, 0.3)',
-                    '&:hover': {
-                      bgcolor: 'rgba(168, 85, 247, 0.2)',
-                      border: '1px solid rgba(168, 85, 247, 0.5)'
-                    }
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>
-                    <StorefrontIcon sx={{ color: '#a855f7', fontSize: '1.2rem' }} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Marketplace"
-                    secondary="Buy & Sell Agents"
-                    primaryTypographyProps={{
-                      variant: 'body2',
-                      fontWeight: 600,
-                      color: '#a855f7'
-                    }}
-                    secondaryTypographyProps={{
-                      variant: 'caption',
-                      color: '#94a3b8'
-                    }}
-                  />
-                  <ShareButton
-                    onShare={() => {
-                      const navigationService = NavigationService.getInstance();
-                      return navigationService.getShareableUrl('marketplace');
-                    }}
-                    title="Marketplace"
-                    description="Browse and purchase professional services"
-                  />
-                </ListItemButton>
-              </Box>
+            {/* Fixed Footer with User Profile */}
+            <Box sx={{ 
+              bgcolor: '#161a1f',
+              borderTop: '1px solid #334155',
+              p: 0
+            }}>
+              <BottomUserSection 
+                collapsed={false} 
+                onNavigate={(path) => console.log('Navigate to:', path)} 
+              />
             </Box>
           </Box>
         </Box>
@@ -1811,4 +1792,3 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 };
 
 export default CollaborationSlidePanel;
-
