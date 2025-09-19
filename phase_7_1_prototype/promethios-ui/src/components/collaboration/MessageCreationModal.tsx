@@ -57,12 +57,15 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user connections when modal opens
+  // Load user connections when modal opens and user is available
   useEffect(() => {
-    if (open) {
+    if (open && user?.uid) {
+      console.log('💬 [MessageModal] Modal opened with user:', user.uid);
       loadConnections();
+    } else if (open && !user?.uid) {
+      console.log('💬 [MessageModal] Modal opened but no user available yet');
     }
-  }, [open]);
+  }, [open, user?.uid]);
 
   // Reset form when modal closes
   useEffect(() => {

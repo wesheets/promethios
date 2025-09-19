@@ -51,6 +51,7 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
   organizationName,
   onChannelCreated
 }) => {
+  const { user } = useAuth();
   const [channelName, setChannelName] = useState('');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -60,12 +61,15 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user connections when modal opens
+  // Load user connections when modal opens and user is available
   useEffect(() => {
-    if (open) {
+    if (open && user?.uid) {
+      console.log('🏢 [ChannelModal] Modal opened with user:', user.uid);
       loadConnections();
+    } else if (open && !user?.uid) {
+      console.log('🏢 [ChannelModal] Modal opened but no user available yet');
     }
-  }, [open]);
+  }, [open, user?.uid]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -81,12 +85,15 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
   const loadConnections = async () => {
     try {
       setLoadingConnections(true);
+      console.log('🏢 [ChannelModal] Loading connections...');
       
       if (!user?.uid) {
         console.log('🏢 [ChannelModal] No user ID available');
         setConnections([]);
         return;
       }
+      
+      console.log('🏢 [ChannelModal] User ID available:', user.uid);
       
       // Use the same ConnectionService that the left navigation uses successfully
       const userConnections = await connectionService.getUserConnections(user.uid);
