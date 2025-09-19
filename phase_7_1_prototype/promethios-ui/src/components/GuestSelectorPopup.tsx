@@ -164,8 +164,12 @@ const GuestSelectorPopup: React.FC<GuestSelectorPopupProps> = ({
   // Filter members based on search query and exclude current participants
   const filterMembers = (members: TeamMember[]) => {
     return members.filter(member => {
-      const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           member.role?.toLowerCase().includes(searchQuery.toLowerCase());
+      const memberName = member.name || '';
+      const memberRole = member.role || '';
+      const searchLower = searchQuery.toLowerCase();
+      
+      const matchesSearch = memberName.toLowerCase().includes(searchLower) ||
+                           memberRole.toLowerCase().includes(searchLower);
       const notCurrentParticipant = !currentParticipants.includes(member.id);
       return matchesSearch && notCurrentParticipant;
     });
