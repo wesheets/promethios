@@ -88,6 +88,9 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
     try {
       setLoadingConnections(true);
       console.log('🏢 [ChannelModal] Loading connections...');
+      console.log('🏢 [ChannelModal] Auth loading state:', authLoading);
+      console.log('🏢 [ChannelModal] User object:', user);
+      console.log('🏢 [ChannelModal] User UID:', user?.uid);
       
       if (!user?.uid) {
         console.log('🏢 [ChannelModal] No user ID available');
@@ -96,14 +99,15 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
       }
       
       console.log('🏢 [ChannelModal] User ID available:', user.uid);
+      console.log('🏢 [ChannelModal] Calling connectionService.getUserConnections with:', user.uid);
       
       // Use the same ConnectionService that the left navigation uses successfully
       const userConnections = await connectionService.getUserConnections(user.uid);
-      console.log('🏢 [ChannelModal] Found', userConnections.length, 'user connections');
+      console.log('🏢 [ChannelModal] Found', userConnections.length, 'user connections:', userConnections);
       
       setConnections(userConnections);
     } catch (error) {
-      console.error('Error loading connections:', error);
+      console.error('❌ [ChannelModal] Error loading connections:', error);
       setError('Failed to load connections');
     } finally {
       setLoadingConnections(false);

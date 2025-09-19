@@ -83,6 +83,9 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
     try {
       setLoadingConnections(true);
       console.log('💬 [MessageModal] Loading connections...');
+      console.log('💬 [MessageModal] Auth loading state:', authLoading);
+      console.log('💬 [MessageModal] User object:', user);
+      console.log('💬 [MessageModal] User UID:', user?.uid);
       
       if (!user?.uid) {
         console.log('💬 [MessageModal] No user ID available');
@@ -90,9 +93,10 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
         return;
       }
       
+      console.log('💬 [MessageModal] Calling connectionService.getUserConnections with:', user.uid);
       // Use the same ConnectionService that the left navigation uses successfully
       const userConnections = await connectionService.getUserConnections(user.uid);
-      console.log('💬 [MessageModal] Found', userConnections.length, 'user connections');
+      console.log('💬 [MessageModal] Found', userConnections.length, 'user connections:', userConnections);
       
       setConnections(userConnections);
     } catch (error) {
