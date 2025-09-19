@@ -6774,19 +6774,13 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           const hostChatSession = loadedHostChatSession;
                                           const participants = [];
                                           
-                                          // Add host agent if it exists
-                                          if (hostChatSession.agentId) {
-                                            participants.push({
-                                              id: hostChatSession.agentId,
-                                              name: hostChatSession.agentName || 'Host Agent',
-                                              type: 'ai_agent' as const,
-                                              avatar: hostChatSession.agentAvatar || undefined,
-                                              status: 'active'
-                                            });
-                                          }
+                                          // DON'T add host agent here - it's already provided via hostAgent prop to avoid duplicates
+                                          // The AgentAvatarSelector will handle the host agent separately
                                           
-                                          // Add guest agents
-                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => g.type === 'ai_agent') || [];
+                                          // Add only guest agents (excluding host agent to prevent duplicates)
+                                          const guestAgents = hostChatSession.participants?.guests?.filter(g => 
+                                            g.type === 'ai_agent' && g.id !== hostChatSession.agentId
+                                          ) || [];
                                           participants.push(...guestAgents.map(agent => {
                                             // Debug logging to see agent data structure
                                             console.log('🔍 [UnifiedParticipants] Guest agent data:', agent);
@@ -6806,7 +6800,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                             };
                                           }));
                                           
-                                          console.log('🔍 [UnifiedParticipants] Final unified participants:', participants);
+                                          console.log('🔍 [UnifiedParticipants] Final unified participants (excluding host):', participants);
                                           return participants;
                                         }
                                         return [];

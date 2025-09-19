@@ -292,10 +292,42 @@ class UnifiedGuestChatService {
         conversationId
       });
       
-      // Use the chat history service to subscribe to the host's conversation
-      const unsubscribe = chatHistoryService.subscribeToSession(conversationId, async (session) => {
-        if (session) {
+      // Use Firebase onSnapshot to listen to the host's chat session document
+      const chatSessionRef = doc(db, 'chatSessions', conversationId);
+      
+      const unsubscribe = onSnapshot(chatSessionRef, async (docSnapshot) => {
+        if (docSnapshot.exists()) {
           console.log('🔄 [UnifiedGuestChat] Host conversation updated via real-time listener');
+          
+          // Convert Firestore document to ChatSession format
+          const data = docSnapshot.data();
+          const session: ChatSession = {
+            id: docSnapshot.id,
+            name: data.name || 'Shared Conversation',
+            agentId: data.agentId || '',
+            agentName: data.agentName || 'AI Assistant',
+            agentAvatar: data.agentAvatar,
+            userId: data.userId || hostUserId,
+            messages: data.messages || [],
+            createdAt: data.createdAt?.toDate() || new Date(),
+            lastUpdated: data.lastUpdated?.toDate() || new Date(),
+            messageCount: data.messageCount || 0,
+            isShared: data.isShared || false,
+            shareableId: data.shareableId,
+            participants: data.participants || { host: null, guests: [] },
+            governanceMetrics: data.governanceMetrics || {
+              overallTrustScore: 100,
+              totalViolations: 0,
+              averageResponseTime: 0,
+              sessionIntegrity: true
+            },
+            metadata: data.metadata || {
+              tags: [],
+              keyTopics: [],
+              lastActivity: new Date(),
+              isMultiAgent: false
+            }
+          };
           
           // Ensure host agent is in participants and discover additional agents
           await this.ensureHostAgentInParticipants(session);
@@ -303,8 +335,12 @@ class UnifiedGuestChatService {
           
           callback(session);
         } else {
+          console.log('🔄 [UnifiedGuestChat] Host conversation document does not exist');
           callback(null);
         }
+      }, (error) => {
+        console.error('❌ [UnifiedGuestChat] Error in real-time listener:', error);
+        callback(null);
       });
       
       console.log('✅ [UnifiedGuestChat] Real-time listener established');
