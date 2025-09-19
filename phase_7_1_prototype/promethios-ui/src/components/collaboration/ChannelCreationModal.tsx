@@ -51,7 +51,7 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
   organizationName,
   onChannelCreated
 }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [channelName, setChannelName] = useState('');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -63,13 +63,15 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
 
   // Load user connections when modal opens and user is available
   useEffect(() => {
-    if (open && user?.uid) {
+    if (open && !authLoading && user?.uid) {
       console.log('🏢 [ChannelModal] Modal opened with user:', user.uid);
       loadConnections();
-    } else if (open && !user?.uid) {
-      console.log('🏢 [ChannelModal] Modal opened but no user available yet');
+    } else if (open && authLoading) {
+      console.log('🏢 [ChannelModal] Modal opened but auth still loading...');
+    } else if (open && !authLoading && !user?.uid) {
+      console.log('🏢 [ChannelModal] Modal opened but no user available after auth loaded');
     }
-  }, [open, user?.uid]);
+  }, [open, user?.uid, authLoading]);
 
   // Reset form when modal closes
   useEffect(() => {

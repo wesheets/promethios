@@ -48,7 +48,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   onClose,
   onMessageCreated
 }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [selectedConnection, setSelectedConnection] = useState<UserConnection | null>(null);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,13 +59,15 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
 
   // Load user connections when modal opens and user is available
   useEffect(() => {
-    if (open && user?.uid) {
+    if (open && !authLoading && user?.uid) {
       console.log('💬 [MessageModal] Modal opened with user:', user.uid);
       loadConnections();
-    } else if (open && !user?.uid) {
-      console.log('💬 [MessageModal] Modal opened but no user available yet');
+    } else if (open && authLoading) {
+      console.log('💬 [MessageModal] Modal opened but auth still loading...');
+    } else if (open && !authLoading && !user?.uid) {
+      console.log('💬 [MessageModal] Modal opened but no user available after auth loaded');
     }
-  }, [open, user?.uid]);
+  }, [open, user?.uid, authLoading]);
 
   // Reset form when modal closes
   useEffect(() => {
