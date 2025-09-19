@@ -123,8 +123,8 @@ import CollaborationSlidePanel from './collaboration/CollaborationSlidePanel';
 import BottomUserSection from './navigation/BottomUserSection';
 import { usePanelManager } from '../context/PanelManagerContext';
 
-const DRAWER_WIDTH = 260;
-const DRAWER_WIDTH_COLLAPSED = 60;
+const DRAWER_WIDTH = 0;
+const DRAWER_WIDTH_COLLAPSED = 0;
 
 // Create a dark theme specifically for the navigation
 const navigationDarkTheme = createTheme({

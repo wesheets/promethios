@@ -417,6 +417,18 @@ const BottomUserSection: React.FC<BottomUserSectionProps> = ({
           </List>
         </Collapse>
 
+        {/* Admin Section - Only show for admin users */}
+        {currentUser?.email === 'admin@promethios.ai' && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => onNavigate('/ui/admin/dashboard')}>
+              <ListItemIcon sx={{ color: 'text.primary' }}>
+                <SettingsIcon />
+              </ListItemIcon>
+              <ListItemText primary="Admin" sx={{ color: 'text.primary' }} />
+            </ListItemButton>
+          </ListItem>
+        )}
+
         {/* Logout */}
         <ListItem disablePadding>
           <ListItemButton onClick={handleLogout}>

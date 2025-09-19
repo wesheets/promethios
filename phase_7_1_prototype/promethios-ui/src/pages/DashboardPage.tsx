@@ -25,10 +25,10 @@ const DashboardPage: React.FC = () => {
       {/* Centered Spark Text Logo */}
       <Box
         component="img"
-        src="/sparkbackground.png"
-        alt="Spark"
+        src="/flamelogonewbackground.png"
+        alt="Flame Logo"
         sx={{
-          width: '300px',
+          width: '200px',
           height: 'auto',
           objectFit: 'contain',
           opacity: 0.8,

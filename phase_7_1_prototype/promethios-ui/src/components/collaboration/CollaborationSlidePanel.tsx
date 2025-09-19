@@ -683,7 +683,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
             {/* Fixed Header with Spark Logo and Notification Bell */}
             <Box sx={{ 
               p: 2, 
-              bgcolor: '#3b82f6',
+              bgcolor: '#1e293b',
               borderBottom: '1px solid #334155',
               display: 'flex',
               alignItems: 'center',
@@ -720,7 +720,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                   openPanel('quick-start', 'quick-start-iframe', 'Quick Start');
                 }}
                 sx={{
-                  bgcolor: '#3b82f6',
+                  bgcolor: '#1e293b',
                   color: 'white',
                   py: 1.5,
                   borderRadius: 2,
@@ -1657,7 +1657,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
             {/* Fixed Footer with User Profile */}
             <Box sx={{ 
-              bgcolor: '#3b82f6',
+              bgcolor: '#1e293b',
               borderTop: '1px solid #334155',
               p: 0
             }}>
