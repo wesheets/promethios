@@ -703,21 +703,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                 />
               </Box>
               
-              {/* Right side with Notification Bell and Close */}
+              {/* Right side with Notification Bell */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 {/* Notification Bell */}
                 <NotificationBell collapsed={false} />
-                
-                <IconButton 
-                  onClick={onClose}
-                  size="small"
-                  sx={{ 
-                    color: '#cbd5e1',
-                    '&:hover': { bgcolor: '#334155' }
-                  }}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
               </Box>
             </Box>
 

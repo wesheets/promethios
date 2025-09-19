@@ -188,6 +188,13 @@ const CollapsibleNavigationEnhanced: React.FC<CollapsibleNavigationEnhancedProps
   const { preferences, updateNavigationState } = useUserPreferences();
   const { currentUser } = useAuth();
   const { openPanel, closePanel, isPanelOpen } = usePanelManager();
+
+  // Auto-open collaboration panel on component mount
+  React.useEffect(() => {
+    if (currentUser && !isPanelOpen('collaboration')) {
+      openPanel('collaboration', 'collaboration', 'Team Collaborations');
+    }
+  }, [currentUser, openPanel, isPanelOpen]);
   const [expandedSections, setExpandedSections] = useState<string[]>(['multi-agent-systems']); // Expand MAS by default
   const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
   const navigate = useNavigate();
