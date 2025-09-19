@@ -542,11 +542,25 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     navigationService.navigateToChannel(channelId);
   };
 
-  // Handle direct message click
+  // Handle direct message click - Open standalone chat interface
   const handleDirectMessageClick = (userId: string, userName: string) => {
-    console.log('Opening DM with:', userId, userName);
-    const navigationService = NavigationService.getInstance();
-    navigationService.navigateToMessage(userId);
+    console.log('💬 [CollaborationPanel] Opening standalone DM chat with:', userId, userName);
+    
+    // Set up the conversation for messaging panel (similar to handleMessageCreated)
+    setCurrentConversation({
+      type: 'direct_message',
+      id: userId,
+      name: userName,
+      participants: [{
+        id: userId,
+        name: userName,
+        isOnline: true // Could be enhanced with real online status
+      }]
+    });
+    
+    // Open messaging panel using panel manager
+    openPanel(`messaging-${userId}`, 'messaging', userName);
+    setMessagingPanelOpen(true);
   };
 
   // Handle AI agent click - Open Command Center as slide-out drawer
@@ -1027,10 +1041,28 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
                 <Collapse in={expandedSections.directMessages} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding sx={{ pl: 2 }}>
-                    {filterBySearch(directMessages, ['name']).map((dm) => (
-                      <ListItem key={dm.id} sx={{ px: 2, py: 0.5 }}>
+                    {/* Show loading state */}
+                    {connectionsLoading && (
+                      <ListItem sx={{ px: 2, py: 1 }}>
+                        <ListItemIcon sx={{ minWidth: 28 }}>
+                          <CircularProgress size={16} sx={{ color: '#94a3b8' }} />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary="Loading connections..."
+                          primaryTypographyProps={{
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                            fontStyle: 'italic'
+                          }}
+                        />
+                      </ListItem>
+                    )}
+                    
+                    {/* Show connections as direct messages */}
+                    {!connectionsLoading && filterBySearch(connections, ['name']).map((connection) => (
+                      <ListItem key={connection.id} sx={{ px: 2, py: 0.5 }}>
                         <ListItemButton
-                          onClick={() => handleDirectMessageClick(dm.id, dm.name)}
+                          onClick={() => handleDirectMessageClick(connection.id, connection.name)}
                           sx={{ 
                             px: 1, 
                             py: 0.5, 
@@ -1048,9 +1080,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                                   bgcolor: '#64748b'
                                 }}
                               >
-                                {dm.avatar}
+                                {connection.avatar || connection.name?.charAt(0)?.toUpperCase() || 'U'}
                               </Avatar>
-                              {dm.isOnline ? (
+                              {connection.isOnline ? (
                                 <OnlineIcon 
                                   sx={{ 
                                     position: 'absolute',
@@ -1074,15 +1106,15 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                             </Box>
                           </ListItemIcon>
                           <ListItemText 
-                            primary={dm.name}
+                            primary={connection.name}
                             primaryTypographyProps={{
                               fontSize: '0.8rem',
                               color: '#f8fafc'
                             }}
                           />
-                          {dm.unreadCount > 0 && (
+                          {connection.unreadCount && connection.unreadCount > 0 && (
                             <Badge 
-                              badgeContent={dm.unreadCount} 
+                              badgeContent={connection.unreadCount} 
                               color="error"
                               sx={{
                                 '& .MuiBadge-badge': {
