@@ -144,7 +144,7 @@ export const ThreadIndicator: React.FC<ThreadIndicatorProps> = ({
                 color: 'white'
               }}
             >
-              {participantId.charAt(0).toUpperCase()}
+              {participantId ? participantId.charAt(0).toUpperCase() : '?'}
             </Avatar>
           ))}
         </AvatarGroup>

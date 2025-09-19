@@ -657,7 +657,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
               }
             }}
           >
-            {agent.avatar || agent.name.charAt(0)}
+            {agent.avatar || (agent.name ? agent.name.charAt(0) : '?')}
           </Avatar>
         </Badge>
       </Tooltip>
@@ -789,7 +789,7 @@ export const AgentAvatarSelector: React.FC<AgentAvatarSelectorProps> = ({
               onClick={(e) => handleTargetClick(human.id, e)}
               sx={getHumanStyle(human)}
             >
-              {human.avatar || human.name.charAt(0)}
+              {human.avatar || (human.name ? human.name.charAt(0) : '?')}
             </Avatar>
           </Badge>
         </Tooltip>
