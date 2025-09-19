@@ -345,10 +345,20 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       
       // If the original message sender is an AI agent and not already selected, include them
       if (parentMessage.senderType === 'ai' || parentMessage.sender.includes('Assistant') || parentMessage.sender.includes('Claude')) {
-        const originalSenderId = parentMessage.senderId || parentMessage.sender;
+        // Use selectedChatbot ID as the primary source of truth
+        const originalSenderId = selectedChatbot?.id || selectedChatbot?.identity?.id || parentMessage.senderId || parentMessage.sender;
         if (!targetAgentIds.includes(originalSenderId)) {
           targetAgentIds.push(originalSenderId);
           console.log('🤖 [ThreadView] Auto-including original sender in thread response:', originalSenderId);
+        }
+      }
+      
+      // If no agents are selected and we have a selectedChatbot, include it by default
+      if (targetAgentIds.length === 0 && selectedChatbot) {
+        const defaultAgentId = selectedChatbot.id || selectedChatbot.identity?.id;
+        if (defaultAgentId) {
+          targetAgentIds.push(defaultAgentId);
+          console.log('🤖 [ThreadView] Including default selectedChatbot in thread response:', defaultAgentId);
         }
       }
 
@@ -595,13 +605,13 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 ? parentMessage.timestamp 
                 : new Date(parentMessage.timestamp).toLocaleTimeString(),
               sender: {
-                id: parentMessage.senderId || parentMessage.sender,
-                name: parentMessage.sender,
-                type: parentMessage.senderType || 'ai',
-                avatar: parentMessage.avatar
+                id: selectedChatbot?.id || parentMessage.senderId || parentMessage.sender,
+                name: selectedChatbot?.identity?.name || selectedChatbot?.name || parentMessage.sender,
+                type: 'ai',
+                avatar: selectedChatbot?.identity?.avatar || selectedChatbot?.avatar || parentMessage.avatar
               }
             }}
-            senderColor={parentMessageColor}
+            senderColor={selectedChatbot ? '#f97316' : parentMessageColor}
             recipient={null}
             isCurrentUser={false}
             currentUserId={currentUserId}

@@ -7263,6 +7263,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     setSelectedAgents(agents);
                     console.log('🤖 [Thread] Agent selection changed:', agents);
                   }}
+                  selectedChatbot={selectedChatbot}
+                  user={user}
                 />
               </Box>
             )}
