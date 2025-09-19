@@ -16,6 +16,7 @@ import {
   and
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { db } from '../firebase/config';
 
 export interface DirectMessage {
   id: string;
@@ -55,10 +56,21 @@ export interface CreateDirectMessageRequest {
  * Firebase service for managing direct messages and user connections
  */
 export class FirebaseDirectMessageService {
+  private static instance: FirebaseDirectMessageService;
   private currentUserId: string | null = null;
 
   constructor() {
     this.initializeCurrentUser();
+  }
+
+  /**
+   * Get singleton instance
+   */
+  static getInstance(): FirebaseDirectMessageService {
+    if (!FirebaseDirectMessageService.instance) {
+      FirebaseDirectMessageService.instance = new FirebaseDirectMessageService();
+    }
+    return FirebaseDirectMessageService.instance;
   }
 
   /**
@@ -78,6 +90,58 @@ export class FirebaseDirectMessageService {
       });
     } catch (error) {
       console.error('Error initializing current user:', error);
+    }
+  }
+
+  /**
+   * Create or get existing conversation between two users
+   */
+  async createOrGetConversation(
+    userId1: string, 
+    userId2: string, 
+    userInfo?: {
+      userName?: string;
+      userAvatar?: string;
+      connectedUserName?: string;
+      connectedUserAvatar?: string;
+    }
+  ): Promise<string> {
+    try {
+      console.log('🔍 [FirebaseDirectMessageService] Creating or getting conversation:', { userId1, userId2 });
+
+      // Check if conversation already exists
+      const existingConversation = await this.findExistingConversation(userId1, userId2);
+      if (existingConversation) {
+        console.log('✅ [FirebaseDirectMessageService] Found existing conversation:', existingConversation.id);
+        return existingConversation.id;
+      }
+
+      // Create new conversation
+      const conversationData = {
+        participantIds: [userId1, userId2],
+        participantNames: [
+          userInfo?.userName || 'User',
+          userInfo?.connectedUserName || 'User'
+        ],
+        participantAvatars: [
+          userInfo?.userAvatar || '',
+          userInfo?.connectedUserAvatar || ''
+        ],
+        lastMessage: '',
+        lastMessageBy: '',
+        lastMessageAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      // Add conversation to Firestore
+      const docRef = await addDoc(collection(db, 'directMessages'), conversationData);
+      
+      console.log('✅ [FirebaseDirectMessageService] Created new conversation:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ [FirebaseDirectMessageService] Error creating/getting conversation:', error);
+      throw error;
     }
   }
 
@@ -147,21 +211,34 @@ export class FirebaseDirectMessageService {
    */
   async getUserDirectMessages(): Promise<DirectMessage[]> {
     try {
+      // Ensure we have the current user ID
+      const auth = getAuth();
+      if (auth.currentUser && !this.currentUserId) {
+        this.currentUserId = auth.currentUser.uid;
+        console.log('🔧 [FirebaseDirectMessageService] Updated currentUserId from auth:', this.currentUserId);
+      }
+      
+      console.log('🔍 [FirebaseDirectMessageService] Getting user direct messages for:', this.currentUserId);
+      
       if (!this.currentUserId) {
+        console.log('⚠️ [FirebaseDirectMessageService] No current user ID available');
         return [];
       }
 
       const messagesRef = collection(db, 'directMessages');
+      // Simplified query to avoid Firebase index requirement
       const q = query(
         messagesRef,
-        where('participantIds', 'array-contains', this.currentUserId),
-        orderBy('lastMessageAt', 'desc')
+        where('participantIds', 'array-contains', this.currentUserId)
       );
 
       const snapshot = await getDocs(q);
       const messages: DirectMessage[] = [];
+      
+      console.log('🔍 [FirebaseDirectMessageService] Query returned', snapshot.size, 'documents');
 
       snapshot.forEach((doc) => {
+        console.log('🔍 [FirebaseDirectMessageService] Processing document:', doc.id, doc.data());
         const data = doc.data();
         messages.push({
           id: doc.id,
@@ -176,6 +253,14 @@ export class FirebaseDirectMessageService {
         });
       });
 
+      // Sort manually by lastMessageAt (descending) to replace orderBy
+      messages.sort((a, b) => {
+        const aTime = a.lastMessageAt?.getTime() || 0;
+        const bTime = b.lastMessageAt?.getTime() || 0;
+        return bTime - aTime; // Descending order (newest first)
+      });
+
+      console.log('✅ [FirebaseDirectMessageService] Returning', messages.length, 'direct messages:', messages);
       return messages;
     } catch (error) {
       console.error('❌ [FirebaseDirectMessageService] Error fetching direct messages:', error);
@@ -286,16 +371,32 @@ export class FirebaseDirectMessageService {
     senderName: string;
     content: string;
     timestamp: Date;
+    type?: string;
   }): Promise<void> {
     try {
+      console.log('💬 [FirebaseDirectMessageService] Adding message to conversation:', conversationId);
+
+      // Add message to messages subcollection
       const messagesRef = collection(db, 'directMessages', conversationId, 'messages');
       await addDoc(messagesRef, {
         senderId: message.senderId,
         senderName: message.senderName,
         content: message.content,
+        type: message.type || 'text',
         timestamp: serverTimestamp(),
         createdAt: serverTimestamp()
       });
+
+      // Update conversation's last message info
+      const conversationRef = doc(db, 'directMessages', conversationId);
+      await updateDoc(conversationRef, {
+        lastMessage: message.content,
+        lastMessageBy: message.senderId,
+        lastMessageAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      console.log('✅ [FirebaseDirectMessageService] Message added and conversation updated');
     } catch (error) {
       console.error('❌ [FirebaseDirectMessageService] Error adding message to conversation:', error);
       throw error;

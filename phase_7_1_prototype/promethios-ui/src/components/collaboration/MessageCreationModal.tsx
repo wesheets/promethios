@@ -56,6 +56,8 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedConnection, setSelectedConnection] = useState<UserConnection | null>(null);
+  const [message, setMessage] = useState('');
 
   // Load user connections when modal opens and user is available
   useEffect(() => {
@@ -139,31 +141,96 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   useEffect(() => {
     if (!open) {
       setSearchQuery('');
+      setSelectedConnection(null);
+      setMessage('');
       setError(null);
     }
   }, [open]);
 
   const handleConnectionSelect = (connection: UserConnection) => {
-    console.log('💬 [MessageCreationModal] Connection selected, opening full chat interface:', connection);
-    
-    // Create a unique conversation ID for this direct message
-    const conversationId = `dm-${user?.uid}-${connection.connectedUserId}`;
-    
-    // Directly open the full chat interface
-    if (onMessageCreated) {
-      onMessageCreated({
-        id: conversationId,
-        participant: {
-          id: connection.connectedUserId,
-          name: connection.connectedUserName || 'Unknown User',
-          avatar: connection.connectedUserAvatar,
-          isOnline: connection.isOnline
-        }
+    console.log('💬 [MessageCreationModal] Connection selected:', connection);
+    setSelectedConnection(connection);
+  };
+
+  const handleSendMessage = async () => {
+    if (!selectedConnection || !message.trim() || !user?.uid) {
+      console.log('💬 [MessageCreationModal] Cannot send message - missing data:', {
+        hasConnection: !!selectedConnection,
+        hasMessage: !!message.trim(),
+        hasUser: !!user?.uid
       });
+      return;
     }
-    
-    // Close the modal
-    onClose();
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('💬 [MessageCreationModal] Sending first message:', {
+        from: user.uid,
+        to: selectedConnection.connectedUserId,
+        message: message.trim()
+      });
+
+      // Import Firebase service
+      const { FirebaseDirectMessageService } = await import('../../services/FirebaseDirectMessageService');
+      const firebaseDirectMessageService = FirebaseDirectMessageService.getInstance();
+
+      // Create or get conversation
+      const conversationId = await firebaseDirectMessageService.createOrGetConversation(
+        user.uid,
+        selectedConnection.connectedUserId,
+        {
+          userName: user.displayName || user.email || 'User',
+          userAvatar: undefined, // TODO: Get user avatar
+          connectedUserName: selectedConnection.connectedUserName,
+          connectedUserAvatar: selectedConnection.connectedUserAvatar
+        }
+      );
+
+      console.log('💬 [MessageCreationModal] Created/got conversation:', conversationId);
+
+      // Send the first message
+      await firebaseDirectMessageService.addMessageToConversation(
+        conversationId,
+        {
+          senderId: user.uid,
+          senderName: user.displayName || user.email || 'User',
+          content: message.trim(),
+          timestamp: new Date(),
+          type: 'text'
+        }
+      );
+
+      console.log('💬 [MessageCreationModal] First message sent successfully');
+
+      // Open the full chat interface
+      if (onMessageCreated) {
+        onMessageCreated({
+          id: conversationId,
+          participant: {
+            id: selectedConnection.connectedUserId,
+            name: selectedConnection.connectedUserName || 'Unknown User',
+            avatar: selectedConnection.connectedUserAvatar,
+            isOnline: selectedConnection.isOnline
+          }
+        });
+      }
+
+      // Close the modal
+      onClose();
+
+    } catch (error) {
+      console.error('❌ [MessageCreationModal] Error sending message:', error);
+      setError('Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToConnections = () => {
+    setSelectedConnection(null);
+    setMessage('');
   };
 
 
@@ -214,10 +281,12 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
           </Alert>
         )}
 
-        {/* Connection Selection */}
-        <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1 }}>
-          Select Connection:
-        </Typography>
+        {!selectedConnection ? (
+          <>
+            {/* Connection Selection */}
+            <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1 }}>
+              Select Connection:
+            </Typography>
             
             {/* Search */}
             <TextField
@@ -318,6 +387,65 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
                 ))}
               </List>
             )}
+          </>
+        ) : (
+          <>
+            {/* Message Composition */}
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1 }}>
+                To:
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: '#334155', borderRadius: 1 }}>
+                <Avatar
+                  src={selectedConnection.connectedUserAvatar}
+                  sx={{ width: 24, height: 24, bgcolor: '#6366f1' }}
+                >
+                  {selectedConnection.connectedUserName?.charAt(0)?.toUpperCase() || 'U'}
+                </Avatar>
+                <Typography variant="body2" sx={{ color: '#f8fafc' }}>
+                  {selectedConnection.connectedUserName || 'Unknown User'}
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={handleBackToConnections}
+                  sx={{ ml: 'auto', color: '#94a3b8', minWidth: 'auto', p: 0.5 }}
+                >
+                  Change
+                </Button>
+              </Box>
+            </Box>
+
+            <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1 }}>
+              Message:
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              placeholder="Type your message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              InputProps={{
+                sx: {
+                  bgcolor: '#334155',
+                  border: '1px solid #475569',
+                  borderRadius: 1,
+                  color: '#f8fafc',
+                  '& textarea::placeholder': {
+                    color: '#94a3b8',
+                    opacity: 1
+                  },
+                  '&:hover': {
+                    border: '1px solid #64748b'
+                  },
+                  '&.Mui-focused': {
+                    border: '1px solid #6366f1'
+                  }
+                }
+              }}
+            />
+          </>
+        )}
       </DialogContent>
 
       <DialogActions sx={{ p: 3, borderTop: '1px solid #334155' }}>
@@ -327,6 +455,21 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
         >
           Cancel
         </Button>
+        {selectedConnection && (
+          <Button
+            onClick={handleSendMessage}
+            disabled={!message.trim() || loading}
+            variant="contained"
+            sx={{
+              bgcolor: '#10b981',
+              color: '#ffffff',
+              '&:hover': { bgcolor: '#059669' },
+              '&:disabled': { bgcolor: '#374151', color: '#6b7280' }
+            }}
+          >
+            {loading ? <CircularProgress size={20} sx={{ color: '#6b7280' }} /> : 'Send Message'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

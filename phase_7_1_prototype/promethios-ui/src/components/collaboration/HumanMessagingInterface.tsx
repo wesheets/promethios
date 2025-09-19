@@ -26,7 +26,7 @@ import {
   EmojiEmotions as EmojiIcon
 } from '@mui/icons-material';
 import { getAuth } from 'firebase/auth';
-import { firebaseDirectMessageService } from '../../services/FirebaseDirectMessageService';
+import { FirebaseDirectMessageService } from '../../services/FirebaseDirectMessageService';
 
 // Message types for human conversations
 interface HumanMessage {
@@ -75,6 +75,7 @@ const HumanMessagingInterface: React.FC<HumanMessagingInterfaceProps> = ({
       if (conversationType === 'direct_message' && conversationId) {
         try {
           console.log('📥 [HumanMessagingInterface] Loading messages for conversation:', conversationId);
+          const firebaseDirectMessageService = FirebaseDirectMessageService.getInstance();
           const conversationMessages = await firebaseDirectMessageService.getConversationMessages(conversationId);
           
           // Transform Firebase messages to HumanMessage format
@@ -242,6 +243,7 @@ const HumanMessagingInterface: React.FC<HumanMessagingInterfaceProps> = ({
 
       // Send message to Firebase
       if (conversationType === 'direct_message') {
+        const firebaseDirectMessageService = FirebaseDirectMessageService.getInstance();
         await firebaseDirectMessageService.addMessageToConversation(conversationId, {
           senderId: currentUser.uid,
           senderName: currentUser.displayName || 'You',

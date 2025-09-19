@@ -488,41 +488,30 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                 const userId = message.metadata?.userId || currentUserId;
                 const isGuest = message.metadata?.isGuestMessage || false;
                 
-                console.log('🔍 [UnifiedSharedMessages] Resolving user name for message:', {
-                  messageId: message.id,
-                  initialUserName: userName,
-                  metadata: message.metadata,
-                  guestAccess: guestAccess ? {
-                    hostUserName: guestAccess.hostUserName,
-                    hostUserId: guestAccess.hostUserId
-                  } : null,
-                  chatSessionHost: chatSession?.participants?.host
-                });
+                console.log('🔍 [USER] Resolving user name - initial:', userName);
                 
-                // Try guestAccess first (most reliable for guest view)
-                if (userName === 'User' && guestAccess?.hostUserName && guestAccess.hostUserName !== 'Host') {
+                // Priority 1: Try chat session host participant (most reliable after enrichment)
+                if (userName === 'User' && chatSession?.participants?.host?.name && chatSession.participants.host.name !== 'User' && chatSession.participants.host.name !== 'Host User') {
+                  userName = chatSession.participants.host.name;
+                  console.log('✅ [USER] Using enriched host name:', userName);
+                }
+                
+                // Priority 2: Try guestAccess hostUserName
+                else if (userName === 'User' && guestAccess?.hostUserName && guestAccess.hostUserName !== 'Host') {
                   userName = guestAccess.hostUserName;
-                  console.log('🔍 [UnifiedSharedMessages] Using host user name from guest access:', userName);
+                  console.log('✅ [USER] Using guest access host name:', userName);
                 }
                 
-                // Try chat session host participant
-                if (userName === 'User' && chatSession?.participants?.host) {
-                  const hostUser = chatSession.participants.host;
-                  if (hostUser.type === 'human' && hostUser.name && hostUser.name !== 'User') {
-                    userName = hostUser.name;
-                    console.log('🔍 [UnifiedSharedMessages] Using host user name from chat session:', userName);
-                  }
-                }
-                
-                // Try to extract from chat session name if it contains user info
-                if (userName === 'User' && chatSession?.name) {
-                  // Look for patterns like "test (with Ted Sheets)" or similar
+                // Priority 3: Extract from chat session name pattern
+                else if (userName === 'User' && chatSession?.name) {
                   const nameMatch = chatSession.name.match(/\(with\s+([^)]+)\)/i);
                   if (nameMatch && nameMatch[1] && nameMatch[1] !== 'User') {
                     userName = nameMatch[1];
-                    console.log('🔍 [UnifiedSharedMessages] Extracted host user name from chat session name:', userName);
+                    console.log('✅ [USER] Extracted from session name:', userName);
                   }
                 }
+                
+                console.log('🔍 [USER] Final user name:', userName);
                 
                 // Get avatar from multiple sources
                 let userAvatar = message.metadata?.userAvatar;
