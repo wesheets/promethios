@@ -1567,6 +1567,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           organizationId={selectedOrganization.id}
           organizationName={selectedOrganization.name}
           onChannelCreated={handleChannelCreated}
+          user={user} // Pass the working user object from parent
         />
       )}
 
@@ -1575,6 +1576,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         open={messageCreationModalOpen}
         onClose={() => setMessageCreationModalOpen(false)}
         onMessageCreated={handleMessageCreated}
+        user={user} // Pass the working user object from parent
       />
 
       {/* Human Messaging Panel */}

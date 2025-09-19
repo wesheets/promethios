@@ -24,7 +24,6 @@ import {
 import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { firebaseChannelService, CreateChannelRequest } from '../../services/FirebaseChannelService';
 import { firebaseDirectMessageService, UserConnection } from '../../services/FirebaseDirectMessageService';
-import { useAuth } from '../../context/AuthContext';
 import { connectionService } from '../../services/ConnectionService';
 
 interface ChannelCreationModalProps {
@@ -32,6 +31,11 @@ interface ChannelCreationModalProps {
   onClose: () => void;
   organizationId: string;
   organizationName: string;
+  user?: {
+    uid: string;
+    displayName?: string;
+    email?: string;
+  } | null;
   onChannelCreated?: (channelData: {
     id: string;
     name: string;
@@ -49,9 +53,9 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
   onClose,
   organizationId,
   organizationName,
+  user,
   onChannelCreated
 }) => {
-  const { user, loading: authLoading } = useAuth();
   const [channelName, setChannelName] = useState('');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -63,15 +67,13 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
 
   // Load user connections when modal opens and user is available
   useEffect(() => {
-    if (open && !authLoading && user?.uid) {
+    if (open && user?.uid) {
       console.log('🏢 [ChannelModal] Modal opened with user:', user.uid);
       loadConnections();
-    } else if (open && authLoading) {
-      console.log('🏢 [ChannelModal] Modal opened but auth still loading...');
-    } else if (open && !authLoading && !user?.uid) {
-      console.log('🏢 [ChannelModal] Modal opened but no user available after auth loaded');
+    } else if (open && !user?.uid) {
+      console.log('🏢 [ChannelModal] Modal opened but no user available');
     }
-  }, [open, user?.uid, authLoading]);
+  }, [open, user?.uid]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -88,7 +90,6 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
     try {
       setLoadingConnections(true);
       console.log('🏢 [ChannelModal] Loading connections...');
-      console.log('🏢 [ChannelModal] Auth loading state:', authLoading);
       console.log('🏢 [ChannelModal] User object:', user);
       console.log('🏢 [ChannelModal] User UID:', user?.uid);
       

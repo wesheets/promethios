@@ -26,12 +26,16 @@ import {
   FiberManualRecord as OnlineIcon
 } from '@mui/icons-material';
 import { firebaseDirectMessageService, UserConnection, CreateDirectMessageRequest } from '../../services/FirebaseDirectMessageService';
-import { useAuth } from '../../context/AuthContext';
 import { connectionService } from '../../services/ConnectionService';
 
 interface MessageCreationModalProps {
   open: boolean;
   onClose: () => void;
+  user?: {
+    uid: string;
+    displayName?: string;
+    email?: string;
+  } | null;
   onMessageCreated?: (messageData: {
     id: string;
     participant: {
@@ -46,9 +50,9 @@ interface MessageCreationModalProps {
 const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   open,
   onClose,
+  user,
   onMessageCreated
 }) => {
-  const { user, loading: authLoading } = useAuth();
   const [selectedConnection, setSelectedConnection] = useState<UserConnection | null>(null);
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,15 +63,13 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
 
   // Load user connections when modal opens and user is available
   useEffect(() => {
-    if (open && !authLoading && user?.uid) {
+    if (open && user?.uid) {
       console.log('💬 [MessageModal] Modal opened with user:', user.uid);
       loadConnections();
-    } else if (open && authLoading) {
-      console.log('💬 [MessageModal] Modal opened but auth still loading...');
-    } else if (open && !authLoading && !user?.uid) {
-      console.log('💬 [MessageModal] Modal opened but no user available after auth loaded');
+    } else if (open && !user?.uid) {
+      console.log('💬 [MessageModal] Modal opened but no user available');
     }
-  }, [open, user?.uid, authLoading]);
+  }, [open, user?.uid]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -83,7 +85,6 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
     try {
       setLoadingConnections(true);
       console.log('💬 [MessageModal] Loading connections...');
-      console.log('💬 [MessageModal] Auth loading state:', authLoading);
       console.log('💬 [MessageModal] User object:', user);
       console.log('💬 [MessageModal] User UID:', user?.uid);
       

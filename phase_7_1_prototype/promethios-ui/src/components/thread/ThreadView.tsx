@@ -669,20 +669,55 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 id: selectedChatbot.identity?.id || selectedChatbot.id || selectedChatbot.key,
                 name: selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
                 type: 'agent' as const,
-                avatar: selectedChatbot.identity?.avatar || selectedChatbot.avatar
+                avatar: selectedChatbot.identity?.avatar || selectedChatbot.avatar,
+                color: selectedChatbot.identity?.color || selectedChatbot.color || '#f97316' // 🔧 FIX: Add color for proper highlighting
               };
             }
             return null;
           })()}
           guestAgents={[]} // Thread-specific: No guest agents to avoid duplication with hostAgent
           selectedAgents={selectedAgents?.map(agent => agent.id) || []}
-          onAgentSelectionChange={(agentIds: string[]) => {
+          onAgentSelectionChange={async (agentIds: string[]) => {
             // Convert agent IDs back to agent objects
             const selectedAgentObjects = (availableAgents || []).filter(agent => 
               agentIds.includes(agent.id)
             );
             if (onAgentSelectionChange) {
               onAgentSelectionChange(selectedAgentObjects);
+            }
+            
+            // 🔧 FIX: Trigger agent responses when agents are selected in thread
+            // This mimics the behavior from the main chat interface
+            if (agentIds.length > 0 && replyText.trim()) {
+              console.log('🤖 [ThreadView] Agent selected with existing message, triggering response for:', agentIds);
+              
+              try {
+                setSending(true);
+                
+                // Use EnhancedThreadService to send message with selected agents
+                const responses = await EnhancedThreadService.sendThreadMessage({
+                  threadId,
+                  message: replyText.trim(),
+                  targetAgentIds: agentIds,
+                  senderId: currentUserId,
+                  senderName: currentUserName
+                });
+
+                console.log('✅ [ThreadView] Agent responses triggered:', responses.length);
+                
+                // Clear the input after sending
+                setReplyText('');
+
+                // Log agent responses
+                responses.forEach(response => {
+                  console.log(`🤖 [ThreadView] Agent ${response.agentName} responded to selection:`, response.content.substring(0, 100) + '...');
+                });
+
+              } catch (error) {
+                console.error('❌ [ThreadView] Error triggering agent responses:', error);
+              } finally {
+                setSending(false);
+              }
             }
           }}
           isSharedMode={false} // Threads are not shared mode
