@@ -41,6 +41,7 @@ import {
 import { MultiAgentRoutingService, AgentResponse } from './MultiAgentRoutingService';
 import { MultiAgentAuditLogger } from './MultiAgentAuditLogger';
 import { MessageParser, ParsedMessage } from '../utils/MessageParser';
+import { universalGovernanceAdapter } from './UniversalGovernanceAdapter';
 
 export interface ThreadAgentRequest {
   threadId: string;
@@ -245,16 +246,31 @@ export class EnhancedThreadService {
         userName: params.senderName
       };
 
-      // 3. Get agent response via MultiAgentRoutingService
-      const agentResponse = await this.multiAgentRouter.routeToAgent(
-        params.agentId,
-        agentRequest
-      );
+      // 3. Get agent response via Universal Governance Adapter (same as main chat)
+      console.log('🤖 [EnhancedThreadService] Calling universalGovernanceAdapter for agent:', params.agentId);
+      
+      const response = await universalGovernanceAdapter.sendMessage({
+        agentId: params.agentId,
+        message: params.userMessage,
+        sessionId: `thread_${params.threadId}_${params.agentId}`,
+        userId: params.senderId,
+        conversationHistory: [], // Thread context could be added here if needed
+        provider: 'openai', // Default provider, could be made configurable
+        model: 'gpt-4' // Default model, could be made configurable
+      });
 
-      if (!agentResponse || !agentResponse.content) {
+      console.log('✅ [EnhancedThreadService] Received response from Universal Governance Adapter:', response);
+
+      if (!response || !response.response) {
         console.warn('⚠️ [EnhancedThreadService] No response from agent:', params.agentId);
         return null;
       }
+
+      // Create agentResponse object compatible with existing code
+      const agentResponse = {
+        content: response.response,
+        agentName: `Agent ${params.agentId}` // Could be improved with actual agent name lookup
+      };
 
       // 4. Add agent response to thread
       const responseMessageId = await this.addAgentMessage({
