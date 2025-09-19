@@ -29,7 +29,7 @@ import UnifiedGuestChatService, { GuestConversationAccess } from '../../services
 import MarkdownRenderer from '../MarkdownRenderer';
 import AttachmentRenderer from '../AttachmentRenderer';
 import ColorCodedChatMessage from '../chat/ColorCodedChatMessage';
-import { useThreads } from '../../contexts/ThreadContext';
+import { useThreads } from '../../hooks/useThreads';
 import ThreadView from '../thread/ThreadView';
 
 interface UnifiedSharedMessagesProps {
@@ -69,7 +69,7 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
   const unifiedGuestChatService = UnifiedGuestChatService.getInstance();
   
   // Thread context
-  const { createThread, openThread, closeThread } = useThreads();
+  const { createThread, openThread, closeThread } = useThreads(conversationId);
 
   // Load chat session and messages
   useEffect(() => {
