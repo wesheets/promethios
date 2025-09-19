@@ -12,6 +12,7 @@ export interface GuestConversationAccess {
   id: string; // Invitation ID
   hostUserId: string;
   hostUserName: string;
+  hostUserAvatar?: string;
   conversationId: string; // Host's conversation ID
   conversationName: string;
   agentName?: string;
@@ -62,6 +63,7 @@ class UnifiedGuestChatService {
             id: invitation.id,
             hostUserId: invitation.fromUserId,
             hostUserName: invitation.fromUserName || 'Host',
+            hostUserAvatar: invitation.fromUserAvatar,
             conversationId: invitation.metadata.conversationId,
             conversationName: invitation.metadata.conversationName || 'Shared Chat',
             agentName: invitation.metadata.agentName,
@@ -106,6 +108,9 @@ class UnifiedGuestChatService {
           guests: chatSession.participants?.guests?.map(g => ({ id: g.id, name: g.name, type: g.type }))
         });
         
+        // Enrich host user information
+        await this.enrichHostUserInfo(chatSession, hostUserId);
+        
         // Ensure the host agent is included in participants if not already present
         await this.ensureHostAgentInParticipants(chatSession);
         
@@ -121,6 +126,68 @@ class UnifiedGuestChatService {
     } catch (error) {
       console.error('❌ [UnifiedGuestChat] Error loading host chat session:', error);
       return null;
+    }
+  }
+
+  /**
+   * Enrich host user information in the chat session
+   */
+  private async enrichHostUserInfo(chatSession: ChatSession, hostUserId: string): Promise<void> {
+    try {
+      console.log('🔍 [UnifiedGuestChat] Enriching host user info for session:', chatSession.id);
+      
+      // Try to get host user info from Firebase user profile
+      const hostUserDoc = await getDoc(doc(db, 'users', hostUserId));
+      let hostUserName = 'Host User';
+      let hostUserAvatar: string | undefined;
+      
+      if (hostUserDoc.exists()) {
+        const hostUserData = hostUserDoc.data();
+        hostUserName = hostUserData.displayName || hostUserData.name || hostUserName;
+        hostUserAvatar = hostUserData.photoURL || hostUserData.avatar;
+        console.log('✅ [UnifiedGuestChat] Found host user info from Firebase:', {
+          name: hostUserName,
+          hasAvatar: !!hostUserAvatar
+        });
+      } else {
+        console.log('⚠️ [UnifiedGuestChat] Host user document not found, using fallback');
+      }
+      
+      // Ensure participants structure exists and update host info
+      if (!chatSession.participants) {
+        chatSession.participants = {
+          host: {
+            id: hostUserId,
+            name: hostUserName,
+            type: 'human',
+            avatar: hostUserAvatar,
+            joinedAt: chatSession.createdAt,
+            lastActive: chatSession.lastUpdated,
+            messageCount: chatSession.messages?.filter(m => m.sender === 'user').length || 0
+          },
+          guests: []
+        };
+      } else if (chatSession.participants.host) {
+        // Update existing host info
+        chatSession.participants.host.name = hostUserName;
+        chatSession.participants.host.avatar = hostUserAvatar;
+        console.log('✅ [UnifiedGuestChat] Updated existing host participant info');
+      } else {
+        // Create host participant
+        chatSession.participants.host = {
+          id: hostUserId,
+          name: hostUserName,
+          type: 'human',
+          avatar: hostUserAvatar,
+          joinedAt: chatSession.createdAt,
+          lastActive: chatSession.lastUpdated,
+          messageCount: chatSession.messages?.filter(m => m.sender === 'user').length || 0
+        };
+        console.log('✅ [UnifiedGuestChat] Created new host participant info');
+      }
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error enriching host user info:', error);
     }
   }
 

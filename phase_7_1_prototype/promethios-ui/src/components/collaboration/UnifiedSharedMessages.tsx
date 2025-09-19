@@ -410,32 +410,62 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                 '#06b6d4', // Cyan
                 '#ef4444', // Red
                 '#84cc16', // Lime
-                '#6366f1', // Indigo
-                '#f59e0b', // Amber
-                '#14b8a6', // Teal
-                '#f43f5e'  // Rose
               ];
               
-              // For Claude Assistant, always use orange to match host chat
-              if (participantId.includes('chatbot-175') || participantId.includes('claude')) {
-                console.log('🎨 [UnifiedSharedMessages] Using orange for Claude Assistant fallback');
-                return agentColorPalette[0]; // Orange
+              // Get all participants in order (same logic as host chat)
+              const getAllParticipants = () => {
+                const participants = [];
+                
+                // Add host agent first (should get orange)
+                if (chatSession?.agentId) {
+                  participants.push({
+                    id: chatSession.agentId,
+                    name: chatSession.agentName || 'Host Agent',
+                    type: 'ai'
+                  });
+                }
+                
+                // Add known guest agents (Mark the Claude should be second for purple color)
+                participants.push({
+                  id: 'mark-the-claude',
+                  name: 'Mark the Claude',
+                  type: 'ai'
+                });
+                
+                // Add other guest agents from chat session
+                if (chatSession?.participants?.guests) {
+                  chatSession.participants.guests.forEach(guest => {
+                    if (guest.type === 'ai_agent' && !participants.find(p => p.id === guest.id)) {
+                      participants.push({
+                        id: guest.id,
+                        name: guest.name,
+                        type: 'ai'
+                      });
+                    }
+                  });
+                }
+                
+                return participants;
+              };
+              
+              // Get color based on participant order (same as host chat)
+              const allParticipants = getAllParticipants();
+              const agentIndex = allParticipants.findIndex(p => p.id === participantId);
+              
+              if (agentIndex >= 0) {
+                const assignedColor = agentColorPalette[agentIndex % agentColorPalette.length];
+                console.log('🎨 [UnifiedSharedMessages] Using sequential color for agent:', {
+                  agentId: participantId,
+                  agentIndex,
+                  color: assignedColor,
+                  allParticipants: allParticipants.map(p => ({ id: p.id, name: p.name }))
+                });
+                return assignedColor;
               }
               
-              // Hash function to generate consistent colors (same as host chat)
-              let hash = 0;
-              for (let i = 0; i < participantId.length; i++) {
-                const char = participantId.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convert to 32-bit integer
-              }
-              
-              const fallbackColor = agentColorPalette[Math.abs(hash) % agentColorPalette.length];
-              console.log('🎨 [UnifiedSharedMessages] Using fallback color for agent:', {
-                agentId: participantId,
-                color: fallbackColor
-              });
-              return fallbackColor;
+              // Fallback to orange for unknown agents
+              console.log('🎨 [UnifiedSharedMessages] Using fallback orange for unknown agent:', participantId);
+              return agentColorPalette[0]; // Orange
             };
 
             // Determine sender info for shared conversation context
@@ -453,16 +483,61 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
               }
               
               if (isUser) {
-                // For user messages, use metadata if available
-                const userName = message.metadata?.userName || 'User';
+                // For user messages, use metadata if available, then try chat session host info
+                let userName = message.metadata?.userName || 'User';
                 const userId = message.metadata?.userId || currentUserId;
                 const isGuest = message.metadata?.isGuestMessage || false;
+                
+                console.log('🔍 [UnifiedSharedMessages] Resolving user name for message:', {
+                  messageId: message.id,
+                  initialUserName: userName,
+                  metadata: message.metadata,
+                  guestAccess: guestAccess ? {
+                    hostUserName: guestAccess.hostUserName,
+                    hostUserId: guestAccess.hostUserId
+                  } : null,
+                  chatSessionHost: chatSession?.participants?.host
+                });
+                
+                // Try guestAccess first (most reliable for guest view)
+                if (userName === 'User' && guestAccess?.hostUserName && guestAccess.hostUserName !== 'Host') {
+                  userName = guestAccess.hostUserName;
+                  console.log('🔍 [UnifiedSharedMessages] Using host user name from guest access:', userName);
+                }
+                
+                // Try chat session host participant
+                if (userName === 'User' && chatSession?.participants?.host) {
+                  const hostUser = chatSession.participants.host;
+                  if (hostUser.type === 'human' && hostUser.name && hostUser.name !== 'User') {
+                    userName = hostUser.name;
+                    console.log('🔍 [UnifiedSharedMessages] Using host user name from chat session:', userName);
+                  }
+                }
+                
+                // Try to extract from chat session name if it contains user info
+                if (userName === 'User' && chatSession?.name) {
+                  // Look for patterns like "test (with Ted Sheets)" or similar
+                  const nameMatch = chatSession.name.match(/\(with\s+([^)]+)\)/i);
+                  if (nameMatch && nameMatch[1] && nameMatch[1] !== 'User') {
+                    userName = nameMatch[1];
+                    console.log('🔍 [UnifiedSharedMessages] Extracted host user name from chat session name:', userName);
+                  }
+                }
+                
+                // Get avatar from multiple sources
+                let userAvatar = message.metadata?.userAvatar;
+                if (!userAvatar && chatSession?.participants?.host?.avatar) {
+                  userAvatar = chatSession.participants.host.avatar;
+                }
+                if (!userAvatar && guestAccess?.hostUserAvatar) {
+                  userAvatar = guestAccess.hostUserAvatar;
+                }
                 
                 return {
                   id: userId,
                   name: isGuest ? `${userName} (Guest)` : userName,
                   type: 'human' as const,
-                  avatar: message.metadata?.userAvatar
+                  avatar: userAvatar
                 };
               } else {
                 // For AI messages, improve agent name detection with detailed logging

@@ -16,16 +16,14 @@ import {
   ListItemButton,
   CircularProgress,
   Alert,
-  Chip,
   InputAdornment
 } from '@mui/material';
 import { 
-  Send as SendIcon, 
   Person as PersonIcon,
   Search as SearchIcon,
   FiberManualRecord as OnlineIcon
 } from '@mui/icons-material';
-import { firebaseDirectMessageService, UserConnection, CreateDirectMessageRequest } from '../../services/FirebaseDirectMessageService';
+import { UserConnection } from '../../services/FirebaseDirectMessageService';
 import { connectionService, Connection } from '../../services/ConnectionService';
 
 interface MessageCreationModalProps {
@@ -53,8 +51,6 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   user,
   onMessageCreated
 }) => {
-  const [selectedConnection, setSelectedConnection] = useState<UserConnection | null>(null);
-  const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [connections, setConnections] = useState<UserConnection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -142,54 +138,35 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
   // Reset form when modal closes
   useEffect(() => {
     if (!open) {
-      setSelectedConnection(null);
-      setMessage('');
       setSearchQuery('');
       setError(null);
     }
   }, [open]);
 
   const handleConnectionSelect = (connection: UserConnection) => {
-    setSelectedConnection(connection);
+    console.log('💬 [MessageCreationModal] Connection selected, opening full chat interface:', connection);
+    
+    // Create a unique conversation ID for this direct message
+    const conversationId = `dm-${user?.uid}-${connection.connectedUserId}`;
+    
+    // Directly open the full chat interface
+    if (onMessageCreated) {
+      onMessageCreated({
+        id: conversationId,
+        participant: {
+          id: connection.connectedUserId,
+          name: connection.connectedUserName || 'Unknown User',
+          avatar: connection.connectedUserAvatar,
+          isOnline: connection.isOnline
+        }
+      });
+    }
+    
+    // Close the modal
+    onClose();
   };
 
-  const handleSendMessage = async () => {
-    if (!selectedConnection || !message.trim()) {
-      setError('Please select a connection and enter a message');
-      return;
-    }
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      const request: CreateDirectMessageRequest = {
-        recipientId: selectedConnection.connectedUserId,
-        initialMessage: message.trim()
-      };
-
-      const conversationId = await firebaseDirectMessageService.createDirectMessage(request);
-      
-      if (onMessageCreated) {
-        onMessageCreated({
-          id: conversationId,
-          participant: {
-            id: selectedConnection.connectedUserId,
-            name: selectedConnection.connectedUserName,
-            avatar: selectedConnection.connectedUserAvatar,
-            isOnline: selectedConnection.isOnline
-          }
-        });
-      }
-      
-      onClose();
-    } catch (error) {
-      console.error('Error creating message:', error);
-      setError(error instanceof Error ? error.message : 'Failed to send message');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filter connections based on search
   const filteredConnections = connections.filter(connection =>
@@ -214,11 +191,11 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
     >
       <DialogTitle sx={{ color: '#f8fafc', borderBottom: '1px solid #334155' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SendIcon sx={{ color: '#10b981' }} />
-          New Message
+          <PersonIcon sx={{ color: '#10b981' }} />
+          Start Conversation
         </Box>
         <Typography variant="body2" sx={{ color: '#94a3b8', mt: 0.5 }}>
-          Send a direct message to one of your connections
+          Select a connection to start a conversation
         </Typography>
       </DialogTitle>
 
@@ -237,38 +214,10 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
           </Alert>
         )}
 
-        {/* Selected Connection */}
-        {selectedConnection && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1 }}>
-              To:
-            </Typography>
-            <Chip
-              avatar={
-                <Avatar 
-                  src={selectedConnection.connectedUserAvatar}
-                  sx={{ width: 24, height: 24 }}
-                >
-                  {selectedConnection.connectedUserName.charAt(0).toUpperCase()}
-                </Avatar>
-              }
-              label={selectedConnection.connectedUserName}
-              onDelete={() => setSelectedConnection(null)}
-              sx={{
-                bgcolor: '#10b981',
-                color: 'white',
-                '& .MuiChip-deleteIcon': { color: 'white' }
-              }}
-            />
-          </Box>
-        )}
-
         {/* Connection Selection */}
-        {!selectedConnection && (
-          <>
-            <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1 }}>
-              Select Connection:
-            </Typography>
+        <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1 }}>
+          Select Connection:
+        </Typography>
             
             {/* Search */}
             <TextField
@@ -369,38 +318,6 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
                 ))}
               </List>
             )}
-          </>
-        )}
-
-        {/* Message Input */}
-        {selectedConnection && (
-          <>
-            <Typography variant="subtitle2" sx={{ color: '#f8fafc', mb: 1, mt: 2 }}>
-              Message:
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              placeholder="Type your message..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: '#334155',
-                  color: '#f8fafc',
-                  '& fieldset': { borderColor: '#475569' },
-                  '&:hover fieldset': { borderColor: '#64748b' },
-                  '&.Mui-focused fieldset': { borderColor: '#10b981' }
-                },
-                '& textarea::placeholder': {
-                  color: '#94a3b8',
-                  opacity: 1
-                }
-              }}
-            />
-          </>
-        )}
       </DialogContent>
 
       <DialogActions sx={{ p: 3, borderTop: '1px solid #334155' }}>
@@ -409,20 +326,6 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
           sx={{ color: '#94a3b8' }}
         >
           Cancel
-        </Button>
-        <Button
-          onClick={handleSendMessage}
-          disabled={loading || !selectedConnection || !message.trim()}
-          variant="contained"
-          startIcon={loading ? <CircularProgress size={16} /> : <SendIcon />}
-          sx={{
-            bgcolor: '#10b981',
-            color: 'white',
-            '&:hover': { bgcolor: '#059669' },
-            '&:disabled': { bgcolor: '#374151', color: '#6b7280' }
-          }}
-        >
-          {loading ? 'Sending...' : 'Send Message'}
         </Button>
       </DialogActions>
     </Dialog>

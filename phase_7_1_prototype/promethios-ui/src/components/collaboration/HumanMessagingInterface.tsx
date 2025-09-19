@@ -25,6 +25,8 @@ import {
   AttachFile as AttachIcon,
   EmojiEmotions as EmojiIcon
 } from '@mui/icons-material';
+import { getAuth } from 'firebase/auth';
+import { firebaseDirectMessageService } from '../../services/FirebaseDirectMessageService';
 
 // Message types for human conversations
 interface HumanMessage {
@@ -66,6 +68,35 @@ const HumanMessagingInterface: React.FC<HumanMessagingInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mentionsAnchorRef = useRef<HTMLDivElement>(null);
+
+  // Load messages when conversation changes
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (conversationType === 'direct_message' && conversationId) {
+        try {
+          console.log('📥 [HumanMessagingInterface] Loading messages for conversation:', conversationId);
+          const conversationMessages = await firebaseDirectMessageService.getConversationMessages(conversationId);
+          
+          // Transform Firebase messages to HumanMessage format
+          const transformedMessages: HumanMessage[] = conversationMessages.map(msg => ({
+            id: msg.id,
+            content: msg.content,
+            senderId: msg.senderId,
+            senderName: msg.senderName,
+            timestamp: msg.timestamp,
+            mentions: msg.mentions
+          }));
+          
+          setMessages(transformedMessages);
+          console.log('✅ [HumanMessagingInterface] Loaded', transformedMessages.length, 'messages');
+        } catch (error) {
+          console.error('❌ [HumanMessagingInterface] Error loading messages:', error);
+        }
+      }
+    };
+
+    loadMessages();
+  }, [conversationId, conversationType]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -170,36 +201,70 @@ const HumanMessagingInterface: React.FC<HumanMessagingInterfaceProps> = ({
     }
   };
   // Handle message sending
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
 
-    // Create new message with mentions
-    const newMessage: HumanMessage = {
-      id: Date.now().toString(),
-      content: messageInput.trim(),
-      senderId: 'current-user', // This would come from auth context
-      senderName: 'You', // This would come from auth context
-      timestamp: new Date(),
-      mentions: mentions.length > 0 ? mentions : undefined
-    };
+    try {
+      // Get current user from auth context
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        console.error('❌ [HumanMessagingInterface] No authenticated user');
+        return;
+      }
 
-    // Add message to list
-    setMessages(prev => [...prev, newMessage]);
+      // Create new message with mentions
+      const newMessage: HumanMessage = {
+        id: Date.now().toString(),
+        content: messageInput.trim(),
+        senderId: currentUser.uid,
+        senderName: currentUser.displayName || 'You',
+        senderAvatar: currentUser.photoURL || undefined,
+        timestamp: new Date(),
+        mentions: mentions.length > 0 ? mentions : undefined
+      };
 
-    // Clear input and reset state
-    setMessageInput('');
-    setMentions([]);
-    setIsTyping(false);
-    setShowMentions(false);
-    setShowEmojiPicker(false);
-    
-    // Focus back on input
-    if (inputRef.current) {
-      inputRef.current.focus();
+      // Add message to local state immediately for responsive UI
+      setMessages(prev => [...prev, newMessage]);
+
+      // Clear input and reset state
+      setMessageInput('');
+      setMentions([]);
+      setIsTyping(false);
+      setShowMentions(false);
+      setShowEmojiPicker(false);
+      
+      // Focus back on input
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+
+      // Send message to Firebase
+      if (conversationType === 'direct_message') {
+        await firebaseDirectMessageService.addMessageToConversation(conversationId, {
+          senderId: currentUser.uid,
+          senderName: currentUser.displayName || 'You',
+          content: messageInput.trim(),
+          timestamp: new Date()
+        });
+
+        // Update conversation's last message
+        await firebaseDirectMessageService.updateConversationLastMessage(
+          conversationId,
+          messageInput.trim(),
+          currentUser.uid
+        );
+      } else {
+        // Handle channel messages (to be implemented)
+        console.log('📢 [HumanMessagingInterface] Channel message sending not yet implemented');
+      }
+
+      console.log('✅ [HumanMessagingInterface] Message sent successfully:', newMessage);
+    } catch (error) {
+      console.error('❌ [HumanMessagingInterface] Error sending message:', error);
+      // TODO: Show error message to user
     }
-
-    // TODO: Send message to Firebase/backend with mentions
-    console.log('Sending message:', newMessage);
   };
 
   // Handle key press

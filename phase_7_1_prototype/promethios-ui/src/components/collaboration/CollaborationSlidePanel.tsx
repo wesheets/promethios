@@ -298,8 +298,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
       console.log('🤝 [CollaborationPanel] Auth finished loading, calling loadAgents');
       loadAgents();
       if (user?.uid) {
-        console.log('🤝 [CollaborationPanel] User available, calling loadConnections');
+        console.log('🤝 [CollaborationPanel] User available, calling loadConnections and loadDirectMessages');
         loadConnections();
+        loadDirectMessages();
       }
     } else {
       console.log('🤝 [CollaborationPanel] Auth still loading, waiting...');
@@ -329,6 +330,21 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
       setConnections([]);
     } finally {
       setConnectionsLoading(false);
+    }
+  };
+
+  // Load direct message conversations from Firebase
+  const loadDirectMessages = async () => {
+    try {
+      setDirectMessagesLoading(true);
+      const userDirectMessages = await firebaseDirectMessageService.getUserDirectMessages();
+      setDirectMessages(userDirectMessages);
+      console.log('✅ [CollaborationPanel] Loaded', userDirectMessages.length, 'direct message conversations');
+    } catch (error) {
+      console.error('❌ [CollaborationPanel] Failed to load direct messages:', error);
+      setDirectMessages([]);
+    } finally {
+      setDirectMessagesLoading(false);
     }
   };
 
@@ -516,9 +532,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     }
   ]);
 
-  const [directMessages] = useState<DirectMessage[]>([]);
+  const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
   const [connections, setConnections] = useState<UserConnection[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [directMessagesLoading, setDirectMessagesLoading] = useState(false);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => ({
@@ -642,6 +659,9 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     // Open messaging panel using panel manager
     openPanel(`messaging-${messageData.id}`, 'messaging', messageData.participant.name);
     setMessagingPanelOpen(true);
+    
+    // Refresh the direct messages list to show the new conversation
+    loadDirectMessages();
   };
 
   // Handle messaging panel close
@@ -1042,13 +1062,13 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                 <Collapse in={expandedSections.directMessages} timeout="auto" unmountOnExit>
                   <List component="div" disablePadding sx={{ pl: 2 }}>
                     {/* Show loading state */}
-                    {connectionsLoading && (
+                    {directMessagesLoading && (
                       <ListItem sx={{ px: 2, py: 1 }}>
                         <ListItemIcon sx={{ minWidth: 28 }}>
                           <CircularProgress size={16} sx={{ color: '#94a3b8' }} />
                         </ListItemIcon>
                         <ListItemText 
-                          primary="Loading connections..."
+                          primary="Loading conversations..."
                           primaryTypographyProps={{
                             fontSize: '0.8rem',
                             color: '#94a3b8',
@@ -1058,76 +1078,101 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                       </ListItem>
                     )}
                     
-                    {/* Show connections as direct messages */}
-                    {!connectionsLoading && filterBySearch(connections, ['name']).map((connection) => (
-                      <ListItem key={connection.id} sx={{ px: 2, py: 0.5 }}>
-                        <ListItemButton
-                          onClick={() => handleDirectMessageClick(connection.id, connection.name)}
-                          sx={{ 
-                            px: 1, 
-                            py: 0.5, 
-                            borderRadius: 1,
-                            '&:hover': { bgcolor: '#334155' }
-                          }}
-                        >
-                          <ListItemIcon sx={{ minWidth: 28 }}>
-                            <Box sx={{ position: 'relative' }}>
-                              <Avatar
-                                sx={{ 
-                                  width: 20, 
-                                  height: 20, 
-                                  fontSize: '0.7rem',
-                                  bgcolor: '#64748b'
-                                }}
-                              >
-                                {connection.avatar || connection.name?.charAt(0)?.toUpperCase() || 'U'}
-                              </Avatar>
-                              {connection.isOnline ? (
-                                <OnlineIcon 
-                                  sx={{ 
-                                    position: 'absolute',
-                                    bottom: -2,
-                                    right: -2,
-                                    fontSize: 8,
-                                    color: '#10b981'
-                                  }} 
-                                />
-                              ) : (
-                                <OfflineIcon 
-                                  sx={{ 
-                                    position: 'absolute',
-                                    bottom: -2,
-                                    right: -2,
-                                    fontSize: 8,
-                                    color: '#6b7280'
-                                  }} 
-                                />
-                              )}
-                            </Box>
-                          </ListItemIcon>
-                          <ListItemText 
-                            primary={connection.name}
-                            primaryTypographyProps={{
-                              fontSize: '0.8rem',
-                              color: '#f8fafc'
+                    {/* Show active direct message conversations */}
+                    {!directMessagesLoading && directMessages.length > 0 && directMessages.map((dm) => {
+                      // Get the other participant (not the current user)
+                      const currentUserId = user?.uid;
+                      const otherParticipantIndex = dm.participantIds.findIndex(id => id !== currentUserId);
+                      const otherParticipantId = dm.participantIds[otherParticipantIndex];
+                      const otherParticipantName = dm.participantNames[otherParticipantIndex] || 'Unknown User';
+                      const otherParticipantAvatar = dm.participantAvatars[otherParticipantIndex];
+                      
+                      return (
+                        <ListItem key={dm.id} sx={{ px: 2, py: 0.5 }}>
+                          <ListItemButton
+                            onClick={() => handleDirectMessageClick(dm.id, otherParticipantName)}
+                            sx={{ 
+                              px: 1, 
+                              py: 0.5, 
+                              borderRadius: 1,
+                              '&:hover': { bgcolor: '#334155' }
                             }}
-                          />
-                          {connection.unreadCount && connection.unreadCount > 0 && (
-                            <Badge 
-                              badgeContent={connection.unreadCount} 
-                              color="error"
-                              sx={{
-                                '& .MuiBadge-badge': {
-                                  fontSize: '0.6rem',
-                                  height: 16,
-                                  minWidth: 16
-                                }
+                          >
+                            <ListItemIcon sx={{ minWidth: 28 }}>
+                              <Box sx={{ position: 'relative' }}>
+                                <Avatar
+                                  src={otherParticipantAvatar}
+                                  sx={{ 
+                                    width: 20, 
+                                    height: 20, 
+                                    fontSize: '0.7rem',
+                                    bgcolor: '#6366f1'
+                                  }}
+                                >
+                                  {otherParticipantName.charAt(0).toUpperCase()}
+                                </Avatar>
+                                {dm.isOnline && (
+                                  <OnlineIcon 
+                                    sx={{ 
+                                      position: 'absolute', 
+                                      bottom: -2, 
+                                      right: -2,
+                                      fontSize: 8,
+                                      color: '#10b981'
+                                    }} 
+                                  />
+                                )}
+                              </Box>
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={otherParticipantName}
+                              secondary={dm.lastMessage ? 
+                                (dm.lastMessage.length > 30 ? 
+                                  `${dm.lastMessage.substring(0, 30)}...` : 
+                                  dm.lastMessage
+                                ) : 
+                                'No messages yet'
+                              }
+                              primaryTypographyProps={{
+                                fontSize: '0.8rem',
+                                color: '#f8fafc'
+                              }}
+                              secondaryTypographyProps={{
+                                fontSize: '0.7rem',
+                                color: '#94a3b8'
                               }}
                             />
-                          )}
-                        </ListItemButton>
+                            {dm.unreadCount && dm.unreadCount > 0 && (
+                              <Badge 
+                                badgeContent={dm.unreadCount} 
+                                color="error"
+                                sx={{
+                                  '& .MuiBadge-badge': {
+                                    fontSize: '0.6rem',
+                                    height: 16,
+                                    minWidth: 16
+                                  }
+                                }}
+                              />
+                            )}
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    })}
+                    
+                    {/* Show empty state if no conversations */}
+                    {!directMessagesLoading && directMessages.length === 0 && (
+                      <ListItem sx={{ px: 2, py: 1 }}>
+                        <ListItemText 
+                          primary="No conversations yet"
+                          primaryTypographyProps={{
+                            fontSize: '0.8rem',
+                            color: '#94a3b8',
+                            fontStyle: 'italic'
+                          }}
+                        />
                       </ListItem>
-                    ))}
+                    )}
                     
                     {/* Add Message Button */}
                     <ListItem sx={{ px: 2, py: 0.5 }}>

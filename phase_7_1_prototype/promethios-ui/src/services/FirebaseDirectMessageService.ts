@@ -281,7 +281,7 @@ export class FirebaseDirectMessageService {
   /**
    * Add a message to a conversation
    */
-  private async addMessageToConversation(conversationId: string, message: {
+  async addMessageToConversation(conversationId: string, message: {
     senderId: string;
     senderName: string;
     content: string;
@@ -348,6 +348,35 @@ export class FirebaseDirectMessageService {
     } catch (error) {
       console.error('❌ [FirebaseDirectMessageService] Error fetching user online status:', error);
       return false;
+    }
+  }
+
+  /**
+   * Get messages from a conversation
+   */
+  async getConversationMessages(conversationId: string): Promise<any[]> {
+    try {
+      const messagesRef = collection(db, 'directMessages', conversationId, 'messages');
+      const q = query(messagesRef, orderBy('timestamp', 'asc'));
+      const snapshot = await getDocs(q);
+      
+      const messages: any[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        messages.push({
+          id: doc.id,
+          senderId: data.senderId,
+          senderName: data.senderName,
+          content: data.content,
+          timestamp: data.timestamp?.toDate() || new Date(),
+          createdAt: data.createdAt?.toDate() || new Date()
+        });
+      });
+      
+      return messages;
+    } catch (error) {
+      console.error('❌ [FirebaseDirectMessageService] Error fetching conversation messages:', error);
+      return [];
     }
   }
 
