@@ -474,9 +474,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: { xs: '100vw', sm: '500px', md: '600px' }, // Responsive width
-          minWidth: '400px',
-          maxWidth: '600px',
+          width: 600,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -498,9 +496,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: { xs: '100vw', sm: '500px', md: '600px' }, // Responsive width
-          minWidth: '400px',
-          maxWidth: '600px',
+          width: 600,
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -524,9 +520,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   return (
     <Paper
       sx={{
-        width: { xs: '100vw', sm: '500px', md: '600px' }, // Responsive width
-        minWidth: '400px',
-        maxWidth: '600px',
+        width: 600,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
