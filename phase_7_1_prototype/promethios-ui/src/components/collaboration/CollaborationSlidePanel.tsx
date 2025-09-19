@@ -720,8 +720,47 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
               </Box>
             </Box>
 
+            {/* Quick Start Button */}
+            <Box sx={{ p: 2, pb: 1 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => {
+                  console.log('🚀 [CollaborationPanel] Opening Quick Start panel');
+                  openPanel('quick-start', 'quick-start-iframe', 'Quick Start');
+                }}
+                sx={{
+                  bgcolor: '#3b82f6',
+                  color: 'white',
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  textTransform: 'none',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                  '&:hover': {
+                    bgcolor: '#2563eb',
+                    boxShadow: '0 6px 16px rgba(59, 130, 246, 0.4)',
+                    transform: 'translateY(-1px)'
+                  },
+                  transition: 'all 0.2s ease-in-out'
+                }}
+                startIcon={
+                  <Box sx={{ 
+                    fontSize: '1.2rem',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    🚀
+                  </Box>
+                }
+              >
+                Quick Start
+              </Button>
+            </Box>
+
             {/* Search */}
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ p: 2, pt: 1 }}>
               <TextField
                 fullWidth
                 size="small"
@@ -1323,8 +1362,8 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
                           <ListItem sx={{ px: 2, py: 0.5 }}>
                             <ListItemButton
                               onClick={() => {
-                                console.log('🤖 [CollaborationPanel] Opening Chatbot Management panel');
-                                openPanel('chatbot-management', 'chatbot-management', 'Chatbot Management');
+                                console.log('🤖 [CollaborationPanel] Opening All Chatbots iframe panel');
+                                openPanel('all-chatbots', 'all-chatbots-iframe', 'My Chatbots');
                               }}
                               sx={{ 
                                 px: 1, 
@@ -1655,7 +1694,138 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
         width={(isPanelOpen && isPanelOpen('workflow')) ? getPanelWidth('workflow') : '0%'}
       />
 
-      {/* Chatbot Management Panel */}
+      {/* All Chatbots Iframe Panel */}
+      {isPanelOpen && isPanelOpen('all-chatbots') && (
+        <Slide direction="left" in={true} mountOnEnter unmountOnExit>
+          <Box
+            sx={{
+              position: 'fixed',
+              top: '56px', // Start below AgentDocker
+              right: 0,
+              width: getPanelWidth('all-chatbots'),
+              height: 'calc(100vh - 56px)', // Adjust height to account for docker
+              bgcolor: '#0f172a',
+              borderLeft: '1px solid #334155',
+              zIndex: 1300,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Header */}
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: '#161a1f',
+                borderBottom: '1px solid #334155',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: '60px'
+              }}
+            >
+              <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 600 }}>
+                My Chatbots
+              </Typography>
+              <IconButton
+                onClick={() => closePanel('all-chatbots')}
+                size="small"
+                sx={{
+                  color: '#cbd5e1',
+                  '&:hover': { bgcolor: '#334155' }
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            
+            {/* Iframe Content */}
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+              <iframe
+                src="/ui/chat/chatbots"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  backgroundColor: '#0f172a'
+                }}
+                title="My Chatbots"
+              />
+            </Box>
+          </Box>
+        </Slide>
+      )}
+
+      {/* Quick Start Iframe Panel */}
+      {isPanelOpen && isPanelOpen('quick-start') && (
+        <Slide direction="left" in={true} mountOnEnter unmountOnExit>
+          <Box
+            sx={{
+              position: 'fixed',
+              top: '56px', // Start below AgentDocker
+              right: 0,
+              width: getPanelWidth('quick-start'),
+              height: 'calc(100vh - 56px)', // Adjust height to account for docker
+              bgcolor: '#0f172a',
+              borderLeft: '1px solid #334155',
+              zIndex: 1300,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Header */}
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: '#161a1f',
+                borderBottom: '1px solid #334155',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: '60px'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ 
+                  fontSize: '1.5rem',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  🚀
+                </Box>
+                <Typography variant="h6" sx={{ color: '#f8fafc', fontWeight: 600 }}>
+                  Quick Start
+                </Typography>
+              </Box>
+              <IconButton
+                onClick={() => closePanel('quick-start')}
+                size="small"
+                sx={{
+                  color: '#cbd5e1',
+                  '&:hover': { bgcolor: '#334155' }
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            
+            {/* Iframe Content */}
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+              <iframe
+                src="/ui/chat/setup/quick-start"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  backgroundColor: '#0f172a'
+                }}
+                title="Quick Start Setup"
+              />
+            </Box>
+          </Box>
+        </Slide>
+      )}
+
+      {/* Chatbot Management Panel - Keep for backward compatibility */}
       <ChatbotManagementPanel
         open={isPanelOpen ? isPanelOpen('chatbot-management') : false}
         onClose={() => closePanel('chatbot-management')}
@@ -1717,10 +1887,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           <Box
             sx={{
               position: 'fixed',
-              top: 0,
+              top: '56px', // Start below AgentDocker
               right: 0,
               width: getPanelWidth(`agent-${urlState.agent}`),
-              height: '100vh',
+              height: 'calc(100vh - 56px)', // Adjust height to account for docker
               bgcolor: '#0f172a',
               borderLeft: '1px solid #334155',
               zIndex: 1300,
@@ -1765,10 +1935,10 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           <Box
             sx={{
               position: 'fixed',
-              top: 0,
+              top: '56px', // Start below AgentDocker
               right: 0,
               width: getPanelWidth(`agent-${activeAgentCommandCenter.agentId}`),
-              height: '100vh',
+              height: 'calc(100vh - 56px)', // Adjust height to account for docker
               bgcolor: '#0f172a',
               borderLeft: '1px solid #334155',
               zIndex: 1300,

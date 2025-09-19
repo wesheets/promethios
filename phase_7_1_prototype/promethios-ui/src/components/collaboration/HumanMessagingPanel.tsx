@@ -56,10 +56,10 @@ const HumanMessagingPanel: React.FC<HumanMessagingPanelProps> = ({
       <Box
         sx={{
           position: 'fixed',
-          top: 0,
+          top: '56px', // Start below AgentDocker
           right: 0,
           width: width,
-          height: '100vh',
+          height: 'calc(100vh - 56px)', // Adjust height to account for docker
           bgcolor: '#0f172a',
           borderLeft: '1px solid #334155',
           zIndex: 1300,
