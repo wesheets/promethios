@@ -243,18 +243,17 @@ export const EnhancedThreadInput: React.FC<EnhancedThreadInputProps> = ({
                   selectedAgents={selectedAgents}
                   onSelectionChange={onAgentSelectionChange}
                   teamMembers={[]} // Thread-specific: no team members in thread context
-                  aiAgents={[
-                    // Include host agent in aiAgents for proper avatar display
-                    ...(hostAgent ? [{
+                  aiAgents={
+                    // Thread-specific: Only show the host agent (original message sender)
+                    // Don't include guest agents to avoid duplication in thread context
+                    hostAgent ? [{
                       id: hostAgent.id,
                       name: hostAgent.name,
                       avatar: hostAgent.avatar,
                       type: 'agent' as const,
                       status: 'active' as const
-                    }] : []),
-                    // Include guest agents
-                    ...guestAgents
-                  ]}
+                    }] : []
+                  }
                   connectionsLoading={false}
                   onAddGuests={() => {}} // Thread-specific: disable guest adding in threads
                   unifiedParticipants={[]} // Thread-specific: simplified for thread context

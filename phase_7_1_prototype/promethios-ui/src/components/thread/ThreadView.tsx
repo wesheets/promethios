@@ -212,6 +212,7 @@ const ThreadMessageItem: React.FC<{
       onAgentInteraction={onAgentInteraction}
       onStartThread={() => {}} // Disable nested threading
       onOpenThread={() => {}} // Disable nested threading
+      isInThread={true} // Mark as being in thread context
     />
   );
 };

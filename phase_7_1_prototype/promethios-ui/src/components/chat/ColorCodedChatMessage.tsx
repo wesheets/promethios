@@ -208,8 +208,8 @@ const ColorCodedChatMessage: React.FC<ColorCodedChatMessageProps> = ({
           </Typography>
         </Box>
 
-        {/* Reply Button - appears on hover */}
-        {isHovered && onStartThread && !message.thread && (
+        {/* Reply Button - appears on hover, but not when already in a thread */}
+        {isHovered && onStartThread && !message.thread && !isInThread && (
           <Box sx={{
             position: 'absolute',
             top: -8,
