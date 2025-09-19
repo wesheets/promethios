@@ -227,10 +227,13 @@ export class FirebaseDirectMessageService {
 
       const messagesRef = collection(db, 'directMessages');
       // Simplified query to avoid Firebase index requirement
+      console.log('🔍 [FirebaseDirectMessageService] Creating query with participantIds array-contains only');
       const q = query(
         messagesRef,
         where('participantIds', 'array-contains', this.currentUserId)
       );
+      
+      console.log('🔍 [FirebaseDirectMessageService] About to execute getDocs query');
 
       const snapshot = await getDocs(q);
       const messages: DirectMessage[] = [];
