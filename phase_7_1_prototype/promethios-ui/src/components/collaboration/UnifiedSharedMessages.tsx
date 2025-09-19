@@ -152,9 +152,20 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
     let unsubscribe: (() => void) | undefined;
     
     if (isUnifiedMode && guestAccess) {
-      // Unified mode: Messages are loaded initially, no real-time listener needed for now
-      console.log('🔍 [UnifiedSharedMessages] Unified mode: Using initial message load (no real-time listener)');
-      // TODO: Implement proper real-time listener for unified mode if needed
+      // Unified mode: Set up real-time listener for host conversation
+      console.log('🔍 [UnifiedSharedMessages] Unified mode: Setting up real-time listener for host conversation');
+      
+      unsubscribe = unifiedGuestChatService.subscribeToHostConversation(
+        guestAccess.hostUserId,
+        guestAccess.conversationId,
+        (updatedSession) => {
+          if (updatedSession?.messages) {
+            console.log('🔄 [UnifiedSharedMessages] Messages updated via unified listener:', updatedSession.messages.length);
+            setMessages(updatedSession.messages);
+            setChatSession(updatedSession);
+          }
+        }
+      );
     } else {
       // Use legacy chat history service
       unsubscribe = chatHistoryService.subscribeToSession(chatSession.id, (session) => {

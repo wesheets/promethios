@@ -6733,19 +6733,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                           
                                           const hostChatSession = loadedHostChatSession;
                                           
-                                          // For avatar selector, include ALL agents (host + guests) for message targeting
+                                          // For avatar selector, include only GUEST agents (host agent is already provided via hostAgent prop)
                                           const allAgents = [];
                                           
-                                          // Add host agent if it exists
-                                          if (hostChatSession.agentId) {
-                                            allAgents.push({
-                                              id: hostChatSession.agentId,
-                                              name: hostChatSession.agentName || 'Host Agent',
-                                              type: 'agent' as const,
-                                              avatar: undefined,
-                                              status: 'active'
-                                            });
-                                          }
+                                          // Don't add host agent here - it's already provided via hostAgent prop to avoid duplicates
                                           
                                           // Add guest agents (but exclude host agent to avoid duplicates)
                                           const guestAgents = hostChatSession.participants?.guests?.filter(g => 

@@ -279,6 +279,44 @@ class UnifiedGuestChatService {
   }
 
   /**
+   * Subscribe to real-time updates for host conversation
+   */
+  subscribeToHostConversation(
+    hostUserId: string, 
+    conversationId: string, 
+    callback: (session: ChatSession | null) => void
+  ): () => void {
+    try {
+      console.log('🔍 [UnifiedGuestChat] Setting up real-time listener for host conversation:', {
+        hostUserId,
+        conversationId
+      });
+      
+      // Use the chat history service to subscribe to the host's conversation
+      const unsubscribe = chatHistoryService.subscribeToSession(conversationId, async (session) => {
+        if (session) {
+          console.log('🔄 [UnifiedGuestChat] Host conversation updated via real-time listener');
+          
+          // Ensure host agent is in participants and discover additional agents
+          await this.ensureHostAgentInParticipants(session);
+          await this.discoverAdditionalAIAgents(session);
+          
+          callback(session);
+        } else {
+          callback(null);
+        }
+      });
+      
+      console.log('✅ [UnifiedGuestChat] Real-time listener established');
+      return unsubscribe;
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error setting up real-time listener:', error);
+      return () => {}; // Return empty unsubscribe function
+    }
+  }
+
+  /**
    * Trigger real-time session refresh on host side
    */
   private triggerHostSessionRefresh(sessionId: string): void {
