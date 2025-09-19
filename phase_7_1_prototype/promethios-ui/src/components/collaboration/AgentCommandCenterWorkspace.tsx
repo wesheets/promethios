@@ -61,7 +61,7 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
   );
 
   // Construct the actual command center URL with navigation hiding parameters
-  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}&hideNav=true&hideDocker=true&embedded=true`;
+  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}&hideNav=true&hideDocker=true`;
 
   // Inject CSS to hide navigation elements when iframe loads
   useEffect(() => {
@@ -73,9 +73,11 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
         const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
         if (!iframeDoc) return;
 
-        // Inject CSS to hide navigation elements
-        const style = iframeDoc.createElement('style');
-        style.textContent = `
+        // Add CSS injection with a slight delay to ensure DOM is ready
+        const injectCSS = () => {
+          const style = iframeDoc.createElement('style');
+          style.id = 'command-center-hide-nav';
+          style.textContent = `
           /* Hide left navigation and collaboration panels */
           nav[aria-label="Main navigation"],
           .left-navigation,
@@ -191,11 +193,26 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
           [style*="position: absolute"][style*="top: 0"] {
             display: none !important;
           }
-        `;
-        iframeDoc.head.appendChild(style);
+          `;
+          
+          // Remove existing style if it exists
+          const existingStyle = iframeDoc.getElementById('command-center-hide-nav');
+          if (existingStyle) {
+            existingStyle.remove();
+          }
+          
+          iframeDoc.head.appendChild(style);
+          console.log('🎨 CSS injected to hide navigation elements');
+        };
+
+        // Inject immediately and also after a delay to catch dynamically loaded content
+        injectCSS();
+        setTimeout(injectCSS, 500);
+        setTimeout(injectCSS, 1000);
+        
       } catch (error) {
         // Cross-origin restrictions - can't inject CSS
-        console.log('Cannot inject CSS due to cross-origin restrictions');
+        console.log('❌ Cannot inject CSS due to cross-origin restrictions:', error);
       }
     };
 
@@ -359,7 +376,7 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
           }}
           title={`${agentName} Command Center`}
           allow="clipboard-read; clipboard-write"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-pointer-lock"
         />
       </Box>
     </Box>
