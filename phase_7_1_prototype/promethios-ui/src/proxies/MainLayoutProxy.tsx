@@ -128,14 +128,43 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
           onClose={closePanel}
         />
         
-        {/* Main content area - adjust margin to account for collapsible nav and expandable panel */}
+        {/* Main content area - adjust margin to account for collapsible nav and stacking drawers */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            ml: isPanelOpen 
-              ? `calc(${preferences.navigationCollapsed ? '60px' : '260px'} + 50vw)` 
-              : (preferences.navigationCollapsed ? '60px' : '260px'),
+            ml: (() => {
+              // Calculate margin based on navigation and open panels
+              const navWidth = preferences.navigationCollapsed ? '60px' : '260px';
+              const collaborationPanelOpen = openPanel.openPanels.some(p => p.type === 'collaboration');
+              const nonCollaborationPanels = openPanel.openPanels.filter(p => p.type !== 'collaboration');
+              
+              let totalPanelWidth = 0;
+              
+              // Add collaboration panel width if open
+              if (collaborationPanelOpen) {
+                totalPanelWidth += 320;
+              }
+              
+              // Add stacking drawer widths
+              if (nonCollaborationPanels.length > 0) {
+                const availableWidth = `100vw - ${collaborationPanelOpen ? '320px' : '0px'}`;
+                if (nonCollaborationPanels.length === 1) {
+                  // Single drawer takes full available space
+                  return `calc(${navWidth} + ${collaborationPanelOpen ? '320px' : '0px'} + (${availableWidth}))`;
+                } else if (nonCollaborationPanels.length >= 2) {
+                  // Two drawers take full available space (50% each)
+                  return `calc(${navWidth} + ${collaborationPanelOpen ? '320px' : '0px'} + (${availableWidth}))`;
+                }
+              }
+              
+              // Fallback for expandable panel (legacy)
+              if (isPanelOpen) {
+                return `calc(${navWidth} + 50vw)`;
+              }
+              
+              return navWidth;
+            })(),
             pt: '60px', // Add top padding to account for AgentDocker
             px: 0, // Remove all horizontal padding for full-width chat interface
             pb: 0, // Remove bottom padding for full-height chat interface

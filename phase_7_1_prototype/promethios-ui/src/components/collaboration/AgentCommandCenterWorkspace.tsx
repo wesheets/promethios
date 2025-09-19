@@ -17,6 +17,7 @@ import {
   Close as CloseIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
+import { useDropTarget } from '../../hooks/useDragDrop';
 
 interface AgentCommandCenterWorkspaceProps {
   agentId: string;
@@ -34,8 +35,33 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
   const theme = useTheme();
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Construct the actual command center URL
-  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}`;
+  // Set up drop target for agent collaboration
+  const { dropRef, isOver, canDrop, dropHandlers } = useDropTarget(
+    `command-center-${agentId}`,
+    'command_center',
+    ['agent', 'human'],
+    async (source, context) => {
+      console.log('🤝 Agent dropped on command center:', {
+        source: source.data,
+        target: agentId,
+        position: context.position
+      });
+      
+      // Handle agent collaboration - could open a new panel or start collaboration
+      // This is where you'd implement the actual collaboration logic
+      if (source.type === 'agent') {
+        console.log(`🤖 Starting collaboration between ${source.data.name} and ${agentName}`);
+        // Could trigger opening a second command center or collaboration interface
+      } else if (source.type === 'human') {
+        console.log(`👤 Human ${source.data.name} joining ${agentName}'s command center`);
+        // Could trigger human-agent collaboration interface
+      }
+    },
+    { agentId, agentName }
+  );
+
+  // Construct the actual command center URL with navigation hiding parameters
+  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}&hideNav=true&hideDocker=true&embedded=true`;
 
   // Inject CSS to hide navigation elements when iframe loads
   useEffect(() => {
@@ -183,9 +209,59 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
           justifyContent: 'space-between',
           p: 2,
           borderBottom: `1px solid ${theme.palette.mode === 'dark' ? '#334155' : '#e2e8f0'}`,
-          bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff'
+          bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+          position: 'relative'
         }}
       >
+        {/* Docker Drop Zone - positioned at ~35% from left to align with AgentDocker */}
+        <Box
+          ref={dropRef}
+          {...dropHandlers}
+          sx={{
+            position: 'absolute',
+            left: '35%',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '120px',
+            height: '32px',
+            border: `2px dashed ${
+              isOver && canDrop 
+                ? '#3b82f6' 
+                : canDrop 
+                  ? 'rgba(59, 130, 246, 0.6)' 
+                  : 'rgba(148, 163, 184, 0.4)'
+            }`,
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: isOver && canDrop 
+              ? 'rgba(59, 130, 246, 0.15)' 
+              : canDrop 
+                ? 'rgba(59, 130, 246, 0.1)' 
+                : 'rgba(148, 163, 184, 0.05)',
+            transition: 'all 0.2s ease-in-out',
+            cursor: canDrop ? 'copy' : 'default',
+            '&:hover': {
+              borderColor: 'rgba(59, 130, 246, 0.6)',
+              bgcolor: 'rgba(59, 130, 246, 0.1)',
+            }
+          }}
+        >
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: isOver && canDrop 
+                ? '#3b82f6' 
+                : theme.palette.text.secondary,
+              fontSize: '10px',
+              fontWeight: 500,
+              textAlign: 'center'
+            }}
+          >
+            {isOver && canDrop ? 'Drop to Collaborate' : 'Drop Agent Here'}
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar
             sx={{
