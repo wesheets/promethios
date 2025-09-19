@@ -298,6 +298,7 @@ class UnifiedGuestChatService {
             newName: properName
           });
           chatSession.agentName = properName;
+          console.log('✅ [UnifiedGuestChat] Updated chatSession.agentName to:', chatSession.agentName);
         }
       }
       
@@ -313,6 +314,7 @@ class UnifiedGuestChatService {
                 newName: properName
               });
               guest.name = properName;
+              console.log('✅ [UnifiedGuestChat] Updated participant name to:', guest.name);
             }
           }
         }
@@ -330,12 +332,16 @@ class UnifiedGuestChatService {
    */
   private async getProperAgentName(agentId: string): Promise<string> {
     try {
+      console.log('🔍 [UnifiedGuestChat] Getting proper agent name for:', agentId);
+      
       // Strategy 1: Extract chatbot ID and use common patterns
       const chatbotId = this.extractChatbotId(agentId);
+      console.log('🔍 [UnifiedGuestChat] Extracted chatbot ID:', chatbotId);
       
       // Strategy 2: Common agent name patterns based on ID patterns
       if (agentId.includes('chatbot-175')) {
         // This appears to be a Claude Assistant based on the pattern
+        console.log('✅ [UnifiedGuestChat] Matched chatbot-175 pattern, returning Claude Assistant');
         return 'Claude Assistant';
       }
       
