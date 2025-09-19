@@ -289,7 +289,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
                             src={connection.connectedUserAvatar}
                             sx={{ width: 40, height: 40 }}
                           >
-                            {(connection.connectedUserName || 'U').charAt(0).toUpperCase()}
+                            {(connection.connectedUserName || 'U')?.charAt(0)?.toUpperCase() || '?'}
                           </Avatar>
                           {connection.isOnline && (
                             <OnlineIcon

@@ -329,7 +329,7 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
                     src={connection.connectedUserAvatar}
                     sx={{ width: 32, height: 32 }}
                   >
-                    {connection.connectedUserName.charAt(0).toUpperCase()}
+                    {connection.connectedUserName?.charAt(0)?.toUpperCase() || '?'}
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
