@@ -683,7 +683,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
             {/* Fixed Header with Spark Logo and Notification Bell */}
             <Box sx={{ 
               p: 2, 
-              bgcolor: '#161a1f',
+              bgcolor: '#3b82f6',
               borderBottom: '1px solid #334155',
               display: 'flex',
               alignItems: 'center',
@@ -693,8 +693,8 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
               {/* Spark Logo */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <img 
-                  src="/embossflame.png" 
-                  alt="Promethios" 
+                  src="/sparkwhitelogo.png" 
+                  alt="Spark" 
                   style={{ 
                     width: '32px', 
                     height: '32px',
@@ -1668,7 +1668,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
 
             {/* Fixed Footer with User Profile */}
             <Box sx={{ 
-              bgcolor: '#161a1f',
+              bgcolor: '#3b82f6',
               borderTop: '1px solid #334155',
               p: 0
             }}>
