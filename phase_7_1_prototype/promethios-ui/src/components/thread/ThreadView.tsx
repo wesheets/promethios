@@ -674,13 +674,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             }
             return null;
           })()}
-          guestAgents={(availableAgents || []).map(agent => ({
-            id: agent.id,
-            name: agent.name,
-            type: 'agent' as const,
-            avatar: agent.avatar,
-            status: 'active'
-          }))}
+          guestAgents={[]} // Thread-specific: No guest agents to avoid duplication with hostAgent
           selectedAgents={selectedAgents?.map(agent => agent.id) || []}
           onAgentSelectionChange={(agentIds: string[]) => {
             // Convert agent IDs back to agent objects
