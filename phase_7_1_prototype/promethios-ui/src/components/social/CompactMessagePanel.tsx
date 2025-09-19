@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { ConnectionService } from '../../services/ConnectionService';
 import { MessageService } from '../../services/MessageService';
+import { useAuth } from '../../context/AuthContext';
 
 interface CompactMessagePanelProps {
   isOpen: boolean;
@@ -57,6 +58,7 @@ const CompactMessagePanel: React.FC<CompactMessagePanelProps> = ({
   onClose,
   onOpenFloatingChat,
 }) => {
+  const { user } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -80,8 +82,15 @@ const CompactMessagePanel: React.FC<CompactMessagePanelProps> = ({
   const loadConnections = async () => {
     try {
       setLoading(true);
+      
+      if (!user?.uid) {
+        setConnections([]);
+        setLoading(false);
+        return;
+      }
+      
       const connectionService = ConnectionService.getInstance();
-      const userConnections = await connectionService.getUserConnections();
+      const userConnections = await connectionService.getUserConnections(user.uid);
       
       // Transform connections to our format
       const formattedConnections: Connection[] = userConnections.map(conn => ({

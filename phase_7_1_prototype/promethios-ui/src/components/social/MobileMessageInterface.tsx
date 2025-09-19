@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { TransitionProps } from '@mui/material/transitions';
 import { ConnectionService } from '../../services/ConnectionService';
+import { useAuth } from '../../context/AuthContext';
 
 const Transition = React.forwardRef(function Transition(
   props: TransitionProps & {
@@ -65,6 +66,7 @@ const MobileMessageInterface: React.FC<MobileMessageInterfaceProps> = ({
   onClose,
   onOpenChat,
 }) => {
+  const { user } = useAuth();
   const [view, setView] = useState<'chats' | 'newChat'>('chats');
   const [searchQuery, setSearchQuery] = useState('');
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -86,8 +88,15 @@ const MobileMessageInterface: React.FC<MobileMessageInterfaceProps> = ({
   const loadConnections = async () => {
     try {
       setLoading(true);
+      
+      if (!user?.uid) {
+        setConnections([]);
+        setLoading(false);
+        return;
+      }
+      
       const connectionService = ConnectionService.getInstance();
-      const userConnections = await connectionService.getUserConnections();
+      const userConnections = await connectionService.getUserConnections(user.uid);
       
       const formattedConnections: Connection[] = userConnections.map(conn => ({
         id: conn.id,

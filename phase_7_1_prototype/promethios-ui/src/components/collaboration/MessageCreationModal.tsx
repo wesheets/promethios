@@ -86,7 +86,7 @@ const MessageCreationModal: React.FC<MessageCreationModalProps> = ({
       }
       
       // Use the same ConnectionService that the left navigation uses successfully
-      const userConnections = await connectionService.getUserConnections();
+      const userConnections = await connectionService.getUserConnections(user.uid);
       console.log('💬 [MessageModal] Found', userConnections.length, 'user connections');
       
       setConnections(userConnections);

@@ -89,7 +89,7 @@ const ChannelCreationModal: React.FC<ChannelCreationModalProps> = ({
       }
       
       // Use the same ConnectionService that the left navigation uses successfully
-      const userConnections = await connectionService.getUserConnections();
+      const userConnections = await connectionService.getUserConnections(user.uid);
       console.log('🏢 [ChannelModal] Found', userConnections.length, 'user connections');
       
       setConnections(userConnections);

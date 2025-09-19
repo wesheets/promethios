@@ -11,12 +11,14 @@ import {
 } from '@mui/icons-material';
 import ResponsiveMessageInterface from './ResponsiveMessageInterface';
 import { ConnectionService } from '../../services/ConnectionService';
+import { useAuth } from '../../context/AuthContext';
 
 interface ChatButtonProps {
   collapsed: boolean;
 }
 
 const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [connections, setConnections] = useState<any[]>([]);
@@ -30,8 +32,13 @@ const ChatButton: React.FC<ChatButtonProps> = ({ collapsed }) => {
 
   const loadConnections = async () => {
     try {
+      if (!user?.uid) {
+        setConnections([]);
+        return;
+      }
+      
       const connectionService = ConnectionService.getInstance();
-      const userConnections = await connectionService.getUserConnections();
+      const userConnections = await connectionService.getUserConnections(user.uid);
       setConnections(userConnections);
     } catch (error) {
       console.error('Failed to load connections:', error);
