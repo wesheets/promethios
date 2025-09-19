@@ -282,14 +282,14 @@ class UnifiedGuestChatService {
   }
 
   /**
-   * Enrich agent names in chat session with proper names from chatbot profiles
+   * Enrich agent names with proper names from chatbot profiles and add color/host user data
    */
   private async enrichAgentNames(chatSession: ChatSession): Promise<void> {
     try {
-      console.log('🔍 [UnifiedGuestChat] Enriching agent names for session:', chatSession.id);
+      console.log('✨ [UnifiedGuestChat] Enriching agent names and data in chat session');
       
-      // Get proper agent name for the main chat session agent
-      if (chatSession.agentId) {
+      // Enrich main agent name
+      if (chatSession.agentId && chatSession.agentName) {
         const properName = await this.getProperAgentName(chatSession.agentId);
         if (properName && properName !== chatSession.agentName) {
           console.log('✨ [UnifiedGuestChat] Enriching main agent name:', {
@@ -302,29 +302,124 @@ class UnifiedGuestChatService {
         }
       }
       
-      // Enrich agent names in participants.guests
+      // Enrich agent names and colors in participants.guests
       if (chatSession.participants?.guests) {
         for (const guest of chatSession.participants.guests) {
           if (guest.type === 'ai_agent' && guest.id) {
             const properName = await this.getProperAgentName(guest.id);
+            const agentColor = this.getAgentColor(guest.id, properName);
+            
             if (properName && properName !== guest.name) {
               console.log('✨ [UnifiedGuestChat] Enriching participant agent name:', {
                 agentId: guest.id,
                 oldName: guest.name,
-                newName: properName
+                newName: properName,
+                color: agentColor
               });
               guest.name = properName;
-              console.log('✅ [UnifiedGuestChat] Updated participant name to:', guest.name);
+              // Add color to participant metadata
+              if (!guest.metadata) guest.metadata = {};
+              guest.metadata.color = agentColor;
+              console.log('✅ [UnifiedGuestChat] Updated participant name and color:', { name: guest.name, color: agentColor });
             }
           }
         }
       }
       
-      console.log('✅ [UnifiedGuestChat] Agent name enrichment completed');
+      // Enrich host user data
+      await this.enrichHostUserData(chatSession);
+      
+      console.log('✅ [UnifiedGuestChat] Agent name and data enrichment completed');
       
     } catch (error) {
       console.error('❌ [UnifiedGuestChat] Error enriching agent names:', error);
     }
+  }
+
+  /**
+   * Enrich host user data with proper name from host chat session
+   */
+  private async enrichHostUserData(chatSession: ChatSession): Promise<void> {
+    try {
+      console.log('✨ [UnifiedGuestChat] Enriching host user data');
+      
+      if (chatSession.participants?.host) {
+        // Try to get host user name from various sources
+        let hostUserName = chatSession.participants.host.name;
+        
+        // If host name is generic, try to get from user data or messages
+        if (!hostUserName || hostUserName === 'Host User' || hostUserName === 'User') {
+          // Look for user messages to get the actual user name
+          const userMessages = chatSession.messages?.filter(m => 
+            m.sender === 'user' && m.metadata?.userName
+          ) || [];
+          
+          if (userMessages.length > 0) {
+            const userName = userMessages[0].metadata?.userName;
+            if (userName && userName !== 'User') {
+              hostUserName = userName;
+              console.log('✨ [UnifiedGuestChat] Found host user name from messages:', userName);
+            }
+          }
+          
+          // Update the host participant name
+          if (hostUserName && hostUserName !== chatSession.participants.host.name) {
+            console.log('✨ [UnifiedGuestChat] Updating host user name:', {
+              oldName: chatSession.participants.host.name,
+              newName: hostUserName
+            });
+            chatSession.participants.host.name = hostUserName;
+            console.log('✅ [UnifiedGuestChat] Updated host user name to:', hostUserName);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error enriching host user data:', error);
+    }
+  }
+
+  /**
+   * Get agent color based on host chat color system
+   */
+  private getAgentColor(agentId: string, agentName?: string): string {
+    // Use the same color palette as the host chat
+    const agentColorPalette = [
+      '#f97316', // Orange
+      '#8b5cf6', // Purple  
+      '#10b981', // Green
+      '#ec4899', // Pink
+      '#eab308', // Yellow
+      '#06b6d4', // Cyan
+      '#ef4444', // Red
+      '#84cc16', // Lime
+    ];
+    
+    // For Claude Assistant, always use orange (first color) to match host chat
+    if (agentName === 'Claude Assistant' || agentId.includes('claude') || agentId.includes('chatbot-175')) {
+      console.log('🎨 [UnifiedGuestChat] Assigning orange color to Claude Assistant');
+      return agentColorPalette[0]; // Orange
+    }
+    
+    // For other agents, use sequential assignment based on agent ID hash
+    const agentIndex = this.hashAgentId(agentId) % agentColorPalette.length;
+    const color = agentColorPalette[agentIndex];
+    
+    console.log('🎨 [UnifiedGuestChat] Assigned color to agent:', { agentId, agentName, color, index: agentIndex });
+    return color;
+  }
+
+  /**
+   * Hash agent ID for consistent color assignment
+   */
+  private hashAgentId(agentId: string): number {
+    let hash = 0;
+    for (let i = 0; i < agentId.length; i++) {
+      const char = agentId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
 
   /**

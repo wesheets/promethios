@@ -23,6 +23,7 @@ export interface ChatParticipant {
   avatar?: string;
   status?: 'pending' | 'active' | 'declined'; // For human guests
   email?: string; // For human guests
+  metadata?: { [key: string]: any }; // For storing additional data like colors
 }
 
 export interface ChatSession {

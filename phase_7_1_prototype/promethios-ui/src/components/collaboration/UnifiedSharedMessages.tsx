@@ -240,7 +240,7 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
           guestAccess.hostUserId,
           guestAccess.conversationId,
           currentUserId,
-          'Guest User', // TODO: Get actual user name
+          chatSession?.participants?.host?.name || 'Guest User', // Use actual host user name
           messageInput.trim()
         );
       } else {
@@ -304,7 +304,7 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
         initialReply: {
           content: initialReply,
           senderId: currentUserId,
-          senderName: 'Guest User', // TODO: Get actual user name
+          senderName: chatSession?.participants?.host?.name || 'Guest User', // Use actual host user name
           senderType: 'user'
         }
       });
@@ -379,14 +379,28 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         <Stack spacing={2}>
           {messages.map((message, index) => {
-            // Get participant color helper function (copied from ChatbotProfilesPageEnhanced)
+            // Get participant color helper function (enhanced with enriched data)
             const getParticipantColor = (participantId: string, type: 'human' | 'ai') => {
               // Use exact same color system as host chat
               if (type === 'human') {
                 return '#3b82f6'; // Blue for humans
               }
               
-              // Agent color palette (exact same as host chat)
+              // First, try to get color from enriched participant metadata
+              const agentParticipant = chatSession?.participants?.guests?.find(g => 
+                g.type === 'ai_agent' && g.id === participantId
+              );
+              
+              if (agentParticipant?.metadata?.color) {
+                console.log('🎨 [UnifiedSharedMessages] Using enriched color for agent:', {
+                  agentId: participantId,
+                  agentName: agentParticipant.name,
+                  color: agentParticipant.metadata.color
+                });
+                return agentParticipant.metadata.color;
+              }
+              
+              // Fallback: Agent color palette (exact same as host chat)
               const agentColorPalette = [
                 '#f97316', // Orange
                 '#8b5cf6', // Purple  
@@ -402,6 +416,12 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                 '#f43f5e'  // Rose
               ];
               
+              // For Claude Assistant, always use orange to match host chat
+              if (participantId.includes('chatbot-175') || participantId.includes('claude')) {
+                console.log('🎨 [UnifiedSharedMessages] Using orange for Claude Assistant fallback');
+                return agentColorPalette[0]; // Orange
+              }
+              
               // Hash function to generate consistent colors (same as host chat)
               let hash = 0;
               for (let i = 0; i < participantId.length; i++) {
@@ -410,7 +430,12 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                 hash = hash & hash; // Convert to 32-bit integer
               }
               
-              return agentColorPalette[Math.abs(hash) % agentColorPalette.length];
+              const fallbackColor = agentColorPalette[Math.abs(hash) % agentColorPalette.length];
+              console.log('🎨 [UnifiedSharedMessages] Using fallback color for agent:', {
+                agentId: participantId,
+                color: fallbackColor
+              });
+              return fallbackColor;
             };
 
             // Determine sender info for shared conversation context
