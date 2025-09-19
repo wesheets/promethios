@@ -37,7 +37,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const { currentUser, logout } = useAuth();
   const { preferences } = useUserPreferences();
   const { isAdmin } = useAdminCheck();
-  const { openPanel } = usePanelManager();
+  const { openPanel, openPanels } = usePanelManager();
 
   // Expandable panel state
   const { 
@@ -136,8 +136,8 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
             ml: (() => {
               // Calculate margin based on navigation and open panels
               const navWidth = preferences.navigationCollapsed ? '60px' : '260px';
-              const collaborationPanelOpen = openPanel.openPanels.some(p => p.type === 'collaboration');
-              const nonCollaborationPanels = openPanel.openPanels.filter(p => p.type !== 'collaboration');
+              const collaborationPanelOpen = openPanels.some(p => p.type === 'collaboration');
+              const nonCollaborationPanels = openPanels.filter(p => p.type !== 'collaboration');
               
               let totalPanelWidth = 0;
               
