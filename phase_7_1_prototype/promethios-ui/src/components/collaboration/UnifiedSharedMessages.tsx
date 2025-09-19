@@ -485,11 +485,18 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                   }
                 }
                 
-                // Try to find agent in host participant if available
+                // Try to find agent in host participant if available (but don't override good names)
                 if (chatSession?.participants?.host && chatSession.participants.host.id === agentId) {
                   const hostName = chatSession.participants.host.name || agentName;
-                  console.log('🔍 [UnifiedSharedMessages] Using host participant name:', hostName);
-                  agentName = hostName;
+                  console.log('🔍 [UnifiedSharedMessages] Host participant name available:', hostName);
+                  
+                  // Only use host name if we don't already have a good enriched name
+                  if (agentName === 'AI Assistant' || agentName.includes('Agent chatbot-')) {
+                    console.log('🔍 [UnifiedSharedMessages] Using host participant name as fallback:', hostName);
+                    agentName = hostName;
+                  } else {
+                    console.log('🔍 [UnifiedSharedMessages] Keeping enriched agent name:', agentName);
+                  }
                 }
                 
                 // Fallback: try to identify from message content patterns
