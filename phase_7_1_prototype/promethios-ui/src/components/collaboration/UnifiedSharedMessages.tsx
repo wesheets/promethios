@@ -28,6 +28,7 @@ import SharedConversationService from '../../services/SharedConversationService'
 import UnifiedGuestChatService, { GuestConversationAccess } from '../../services/UnifiedGuestChatService';
 import MarkdownRenderer from '../MarkdownRenderer';
 import AttachmentRenderer from '../AttachmentRenderer';
+import ColorCodedChatMessage from '../chat/ColorCodedChatMessage';
 
 interface UnifiedSharedMessagesProps {
   conversationId: string;
@@ -281,74 +282,127 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
         )}
       </Box>
 
-      {/* Messages - Using Host Chat Format */}
+      {/* Messages - Using Enhanced ColorCodedChatMessage System */}
       <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
         <Stack spacing={2}>
-          {messages.map((message, index) => (
-            <Box
-              key={message.id || index}
-              sx={{
-                display: 'flex',
-                justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start',
-                position: 'relative'
-              }}
-            >
-              <Box
-                sx={{
-                  maxWidth: '75%',
-                  textAlign: message.sender === 'user' ? 'right' : 'left'
-                }}
-              >
-                {/* Message Header with User/Agent Info */}
-                {message.metadata?.userName && (
-                  <Box sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, justifyContent: message.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: '#64748b',
-                        fontSize: '0.75rem',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}
-                    >
-                      {message.metadata.userName}
-                      {message.metadata?.isGuestMessage && (
-                        <Chip label="Guest" size="small" sx={{ ml: 1, bgcolor: '#059669', color: 'white', height: 20, fontSize: '0.65rem' }} />
-                      )}
-                    </Typography>
-                  </Box>
-                )}
+          {messages.map((message, index) => {
+            // Get participant color helper function (copied from ChatbotProfilesPageEnhanced)
+            const getParticipantColor = (participantId: string, type: 'human' | 'ai') => {
+              const colors = {
+                human: ['#64748b', '#6b7280', '#71717a', '#737373'],
+                ai: ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#06b6d4', '#84cc16']
+              };
+              
+              const colorArray = colors[type];
+              const hash = participantId.split('').reduce((a, b) => {
+                a = ((a << 5) - a) + b.charCodeAt(0);
+                return a & a;
+              }, 0);
+              
+              return colorArray[Math.abs(hash) % colorArray.length];
+            };
+
+            // Determine sender info for shared conversation context
+            const getSenderInfo = () => {
+              const isUser = message.sender === 'user';
+              const isSystem = message.sender === 'system';
+              
+              if (isSystem) {
+                return {
+                  id: 'system',
+                  name: 'System',
+                  type: 'ai' as const,
+                  avatar: undefined
+                };
+              }
+              
+              if (isUser) {
+                // For user messages, use metadata if available
+                const userName = message.metadata?.userName || 'User';
+                const userId = message.metadata?.userId || currentUserId;
+                const isGuest = message.metadata?.isGuestMessage || false;
                 
-                {/* Message Content */}
-                <MarkdownRenderer 
-                  content={message.content}
-                  sx={{ 
-                    fontSize: '0.9rem',
-                    mb: 0.5
-                  }}
-                />
+                return {
+                  id: userId,
+                  name: isGuest ? `${userName} (Guest)` : userName,
+                  type: 'human' as const,
+                  avatar: message.metadata?.userAvatar
+                };
+              } else {
+                // For AI messages, use session or conversation info
+                const agentId = chatSession?.agentId || 'ai-assistant';
+                const agentName = chatSession?.agentName || 'AI Assistant';
                 
-                {/* Attachments Display */}
-                {message.attachments && message.attachments.length > 0 && (
-                  <Box sx={{ mt: 1 }}>
-                    {message.attachments.map((attachment, idx) => (
-                      <AttachmentRenderer key={idx} attachment={attachment} />
-                    ))}
-                  </Box>
-                )}
-                
-                {/* Timestamp */}
-                <Typography variant="caption" sx={{ 
-                  color: '#94a3b8', 
-                  fontSize: '0.75rem'
-                }}>
-                  {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : 'Now'}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
+                return {
+                  id: agentId,
+                  name: agentName,
+                  type: 'ai' as const,
+                  avatar: chatSession?.agentAvatar
+                };
+              }
+            };
+
+            const senderInfo = getSenderInfo();
+            const senderColor = getParticipantColor(senderInfo.id, senderInfo.type);
+            
+            // Format timestamp
+            const formatTimestamp = () => {
+              try {
+                if (message.timestamp) {
+                  const timestamp = message.timestamp instanceof Date 
+                    ? message.timestamp 
+                    : new Date(message.timestamp);
+                  return timestamp.toLocaleTimeString();
+                } else {
+                  return 'Now';
+                }
+              } catch (error) {
+                console.error('❌ [UnifiedSharedMessages] Error formatting timestamp:', error);
+                return 'Invalid time';
+              }
+            };
+
+            // Extract content
+            const getMessageContent = () => {
+              let content = message.content;
+              
+              // If content is an object, try to extract the actual text
+              if (typeof content === 'object' && content !== null) {
+                if (content.content) {
+                  content = content.content;
+                } else if (content.text) {
+                  content = content.text;
+                } else if (content.message) {
+                  content = content.message;
+                } else {
+                  content = JSON.stringify(content);
+                }
+              }
+              
+              return String(content || '');
+            };
+
+            // Create message object for ColorCodedChatMessage (same format as ChatbotProfilesPageEnhanced)
+            const colorCodedMessage = {
+              id: message.id || `msg-${index}`,
+              content: getMessageContent(),
+              timestamp: formatTimestamp(),
+              sender: senderInfo
+            };
+
+            return (
+              <ColorCodedChatMessage
+                key={message.id || index}
+                message={colorCodedMessage}
+                senderColor={senderColor}
+                isCurrentUser={message.sender === 'user' && senderInfo.id === currentUserId}
+                currentUserId={currentUserId}
+                // Note: Thread functionality can be added later if needed for shared conversations
+                // onStartThread={handleStartThread}
+                // onOpenThread={handleOpenThread}
+              />
+            );
+          })}
         </Stack>
         <div ref={messagesEndRef} />
       </Box>
