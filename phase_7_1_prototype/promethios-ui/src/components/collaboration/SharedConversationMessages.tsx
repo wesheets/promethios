@@ -21,6 +21,7 @@ import { ChatMessage } from '../../services/ChatStorageService';
 import SharedConversationService from '../../services/SharedConversationService';
 import MarkdownRenderer from '../MarkdownRenderer';
 import AttachmentRenderer from '../AttachmentRenderer';
+import ColorCodedChatMessage from '../chat/ColorCodedChatMessage';
 import { onSnapshot, doc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 
@@ -222,18 +223,47 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
     }
   };
 
+  // Enhanced message rendering using ColorCodedChatMessage (copied from ChatbotProfilesPageEnhanced)
   const renderMessage = (message: ChatMessage, index: number) => {
     const isUser = message.sender === 'user';
     const isSystem = message.sender === 'system';
     
-    // Get actual sender names for shared conversation context
-    const getSenderName = () => {
-      if (isSystem) return 'System';
+    // Get participant color helper function (copied from ChatbotProfilesPageEnhanced)
+    const getParticipantColor = (participantId: string, type: 'human' | 'ai') => {
+      const colors = {
+        human: ['#64748b', '#6b7280', '#71717a', '#737373'],
+        ai: ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#06b6d4', '#84cc16']
+      };
+      
+      const colorArray = colors[type];
+      const hash = participantId.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      
+      return colorArray[Math.abs(hash) % colorArray.length];
+    };
+
+    // Get actual sender info for shared conversation context
+    const getSenderInfo = () => {
+      if (isSystem) {
+        return {
+          id: 'system',
+          name: 'System',
+          type: 'ai' as const,
+          avatar: undefined
+        };
+      }
       
       if (isUser) {
         // For user messages, check metadata first for shared conversation sender info
         if (message.metadata?.sharedConversationSender) {
-          return message.metadata.sharedConversationSender.name;
+          return {
+            id: message.metadata.sharedConversationSender.id,
+            name: message.metadata.sharedConversationSender.name,
+            type: 'human' as const,
+            avatar: message.metadata.sharedConversationSender.avatar
+          };
         }
         
         // Fallback: look up the host user in shared conversation participants
@@ -241,139 +271,83 @@ const SharedConversationMessages: React.FC<SharedConversationMessagesProps> = ({
           p.type === 'human' && p.id === sharedConversation.createdBy
         );
         
-        // If we found the host user and they have a proper name (not just an ID)
-        if (hostUser?.name && hostUser.name !== `User ${hostUser.id}`) {
-          return hostUser.name;
-        }
-        
-        // Final fallback: use a generic host label
-        return 'Host User';
+        return {
+          id: hostUser?.id || 'host-user',
+          name: hostUser?.name && hostUser.name !== `User ${hostUser.id}` ? hostUser.name : 'Host User',
+          type: 'human' as const,
+          avatar: hostUser?.avatar
+        };
       } else {
-        // For AI messages, show the actual agent name
-        return chatSession?.agentName || sharedConversation?.agentName || 'AI Assistant';
+        // For AI messages, show the actual agent info
+        const agentId = chatSession?.agentId || sharedConversation?.agentId || 'ai-assistant';
+        return {
+          id: agentId,
+          name: chatSession?.agentName || sharedConversation?.agentName || 'AI Assistant',
+          type: 'ai' as const,
+          avatar: chatSession?.agentAvatar || sharedConversation?.agentAvatar
+        };
       }
     };
+
+    const senderInfo = getSenderInfo();
+    const senderColor = getParticipantColor(senderInfo.id, senderInfo.type);
     
+    // Format timestamp
+    const formatTimestamp = () => {
+      try {
+        const timestamp = message.timestamp;
+        if (timestamp instanceof Date) {
+          return timestamp.toLocaleTimeString();
+        } else if (typeof timestamp === 'string') {
+          return new Date(timestamp).toLocaleTimeString();
+        } else {
+          return 'Unknown time';
+        }
+      } catch (error) {
+        console.error('❌ [SharedConversationMessages] Error formatting timestamp:', error);
+        return 'Invalid time';
+      }
+    };
+
+    // Extract content (copied from ChatbotProfilesPageEnhanced)
+    const getMessageContent = () => {
+      let content = message.content;
+      
+      // If content is an object, try to extract the actual text
+      if (typeof content === 'object' && content !== null) {
+        if (content.content) {
+          content = content.content;
+        } else if (content.text) {
+          content = content.text;
+        } else if (content.message) {
+          content = content.message;
+        } else {
+          content = JSON.stringify(content);
+        }
+      }
+      
+      return String(content || '');
+    };
+
+    // Create message object for ColorCodedChatMessage (same format as ChatbotProfilesPageEnhanced)
+    const colorCodedMessage = {
+      id: message.id || `msg-${index}`,
+      content: getMessageContent(),
+      timestamp: formatTimestamp(),
+      sender: senderInfo
+    };
+
     return (
-      <Box
+      <ColorCodedChatMessage
         key={`${message.id || index}-${message.timestamp}`}
-        sx={{
-          display: 'flex',
-          flexDirection: isUser ? 'row-reverse' : 'row',
-          mb: 2,
-          alignItems: 'flex-start'
-        }}
-      >
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            mx: 1,
-            bgcolor: isUser ? '#2563eb' : isSystem ? '#64748b' : '#16a34a'
-          }}
-        >
-          {isUser ? <PersonIcon /> : <BotIcon />}
-        </Avatar>
-        
-        <Paper
-          elevation={1}
-          sx={{
-            maxWidth: '70%',
-            p: 2,
-            bgcolor: isUser ? '#1e40af' : isSystem ? '#374151' : '#1e293b',
-            color: '#ffffff',
-            borderRadius: 2,
-            '& .markdown-content': {
-              color: '#ffffff'
-            }
-          }}
-        >
-          {/* Message header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Typography variant="caption" sx={{ color: '#94a3b8', mr: 1 }}>
-              {getSenderName()}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b' }}>
-              {(() => {
-                try {
-                  const timestamp = message.timestamp;
-                  if (timestamp instanceof Date) {
-                    return timestamp.toLocaleTimeString();
-                  } else if (typeof timestamp === 'string') {
-                    return new Date(timestamp).toLocaleTimeString();
-                  } else {
-                    return 'Unknown time';
-                  }
-                } catch (error) {
-                  console.error('❌ [SharedConversationMessages] Error formatting timestamp:', error);
-                  return 'Invalid time';
-                }
-              })()}
-            </Typography>
-          </Box>
-          
-          {/* Message content */}
-          <Box>
-            {message.content && (
-              <>
-                {/* Enhanced debug logging */}
-                {(() => {
-                  console.log('🐛 [SharedConversationMessages] Message details:', {
-                    id: message.id,
-                    content: message.content,
-                    contentType: typeof message.content,
-                    contentStringified: JSON.stringify(message.content),
-                    sender: message.sender,
-                    timestamp: message.timestamp,
-                    timestampType: typeof message.timestamp,
-                    fullMessage: message
-                  });
-                  return null;
-                })()}
-                <MarkdownRenderer content={
-                  (() => {
-                    // Enhanced content extraction logic
-                    let content = message.content;
-                    
-                    // If content is an object, try to extract the actual text
-                    if (typeof content === 'object' && content !== null) {
-                      // Check common object structures for content
-                      if (content.content) {
-                        content = content.content;
-                      } else if (content.text) {
-                        content = content.text;
-                      } else if (content.message) {
-                        content = content.message;
-                      } else {
-                        // Fallback to JSON string representation
-                        content = JSON.stringify(content);
-                      }
-                    }
-                    
-                    // Ensure we always return a string
-                    const finalContent = typeof content === 'string' ? content : String(content || '');
-                    console.log('🐛 [SharedConversationMessages] Final content for rendering:', finalContent);
-                    return finalContent;
-                  })()
-                } />
-              </>
-            )}
-            
-            {/* Attachments */}
-            {message.attachments && message.attachments.length > 0 && (
-              <Box sx={{ mt: 1 }}>
-                {message.attachments.map((attachment, idx) => (
-                  <AttachmentRenderer
-                    key={idx}
-                    attachment={attachment}
-                    onDownload={() => {}}
-                  />
-                ))}
-              </Box>
-            )}
-          </Box>
-        </Paper>
-      </Box>
+        message={colorCodedMessage}
+        senderColor={senderColor}
+        isCurrentUser={isUser && senderInfo.id === currentUserId}
+        currentUserId={currentUserId}
+        // Note: Thread functionality can be added later if needed for shared conversations
+        // onStartThread={handleStartThread}
+        // onOpenThread={handleOpenThread}
+      />
     );
   };
 
