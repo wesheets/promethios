@@ -669,7 +669,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
           sx={{
             position: 'fixed',
             top: 0,
-            left: '64px', // Position after left nav
+            left: '0px', // Align to left edge
             width: panelWidth,
             height: '100vh',
             bgcolor: '#1e293b', // Exact match with left navigation
@@ -1731,7 +1731,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
             {/* Iframe Content */}
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
               <iframe
-                src="/ui/chat/chatbots"
+                src="/ui/chat/chatbots?hideNav=true&hideDocker=true"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -1801,7 +1801,7 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
             {/* Iframe Content */}
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
               <iframe
-                src="/ui/chat/setup/quick-start"
+                src="/ui/chat/setup/quick-start?hideNav=true&hideDocker=true"
                 style={{
                   width: '100%',
                   height: '100%',
