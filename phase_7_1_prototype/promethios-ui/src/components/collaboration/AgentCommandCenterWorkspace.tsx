@@ -76,18 +76,21 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
         // Inject CSS to hide navigation elements
         const style = iframeDoc.createElement('style');
         style.textContent = `
-          /* Hide left navigation */
+          /* Hide left navigation and collaboration panels */
           nav[aria-label="Main navigation"],
           .left-navigation,
           .sidebar,
           .navigation-panel,
           [data-testid="left-nav"],
           .MuiDrawer-root,
-          .navigation-drawer {
+          .navigation-drawer,
+          .collaboration-panel,
+          .collaboration-slide-panel,
+          .slide-panel {
             display: none !important;
           }
           
-          /* Hide top docker/header with agent avatars */
+          /* Hide top docker/header with agent avatars - more comprehensive */
           .top-docker,
           .header-docker,
           .app-header,
@@ -101,7 +104,9 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
           .agent-navigation,
           .chatbot-header,
           .agent-tabs,
-          .agent-switcher {
+          .agent-switcher,
+          [style*="position: fixed"][style*="top: 0"],
+          [style*="position: fixed"][style*="z-index: 1300"] {
             display: none !important;
           }
           
@@ -128,21 +133,25 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
             display: none !important;
           }
           
-          /* Hide docker agent circles specifically */
+          /* Hide docker agent circles specifically - enhanced selectors */
           .MuiAvatar-root[style*="position"],
           .agent-avatar-circle,
           .docker-agent-avatar,
           .collaboration-avatar,
           .agent-circle,
-          .chatbot-circle {
+          .chatbot-circle,
+          [style*="border-radius"][style*="width: 32px"],
+          [style*="border-radius"][style*="height: 32px"] {
             display: none !important;
           }
           
-          /* Hide any floating agent elements */
+          /* Hide any floating agent elements and fixed positioned elements */
           [class*="agent"][style*="position: fixed"],
           [class*="agent"][style*="position: absolute"],
           [class*="docker"][style*="position: fixed"],
-          [class*="docker"][style*="position: absolute"] {
+          [class*="docker"][style*="position: absolute"],
+          [style*="backdrop-filter: blur"],
+          [style*="z-index: 1300"] {
             display: none !important;
           }
           
@@ -207,7 +216,10 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          p: 2,
+          px: 2,
+          py: 1, // Reduced padding to match 56px height
+          minHeight: '56px', // Match AgentDocker height
+          maxHeight: '56px', // Enforce height limit
           borderBottom: `1px solid ${theme.palette.mode === 'dark' ? '#334155' : '#e2e8f0'}`,
           bgcolor: theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
           position: 'relative'
@@ -222,7 +234,7 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
             left: '35%',
             top: '50%',
             transform: 'translateY(-50%)',
-            width: '120px',
+            width: '240px', // Doubled from 120px
             height: '32px',
             border: `2px dashed ${
               isOver && canDrop 
