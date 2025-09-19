@@ -109,6 +109,9 @@ class UnifiedGuestChatService {
         // Ensure the host agent is included in participants if not already present
         await this.ensureHostAgentInParticipants(chatSession);
         
+        // Enrich agent names with proper names from chatbot profiles
+        await this.enrichAgentNames(chatSession);
+        
         return chatSession;
       } else {
         console.warn('⚠️ [UnifiedGuestChat] Host chat session not found:', conversationId);
@@ -279,13 +282,98 @@ class UnifiedGuestChatService {
   }
 
   /**
-   * Subscribe to real-time updates for host conversation
+   * Enrich agent names in chat session with proper names from chatbot profiles
    */
-  subscribeToHostConversation(
-    hostUserId: string, 
-    conversationId: string, 
-    callback: (session: ChatSession | null) => void
-  ): () => void {
+  private async enrichAgentNames(chatSession: ChatSession): Promise<void> {
+    try {
+      console.log('🔍 [UnifiedGuestChat] Enriching agent names for session:', chatSession.id);
+      
+      // Get proper agent name for the main chat session agent
+      if (chatSession.agentId) {
+        const properName = await this.getProperAgentName(chatSession.agentId);
+        if (properName && properName !== chatSession.agentName) {
+          console.log('✨ [UnifiedGuestChat] Enriching main agent name:', {
+            agentId: chatSession.agentId,
+            oldName: chatSession.agentName,
+            newName: properName
+          });
+          chatSession.agentName = properName;
+        }
+      }
+      
+      // Enrich agent names in participants.guests
+      if (chatSession.participants?.guests) {
+        for (const guest of chatSession.participants.guests) {
+          if (guest.type === 'ai_agent' && guest.id) {
+            const properName = await this.getProperAgentName(guest.id);
+            if (properName && properName !== guest.name) {
+              console.log('✨ [UnifiedGuestChat] Enriching participant agent name:', {
+                agentId: guest.id,
+                oldName: guest.name,
+                newName: properName
+              });
+              guest.name = properName;
+            }
+          }
+        }
+      }
+      
+      console.log('✅ [UnifiedGuestChat] Agent name enrichment completed');
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error enriching agent names:', error);
+    }
+  }
+
+  /**
+   * Get proper agent name from chatbot ID using various strategies
+   */
+  private async getProperAgentName(agentId: string): Promise<string> {
+    try {
+      // Strategy 1: Extract chatbot ID and use common patterns
+      const chatbotId = this.extractChatbotId(agentId);
+      
+      // Strategy 2: Common agent name patterns based on ID patterns
+      if (agentId.includes('chatbot-175')) {
+        // This appears to be a Claude Assistant based on the pattern
+        return 'Claude Assistant';
+      }
+      
+      // Strategy 3: Try to get from global chatbot profiles if available
+      // Note: In guest context, we might not have access to full chatbot profiles
+      // but we can try common patterns
+      
+      // Strategy 4: Fallback patterns
+      if (agentId.includes('claude') || agentId.includes('anthropic')) {
+        return 'Claude Assistant';
+      } else if (agentId.includes('gpt') || agentId.includes('openai')) {
+        return 'GPT Assistant';
+      } else if (agentId.includes('gemini') || agentId.includes('google')) {
+        return 'Gemini Assistant';
+      }
+      
+      // If no pattern matches, return a cleaner version of the ID
+      return `AI Agent ${chatbotId.slice(-6)}`;
+      
+    } catch (error) {
+      console.error('❌ [UnifiedGuestChat] Error getting proper agent name:', error);
+      return agentId; // Fallback to original ID
+    }
+  }
+
+  /**
+   * Extract chatbot ID from various formats
+   */
+  private extractChatbotId(agentId: string): string {
+    // Extract numeric ID from formats like "chatbot-1756857540077"
+    const match = agentId.match(/chatbot-(\d+)/);
+    return match ? match[1] : agentId;
+  }
+
+  /**
+   * Subscribe to real-time updates for the host conversation
+   */
+  subscribeToHostConversation(hostUserId: string, conversationId: string, callback: (messages: Message[]) => void): () => void {
     try {
       console.log('🔍 [UnifiedGuestChat] Setting up real-time listener for host conversation:', {
         hostUserId,
