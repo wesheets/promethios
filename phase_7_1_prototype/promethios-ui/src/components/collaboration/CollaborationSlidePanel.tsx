@@ -568,11 +568,12 @@ const CollaborationSlidePanel: React.FC<CollaborationSlidePanelProps> = ({
     setMessagingPanelOpen(true);
   };
 
-  // Handle agent click
+  // Handle agent click - navigate to chatbot page with agent parameter
   const handleAgentClick = (agentId: string, agentName: string) => {
     console.log('🤖 [CollaborationPanel] Agent clicked:', agentId, agentName);
-    const navigationService = NavigationService.getInstance();
-    navigationService.navigateToAgentCommandCenter(agentId);
+    // Use same URL format as chatbot page command center buttons
+    const chatbotUrl = `/ui/chat/chatbots?agent=${agentId}`;
+    window.location.href = chatbotUrl;
   };
 
   // Handle channel creation
