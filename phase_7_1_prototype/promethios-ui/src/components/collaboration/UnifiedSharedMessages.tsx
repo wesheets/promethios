@@ -473,6 +473,13 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
               const isUser = message.sender === 'user';
               const isSystem = message.sender === 'system';
               
+              console.log('🔍 [SENDER] Message sender detection:', {
+                messageId: message.id,
+                sender: message.sender,
+                isUser: isUser,
+                isSystem: isSystem
+              });
+              
               if (isSystem) {
                 return {
                   id: 'system',
