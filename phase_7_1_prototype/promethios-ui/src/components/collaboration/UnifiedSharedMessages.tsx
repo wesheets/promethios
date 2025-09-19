@@ -29,6 +29,8 @@ import UnifiedGuestChatService, { GuestConversationAccess } from '../../services
 import MarkdownRenderer from '../MarkdownRenderer';
 import AttachmentRenderer from '../AttachmentRenderer';
 import ColorCodedChatMessage from '../chat/ColorCodedChatMessage';
+import { useThreads } from '../../contexts/ThreadContext';
+import ThreadView from '../thread/ThreadView';
 
 interface UnifiedSharedMessagesProps {
   conversationId: string;
@@ -58,8 +60,16 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Thread state
+  const [threadViewOpen, setThreadViewOpen] = useState(false);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [activeThreadParentMessage, setActiveThreadParentMessage] = useState<ChatMessage | null>(null);
+  
   const sharedConversationService = SharedConversationService.getInstance();
   const unifiedGuestChatService = UnifiedGuestChatService.getInstance();
+  
+  // Thread context
+  const { createThread, openThread, closeThread } = useThreads();
 
   // Load chat session and messages
   useEffect(() => {
@@ -247,6 +257,78 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
     }
   };
 
+  // Thread handler functions (copied from ChatbotProfilesPageEnhanced)
+  const handleStartThread = async (messageId: string) => {
+    console.log('🧵 [UnifiedSharedMessages] Starting thread for message:', messageId);
+    console.log('🧵 [UnifiedSharedMessages] conversationId:', conversationId);
+    console.log('🧵 [UnifiedSharedMessages] currentUserId:', currentUserId);
+    
+    // Find the parent message from messages
+    const parentMessage = messages.find(msg => msg.id === messageId);
+    console.log('🧵 [UnifiedSharedMessages] Found parent message:', parentMessage);
+    
+    // Validate parameters before creating thread
+    if (!messageId) {
+      console.error('❌ [UnifiedSharedMessages] messageId is required');
+      return;
+    }
+    
+    if (!conversationId) {
+      console.error('❌ [UnifiedSharedMessages] conversationId is required');
+      return;
+    }
+    
+    if (!currentUserId) {
+      console.error('❌ [UnifiedSharedMessages] currentUserId is required');
+      return;
+    }
+    
+    try {
+      // Create thread with a placeholder initial reply
+      const initialReply = `Starting a discussion about this message.`;
+      
+      const threadId = await createThread({
+        parentMessageId: messageId,
+        conversationId: conversationId,
+        initialReply: {
+          content: initialReply,
+          senderId: currentUserId,
+          senderName: 'Guest User', // TODO: Get actual user name
+          senderType: 'user'
+        }
+      });
+
+      console.log('✅ [UnifiedSharedMessages] Thread created successfully:', threadId);
+
+      // Store the parent message for the thread
+      setActiveThreadParentMessage(parentMessage);
+      
+      // Open the newly created thread
+      setActiveThreadId(threadId);
+      setThreadViewOpen(true);
+      
+    } catch (error) {
+      console.error('❌ [UnifiedSharedMessages] Error starting thread:', error);
+    }
+  };
+
+  const handleOpenThread = (threadId: string) => {
+    console.log('📂 [UnifiedSharedMessages] Opening thread:', threadId);
+    setActiveThreadId(threadId);
+    setThreadViewOpen(true);
+    openThread(threadId);
+  };
+
+  const handleCloseThread = () => {
+    console.log('❌ [UnifiedSharedMessages] Closing thread view');
+    setThreadViewOpen(false);
+    if (activeThreadId) {
+      closeThread(activeThreadId);
+      setActiveThreadId(null);
+      setActiveThreadParentMessage(null);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
@@ -345,6 +427,44 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
             const senderInfo = getSenderInfo();
             const senderColor = getParticipantColor(senderInfo.id, senderInfo.type);
             
+            // Determine recipient for directional flow (copied from ChatbotProfilesPageEnhanced)
+            const getRecipient = () => {
+              const isUser = message.sender === 'user';
+              
+              if (isUser) {
+                // User message - recipient is the target agent(s)
+                // Use the host agent from the chat session
+                if (chatSession?.agentId) {
+                  const agentId = chatSession.agentId;
+                  const agentName = chatSession.agentName || 'AI Assistant';
+                  
+                  return {
+                    id: agentId,
+                    name: agentName,
+                    type: 'ai' as const,
+                    avatar: chatSession.agentAvatar,
+                    color: getParticipantColor(agentId, 'ai')
+                  };
+                }
+              } else {
+                // Agent message - recipient is the user (or guest user)
+                const isGuestMessage = message.metadata?.isGuestMessage;
+                const userName = message.metadata?.userName || 'User';
+                const userId = message.metadata?.userId || currentUserId;
+                
+                return {
+                  id: userId,
+                  name: isGuestMessage ? `${userName} (Guest)` : userName,
+                  type: 'human' as const,
+                  avatar: message.metadata?.userAvatar,
+                  color: getParticipantColor(userId, 'human')
+                };
+              }
+              return null;
+            };
+
+            const recipient = getRecipient();
+            
             // Format timestamp
             const formatTimestamp = () => {
               try {
@@ -395,11 +515,11 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                 key={message.id || index}
                 message={colorCodedMessage}
                 senderColor={senderColor}
+                recipient={recipient}
                 isCurrentUser={message.sender === 'user' && senderInfo.id === currentUserId}
                 currentUserId={currentUserId}
-                // Note: Thread functionality can be added later if needed for shared conversations
-                // onStartThread={handleStartThread}
-                // onOpenThread={handleOpenThread}
+                onStartThread={handleStartThread}
+                onOpenThread={handleOpenThread}
               />
             );
           })}
@@ -438,6 +558,17 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
             </IconButton>
           </Box>
         </Box>
+      )}
+
+      {/* Thread View */}
+      {threadViewOpen && activeThreadId && (
+        <ThreadView
+          threadId={activeThreadId}
+          parentMessage={activeThreadParentMessage}
+          onClose={handleCloseThread}
+          conversationId={conversationId}
+          currentUserId={currentUserId}
+        />
       )}
     </Box>
   );
