@@ -1,16 +1,14 @@
 /**
- * AgentCommandCenterWorkspace - Embeds the actual command center interface
- * Uses iframe with CSS to hide navigation elements (clean content only)
- * Adapts between 100% and 50% width for side-by-side collaboration
+ * Agent Command Center Workspace Component
+ * Direct component rendering for clean, fast agent conversations
+ * Includes drop zone header for agent collaboration management
  */
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
   Typography,
   IconButton,
-  Avatar,
-  Chip,
   useTheme
 } from '@mui/material';
 import {
@@ -18,7 +16,6 @@ import {
   Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useDropTarget } from '../../hooks/useDragDrop';
-import { useAuth } from '../../context/AuthContext';
 
 interface AgentCommandCenterWorkspaceProps {
   agentId: string;
@@ -30,11 +27,9 @@ interface AgentCommandCenterWorkspaceProps {
 const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = ({
   agentId,
   agentName,
-  onClose,
-  position = 'primary'
+  onClose
 }) => {
   const theme = useTheme();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Set up drop target for agent collaboration
   const { dropRef, isOver, canDrop, dropHandlers } = useDropTarget(
@@ -61,168 +56,10 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
     { agentId, agentName }
   );
 
-  // Get current user for context passing
-  const { currentUser } = useAuth();
+  // TODO: Replace with direct component imports
+  // const { currentUser } = useAuth();
   
-  // Construct the actual command center URL with navigation hiding parameters and user context
-  const commandCenterUrl = `/ui/chat/chatbots?agent=${agentId}&hideNav=true&hideDocker=true&userId=${currentUser?.uid || ''}`;
-
-  // Inject CSS to hide navigation elements when iframe loads
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const handleLoad = () => {
-      try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (!iframeDoc) return;
-
-        // Add CSS injection with a slight delay to ensure DOM is ready
-        const injectCSS = () => {
-          const style = iframeDoc.createElement('style');
-          style.id = 'command-center-hide-nav';
-          style.textContent = `
-          /* Hide left navigation and collaboration panels */
-          nav[aria-label="Main navigation"],
-          .left-navigation,
-          .sidebar,
-          .navigation-panel,
-          [data-testid="left-nav"],
-          .MuiDrawer-root,
-          .navigation-drawer,
-          .collaboration-panel,
-          .collaboration-slide-panel,
-          .slide-panel {
-            display: none !important;
-          }
-          
-          /* Hide top docker/header with agent avatars - more comprehensive */
-          .top-docker,
-          .header-docker,
-          .app-header,
-          .top-navigation,
-          [data-testid="top-header"],
-          .MuiAppBar-root,
-          .agent-docker,
-          .agent-header,
-          .agent-selector,
-          .top-agent-bar,
-          .agent-navigation,
-          .chatbot-header,
-          .agent-tabs,
-          .agent-switcher,
-          [style*="position: fixed"][style*="top: 0"],
-          [style*="position: fixed"][style*="z-index: 1300"] {
-            display: none !important;
-          }
-          
-          /* Hide any header with agent avatars/circles */
-          header,
-          .header,
-          [role="banner"],
-          .top-bar,
-          .navigation-header {
-            display: none !important;
-          }
-          
-          /* Hide specific agent avatar containers and docker agents */
-          .agent-avatar-container,
-          .agent-circle-container,
-          .chatbot-avatar-bar,
-          .agent-selection-bar,
-          .docker-agents,
-          .agent-docker-container,
-          .agent-avatars,
-          .agent-selector-bar,
-          .collaboration-agents,
-          .agent-collaboration-bar {
-            display: none !important;
-          }
-          
-          /* Hide docker agent circles specifically - enhanced selectors */
-          .MuiAvatar-root[style*="position"],
-          .agent-avatar-circle,
-          .docker-agent-avatar,
-          .collaboration-avatar,
-          .agent-circle,
-          .chatbot-circle,
-          [style*="border-radius"][style*="width: 32px"],
-          [style*="border-radius"][style*="height: 32px"] {
-            display: none !important;
-          }
-          
-          /* Hide any floating agent elements and fixed positioned elements */
-          [class*="agent"][style*="position: fixed"],
-          [class*="agent"][style*="position: absolute"],
-          [class*="docker"][style*="position: fixed"],
-          [class*="docker"][style*="position: absolute"],
-          [style*="backdrop-filter: blur"],
-          [style*="z-index: 1300"] {
-            display: none !important;
-          }
-          
-          /* Adjust main content to fill space */
-          main,
-          .main-content,
-          .chat-container,
-          .content-area,
-          .chat-interface,
-          .workspace-content {
-            margin-left: 0 !important;
-            margin-top: 0 !important;
-            padding-left: 0 !important;
-            padding-top: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            height: 100vh !important;
-            max-height: 100vh !important;
-          }
-          
-          /* Hide any floating navigation elements */
-          .floating-nav,
-          .nav-overlay,
-          .navigation-overlay {
-            display: none !important;
-          }
-          
-          /* Ensure full height usage and remove any top spacing */
-          body, html, #root {
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow-x: hidden !important;
-          }
-          
-          /* Hide any top-positioned fixed elements */
-          [style*="position: fixed"][style*="top:"],
-          [style*="position: absolute"][style*="top: 0"] {
-            display: none !important;
-          }
-          `;
-          
-          // Remove existing style if it exists
-          const existingStyle = iframeDoc.getElementById('command-center-hide-nav');
-          if (existingStyle) {
-            existingStyle.remove();
-          }
-          
-          iframeDoc.head.appendChild(style);
-          console.log('🎨 CSS injected to hide navigation elements');
-        };
-
-        // Inject immediately and also after a delay to catch dynamically loaded content
-        injectCSS();
-        setTimeout(injectCSS, 500);
-        setTimeout(injectCSS, 1000);
-        
-      } catch (error) {
-        // Cross-origin restrictions - can't inject CSS
-        console.log('❌ Cannot inject CSS due to cross-origin restrictions:', error);
-      }
-    };
-
-    iframe.addEventListener('load', handleLoad);
-    return () => iframe.removeEventListener('load', handleLoad);
-  }, []);
+  // Placeholder for direct component rendering - no more iframe needed
 
   return (
     <Box sx={{ 
@@ -367,21 +204,34 @@ const AgentCommandCenterWorkspace: React.FC<AgentCommandCenterWorkspaceProps> = 
         </Box>
       </Box>
 
-      {/* Embedded Command Center with Hidden Navigation */}
-      <Box sx={{ flex: 1, position: 'relative' }}>
-        <iframe
-          ref={iframeRef}
-          src={commandCenterUrl}
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            backgroundColor: theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff'
-          }}
-          title={`${agentName} Command Center`}
-          allow="clipboard-read; clipboard-write"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-pointer-lock"
-        />
+      {/* Direct Chat Interface - No iframe needed */}
+      <Box sx={{ 
+        flex: 1, 
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: theme.palette.mode === 'dark' ? '#0f172a' : '#ffffff',
+        position: 'relative'
+      }}>
+        {/* Placeholder for direct chat component */}
+        <Box sx={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 2,
+          color: theme.palette.text.secondary
+        }}>
+          <Typography variant="h6" color="primary">
+            {agentName} Command Center
+          </Typography>
+          <Typography variant="body2">
+            Direct component rendering - No iframe complexity
+          </Typography>
+          <Typography variant="caption" sx={{ opacity: 0.7 }}>
+            TODO: Import and render actual chat components here
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );
