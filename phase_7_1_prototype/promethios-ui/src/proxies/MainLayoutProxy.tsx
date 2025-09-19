@@ -39,6 +39,13 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
   const { isAdmin } = useAdminCheck();
   const { openPanel, openPanels } = usePanelManager();
 
+  // Check URL parameters for hiding navigation elements
+  const urlParams = new URLSearchParams(location.search);
+  const hideNav = urlParams.get('hideNav') === 'true';
+  const hideDocker = urlParams.get('hideDocker') === 'true';
+  
+  console.log("🔍 URL Parameters - hideNav:", hideNav, "hideDocker:", hideDocker);
+
   // Expandable panel state
   const { 
     isOpen: isPanelOpen, 
@@ -92,33 +99,37 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <CssBaseline />
       
-      {/* Agent Docker - Persistent across all pages */}
-      <AgentDocker 
-        onAddAgent={() => {
-          // Navigate to agent creation QuickStart
-          console.log('🐳 [AgentDocker] Add agent clicked');
-          window.location.href = '/ui/chat/setup/quick-start';
-        }}
-        onAgentClick={(agentId, agentName) => {
-          console.log('🐳 [AgentDocker] Agent clicked:', agentName, agentId);
-          // Open Command Center in collaboration panel
-          openPanel(`agent-${agentId}`, 'agent-command-center', `${agentName} Command Center`);
-        }}
-        onBehaviorPrompt={(agentId, agentName, behavior) => {
-          console.log('🐳 [AgentDocker] Behavior prompt:', agentName, behavior);
-          // You can add behavior prompt logic here
-        }}
-        maxVisibleAgents={8}
-        showBehaviorPrompts={true}
-      />
+      {/* Agent Docker - Persistent across all pages (hidden if hideDocker=true) */}
+      {!hideDocker && (
+        <AgentDocker 
+          onAddAgent={() => {
+            // Navigate to agent creation QuickStart
+            console.log('🐳 [AgentDocker] Add agent clicked');
+            window.location.href = '/ui/chat/setup/quick-start';
+          }}
+          onAgentClick={(agentId, agentName) => {
+            console.log('🐳 [AgentDocker] Agent clicked:', agentName, agentId);
+            // Open Command Center in collaboration panel
+            openPanel(`agent-${agentId}`, 'agent-command-center', `${agentName} Command Center`);
+          }}
+          onBehaviorPrompt={(agentId, agentName, behavior) => {
+            console.log('🐳 [AgentDocker] Behavior prompt:', agentName, behavior);
+            // You can add behavior prompt logic here
+          }}
+          maxVisibleAgents={8}
+          showBehaviorPrompts={true}
+        />
+      )}
       
       <Box sx={{ display: 'flex', flex: 1, height: '100vh' }}>
-        {/* Collapsible Left Navigation for logged-in users */}
-        <CollapsibleNavigationEnhanced 
-          userPermissions={['view']}
-          isAdmin={isAdmin}
-          onOpenExpandablePanel={openExpandablePanel}
-        />
+        {/* Collapsible Left Navigation for logged-in users (hidden if hideNav=true) */}
+        {!hideNav && (
+          <CollapsibleNavigationEnhanced 
+            userPermissions={['view']}
+            isAdmin={isAdmin}
+            onOpenExpandablePanel={openExpandablePanel}
+          />
+        )}
         
         {/* Expandable Left Panel */}
         <ExpandableLeftPanel
@@ -135,7 +146,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
             flexGrow: 1,
             ml: (() => {
               // Calculate margin based on navigation and open panels
-              const navWidth = preferences.navigationCollapsed ? '60px' : '260px';
+              const navWidth = hideNav ? '0px' : (preferences.navigationCollapsed ? '60px' : '260px');
               const collaborationPanelOpen = openPanels.some(p => p.type === 'collaboration');
               const nonCollaborationPanels = openPanels.filter(p => p.type !== 'collaboration');
               
