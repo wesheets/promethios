@@ -59,6 +59,7 @@ const getParticipantColor = (participantId: string, type: 'ai' | 'human'): strin
 };
 import ThreadResolutionDialog from './ThreadResolutionDialog';
 import AgentAvatarSelector from '../AgentAvatarSelector';
+import EnhancedThreadInput from './EnhancedThreadInput';
 
 interface ThreadViewProps {
   threadId: string;
@@ -473,7 +474,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: 600,
+          width: { xs: '100vw', sm: '500px', md: '600px' }, // Responsive width
+          minWidth: '400px',
+          maxWidth: '600px',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -495,7 +498,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     return (
       <Paper
         sx={{
-          width: 600,
+          width: { xs: '100vw', sm: '500px', md: '600px' }, // Responsive width
+          minWidth: '400px',
+          maxWidth: '600px',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
@@ -519,7 +524,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   return (
     <Paper
       sx={{
-        width: 600,
+        width: { xs: '100vw', sm: '500px', md: '600px' }, // Responsive width
+        minWidth: '400px',
+        maxWidth: '600px',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -639,92 +646,55 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Enhanced Reply Input with Agent Selector */}
+      {/* Enhanced Reply Input with Agent Selector - Copied from Main Chat */}
       <Box sx={{ p: 2, borderTop: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}` }}>
-        <Box sx={{ 
-          display: 'flex', 
-          gap: 1, 
-          alignItems: 'flex-end',
-          bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-          borderRadius: 2,
-          border: `1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}`,
-          p: 1
-        }}>
-          {/* Agent Avatar Selector for Thread */}
-          {availableAgents.length > 0 && (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              flexShrink: 0,
-              mr: 1
-            }}>
-              <AgentAvatarSelector
-                hostAgent={null}
-                availableAgents={availableAgents}
-                selectedAgents={selectedAgents}
-                onSelectionChange={onAgentSelectionChange || (() => {})}
-                maxVisible={3}
-                size="small"
-                showLabels={false}
-                variant="compact"
-                sx={{
-                  '& .MuiAvatar-root': {
-                    width: 28,
-                    height: 28,
-                    fontSize: '12px'
-                  }
-                }}
-              />
-            </Box>
-          )}
-          
-          {/* Text Input */}
-          <TextField
-            fullWidth
-            multiline
-            maxRows={4}
-            placeholder="Reply to thread..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={sending}
-            variant="standard"
-            InputProps={{
-              disableUnderline: true,
-              sx: {
-                fontSize: '14px',
-                '& .MuiInputBase-input': {
-                  padding: '8px 0',
-                  '&::placeholder': {
-                    color: theme.palette.text.secondary,
-                    opacity: 0.7
-                  }
-                }
-              }
-            }}
-          />
-          
-          {/* Send Button */}
-          <IconButton
-            onClick={handleSendReply}
-            disabled={!replyText.trim() || sending}
-            sx={{
-              bgcolor: '#3b82f6',
-              color: 'white',
-              width: 32,
-              height: 32,
-              '&:hover': {
-                bgcolor: '#2563eb',
-              },
-              '&:disabled': {
-                bgcolor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                color: theme.palette.text.disabled,
-              }
-            }}
-          >
-            {sending ? <CircularProgress size={16} /> : <SendIcon sx={{ fontSize: '16px' }} />}
-          </IconButton>
-        </Box>
+        <EnhancedThreadInput
+          threadId={threadId}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+          messageInput={replyText}
+          onMessageInputChange={setReplyText}
+          onSendMessage={handleSendReply}
+          disabled={sending}
+          loading={sending}
+          hostAgent={(() => {
+            // Convert selectedChatbot to hostAgent format
+            if (selectedChatbot) {
+              return {
+                id: selectedChatbot.identity?.id || selectedChatbot.id || selectedChatbot.key,
+                name: selectedChatbot.identity?.name || selectedChatbot.name || 'AI Assistant',
+                type: 'agent' as const,
+                avatar: selectedChatbot.identity?.avatar || selectedChatbot.avatar
+              };
+            }
+            return null;
+          })()}
+          guestAgents={(availableAgents || []).map(agent => ({
+            id: agent.id,
+            name: agent.name,
+            type: 'agent' as const,
+            avatar: agent.avatar,
+            status: 'active'
+          }))}
+          selectedAgents={selectedAgents?.map(agent => agent.id) || []}
+          onAgentSelectionChange={(agentIds: string[]) => {
+            // Convert agent IDs back to agent objects
+            const selectedAgentObjects = (availableAgents || []).filter(agent => 
+              agentIds.includes(agent.id)
+            );
+            if (onAgentSelectionChange) {
+              onAgentSelectionChange(selectedAgentObjects);
+            }
+          }}
+          isSharedMode={false} // Threads are not shared mode
+          autonomousStarsActive={false}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSendReply();
+            }
+          }}
+        />
       </Box>
 
       {/* Thread Resolution Dialog */}

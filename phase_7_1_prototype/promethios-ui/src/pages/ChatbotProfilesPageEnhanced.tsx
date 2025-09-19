@@ -5974,21 +5974,22 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               justifyContent: 'center', // Center the chat+thread unit
               alignItems: 'stretch'
             }}>
-              {/* Chat + Thread Container */}
+              {/* Chat + Thread Container - Responsive */}
               <Box sx={{ 
                 display: 'flex',
                 height: '100vh',
-                maxWidth: threadViewOpen ? '1700px' : '1200px', // Adjust max width for 500px thread
-                width: threadViewOpen ? 'calc(1200px + 500px)' : '1200px', // Chat width + thread width
-                transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
+                width: '100%',
+                maxWidth: '100vw',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
               }}>
-                {/* Chat Interface */}
+                {/* Chat Interface - Responsive */}
                 <Box sx={{ 
-                  width: '1200px', // Fixed chat interface width
+                  flex: threadViewOpen ? '1 1 auto' : '1 1 100%', // Flexible width
+                  minWidth: threadViewOpen ? '400px' : '300px', // Minimum width for usability
+                  maxWidth: threadViewOpen ? 'calc(100vw - 600px)' : '100%', // Leave space for thread
                   display: 'flex', 
                   flexDirection: 'column', 
                   height: '100vh',
-                  // Removed bgcolor to match main background
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
                 }}>
 
