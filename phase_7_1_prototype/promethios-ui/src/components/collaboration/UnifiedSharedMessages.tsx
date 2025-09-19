@@ -440,24 +440,56 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                   avatar: message.metadata?.userAvatar
                 };
               } else {
-                // For AI messages, improve agent name detection
+                // For AI messages, improve agent name detection with detailed logging
                 let agentId = chatSession?.agentId || 'ai-assistant';
                 let agentName = chatSession?.agentName || 'AI Assistant';
+                
+                console.log('🔍 [UnifiedSharedMessages] Agent name detection for message:', {
+                  messageId: message.id,
+                  initialAgentId: agentId,
+                  initialAgentName: agentName,
+                  chatSessionAgentId: chatSession?.agentId,
+                  chatSessionAgentName: chatSession?.agentName,
+                  messageMetadata: message.metadata
+                });
                 
                 // Try message metadata first
                 if (message.metadata?.agentId) {
                   agentId = message.metadata.agentId;
                   agentName = message.metadata.agentName || agentName;
+                  console.log('🔍 [UnifiedSharedMessages] Using metadata agent:', { agentId, agentName });
                 }
                 
                 // Try to find agent in chat session participants
                 if (chatSession?.participants?.guests) {
+                  console.log('🔍 [UnifiedSharedMessages] Searching in participants.guests:', 
+                    chatSession.participants.guests.map(g => ({ id: g.id, name: g.name, type: g.type }))
+                  );
+                  
                   const agent = chatSession.participants.guests.find(g => 
                     g.type === 'ai_agent' && (g.id === agentId || g.id === message.metadata?.agentId)
                   );
+                  
                   if (agent) {
-                    agentName = agent.agentConfig?.name || agent.identity?.name || agent.name || agentName;
+                    const foundName = agent.agentConfig?.name || agent.identity?.name || agent.name || agentName;
+                    console.log('🔍 [UnifiedSharedMessages] Found agent in participants:', {
+                      agentId: agent.id,
+                      foundName,
+                      agentConfig: agent.agentConfig,
+                      identity: agent.identity,
+                      name: agent.name
+                    });
+                    agentName = foundName;
+                  } else {
+                    console.log('🔍 [UnifiedSharedMessages] Agent not found in participants for ID:', agentId);
                   }
+                }
+                
+                // Try to find agent in host participant if available
+                if (chatSession?.participants?.host && chatSession.participants.host.id === agentId) {
+                  const hostName = chatSession.participants.host.name || agentName;
+                  console.log('🔍 [UnifiedSharedMessages] Using host participant name:', hostName);
+                  agentName = hostName;
                 }
                 
                 // Fallback: try to identify from message content patterns
@@ -465,14 +497,22 @@ const UnifiedSharedMessages: React.FC<UnifiedSharedMessagesProps> = ({
                   const content = message.content.toLowerCase();
                   if (content.includes("i'm mark the claude") || content.includes("mark the claude")) {
                     agentName = 'Mark the Claude';
+                    console.log('🔍 [UnifiedSharedMessages] Using content pattern detection: Mark the Claude');
                   } else if (content.includes("chatbot-")) {
                     // Extract agent name from chatbot ID if present
                     const match = content.match(/chatbot-(\d+)/);
                     if (match) {
                       agentName = `Agent ${match[1]}`;
+                      console.log('🔍 [UnifiedSharedMessages] Using content pattern detection:', agentName);
                     }
                   }
                 }
+                
+                console.log('✅ [UnifiedSharedMessages] Final resolved agent name:', {
+                  agentId,
+                  agentName,
+                  messageId: message.id
+                });
                 
                 return {
                   id: agentId,
