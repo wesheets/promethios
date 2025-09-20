@@ -48,6 +48,7 @@ import { TokenEconomicsService } from '../services/TokenEconomicsService';
 import TokenBudgetWidget from '../components/TokenBudgetWidget';
 import TokenResponseIcon from '../components/TokenResponseIcon';
 import TokenEconomicsConfigPanel from '../components/TokenEconomicsConfigPanel';
+import { useDropTarget } from '../hooks/useDragDrop';
 import TokenBudgetPopup from '../components/TokenBudgetPopup';
 // Autonomous systems imports
 import { AutonomousGovernanceExtension, AutonomousTaskPlan, AutonomousPhase, AutonomousExecutionState } from '../services/AutonomousGovernanceExtension';
@@ -7074,8 +7075,66 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                     mr: 1,
                                     flexShrink: 0
                                   }}>
-                                    {/* Agent Avatar Selector - Inside Input */}
-                                    <AgentAvatarSelector
+                                    {/* Human Drop Zone - Wraps AgentAvatarSelector */}
+                                    {(() => {
+                                      const { dropRef, isOver, canDrop, dropHandlers } = useDropTarget(
+                                        'chat-input-drop-zone',
+                                        'chat_input',
+                                        ['human'], // Accept human drops
+                                        async (source) => {
+                                          console.log('🎯 Human dropped in chat input area:', source);
+                                          if (source.type === 'human' && source.data) {
+                                            // Convert the dragged human to the format expected by handleAddGuests
+                                            const humanGuest = {
+                                              id: source.data.id,
+                                              name: source.data.name,
+                                              type: 'human' as const,
+                                              avatar: source.data.avatar,
+                                              status: source.data.status || 'online',
+                                              role: 'Collaborator'
+                                            };
+                                            
+                                            console.log('🎯 Triggering handleAddGuests with human:', humanGuest);
+                                            await handleAddGuests([humanGuest]);
+                                          }
+                                        }
+                                      );
+
+                                      return (
+                                        <Box 
+                                          ref={dropRef}
+                                          {...dropHandlers}
+                                          sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            position: 'relative',
+                                            borderRadius: '8px',
+                                            transition: 'all 0.2s ease-in-out',
+                                            ...(isOver && canDrop && {
+                                              bgcolor: 'rgba(16, 185, 129, 0.1)',
+                                              border: '2px dashed #10b981',
+                                              '&::after': {
+                                                content: '"Drop to invite to chat"',
+                                                position: 'absolute',
+                                                top: '-30px',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                bgcolor: '#10b981',
+                                                color: 'white',
+                                                px: 1,
+                                                py: 0.5,
+                                                borderRadius: '4px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 500,
+                                                whiteSpace: 'nowrap',
+                                                zIndex: 1000,
+                                              }
+                                            })
+                                          }}
+                                        >
+                                          {/* Agent Avatar Selector - Inside Drop Zone */}
+                                          <AgentAvatarSelector
                                       hostAgent={(() => {
                                         if (isInSharedMode && loadedHostChatSession) {
                                           // Use the actual host agent from the loaded session
@@ -7243,6 +7302,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       agentId={selectedChatbot?.id}
                                       user={user}
                                     />
+                                        </Box>
+                                      );
+                                    })()}
                                     
                                     {/* Behavioral Orchestration Hover Triggers */}
                                     <HoverOrchestrationTrigger

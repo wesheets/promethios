@@ -32,8 +32,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
-import { useAgentDragSource } from '../../hooks/useDragDrop';
 import { usePinnedCollaborators } from '../../hooks/usePinnedCollaborators';
+import { useAgentDragSource } from '../../hooks/useDragDrop';
 
 interface AgentDockerProps {
   onAddAgent?: () => void;
@@ -271,6 +271,49 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
     onBehaviorPrompt?.(agentId, agentName, behavior);
   };
 
+  // Draggable Human Collaborator Component
+  const DraggableHumanCollaborator: React.FC<{ collaborator: any }> = ({ collaborator }) => {
+    const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
+      collaborator.id,
+      {
+        id: collaborator.id,
+        name: collaborator.name,
+        type: 'human',
+        avatar: collaborator.avatar,
+        status: collaborator.status,
+      },
+      true // isHuman = true
+    );
+
+    return (
+      <Tooltip title={`${collaborator.name} - Drag to invite to chat`}>
+        <Avatar
+          ref={dragRef}
+          {...dragHandlers}
+          sx={{
+            width: 32,
+            height: 32,
+            bgcolor: '#10b981',
+            border: '2px solid #10b981',
+            cursor: 'grab',
+            transition: 'all 0.2s ease-in-out',
+            opacity: isDragging ? 0.5 : 1,
+            '&:hover': {
+              transform: 'scale(1.1)',
+              borderColor: '#34d399',
+            },
+            '&:active': {
+              cursor: 'grabbing',
+            },
+          }}
+          src={collaborator.avatar}
+        >
+          {collaborator.name.charAt(0).toUpperCase()}
+        </Avatar>
+      </Tooltip>
+    );
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -467,25 +510,10 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
             <CircularProgress size={16} sx={{ color: '#10b981' }} />
           ) : humanCollaborators.length > 0 ? (
             humanCollaborators.slice(0, 3).map((collaborator) => (
-              <Tooltip key={collaborator.id} title={collaborator.name}>
-                <Avatar
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    bgcolor: '#10b981',
-                    border: '2px solid #10b981',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'scale(1.1)',
-                      borderColor: '#34d399',
-                    },
-                  }}
-                  src={collaborator.avatar}
-                >
-                  {collaborator.name.charAt(0).toUpperCase()}
-                </Avatar>
-              </Tooltip>
+              <DraggableHumanCollaborator 
+                key={collaborator.id} 
+                collaborator={collaborator} 
+              />
             ))
           ) : (
             <Typography variant="caption" sx={{ 
