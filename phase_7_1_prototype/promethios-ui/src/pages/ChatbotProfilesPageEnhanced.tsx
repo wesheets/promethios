@@ -178,6 +178,7 @@ import { ChatSharingService } from '../services/ChatSharingService';
 import { ReceiptSharingService } from '../services/ReceiptSharingService';
 import ToolConfigurationPanel from '../components/tools/ToolConfigurationPanel';
 import ChatInterfacePanel from '../components/chat/ChatInterfacePanel';
+import GuestSelectorPopup from '../components/GuestSelectorPopup';
 import { RAGPolicyPanel } from '../components/governance/RAGPolicyPanel';
 import { AgentToolProfile } from '../types/ToolTypes';
 import { conversationalReceiptSearchService } from '../services/ConversationalReceiptSearchService';
@@ -766,6 +767,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Active agents in command center drop zone
   const [activeAgents, setActiveAgents] = useState<ChatbotProfile[]>([]);
   
+  // Guest selector popup state
+  const [showGuestSelector, setShowGuestSelector] = useState(false);
+  
   // Current bot state (derived from botStates map) - moved here to fix initialization order
   const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
   const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
@@ -787,6 +791,32 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
     activePanel: null as string | null,
     panelWidth: 0
   });
+
+  // Function to programmatically add agent to chat (same logic as GuestSelectorPopup)
+  const addAgentToChat = async (agent: ChatbotProfile) => {
+    console.log('🤖 Adding agent to chat:', agent.identity?.name || agent.name);
+    
+    try {
+      // Convert ChatbotProfile to TeamMember format expected by GuestSelectorPopup
+      const teamMember = {
+        id: agent.identity?.id || agent.id,
+        name: agent.identity?.name || agent.name || 'Agent',
+        type: 'ai_agent' as const,
+        role: 'AI Assistant',
+        status: 'online' as const,
+        avatar: agent.identity?.avatar,
+        health: 100,
+        provider: 'Custom'
+      };
+      
+      // Call the same logic as GuestSelectorPopup's handleAddSelected
+      await handleAddGuests([teamMember]);
+      
+      console.log('✅ Agent successfully added to chat via programmatic method');
+    } catch (error) {
+      console.error('❌ Error adding agent to chat:', error);
+    }
+  };
 
   // Calculate chat interface width based on right navigation state and thread view
   const getChatInterfaceWidth = () => {
@@ -6066,23 +6096,10 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       );
                       
                       if (droppedAgent) {
-                        // Add to active agents instead of selecting as chatbot
-                        setActiveAgents(prev => {
-                          // Check if agent is already in the drop zone
-                          const isAlreadyActive = prev.some(agent => 
-                            (agent.identity?.id || agent.id) === (droppedAgent.identity?.id || droppedAgent.id)
-                          );
-                          
-                          if (isAlreadyActive) {
-                            console.log('🤖 Agent already in command center:', droppedAgent.identity?.name);
-                            return prev;
-                          }
-                          
-                          console.log('🤖 Adding agent to command center:', droppedAgent.identity?.name);
-                          return [...prev, droppedAgent];
-                        });
+                        // Add agent to chat using the same logic as the GuestSelectorPopup
+                        await addAgentToChat(droppedAgent);
                         
-                        console.log('✅ Agent successfully added to command center');
+                        console.log('✅ Agent successfully added to chat');
                       } else {
                         console.error('❌ Could not find dropped agent in chatbot profiles');
                       }
@@ -8498,6 +8515,31 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         onDenyRequest={handleDenyAgentRequest}
         onDismissNotification={handleDismissPermissionNotification}
         position="top-right"
+      />
+
+      {/* Guest Selector Popup for Adding Agents */}
+      <GuestSelectorPopup
+        open={showGuestSelector}
+        onClose={() => setShowGuestSelector(false)}
+        onAddGuests={handleAddGuests}
+        currentParticipants={[]}
+        teamMembers={[]} // TODO: Connect to real team members
+        aiAgents={chatbotProfiles.map(profile => ({
+          id: profile.identity?.id || profile.id,
+          name: profile.identity?.name || profile.name || 'Agent',
+          type: 'ai_agent' as const,
+          role: 'AI Assistant',
+          status: 'online' as const,
+          avatar: profile.identity?.avatar,
+          health: 100,
+          provider: 'Custom'
+        }))}
+        currentUserId={user?.uid}
+        currentUserName={user?.displayName || user?.email}
+        conversationId={conversationId}
+        conversationName={selectedChatbot?.identity?.name || 'Chat'}
+        agentName={selectedChatbot?.identity?.name}
+        user={user}
       />
     </Box>
   );
