@@ -5984,7 +5984,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               ml: 0 // Navigation drawer is hidden (DRAWER_WIDTH = 0)
             }}>
               {/* Left Side - Agent Name and Chat Name */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 2,
+                ml: '190px' // Account for sidebar width so text doesn't hide behind it
+              }}>
                 <Typography variant="h6" sx={{ 
                   color: '#f8fafc',
                   fontSize: '1rem',
