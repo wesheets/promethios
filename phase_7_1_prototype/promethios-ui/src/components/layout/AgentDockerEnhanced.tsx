@@ -392,7 +392,7 @@ interface DraggableAgentAvatarProps {
 }
 
 const DraggableAgentAvatar: React.FC<DraggableAgentAvatarProps> = ({ agent, onClick, onBehaviorPrompt, showTooltip }) => {
-  const [{ isDragging }, drag] = useAgentDragSource(agent.id, agent.name);
+  const { dragRef, isDragging, dragHandlers } = useAgentDragSource(agent.id, agent, false);
 
   const handleBehaviorClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -439,8 +439,9 @@ const DraggableAgentAvatar: React.FC<DraggableAgentAvatarProps> = ({ agent, onCl
       }}
     >
       <Box
-        ref={drag}
+        ref={dragRef}
         onClick={onClick}
+        {...dragHandlers}
         sx={{
           position: 'relative',
           cursor: 'pointer',
