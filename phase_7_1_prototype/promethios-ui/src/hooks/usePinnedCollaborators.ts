@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useConnections } from './useConnections';
+import { ConnectionService } from '../services/ConnectionService';
 
 export interface PinnedCollaborator {
   id: string;
@@ -11,128 +11,116 @@ export interface PinnedCollaborator {
 
 export const usePinnedCollaborators = () => {
   const { currentUser } = useAuth();
-  const { connections, loading: connectionsLoading, error: connectionsError } = useConnections();
   const [collaborators, setCollaborators] = useState<PinnedCollaborator[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Debug logging
-  console.log('🤝 [usePinnedCollaborators] Hook called with:', JSON.stringify({
-    currentUser: currentUser?.uid,
-    connectionsCount: connections?.length || 0,
-    connectionsLoading,
-    connectionsError: connectionsError?.message || connectionsError
-  }, null, 2));
-  
-  console.log('🤝 [usePinnedCollaborators] Detailed connections data:', JSON.stringify({
-    connectionsType: typeof connections,
-    connectionsIsArray: Array.isArray(connections),
-    connectionsLength: connections?.length,
-    connectionsKeys: connections ? Object.keys(connections) : 'null',
-    firstConnection: connections?.[0] ? {
-      id: connections[0].id,
-      name: connections[0].name,
-      keys: Object.keys(connections[0])
-    } : 'none'
-  }, null, 2));
-
   useEffect(() => {
-    console.log('🤝 [usePinnedCollaborators] useEffect triggered with:', {
-      currentUser: currentUser?.uid,
-      connectionsCount: connections.length,
-      connectionsLoading,
-      connectionsError,
-      connections: connections
-    });
+    const loadConnections = async () => {
+      if (!currentUser?.uid) {
+        console.log('🤝 [usePinnedCollaborators] No current user, showing demo collaborators');
+        const demoCollaborators: PinnedCollaborator[] = [
+          {
+            id: 'demo-john',
+            name: 'John Doe',
+            avatar: 'https://i.pravatar.cc/150?u=john.doe',
+            status: 'active',
+          },
+          {
+            id: 'demo-jane',
+            name: 'Jane Smith',
+            avatar: 'https://i.pravatar.cc/150?u=jane.smith',
+            status: 'inactive',
+          },
+        ];
+        setCollaborators(demoCollaborators);
+        setLoading(false);
+        return;
+      }
 
-    if (!currentUser) {
-      console.log('🤝 [usePinnedCollaborators] No current user, showing demo collaborators');
-      // Show demo collaborators for unauthenticated users
-      const demoCollaborators: PinnedCollaborator[] = [
-        {
-          id: 'demo-john',
-          name: 'John Doe',
-          avatar: 'https://i.pravatar.cc/150?u=john.doe',
-          status: 'active',
-        },
-        {
-          id: 'demo-jane',
-          name: 'Jane Smith',
-          avatar: 'https://i.pravatar.cc/150?u=jane.smith',
-          status: 'inactive',
-        },
-      ];
-      setCollaborators(demoCollaborators);
-      setLoading(false);
-      return;
-    }
-
-    if (connectionsLoading) {
-      console.log('🤝 [usePinnedCollaborators] Connections still loading...');
       setLoading(true);
-      return;
-    }
+      try {
+        console.log('🤝 [usePinnedCollaborators] Loading connections for user:', currentUser.uid);
+        const connectionService = ConnectionService.getInstance();
+        const userConnections = await connectionService.getUserConnections(currentUser.uid);
+        
+        console.log('🤝 [usePinnedCollaborators] Loaded connections:', userConnections.length, userConnections);
 
-    if (connectionsError) {
-      console.log('🤝 [usePinnedCollaborators] Connections error:', connectionsError);
-      setError(connectionsError);
-      setLoading(false);
-      return;
-    }
+        if (userConnections.length === 0) {
+          console.log('🤝 [usePinnedCollaborators] No connections found, showing demo collaborators');
+          const demoCollaborators: PinnedCollaborator[] = [
+            {
+              id: 'demo-ted',
+              name: 'Ted Sheets',
+              avatar: 'https://i.pravatar.cc/150?u=ted.sheets',
+              status: 'active',
+            },
+            {
+              id: 'demo-alice',
+              name: 'Alice Johnson',
+              avatar: 'https://i.pravatar.cc/150?u=alice.johnson',
+              status: 'active',
+            },
+          ];
+          setCollaborators(demoCollaborators);
+          setLoading(false);
+          return;
+        }
 
-    console.log('🤝 [usePinnedCollaborators] Processing connections:', connections);
+        // Convert Firebase connections to collaborators
+        const realCollaborators: PinnedCollaborator[] = userConnections.map(connection => {
+          // Determine which user is the collaborator (not the current user)
+          const isUser1 = connection.userId1 === currentUser.uid;
+          const collaboratorId = isUser1 ? connection.userId2 : connection.userId1;
+          const collaboratorName = isUser1 ? connection.user2Name : connection.user1Name;
+          const collaboratorAvatar = isUser1 ? connection.user2Avatar : connection.user1Avatar;
 
-    // If no connections, show demo collaborators for now
-    if (connections.length === 0) {
-      console.log('🤝 [usePinnedCollaborators] No connections found, showing demo collaborators');
-      const demoCollaborators: PinnedCollaborator[] = [
-        {
-          id: 'demo-ted',
-          name: 'Ted Sheets',
-          avatar: 'https://i.pravatar.cc/150?u=ted.sheets',
-          status: 'active',
-        },
-        {
-          id: 'demo-alice',
-          name: 'Alice Johnson',
-          avatar: 'https://i.pravatar.cc/150?u=alice.johnson',
-          status: 'active',
-        },
-      ];
-      setCollaborators(demoCollaborators);
-      setLoading(false);
-      return;
-    }
+          console.log('🤝 [usePinnedCollaborators] Processing connection:', {
+            connectionId: connection.id,
+            isUser1,
+            collaboratorId,
+            collaboratorName,
+            collaboratorAvatar
+          });
 
-    // Convert Firebase connections to collaborators
-    const realCollaborators: PinnedCollaborator[] = connections.map(connection => {
-      // Determine which user is the collaborator (not the current user)
-      const isUser1 = connection.userId1 === currentUser.uid;
-      const collaboratorId = isUser1 ? connection.userId2 : connection.userId1;
-      const collaboratorName = isUser1 ? connection.user2Name : connection.user1Name;
-      const collaboratorPhoto = isUser1 ? connection.user2Photo : connection.user1Photo;
+          return {
+            id: collaboratorId,
+            name: collaboratorName || 'Unknown User',
+            avatar: collaboratorAvatar || collaboratorName?.charAt(0) || 'U',
+            status: 'active' as const,
+          };
+        });
 
-      console.log('🤝 [usePinnedCollaborators] Processing connection:', {
-        connectionId: connection.id,
-        isUser1,
-        collaboratorId,
-        collaboratorName,
-        collaboratorPhoto
-      });
+        console.log('🤝 [usePinnedCollaborators] Final collaborators:', realCollaborators);
+        setCollaborators(realCollaborators);
+        setError(null);
+      } catch (err) {
+        console.error('❌ [usePinnedCollaborators] Failed to load connections:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load connections');
+        
+        // Show demo collaborators on error
+        const demoCollaborators: PinnedCollaborator[] = [
+          {
+            id: 'demo-ted',
+            name: 'Ted Sheets',
+            avatar: 'https://i.pravatar.cc/150?u=ted.sheets',
+            status: 'active',
+          },
+          {
+            id: 'demo-alice',
+            name: 'Alice Johnson',
+            avatar: 'https://i.pravatar.cc/150?u=alice.johnson',
+            status: 'active',
+          },
+        ];
+        setCollaborators(demoCollaborators);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      return {
-        id: collaboratorId,
-        name: collaboratorName,
-        avatar: collaboratorPhoto,
-        status: 'active' as const, // Could be enhanced with real-time status
-      };
-    });
-
-    console.log('🤝 [usePinnedCollaborators] Final collaborators:', realCollaborators);
-    setCollaborators(realCollaborators);
-    setError(null);
-    setLoading(false);
-  }, [currentUser, connections, connectionsLoading, connectionsError]);
+    loadConnections();
+  }, [currentUser?.uid]);
 
   return { collaborators, loading, error };
 };
