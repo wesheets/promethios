@@ -5965,7 +5965,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           transition: 'flex 0.3s ease-in-out',
           overflow: 'auto',
           height: '100vh',
-          paddingTop: '56px' // Account for fixed AgentDocker at top
+          paddingTop: 0 // Remove gap - header will touch AgentDocker
         }}
       >
         {isWorkspaceMode ? (
@@ -5981,7 +5981,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               backgroundColor: '#1e293b',
               borderBottom: '1px solid #334155',
               px: 2,
-              ml: 0 // Navigation drawer is hidden (DRAWER_WIDTH = 0)
+              ml: 0, // Navigation drawer is hidden (DRAWER_WIDTH = 0)
+              mt: '56px' // Position directly under AgentDocker
             }}>
               {/* Left Side - Agent Name and Chat Name */}
               <Box sx={{ 
@@ -6023,7 +6024,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   backgroundColor: 'rgba(100, 116, 139, 0.1)',
                   transition: 'all 0.2s ease',
                   position: 'absolute',
-                  left: '35%', // Align with global docker position
+                  left: '50%', // Center under global agent docker
                   transform: 'translateX(-50%)',
                   '&:hover': {
                     borderColor: '#3b82f6',
