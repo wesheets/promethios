@@ -68,7 +68,13 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
   const { currentUser: user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [agents, setAgents] = useState<DockerAgent[]>([]);
+  console.log('🐳 [AgentDockerEnhanced] Component rendering, about to call usePinnedCollaborators');
   const { collaborators: humans, loading: humansLoading, error: humansError } = usePinnedCollaborators();
+  console.log('🐳 [AgentDockerEnhanced] usePinnedCollaborators result:', { 
+    humans: humans?.length || 0, 
+    humansLoading, 
+    humansError 
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);

@@ -767,6 +767,25 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Active agents in command center drop zone
   const [activeAgents, setActiveAgents] = useState<ChatbotProfile[]>([]);
   
+  // Auto-add host agent to drop zone when selectedChatbot changes
+  useEffect(() => {
+    if (selectedChatbot) {
+      setActiveAgents(prev => {
+        // Check if host agent is already in drop zone
+        const isAlreadyActive = prev.some(agent => 
+          (agent.identity?.id || agent.id) === (selectedChatbot.identity?.id || selectedChatbot.id)
+        );
+        
+        if (!isAlreadyActive) {
+          console.log('🏠 Auto-adding host agent to drop zone:', selectedChatbot.identity?.name || selectedChatbot.name);
+          return [selectedChatbot, ...prev];
+        }
+        
+        return prev;
+      });
+    }
+  }, [selectedChatbot]);
+  
   // Guest selector popup state
   const [showGuestSelector, setShowGuestSelector] = useState(false);
   
