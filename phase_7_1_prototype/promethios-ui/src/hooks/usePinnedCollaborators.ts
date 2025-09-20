@@ -10,14 +10,30 @@ export interface PinnedCollaborator {
 }
 
 export const usePinnedCollaborators = () => {
-  const { currentUser } = useAuth();
+  const { user: currentUser } = useAuth();
   const { connections, loading: connectionsLoading, error: connectionsError } = useConnections();
   const [collaborators, setCollaborators] = useState<PinnedCollaborator[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug logging
+  console.log('🤝 [usePinnedCollaborators] Hook called with:', {
+    currentUser: currentUser?.uid,
+    connectionsCount: connections.length,
+    connectionsLoading,
+    connectionsError
+  });
+
   useEffect(() => {
+    console.log('🤝 [usePinnedCollaborators] useEffect triggered with:', {
+      currentUser: currentUser?.uid,
+      connectionsCount: connections.length,
+      connectionsLoading,
+      connectionsError
+    });
+
     if (!currentUser) {
+      console.log('🤝 [usePinnedCollaborators] No current user, showing demo collaborators');
       // Show demo collaborators for unauthenticated users
       const demoCollaborators: PinnedCollaborator[] = [
         {
@@ -39,15 +55,19 @@ export const usePinnedCollaborators = () => {
     }
 
     if (connectionsLoading) {
+      console.log('🤝 [usePinnedCollaborators] Connections still loading...');
       setLoading(true);
       return;
     }
 
     if (connectionsError) {
+      console.log('🤝 [usePinnedCollaborators] Connections error:', connectionsError);
       setError(connectionsError);
       setLoading(false);
       return;
     }
+
+    console.log('🤝 [usePinnedCollaborators] Processing connections:', connections);
 
     // Convert Firebase connections to collaborators
     const realCollaborators: PinnedCollaborator[] = connections.map(connection => {
@@ -57,6 +77,14 @@ export const usePinnedCollaborators = () => {
       const collaboratorName = isUser1 ? connection.user2Name : connection.user1Name;
       const collaboratorPhoto = isUser1 ? connection.user2Photo : connection.user1Photo;
 
+      console.log('🤝 [usePinnedCollaborators] Processing connection:', {
+        connectionId: connection.id,
+        isUser1,
+        collaboratorId,
+        collaboratorName,
+        collaboratorPhoto
+      });
+
       return {
         id: collaboratorId,
         name: collaboratorName,
@@ -65,6 +93,7 @@ export const usePinnedCollaborators = () => {
       };
     });
 
+    console.log('🤝 [usePinnedCollaborators] Final collaborators:', realCollaborators);
     setCollaborators(realCollaborators);
     setError(null);
     setLoading(false);
