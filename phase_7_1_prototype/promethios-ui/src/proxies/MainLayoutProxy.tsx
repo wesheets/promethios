@@ -13,7 +13,7 @@ import CollapsibleNavigationEnhanced from '../components/CollapsibleNavigationEn
 import Footer from '../components/layout/Footer';
 import TestAuth from '../components/TestAuth';
 import SuperEnhancedObserverButton from '../components/SuperEnhancedObserverButton';
-import AgentDocker from '../components/layout/AgentDocker';
+import AgentDockerEnhanced from '../components/layout/AgentDockerEnhanced';
 
 // Import expandable panel system
 import ExpandableLeftPanel from '../components/layout/ExpandableLeftPanel';
@@ -101,7 +101,7 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
       
       {/* Agent Docker - Persistent across all pages (hidden if hideDocker=true) */}
       {!hideDocker && (
-        <AgentDocker 
+        <AgentDockerEnhanced 
           onAddAgent={() => {
             // Navigate to agent creation QuickStart
             console.log('🐳 [AgentDocker] Add agent clicked');

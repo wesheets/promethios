@@ -361,86 +361,127 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
         }
       }}
     >
-      {/* Main agent row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {/* Visible agents */}
-        {visibleAgents.map((agent) => (
-          <DraggableAgentAvatar
-            key={agent.id}
-            agent={agent}
-            onClick={() => handleAgentClick(agent)}
-            onBehaviorPrompt={showBehaviorPrompts ? handleBehaviorPrompt : undefined}
-            showTooltip={hovering}
-          />
-        ))}
+      {/* Main collaboration row with AI and Human sections */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        
+        {/* AI Section */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* AI Label */}
+          <Typography variant="caption" sx={{ 
+            color: '#3b82f6', 
+            fontWeight: 600, 
+            fontSize: '0.75rem',
+            minWidth: '20px'
+          }}>
+            AI
+          </Typography>
+          
+          {/* AI Agents */}
+          {visibleAgents.map((agent) => (
+            <DraggableAgentAvatar
+              key={agent.id}
+              agent={agent}
+              onClick={() => handleAgentClick(agent)}
+              onBehaviorPrompt={showBehaviorPrompts ? handleBehaviorPrompt : undefined}
+              showTooltip={hovering}
+            />
+          ))}
 
-        {/* Expand/Collapse button for hidden agents */}
-        {hasHiddenAgents && (
-          <Tooltip title={expanded ? 'Show less' : `Show ${hiddenAgents.length} more agents`}>
+          {/* Expand/Collapse button for hidden AI agents */}
+          {hasHiddenAgents && (
+            <Tooltip title={expanded ? 'Show less' : `Show ${hiddenAgents.length} more agents`}>
+              <IconButton
+                size="small"
+                onClick={() => setExpanded(!expanded)}
+                sx={{
+                  width: 32,
+                  height: 32,
+                  bgcolor: 'rgba(59, 130, 246, 0.2)',
+                  color: '#3b82f6',
+                  '&:hover': {
+                    bgcolor: 'rgba(59, 130, 246, 0.3)',
+                    color: '#60a5fa'
+                  }
+                }}
+              >
+                {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          )}
+
+          {/* Add AI agent button */}
+          <Tooltip title="Create new AI agent">
             <IconButton
               size="small"
-              onClick={() => setExpanded(!expanded)}
+              onClick={handleAddAgent}
               sx={{
                 width: 32,
                 height: 32,
-                bgcolor: 'rgba(100, 116, 139, 0.3)',
-                color: '#94a3b8',
+                bgcolor: 'rgba(59, 130, 246, 0.2)',
+                color: '#3b82f6',
+                border: '1px dashed rgba(59, 130, 246, 0.5)',
                 '&:hover': {
-                  bgcolor: 'rgba(100, 116, 139, 0.5)',
-                  color: '#e2e8f0'
+                  bgcolor: 'rgba(59, 130, 246, 0.3)',
+                  borderColor: 'rgba(59, 130, 246, 0.7)',
+                  color: '#60a5fa'
                 }
               }}
             >
-              {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+              <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        )}
+        </Box>
 
-        {/* Refresh button */}
-        <Tooltip title="Refresh agents">
-          <IconButton
-            size="small"
-            onClick={handleRefresh}
-            disabled={loading}
-            sx={{
-              width: 32,
-              height: 32,
-              bgcolor: 'rgba(100, 116, 139, 0.2)',
-              color: '#94a3b8',
-              '&:hover': {
-                bgcolor: 'rgba(100, 116, 139, 0.4)',
-                color: '#e2e8f0'
-              },
-              '&:disabled': {
-                opacity: 0.5
-              }
-            }}
-          >
-            <RefreshIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        {/* Divider */}
+        <Box sx={{ 
+          width: '1px', 
+          height: '24px', 
+          bgcolor: 'rgba(148, 163, 184, 0.3)' 
+        }} />
 
-        {/* Add agent button */}
-        <Tooltip title="Create new agent (Quick Start)">
-          <IconButton
-            size="small"
-            onClick={handleAddAgent}
-            sx={{
-              width: 32,
-              height: 32,
-              bgcolor: 'rgba(59, 130, 246, 0.2)',
-              color: '#3b82f6',
-              border: '1px dashed rgba(59, 130, 246, 0.5)',
-              '&:hover': {
-                bgcolor: 'rgba(59, 130, 246, 0.3)',
-                borderColor: 'rgba(59, 130, 246, 0.7)',
-                color: '#60a5fa'
-              }
-            }}
-          >
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        {/* Human Section */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* Human Label */}
+          <Typography variant="caption" sx={{ 
+            color: '#10b981', 
+            fontWeight: 600, 
+            fontSize: '0.75rem',
+            minWidth: '12px'
+          }}>
+            H
+          </Typography>
+          
+          {/* Placeholder for humans - Coming soon */}
+          <Typography variant="caption" sx={{ 
+            color: '#64748b', 
+            fontSize: '0.7rem',
+            fontStyle: 'italic'
+          }}>
+            Coming soon
+          </Typography>
+
+          {/* Add human button */}
+          <Tooltip title="Add human collaborator">
+            <IconButton
+              size="small"
+              onClick={() => console.log('Add human collaborator')}
+              sx={{
+                width: 32,
+                height: 32,
+                bgcolor: 'rgba(16, 185, 129, 0.2)',
+                color: '#10b981',
+                border: '1px dashed rgba(16, 185, 129, 0.5)',
+                '&:hover': {
+                  bgcolor: 'rgba(16, 185, 129, 0.3)',
+                  borderColor: 'rgba(16, 185, 129, 0.7)',
+                  color: '#34d399'
+                }
+              }}
+            >
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {/* Expanded hidden agents */}
