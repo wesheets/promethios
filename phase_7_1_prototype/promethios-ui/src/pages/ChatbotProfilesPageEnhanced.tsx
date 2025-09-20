@@ -5969,6 +5969,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
           <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Agent Command Center Header with Drop Zone */}
             <Box sx={{
+              position: 'fixed',
+              top: '56px', // Position below the AgentDocker
+              left: 0,
+              right: 0,
+              zIndex: 1200, // Lower than AgentDocker (1300) but higher than content
               height: '56px',
               minHeight: '56px',
               maxHeight: '56px',
@@ -6064,7 +6069,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
             {/* Command Center Layout - Centered Chat + Thread Unit */}
             <Box sx={{ 
               display: 'flex', 
-              height: 'calc(100% - 56px)', // Subtract header height
+              height: 'calc(100vh - 112px)', // Subtract both headers (56px + 56px)
+              marginTop: '112px', // Account for both fixed headers
               justifyContent: 'center', // Center the chat+thread unit
               alignItems: 'stretch'
             }}>
