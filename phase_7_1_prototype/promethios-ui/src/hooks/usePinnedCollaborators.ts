@@ -29,7 +29,8 @@ export const usePinnedCollaborators = () => {
       currentUser: currentUser?.uid,
       connectionsCount: connections.length,
       connectionsLoading,
-      connectionsError
+      connectionsError,
+      connections: connections
     });
 
     if (!currentUser) {

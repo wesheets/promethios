@@ -6096,10 +6096,26 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       );
                       
                       if (droppedAgent) {
-                        // Add agent to chat using the same logic as the GuestSelectorPopup
+                        // Add to visual drop zone first
+                        setActiveAgents(prev => {
+                          // Check if agent is already in the drop zone
+                          const isAlreadyActive = prev.some(agent => 
+                            (agent.identity?.id || agent.id) === (droppedAgent.identity?.id || droppedAgent.id)
+                          );
+                          
+                          if (isAlreadyActive) {
+                            console.log('🤖 Agent already in command center:', droppedAgent.identity?.name);
+                            return prev;
+                          }
+                          
+                          console.log('🤖 Adding agent to visual drop zone:', droppedAgent.identity?.name);
+                          return [...prev, droppedAgent];
+                        });
+                        
+                        // Also add agent to chat using the same logic as the GuestSelectorPopup
                         await addAgentToChat(droppedAgent);
                         
-                        console.log('✅ Agent successfully added to chat');
+                        console.log('✅ Agent successfully added to chat and drop zone');
                       } else {
                         console.error('❌ Could not find dropped agent in chatbot profiles');
                       }
@@ -6123,28 +6139,24 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       <Box
                         key={agent.identity?.id || agent.id}
                         sx={{
+                          position: 'relative',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 0.5,
-                          backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                          border: '1px solid #3b82f6',
-                          borderRadius: '16px',
-                          px: 1,
-                          py: 0.5,
-                          fontSize: '0.75rem',
-                          color: '#3b82f6',
-                          fontWeight: 500
+                          justifyContent: 'center'
                         }}
                       >
                         <Avatar
                           src={agent.identity?.avatar}
-                          sx={{ width: 16, height: 16, fontSize: '0.6rem' }}
+                          sx={{ 
+                            width: 32, 
+                            height: 32, 
+                            fontSize: '0.875rem',
+                            border: '2px solid #3b82f6',
+                            backgroundColor: '#1e293b'
+                          }}
                         >
                           {agent.identity?.name?.charAt(0) || agent.name?.charAt(0) || 'A'}
                         </Avatar>
-                        <Typography variant="caption" sx={{ color: '#3b82f6', fontWeight: 500 }}>
-                          {agent.identity?.name || agent.name || 'Agent'}
-                        </Typography>
                         <IconButton
                           size="small"
                           onClick={(e) => {
@@ -6154,13 +6166,18 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                             ));
                           }}
                           sx={{ 
-                            width: 14, 
-                            height: 14, 
-                            color: '#3b82f6',
-                            '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.3)' }
+                            position: 'absolute',
+                            top: -4,
+                            right: -4,
+                            width: 16, 
+                            height: 16, 
+                            backgroundColor: '#ef4444',
+                            color: 'white',
+                            fontSize: '0.6rem',
+                            '&:hover': { backgroundColor: '#dc2626' }
                           }}
                         >
-                          <CloseIcon sx={{ fontSize: '0.7rem' }} />
+                          <CloseIcon sx={{ fontSize: '0.6rem' }} />
                         </IconButton>
                       </Box>
                     ))}
