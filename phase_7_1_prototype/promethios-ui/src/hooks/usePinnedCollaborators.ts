@@ -10,7 +10,7 @@ export interface PinnedCollaborator {
 }
 
 export const usePinnedCollaborators = () => {
-  const { user: currentUser } = useAuth();
+  const { currentUser } = useAuth();
   const { connections, loading: connectionsLoading, error: connectionsError } = useConnections();
   const [collaborators, setCollaborators] = useState<PinnedCollaborator[]>([]);
   const [loading, setLoading] = useState(true);
