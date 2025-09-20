@@ -763,6 +763,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const [filterTab, setFilterTab] = useState(0); // 0: All, 1: Hosted API, 2: BYOK, 3: Enterprise
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Active agents in command center drop zone
+  const [activeAgents, setActiveAgents] = useState<ChatbotProfile[]>([]);
+  
   // Current bot state (derived from botStates map) - moved here to fix initialization order
   const selectedChatbotId = selectedChatbot ? (selectedChatbot.identity?.id || selectedChatbot.key || selectedChatbot.id) : null;
   const currentBotState = selectedChatbotId ? botStates.get(selectedChatbotId) : null;
@@ -6015,7 +6018,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               <Box 
                 sx={{
                   width: '320px', // Wider drop zone
-                  height: '40px',
+                  minHeight: '40px',
+                  maxHeight: '80px', // Allow expansion for multiple agents
                   border: '2px dashed #64748b',
                   borderRadius: '8px',
                   display: 'flex',
@@ -6026,6 +6030,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   position: 'absolute',
                   left: '50%', // Center under global agent docker
                   transform: 'translateX(-50%)',
+                  padding: '8px',
+                  overflow: 'hidden',
                   '&:hover': {
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)'
@@ -6053,17 +6059,29 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                     const agentId = sourceId.replace('agent-', '');
                     
                     try {
-                      // Set the selected chatbot to the dropped agent
+                      // Find the dropped agent
                       const chatbotProfiles = await chatbotService.getChatbots(user?.uid || '');
                       const droppedAgent = chatbotProfiles?.find(profile => 
                         profile.identity?.id === agentId || profile.id === agentId
                       );
                       
                       if (droppedAgent) {
-                        console.log('🤖 Setting selected chatbot to dropped agent:', droppedAgent.identity?.name);
-                        setSelectedChatbot(droppedAgent);
+                        // Add to active agents instead of selecting as chatbot
+                        setActiveAgents(prev => {
+                          // Check if agent is already in the drop zone
+                          const isAlreadyActive = prev.some(agent => 
+                            (agent.identity?.id || agent.id) === (droppedAgent.identity?.id || droppedAgent.id)
+                          );
+                          
+                          if (isAlreadyActive) {
+                            console.log('🤖 Agent already in command center:', droppedAgent.identity?.name);
+                            return prev;
+                          }
+                          
+                          console.log('🤖 Adding agent to command center:', droppedAgent.identity?.name);
+                          return [...prev, droppedAgent];
+                        });
                         
-                        // Show success feedback
                         console.log('✅ Agent successfully added to command center');
                       } else {
                         console.error('❌ Could not find dropped agent in chatbot profiles');
@@ -6074,13 +6092,63 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   }
                 }}
               >
-                <Typography variant="body2" sx={{ 
-                  color: '#94a3b8',
-                  fontSize: '0.875rem',
-                  fontWeight: 500
-                }}>
-                  Drop Agents and Humans Here
-                </Typography>
+                {activeAgents.length === 0 ? (
+                  <Typography variant="body2" sx={{ 
+                    color: '#94a3b8',
+                    fontSize: '0.875rem',
+                    fontWeight: 500
+                  }}>
+                    Drop Agents and Humans Here
+                  </Typography>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    {activeAgents.map((agent) => (
+                      <Box
+                        key={agent.identity?.id || agent.id}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                          border: '1px solid #3b82f6',
+                          borderRadius: '16px',
+                          px: 1,
+                          py: 0.5,
+                          fontSize: '0.75rem',
+                          color: '#3b82f6',
+                          fontWeight: 500
+                        }}
+                      >
+                        <Avatar
+                          src={agent.identity?.avatar}
+                          sx={{ width: 16, height: 16, fontSize: '0.6rem' }}
+                        >
+                          {agent.identity?.name?.charAt(0) || agent.name?.charAt(0) || 'A'}
+                        </Avatar>
+                        <Typography variant="caption" sx={{ color: '#3b82f6', fontWeight: 500 }}>
+                          {agent.identity?.name || agent.name || 'Agent'}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveAgents(prev => prev.filter(a => 
+                              (a.identity?.id || a.id) !== (agent.identity?.id || agent.id)
+                            ));
+                          }}
+                          sx={{ 
+                            width: 14, 
+                            height: 14, 
+                            color: '#3b82f6',
+                            '&:hover': { backgroundColor: 'rgba(59, 130, 246, 0.3)' }
+                          }}
+                        >
+                          <CloseIcon sx={{ fontSize: '0.7rem' }} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
 
               {/* Right Side - Spacer for balance */}
