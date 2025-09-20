@@ -148,6 +148,7 @@ import {
   Error as ErrorIcon,
   Refresh,
   Download,
+  DragIndicator,
   Upload,
   Share,
   Delete,
@@ -6157,7 +6158,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                 ) : (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     {activeAgents.map((agent) => {
-                      // Create draggable agent with same functionality as chat input agents
+                      // Create draggable agent with same functionality as secondary header agents
                       const DraggableDropZoneAgent = () => {
                         const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
                           agent.identity?.id || agent.id,
@@ -6171,6 +6172,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           false // isHuman
                         );
 
+                        const borderColor = agent.identity?.color || '#3b82f6';
+
                         return (
                           <Box
                             sx={{
@@ -6180,32 +6183,71 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                               justifyContent: 'center'
                             }}
                           >
-                            <Avatar
+                            <Box 
                               ref={dragRef}
                               {...dragHandlers}
-                              src={agent.identity?.avatar}
-                              sx={{ 
-                                width: 32, 
-                                height: 32, 
-                                fontSize: '0.875rem',
-                                border: '2px solid #3b82f6',
-                                backgroundColor: agent.identity?.color || '#1e293b',
-                                color: 'white',
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                px: 1,
+                                py: 0.5,
+                                bgcolor: isDragging ? '#475569' : '#334155',
+                                borderRadius: 1,
+                                borderLeft: `3px solid ${borderColor}`,
                                 cursor: 'grab',
-                                opacity: isDragging ? 0.7 : 1,
-                                transform: isDragging ? 'rotate(5deg)' : 'none',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                  transform: isDragging ? 'rotate(5deg)' : 'scale(1.1)',
-                                  boxShadow: `0 0 8px ${agent.identity?.color || '#3b82f6'}40`
+                                '&:hover': { 
+                                  bgcolor: '#475569',
+                                  transform: 'translateY(-1px)',
                                 },
                                 '&:active': {
                                   cursor: 'grabbing',
-                                }
+                                },
+                                height: 32,
+                                minWidth: 'fit-content',
+                                opacity: isDragging ? 0.7 : 1,
+                                transition: 'all 0.2s ease',
                               }}
                             >
-                              {agent.identity?.name?.charAt(0) || agent.name?.charAt(0) || 'A'}
-                            </Avatar>
+                              {/* Drag indicator */}
+                              <DragIndicator sx={{ 
+                                fontSize: '12px', 
+                                color: '#64748b',
+                                opacity: 0.6,
+                              }} />
+                              
+                              {/* Avatar Circle */}
+                              <Avatar sx={{
+                                width: 20,
+                                height: 20,
+                                backgroundColor: borderColor,
+                                fontSize: '10px',
+                                fontWeight: 'bold'
+                              }}>
+                                {agent.identity?.avatar ? (
+                                  <img 
+                                    src={agent.identity.avatar} 
+                                    alt={agent.identity.name || agent.name}
+                                    style={{ width: '100%', height: '100%', borderRadius: '50%' }}
+                                  />
+                                ) : (
+                                  agent.identity?.name?.charAt(0) || agent.name?.charAt(0) || 'A'
+                                )}
+                              </Avatar>
+                              
+                              {/* Agent Name */}
+                              <Typography sx={{ 
+                                color: 'white', 
+                                fontSize: '11px', 
+                                fontWeight: 500,
+                                maxWidth: '80px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {agent.identity?.name || agent.name || 'Agent'}
+                              </Typography>
+                            </Box>
                             <IconButton
                               size="small"
                               onClick={(e) => {
