@@ -5982,7 +5982,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               borderBottom: '1px solid #334155',
               px: 2,
               ml: 0, // Navigation drawer is hidden (DRAWER_WIDTH = 0)
-              mt: '56px' // Position directly under AgentDocker
+              mt: 0 // Remove gap - AgentDocker handles positioning
             }}>
               {/* Left Side - Agent Name and Chat Name */}
               <Box sx={{ 
@@ -6040,20 +6040,36 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   e.currentTarget.style.borderColor = '#64748b';
                   e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
                 }}
-                onDrop={(e) => {
+                onDrop={async (e) => {
                   e.preventDefault();
                   e.currentTarget.style.borderColor = '#64748b';
                   e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
                   
-                  // Get dropped agent data
-                  const agentData = e.dataTransfer.getData('application/json');
-                  if (agentData) {
+                  // Get dropped agent ID from drag registry
+                  const sourceId = e.dataTransfer.getData('text/plain');
+                  console.log('🤖 Agent dropped into command center:', sourceId);
+                  
+                  if (sourceId && sourceId.startsWith('agent-')) {
+                    const agentId = sourceId.replace('agent-', '');
+                    
                     try {
-                      const agent = JSON.parse(agentData);
-                      console.log('🤖 Agent dropped into command center:', agent);
-                      // TODO: Implement agent collaboration logic
+                      // Set the selected chatbot to the dropped agent
+                      const chatbotProfiles = await chatbotService.getChatbots(user?.uid || '');
+                      const droppedAgent = chatbotProfiles?.find(profile => 
+                        profile.identity?.id === agentId || profile.id === agentId
+                      );
+                      
+                      if (droppedAgent) {
+                        console.log('🤖 Setting selected chatbot to dropped agent:', droppedAgent.identity?.name);
+                        setSelectedChatbot(droppedAgent);
+                        
+                        // Show success feedback
+                        console.log('✅ Agent successfully added to command center');
+                      } else {
+                        console.error('❌ Could not find dropped agent in chatbot profiles');
+                      }
                     } catch (error) {
-                      console.error('Error parsing dropped agent data:', error);
+                      console.error('❌ Error handling agent drop:', error);
                     }
                   }
                 }}
