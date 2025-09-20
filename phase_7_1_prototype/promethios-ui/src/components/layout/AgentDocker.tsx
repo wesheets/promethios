@@ -322,7 +322,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           position: 'fixed',
           top: 0,
           left: '50%',
-          transform: 'translateX(calc(-50% + 130px))', // Offset by half the sidebar width
+          transform: 'translateX(calc(-50% + 160px))', // Responsive offset for sidebar (260px / 2 = 130px + 30px buffer)
           zIndex: 1300,
           bgcolor: 'rgba(15, 23, 42, 0.8)',
           backdropFilter: 'blur(8px)',
@@ -352,7 +352,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           position: 'fixed',
           top: 0,
           left: '50%',
-          transform: 'translateX(calc(-50% + 130px))', // Offset by half the sidebar width
+          transform: 'translateX(calc(-50% + 160px))', // Responsive offset for sidebar (260px / 2 = 130px + 30px buffer)
           zIndex: 1300,
           bgcolor: 'rgba(15, 23, 42, 0.8)',
           backdropFilter: 'blur(8px)',
@@ -397,7 +397,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
         position: 'fixed',
         top: 0,
         left: '50%',
-        transform: 'translateX(calc(-50% + 130px))', // Offset by half the sidebar width
+        transform: 'translateX(calc(-50% + 160px))', // Responsive offset for sidebar (260px / 2 = 130px + 30px buffer)
         zIndex: 1300,
         bgcolor: 'rgba(15, 23, 42, 0.85)',
         backdropFilter: 'blur(12px)',
@@ -411,7 +411,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
         '&:hover': {
           bgcolor: 'rgba(15, 23, 42, 0.95)',
           borderColor: 'rgba(148, 163, 184, 0.5)',
-            transform: 'translateX(calc(-50% + 130px)) translateY(2px)',
+            transform: 'translateX(calc(-50% + 160px)) translateY(2px)',
         }
       }}
     >
