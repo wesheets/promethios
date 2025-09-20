@@ -5966,18 +5966,56 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
         }}
       >
         {isWorkspaceMode ? (
-          <Box sx={{ height: '100%', width: '100%' }}>
+          <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+            {/* Agent Command Center Header with Drop Zone */}
+            <Box sx={{
+              height: '56px',
+              minHeight: '56px',
+              maxHeight: '56px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#1e293b',
+              borderBottom: '1px solid #334155',
+              px: 2
+            }}>
+              {/* Drop Zone for Agent Collaboration */}
+              <Box sx={{
+                width: '320px', // Wider drop zone
+                height: '40px',
+                border: '2px dashed #64748b',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  borderColor: '#3b82f6',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                }
+              }}>
+                <Typography variant="body2" sx={{ 
+                  color: '#94a3b8',
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}>
+                  Drop Agent Here
+                </Typography>
+              </Box>
+            </Box>
+            
             {/* Command Center Layout - Centered Chat + Thread Unit */}
             <Box sx={{ 
               display: 'flex', 
-              height: '100%',
+              height: 'calc(100% - 56px)', // Subtract header height
               justifyContent: 'center', // Center the chat+thread unit
               alignItems: 'stretch'
             }}>
               {/* Chat + Thread Container */}
               <Box sx={{ 
                 display: 'flex',
-                height: '100vh',
+                height: '100%', // Use full available height (already adjusted for header)
                 maxWidth: threadViewOpen ? '1700px' : '1200px', // Adjust max width for 500px thread
                 width: threadViewOpen ? 'calc(1200px + 500px)' : '1200px', // Chat width + thread width
                 transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
@@ -5987,7 +6025,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   width: '1200px', // Fixed chat interface width
                   display: 'flex', 
                   flexDirection: 'column', 
-                  height: '100vh',
+                  height: '100%', // Use full available height
                   // Removed bgcolor to match main background
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
                 }}>
