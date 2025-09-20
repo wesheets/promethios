@@ -33,6 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { useAgentDragSource } from '../../hooks/useDragDrop';
+import { usePinnedCollaborators } from '../../hooks/usePinnedCollaborators';
 
 interface AgentDockerProps {
   onAddAgent?: () => void;
@@ -67,6 +68,16 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [hovering, setHovering] = useState(false);
+  
+  // Human collaborators
+  const { collaborators: humanCollaborators, loading: collaboratorsLoading } = usePinnedCollaborators();
+  
+  // Debug human collaborators
+  console.log('🐳 [AgentDocker] Human collaborators:', {
+    count: humanCollaborators.length,
+    loading: collaboratorsLoading,
+    collaborators: humanCollaborators
+  });
   
   // Circuit breaker to prevent duplicate loading calls
   const loadingAgentsRef = useRef(false);
@@ -268,7 +279,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           position: 'fixed',
           top: 0,
           left: '50%',
-          transform: 'translateX(-50%)',
+          transform: 'translateX(calc(-50% + 130px))', // Offset by half the sidebar width
           zIndex: 1300,
           bgcolor: 'rgba(15, 23, 42, 0.8)',
           backdropFilter: 'blur(8px)',
@@ -298,7 +309,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
           position: 'fixed',
           top: 0,
           left: '50%',
-          transform: 'translateX(-50%)',
+          transform: 'translateX(calc(-50% + 130px))', // Offset by half the sidebar width
           zIndex: 1300,
           bgcolor: 'rgba(15, 23, 42, 0.8)',
           backdropFilter: 'blur(8px)',
@@ -343,7 +354,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
         position: 'fixed',
         top: 0,
         left: '50%',
-        transform: 'translateX(-50%)',
+        transform: 'translateX(calc(-50% + 130px))', // Offset by half the sidebar width
         zIndex: 1300,
         bgcolor: 'rgba(15, 23, 42, 0.85)',
         backdropFilter: 'blur(12px)',
@@ -357,7 +368,7 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
         '&:hover': {
           bgcolor: 'rgba(15, 23, 42, 0.95)',
           borderColor: 'rgba(148, 163, 184, 0.5)',
-          transform: 'translateX(-50%) translateY(2px)',
+            transform: 'translateX(calc(-50% + 130px)) translateY(2px)',
         }
       }}
     >
@@ -451,14 +462,40 @@ const AgentDocker: React.FC<AgentDockerProps> = ({
             H
           </Typography>
           
-          {/* Placeholder for humans - Coming soon */}
-          <Typography variant="caption" sx={{ 
-            color: '#64748b', 
-            fontSize: '0.7rem',
-            fontStyle: 'italic'
-          }}>
-            Coming soon
-          </Typography>
+          {/* Human Collaborators */}
+          {collaboratorsLoading ? (
+            <CircularProgress size={16} sx={{ color: '#10b981' }} />
+          ) : humanCollaborators.length > 0 ? (
+            humanCollaborators.slice(0, 3).map((collaborator) => (
+              <Tooltip key={collaborator.id} title={collaborator.name}>
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: '#10b981',
+                    border: '2px solid #10b981',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'scale(1.1)',
+                      borderColor: '#34d399',
+                    },
+                  }}
+                  src={collaborator.avatar}
+                >
+                  {collaborator.name.charAt(0).toUpperCase()}
+                </Avatar>
+              </Tooltip>
+            ))
+          ) : (
+            <Typography variant="caption" sx={{ 
+              color: '#64748b', 
+              fontSize: '0.7rem',
+              fontStyle: 'italic'
+            }}>
+              No connections
+            </Typography>
+          )}
 
           {/* Add human button */}
           <Tooltip title="Add human collaborator">

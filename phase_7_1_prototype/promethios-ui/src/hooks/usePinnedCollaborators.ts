@@ -82,6 +82,28 @@ export const usePinnedCollaborators = () => {
 
     console.log('🤝 [usePinnedCollaborators] Processing connections:', connections);
 
+    // If no connections, show demo collaborators for now
+    if (connections.length === 0) {
+      console.log('🤝 [usePinnedCollaborators] No connections found, showing demo collaborators');
+      const demoCollaborators: PinnedCollaborator[] = [
+        {
+          id: 'demo-ted',
+          name: 'Ted Sheets',
+          avatar: 'https://i.pravatar.cc/150?u=ted.sheets',
+          status: 'active',
+        },
+        {
+          id: 'demo-alice',
+          name: 'Alice Johnson',
+          avatar: 'https://i.pravatar.cc/150?u=alice.johnson',
+          status: 'active',
+        },
+      ];
+      setCollaborators(demoCollaborators);
+      setLoading(false);
+      return;
+    }
+
     // Convert Firebase connections to collaborators
     const realCollaborators: PinnedCollaborator[] = connections.map(connection => {
       // Determine which user is the collaborator (not the current user)

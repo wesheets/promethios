@@ -39,7 +39,7 @@ export interface UseConnectionsReturn {
 }
 
 export const useConnections = (): UseConnectionsReturn => {
-  const { user } = useAuth();
+  const { currentUser: user } = useAuth();
   
   // State
   const [connections, setConnections] = useState<Connection[]>([]);

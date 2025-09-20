@@ -30,6 +30,7 @@ import { useAuth } from '../../context/AuthContext';
 import ChatbotStorageService, { ChatbotProfile } from '../../services/ChatbotStorageService';
 import { useAgentDragSource } from '../../hooks/useDragDrop';
 import { usePinnedCollaborators, PinnedCollaborator } from '../../hooks/usePinnedCollaborators';
+import DraggableParticipantChip from '../DraggableParticipantChip';
 
 interface AgentDockerProps {
   onAddAgent?: () => void;
@@ -37,6 +38,19 @@ interface AgentDockerProps {
   onBehaviorPrompt?: (agentId: string, agentName: string, behavior: string) => void;
   maxVisibleAgents?: number;
   showBehaviorPrompts?: boolean;
+  // New props for drop zone functionality
+  currentChatParticipants?: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    type: 'ai_agent' | 'human';
+    color?: string;
+    status?: 'active' | 'inactive';
+    personality?: string;
+    expertise?: string[];
+  }>;
+  onRemoveParticipant?: (participantId: string) => void;
+  showDropZone?: boolean;
 }
 
 interface DockerAgent {
@@ -63,7 +77,10 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
   onAgentClick,
   onBehaviorPrompt,
   maxVisibleAgents = 8,
-  showBehaviorPrompts = true
+  showBehaviorPrompts = true,
+  currentChatParticipants = [],
+  onRemoveParticipant,
+  showDropZone = true
 }) => {
   const { currentUser: user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -146,17 +163,15 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
       setLoading(true);
       setError(null);
       const chatbotProfiles = await chatbotServiceRef.current.getChatbots(user.uid);
-      const dockerAgents: DockerAgent[] = chatbotProfiles
-        .map(profile => ({
-            id: profile.identity?.id || profile.id,
-            name: profile.identity?.name || 'Unnamed Agent',
-            avatar: profile.identity?.avatar,
-            color: getAgentColor(profile.identity?.personality || 'professional'),
-            status: 'active' as const,
-            type: 'ai_agent' as const,
-            personality: profile.identity?.personality,
-            expertise: profile.identity?.expertise || []
-        }));
+      const dockerAgents: DockerAgent[] = chatbotProfiles.map((profile) => ({
+        id: profile.identity?.id || profile.id,
+        name: profile.identity?.name || profile.name || 'Unnamed Agent',
+        avatar: profile.identity?.avatar || profile.chatbotConfig?.brandSettings?.logo,
+        personality: profile.chatbotConfig?.personality || 'professional',
+        status: 'active' as const,
+        type: 'ai_agent' as const,
+        expertise: profile.identity?.expertise || [],
+      }));
 
       setAgents(dockerAgents);
       if (dockerAgents.length === 0) {
@@ -290,7 +305,7 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
         position: 'fixed',
         top: 0,
         left: '50%',
-        transform: 'translateX(-50%)',
+        transform: 'translateX(calc(-50% + 130px))', // Offset by half the sidebar width (260px / 2)
         zIndex: 1300,
         bgcolor: 'rgba(15, 23, 42, 0.85)',
         backdropFilter: 'blur(12px)',
@@ -304,11 +319,36 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
         '&:hover': {
           bgcolor: 'rgba(15, 23, 42, 0.95)',
           borderColor: 'rgba(148, 163, 184, 0.5)',
-          transform: 'translateX(-50%) translateY(2px)',
+          transform: 'translateX(calc(-50% + 130px)) translateY(2px)',
         }
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        
+        {/* Drop Zone Section */}
+        {showDropZone && currentChatParticipants.length > 0 && (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" sx={{ color: '#f59e0b', fontWeight: 600, fontSize: '0.75rem', minWidth: '20px' }}>
+                ⚡
+              </Typography>
+              
+              {currentChatParticipants.map((participant) => (
+                <DraggableParticipantChip
+                  key={participant.id}
+                  participant={participant}
+                  type={participant.type === 'ai_agent' ? 'ai' : 'human'}
+                  onRemove={onRemoveParticipant}
+                  onBehaviorPrompt={showBehaviorPrompts ? onBehaviorPrompt : undefined}
+                  showRemoveButton={true}
+                  showBehaviorButton={showBehaviorPrompts && participant.type === 'ai_agent'}
+                />
+              ))}
+            </Box>
+
+            <Box sx={{ width: '1px', height: '24px', bgcolor: 'rgba(148, 163, 184, 0.3)' }} />
+          </>
+        )}
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Typography variant="caption" sx={{ color: '#3b82f6', fontWeight: 600, fontSize: '0.75rem', minWidth: '20px' }}>
