@@ -63,6 +63,8 @@ import RepositoryBrowser from '../components/workflow/RepositoryBrowser';
 // Behavioral orchestration imports
 import HoverOrchestrationTrigger, { ParticipantData } from '../components/collaboration/HoverOrchestrationTrigger';
 import { BehavioralSettings } from '../components/collaboration/BehavioralOrchestrationControls';
+// Drag and drop imports
+import { useAgentDragSource } from '../hooks/useDragDrop';
 import {
   Box,
   Container,
@@ -6154,31 +6156,59 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   </Typography>
                 ) : (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                    {activeAgents.map((agent) => (
-                      <Box
-                        key={agent.identity?.id || agent.id}
-                        sx={{
-                          position: 'relative',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <Avatar
-                          src={agent.identity?.avatar}
-                          sx={{ 
-                            width: 32, 
-                            height: 32, 
-                            fontSize: '0.875rem',
-                            border: '2px solid #3b82f6',
-                            backgroundColor: '#1e293b'
-                          }}
-                        >
-                          {agent.identity?.name?.charAt(0) || agent.name?.charAt(0) || 'A'}
-                        </Avatar>
-                        <IconButton
-                          size="small"
-                          onClick={(e) => {
+                    {activeAgents.map((agent) => {
+                      // Create draggable agent with same functionality as chat input agents
+                      const DraggableDropZoneAgent = () => {
+                        const { dragRef, isDragging, dragHandlers } = useAgentDragSource(
+                          agent.identity?.id || agent.id,
+                          {
+                            id: agent.identity?.id || agent.id,
+                            name: agent.identity?.name || agent.name || 'Agent',
+                            type: 'ai_agent',
+                            color: agent.identity?.color || '#3b82f6',
+                            avatar: agent.identity?.avatar,
+                          },
+                          false // isHuman
+                        );
+
+                        return (
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <Avatar
+                              ref={dragRef}
+                              {...dragHandlers}
+                              src={agent.identity?.avatar}
+                              sx={{ 
+                                width: 32, 
+                                height: 32, 
+                                fontSize: '0.875rem',
+                                border: '2px solid #3b82f6',
+                                backgroundColor: agent.identity?.color || '#1e293b',
+                                color: 'white',
+                                cursor: 'grab',
+                                opacity: isDragging ? 0.7 : 1,
+                                transform: isDragging ? 'rotate(5deg)' : 'none',
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                  transform: isDragging ? 'rotate(5deg)' : 'scale(1.1)',
+                                  boxShadow: `0 0 8px ${agent.identity?.color || '#3b82f6'}40`
+                                },
+                                '&:active': {
+                                  cursor: 'grabbing',
+                                }
+                              }}
+                            >
+                              {agent.identity?.name?.charAt(0) || agent.name?.charAt(0) || 'A'}
+                            </Avatar>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
                             e.stopPropagation();
                             
                             // Remove from visual drop zone
@@ -6222,8 +6252,12 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                         >
                           <CloseIcon sx={{ fontSize: '0.6rem' }} />
                         </IconButton>
-                      </Box>
-                    ))}
+                          </Box>
+                        );
+                      };
+
+                      return <DraggableDropZoneAgent key={agent.identity?.id || agent.id} />;
+                    })}
                   </Box>
                 )}
               </Box>
