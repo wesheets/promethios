@@ -6053,7 +6053,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   fontSize: '0.875rem',
                   fontWeight: 500
                 }}>
-                  Drop Agent Here
+                  Drop Agents and Humans Here
                 </Typography>
               </Box>
 
