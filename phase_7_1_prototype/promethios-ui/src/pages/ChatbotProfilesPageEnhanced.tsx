@@ -191,7 +191,7 @@ import TeamPanel from '../components/team/TeamPanel';
 import CustomGPTTab from '../components/command-center/CustomGPTTab';
 import EnhancedHostChatInterface from '../components/modern/EnhancedHostChatInterface';
 import EnhancedChatWrapper from '../components/modern/EnhancedChatWrapper';
-import ConsolidatedChatHeader from '../components/chat/ConsolidatedChatHeader';
+
 import ColorCodedChatMessage from '../components/chat/ColorCodedChatMessage';
 import UnifiedChatMessage from '../components/chat/UnifiedChatMessage';
 import BehavioralPromptSelectorModal from '../components/chat/BehavioralPromptSelectorModal';
@@ -6333,25 +6333,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' // Smooth transition
                 }}>
 
-              {/* Consolidated Chat Header */}
-              <ConsolidatedChatHeader
-                multiChatState={multiChatState}
-                selectedChatbot={selectedChatbot}
-                currentChatName={currentBotState?.currentChatName || ''}
-                humanParticipants={humanParticipants}
-                isInSharedMode={isInSharedMode}
-                activeSharedConversation={activeSharedConversation}
-                sharedConversations={sharedConversations}
-                loadedHostChatSession={loadedHostChatSession}
-                onSwitchChatContext={switchChatContext}
-                onRemoveChatContext={removeChatContext}
-                onAddParticipant={() => {
-                  // Open the guest selector popup
-                  setShowGuestSelector(true);
-                }}
-                onToggleSidePanel={toggleSidePanel}
-                user={user}
-              />
+
 
               {/* Chat Messages Area - Enhanced */}
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
