@@ -6157,10 +6157,11 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   e.currentTarget.style.borderColor = '#64748b';
                   e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
                   
-                  // Get dropped agent ID from drag registry
+                  // Get dropped item ID from drag registry
                   const sourceId = e.dataTransfer.getData('text/plain');
-                  console.log('🤖 Agent dropped into command center:', sourceId);
+                  console.log('🎯 Item dropped into command center:', sourceId);
                   
+                  // Handle AI Agent drops
                   if (sourceId && sourceId.startsWith('agent-')) {
                     const agentId = sourceId.replace('agent-', '');
                     
@@ -6197,6 +6198,43 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                       }
                     } catch (error) {
                       console.error('❌ Error handling agent drop:', error);
+                    }
+                  }
+                  
+                  // Handle Human drops (humans use 'agent-{humanId}' format but with isHuman=true)
+                  // We need to check the drag registry to determine if this is a human
+                  else {
+                    // For humans, we need to check if the sourceId corresponds to a human
+                    // Since humans also use 'agent-{id}' format, we need to distinguish them
+                    const itemId = sourceId.replace('agent-', '');
+                    
+                    try {
+                      // Check if this is a human by looking in connections
+                      const connections = await ConnectionService.getInstance().loadConnections(user?.uid || '');
+                      const droppedHuman = connections?.find(conn => conn.id === itemId);
+                      
+                      if (droppedHuman) {
+                        console.log('👤 Human dropped into command center:', droppedHuman.name);
+                        
+                        // Convert to format expected by handleAddGuests
+                        const humanGuest = {
+                          id: droppedHuman.id,
+                          name: droppedHuman.name,
+                          type: 'human' as const,
+                          avatar: droppedHuman.avatar,
+                          status: droppedHuman.status || 'online',
+                          role: 'Collaborator'
+                        };
+                        
+                        console.log('👤 Triggering handleAddGuests with human:', humanGuest);
+                        await handleAddGuests([humanGuest]);
+                        
+                        console.log('✅ Human successfully invited to chat');
+                      } else {
+                        console.log('❓ Unknown item dropped:', sourceId);
+                      }
+                    } catch (error) {
+                      console.error('❌ Error handling drop:', error);
                     }
                   }
                 }}
@@ -7075,66 +7113,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                     mr: 1,
                                     flexShrink: 0
                                   }}>
-                                    {/* Human Drop Zone - Wraps AgentAvatarSelector */}
-                                    {(() => {
-                                      const { dropRef, isOver, canDrop, dropHandlers } = useDropTarget(
-                                        'chat-input-drop-zone',
-                                        'chat_input',
-                                        ['human'], // Accept human drops
-                                        async (source) => {
-                                          console.log('🎯 Human dropped in chat input area:', source);
-                                          if (source.type === 'human' && source.data) {
-                                            // Convert the dragged human to the format expected by handleAddGuests
-                                            const humanGuest = {
-                                              id: source.data.id,
-                                              name: source.data.name,
-                                              type: 'human' as const,
-                                              avatar: source.data.avatar,
-                                              status: source.data.status || 'online',
-                                              role: 'Collaborator'
-                                            };
-                                            
-                                            console.log('🎯 Triggering handleAddGuests with human:', humanGuest);
-                                            await handleAddGuests([humanGuest]);
-                                          }
-                                        }
-                                      );
-
-                                      return (
-                                        <Box 
-                                          ref={dropRef}
-                                          {...dropHandlers}
-                                          sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 0.5,
-                                            position: 'relative',
-                                            borderRadius: '8px',
-                                            transition: 'all 0.2s ease-in-out',
-                                            ...(isOver && canDrop && {
-                                              bgcolor: 'rgba(16, 185, 129, 0.1)',
-                                              border: '2px dashed #10b981',
-                                              '&::after': {
-                                                content: '"Drop to invite to chat"',
-                                                position: 'absolute',
-                                                top: '-30px',
-                                                left: '50%',
-                                                transform: 'translateX(-50%)',
-                                                bgcolor: '#10b981',
-                                                color: 'white',
-                                                px: 1,
-                                                py: 0.5,
-                                                borderRadius: '4px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 500,
-                                                whiteSpace: 'nowrap',
-                                                zIndex: 1000,
-                                              }
-                                            })
-                                          }}
-                                        >
-                                          {/* Agent Avatar Selector - Inside Drop Zone */}
-                                          <AgentAvatarSelector
+                                    {/* Agent Avatar Selector - Inside Input */}
+                                    <AgentAvatarSelector
                                       hostAgent={(() => {
                                         if (isInSharedMode && loadedHostChatSession) {
                                           // Use the actual host agent from the loaded session
@@ -7302,9 +7282,6 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                                       agentId={selectedChatbot?.id}
                                       user={user}
                                     />
-                                        </Box>
-                                      );
-                                    })()}
                                     
                                     {/* Behavioral Orchestration Hover Triggers */}
                                     <HoverOrchestrationTrigger
