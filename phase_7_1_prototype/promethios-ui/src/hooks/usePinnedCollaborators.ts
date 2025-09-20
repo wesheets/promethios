@@ -19,9 +19,17 @@ export const usePinnedCollaborators = () => {
   // Debug logging
   console.log('🤝 [usePinnedCollaborators] Hook called with:', {
     currentUser: currentUser?.uid,
-    connectionsCount: connections.length,
+    connectionsCount: connections?.length || 0,
     connectionsLoading,
-    connectionsError
+    connectionsError,
+    connectionsRaw: connections
+  });
+  
+  console.log('🤝 [usePinnedCollaborators] Detailed connections data:', {
+    connections,
+    connectionsType: typeof connections,
+    connectionsIsArray: Array.isArray(connections),
+    connectionsKeys: connections ? Object.keys(connections) : 'null'
   });
 
   useEffect(() => {
