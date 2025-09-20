@@ -6161,9 +6161,33 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
+                            
+                            // Remove from visual drop zone
                             setActiveAgents(prev => prev.filter(a => 
                               (a.identity?.id || a.id) !== (agent.identity?.id || agent.id)
                             ));
+                            
+                            // Also remove from chat (multi-agent context)
+                            setMultiChatState(prev => {
+                              const activeContext = prev.contexts.find(c => c.isActive);
+                              if (!activeContext) return prev;
+                              
+                              return {
+                                ...prev,
+                                contexts: prev.contexts.map(context => 
+                                  context.isActive 
+                                    ? {
+                                        ...context,
+                                        guestAgents: (context.guestAgents || []).filter(guestAgent => 
+                                          guestAgent.agentId !== (agent.identity?.id || agent.id)
+                                        )
+                                      }
+                                    : context
+                                )
+                              };
+                            });
+                            
+                            console.log('🗑️ Removed agent from both drop zone and chat:', agent.identity?.name || agent.name);
                           }}
                           sx={{ 
                             position: 'absolute',
