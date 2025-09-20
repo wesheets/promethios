@@ -72,7 +72,7 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [hovering, setHovering] = useState(false);
+
   
   const loadingAgentsRef = useRef(false);
   const chatbotServiceRef = useRef<ChatbotStorageService | null>(null);
@@ -280,8 +280,6 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
 
   return (
     <Box
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
       sx={{
         position: 'fixed',
         top: 0,
@@ -317,7 +315,6 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
               agent={agent}
               onClick={() => handleAgentClick(agent)}
               onBehaviorPrompt={showBehaviorPrompts ? handleBehaviorPrompt : undefined}
-              showTooltip={hovering}
             />
           ))}
 
@@ -352,7 +349,7 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
           </Typography>
           
           {humans.map(human => (
-              <CollaboratorAvatar key={human.id} collaborator={human} showTooltip={hovering} />
+              <CollaboratorAvatar key={human.id} collaborator={human} />
           ))}
 
           <Tooltip title="Add human collaborator">
@@ -375,7 +372,6 @@ const AgentDockerEnhanced: React.FC<AgentDockerProps> = ({
               agent={agent}
               onClick={() => handleAgentClick(agent)}
               onBehaviorPrompt={showBehaviorPrompts ? handleBehaviorPrompt : undefined}
-              showTooltip={hovering}
             />
           ))}
         </Box>
@@ -388,11 +384,11 @@ interface DraggableAgentAvatarProps {
   agent: DockerAgent;
   onClick: () => void;
   onBehaviorPrompt?: (agentId: string, agentName: string, behavior: string) => void;
-  showTooltip: boolean;
 }
 
-const DraggableAgentAvatar: React.FC<DraggableAgentAvatarProps> = ({ agent, onClick, onBehaviorPrompt, showTooltip }) => {
+const DraggableAgentAvatar: React.FC<DraggableAgentAvatarProps> = ({ agent, onClick, onBehaviorPrompt }) => {
   const { dragRef, isDragging, dragHandlers } = useAgentDragSource(agent.id, agent, false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleBehaviorClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -422,7 +418,7 @@ const DraggableAgentAvatar: React.FC<DraggableAgentAvatarProps> = ({ agent, onCl
         </Box>
       }
       placement="bottom"
-      open={showTooltip}
+      open={isHovered}
       PopperProps={{
         sx: {
           '& .MuiTooltip-tooltip': {
@@ -441,6 +437,8 @@ const DraggableAgentAvatar: React.FC<DraggableAgentAvatarProps> = ({ agent, onCl
       <Box
         ref={dragRef}
         onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         {...dragHandlers}
         sx={{
           position: 'relative',
@@ -518,10 +516,11 @@ const DraggableAgentAvatar: React.FC<DraggableAgentAvatarProps> = ({ agent, onCl
 
 interface CollaboratorAvatarProps {
     collaborator: PinnedCollaborator;
-    showTooltip: boolean;
 }
 
-const CollaboratorAvatar: React.FC<CollaboratorAvatarProps> = ({ collaborator, showTooltip }) => {
+const CollaboratorAvatar: React.FC<CollaboratorAvatarProps> = ({ collaborator }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    
     return (
         <Tooltip
             title={
@@ -530,7 +529,7 @@ const CollaboratorAvatar: React.FC<CollaboratorAvatarProps> = ({ collaborator, s
                 </Box>
             }
             placement="bottom"
-            open={showTooltip}
+            open={isHovered}
             PopperProps={{
                 sx: {
                     '& .MuiTooltip-tooltip': {
@@ -547,6 +546,8 @@ const CollaboratorAvatar: React.FC<CollaboratorAvatarProps> = ({ collaborator, s
             }}
         >
             <Box
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
                 sx={{
                     position: 'relative',
                     cursor: 'pointer',
