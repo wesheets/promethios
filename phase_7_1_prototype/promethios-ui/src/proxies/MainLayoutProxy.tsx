@@ -184,9 +184,10 @@ const MainLayoutProxy: React.FC<MainLayoutProxyProps> = ({ children }) => {
               duration: theme.transitions.duration.enteringScreen,
             }),
             backgroundColor: '#1a202c',
-            minHeight: 'calc(100vh - 60px)', // Minimum height to account for AgentDocker
-            maxHeight: 'calc(100vh - 60px)', // Maximum height to prevent overflow
-            overflow: 'hidden', // Prevent scrolling on main container
+            height: 'calc(100vh - 60px)', // Fixed height to account for AgentDocker
+            overflow: 'auto', // Allow scrolling within the content area
+            display: 'flex',
+            flexDirection: 'column', // Stack children vertically
             color: 'white',
             position: 'relative',
           }}
