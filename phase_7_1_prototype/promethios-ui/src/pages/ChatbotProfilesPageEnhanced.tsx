@@ -770,24 +770,77 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   // Active agents in command center drop zone
   const [activeAgents, setActiveAgents] = useState<ChatbotProfile[]>([]);
   
-  // Auto-add host agent to drop zone when selectedChatbot changes
+  // Auto-update drop zone agents when chat context changes
   useEffect(() => {
-    if (selectedChatbot) {
-      setActiveAgents(prev => {
-        // Check if host agent is already in drop zone
-        const isAlreadyActive = prev.some(agent => 
-          (agent.identity?.id || agent.id) === (selectedChatbot.identity?.id || selectedChatbot.id)
-        );
+    const updateDropZoneAgents = async () => {
+      if (!selectedChatbot) {
+        setActiveAgents([]);
+        return;
+      }
+
+      console.log('🔄 Updating drop zone agents for chat context change');
+      
+      try {
+        const newActiveAgents: ChatbotProfile[] = [];
         
-        if (!isAlreadyActive) {
-          console.log('🏠 Auto-adding host agent to drop zone:', selectedChatbot.identity?.name || selectedChatbot.name);
-          return [selectedChatbot, ...prev];
+        // Always add the host agent first
+        newActiveAgents.push(selectedChatbot);
+        console.log('🏠 Added host agent:', selectedChatbot.identity?.name || selectedChatbot.name);
+        
+        // Get guest agents from multiChatState
+        const currentContext = multiChatState.contexts.find(ctx => ctx.id === multiChatState.activeContextId);
+        if (currentContext?.guestAgents && currentContext.guestAgents.length > 0) {
+          console.log('👥 Found guest agents in multiChatState:', currentContext.guestAgents.length);
+          
+          // Get all chatbot profiles to match guest agents
+          const chatbotProfiles = await chatbotService.getChatbots(user?.uid || '');
+          
+          for (const guestAgent of currentContext.guestAgents) {
+            const matchingProfile = chatbotProfiles?.find(profile => 
+              profile.identity?.id === guestAgent.agentId || 
+              profile.id === guestAgent.agentId
+            );
+            
+            if (matchingProfile) {
+              newActiveAgents.push(matchingProfile);
+              console.log('🤖 Added guest agent:', matchingProfile.identity?.name || matchingProfile.name);
+            }
+          }
         }
         
-        return prev;
-      });
-    }
-  }, [selectedChatbot]);
+        // Also check loadedHostChatSession for additional participants
+        if (loadedHostChatSession?.participants?.guests) {
+          console.log('📋 Checking loadedHostChatSession for additional participants');
+          
+          const chatbotProfiles = await chatbotService.getChatbots(user?.uid || '');
+          
+          for (const guest of loadedHostChatSession.participants.guests) {
+            if (guest.type === 'ai_agent') {
+              const matchingProfile = chatbotProfiles?.find(profile => 
+                profile.identity?.id === guest.id || 
+                profile.id === guest.id
+              );
+              
+              if (matchingProfile && !newActiveAgents.some(agent => 
+                (agent.identity?.id || agent.id) === (matchingProfile.identity?.id || matchingProfile.id)
+              )) {
+                newActiveAgents.push(matchingProfile);
+                console.log('📋 Added session participant:', matchingProfile.identity?.name || matchingProfile.name);
+              }
+            }
+          }
+        }
+        
+        console.log('✅ Final active agents count:', newActiveAgents.length);
+        setActiveAgents(newActiveAgents);
+        
+      } catch (error) {
+        console.error('❌ Error updating drop zone agents:', error);
+      }
+    };
+
+    updateDropZoneAgents();
+  }, [selectedChatbot, multiChatState.activeContextId, multiChatState.contexts, loadedHostChatSession, user?.uid]);
   
   // Guest selector popup state
   const [showGuestSelector, setShowGuestSelector] = useState(false);
