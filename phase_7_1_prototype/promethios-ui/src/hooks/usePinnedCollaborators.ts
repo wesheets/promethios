@@ -17,20 +17,24 @@ export const usePinnedCollaborators = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Debug logging
-  console.log('🤝 [usePinnedCollaborators] Hook called with:', {
+  console.log('🤝 [usePinnedCollaborators] Hook called with:', JSON.stringify({
     currentUser: currentUser?.uid,
     connectionsCount: connections?.length || 0,
     connectionsLoading,
-    connectionsError,
-    connectionsRaw: connections
-  });
+    connectionsError: connectionsError?.message || connectionsError
+  }, null, 2));
   
-  console.log('🤝 [usePinnedCollaborators] Detailed connections data:', {
-    connections,
+  console.log('🤝 [usePinnedCollaborators] Detailed connections data:', JSON.stringify({
     connectionsType: typeof connections,
     connectionsIsArray: Array.isArray(connections),
-    connectionsKeys: connections ? Object.keys(connections) : 'null'
-  });
+    connectionsLength: connections?.length,
+    connectionsKeys: connections ? Object.keys(connections) : 'null',
+    firstConnection: connections?.[0] ? {
+      id: connections[0].id,
+      name: connections[0].name,
+      keys: Object.keys(connections[0])
+    } : 'none'
+  }, null, 2));
 
   useEffect(() => {
     console.log('🤝 [usePinnedCollaborators] useEffect triggered with:', {
