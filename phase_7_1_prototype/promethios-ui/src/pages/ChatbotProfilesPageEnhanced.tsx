@@ -5974,27 +5974,80 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               maxHeight: '56px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'space-between',
               backgroundColor: '#1e293b',
               borderBottom: '1px solid #334155',
               px: 2
             }}>
-              {/* Drop Zone for Agent Collaboration */}
-              <Box sx={{
-                width: '320px', // Wider drop zone
-                height: '40px',
-                border: '2px dashed #64748b',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'rgba(100, 116, 139, 0.1)',
-                transition: 'all 0.2s ease',
-                '&:hover': {
-                  borderColor: '#3b82f6',
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)'
-                }
-              }}>
+              {/* Left Side - Agent Name and Chat Name */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="h6" sx={{ 
+                  color: '#f8fafc',
+                  fontSize: '1rem',
+                  fontWeight: 600
+                }}>
+                  {selectedChatbot?.identity?.name || 'AI Agent'}
+                </Typography>
+                {currentBotState?.currentChatName && (
+                  <>
+                    <Typography sx={{ color: '#64748b', fontSize: '0.875rem' }}>•</Typography>
+                    <Typography variant="body2" sx={{ 
+                      color: '#94a3b8',
+                      fontSize: '0.875rem'
+                    }}>
+                      {currentBotState.currentChatName}
+                    </Typography>
+                  </>
+                )}
+              </Box>
+
+              {/* Center - Drop Zone for Agent Collaboration (aligned with global docker) */}
+              <Box 
+                sx={{
+                  width: '320px', // Wider drop zone
+                  height: '40px',
+                  border: '2px dashed #64748b',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                  transition: 'all 0.2s ease',
+                  position: 'absolute',
+                  left: '35%', // Align with global docker position
+                  transform: 'translateX(-50%)',
+                  '&:hover': {
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                  }
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.borderColor = '#3b82f6';
+                  e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#64748b';
+                  e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.borderColor = '#64748b';
+                  e.currentTarget.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
+                  
+                  // Get dropped agent data
+                  const agentData = e.dataTransfer.getData('application/json');
+                  if (agentData) {
+                    try {
+                      const agent = JSON.parse(agentData);
+                      console.log('🤖 Agent dropped into command center:', agent);
+                      // TODO: Implement agent collaboration logic
+                    } catch (error) {
+                      console.error('Error parsing dropped agent data:', error);
+                    }
+                  }
+                }}
+              >
                 <Typography variant="body2" sx={{ 
                   color: '#94a3b8',
                   fontSize: '0.875rem',
@@ -6003,6 +6056,9 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
                   Drop Agent Here
                 </Typography>
               </Box>
+
+              {/* Right Side - Spacer for balance */}
+              <Box sx={{ width: '100px' }} />
             </Box>
             
             {/* Command Center Layout - Centered Chat + Thread Unit */}
