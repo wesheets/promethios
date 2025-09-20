@@ -34,6 +34,7 @@ import ConversationNotificationService from '../services/ConversationNotificatio
 import aiCollaborationInvitationService, { AICollaborationInvitationRequest } from '../services/ChatInvitationService';
 import { ConnectionService } from '../services/ConnectionService';
 import { useAdaptiveRightPanel, useAdaptiveTransitions } from '../hooks/useAdaptiveRightPanel';
+import { useUserPreferences } from '../hooks/useUserPreferences';
 import RightNavigationBar from '../components/navigation/RightNavigationBar';
 // Removed MultiAgentResponseIndicator - intrusive orange popup
 // Real-time collaboration imports
@@ -374,6 +375,7 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser: user, loading: authLoading } = useAuth();
+  const { preferences } = useUserPreferences();
   // Use ConnectionService directly (same as left navigation)
   const [connections, setConnections] = useState<any[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
@@ -5978,7 +5980,8 @@ const ChatbotProfilesPageEnhanced: React.FC = () => {
               justifyContent: 'space-between',
               backgroundColor: '#1e293b',
               borderBottom: '1px solid #334155',
-              px: 2
+              px: 2,
+              ml: preferences.navigationCollapsed ? '60px' : '260px' // Align with navigation layout
             }}>
               {/* Left Side - Agent Name and Chat Name */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
